@@ -1,0 +1,7 @@
+{
+  "image_sha256": "fd4b9165d26927e9a0a2783ee271b406f72f413b24ebafcca0b26bf1030c02b7",
+  "source_manifest_sha256": "8000ab910920bf5230ced65af5ab172b7e4bd4fe1cd798845cea0919f2a2260e",
+  "validator_sha256": "3441e9f4fcfcc5f3cf08c7bb82152384eaba2557ba8696ced29762d331d9b31b",
+  "failure_preserved_at": "build/fourteenth-observations/max-portal-action-mark",
+  "scope": "Max CPU baseline retry after full-line initial-selection and completed-frame navigation barriers; compiled Source14 unchanged."
+}

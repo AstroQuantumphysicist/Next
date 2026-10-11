@@ -1,0 +1,16 @@
+{
+  "artifact": "Next development ESP image; NOT Next 1.0 or an installer",
+  "uefi_secure_boot_certified": false,
+  "deployment_bundle": "SHA256/Ed25519 signed with workspace development key; not a production trust chain",
+  "sha256": {
+    "BOOTX64.EFI": "5ca50f3e0da74d126d8a251f9fd3493a4047d2d7043c9bafa995c7345ba3dbfa",
+    "HELIX.ELF": "3322997b2ed3e9895f2e506d9520aede4a9a0cc5f0fe3c2cfcbe43b0602c3a0f",
+    "INITRD.NXI": "6d220dc1881be3044764cac3e4af5acc71afed00fe0823f8e2d1ace9917c5240",
+    "SYSTEM.NXP": "d86fa287fc18b94657bac33eef9239eb21879f54125f5afe987135fcfe3ec49a",
+    "next-dev.img": "1dbcad2f1dd45d74383f5120deb9d1530d9dc594443f98e6617f4cd69b921c83"
+  },
+  "source_manifest_sha256": "e577af843330b0532a6f62baa7104dfac05d90962f0ca39bdf60b8aa1f623408",
+  "source_files": 193,
+  "frozen_source_unchanged": true,
+  "scope": "Frozen Source12 cooperative close, Trash Undo, MRU correction; isolated private AP roots remain unactivated; excludes live Source13"
+}

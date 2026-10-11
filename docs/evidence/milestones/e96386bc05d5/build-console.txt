@@ -1,0 +1,76 @@
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.05s
+     Running `target/debug/next-package keygen /workspace/Next/work/package-dev.seed /workspace/Next/work/package-dev.pub`
+   Compiling next-abi v0.1.0 (/workspace/Next/crates/next-abi)
+   Compiling helix-core v0.1.0 (/workspace/Next/crates/helix-core)
+   Compiling prism v0.1.0 (/workspace/Next/crates/prism)
+   Compiling helix-kernel v0.1.0 (/workspace/Next/crates/helix-kernel)
+    Finished `release` profile [optimized] target(s) in 5.09s
+    Finished `release` profile [optimized] target(s) in 0.04s
+Independent Linux static ELF host execution PASS (exit 37)
+Independent Linux clock ELF host execution PASS (exit 43)
+Independent Linux memory ELF host execution PASS (exit 44)
+Independent Linux file ELF host execution PASS (exit 46)
+Independent Linux TLS ELF host execution PASS (exit 47)
+Independent Linux namespace ELF host execution PASS (exit 48)
+Original fixed PE32+ fixture built: 3072 bytes, 3 kernel32 imports
+Original fixed PE32+ fixture built: 3584 bytes, 3 kernel32 imports
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.01s
+Signed 1 files into /workspace/Next/build/.apps.aQctnNY5/system/clock.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/build/.apps.aQctnNY5/system/context.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/build/.apps.aQctnNY5/system/event-wait.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/build/.apps.aQctnNY5/system/fault-avx.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/build/.apps.aQctnNY5/system/fault-fsgsbase.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/build/.apps.aQctnNY5/system/fault-guard.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/build/.apps.aQctnNY5/system/fault-nx.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/build/.apps.aQctnNY5/system/fault-rx.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/build/.apps.aQctnNY5/system/fault-supervisor.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/build/.apps.aQctnNY5/system/fault-ud.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/build/.apps.aQctnNY5/system/fault.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/build/.apps.aQctnNY5/system/nextd.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/build/.apps.aQctnNY5/system/portal-probe.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/build/.apps.aQctnNY5/system/probe.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/build/.apps.aQctnNY5/system/service-worker.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/build/.apps.aQctnNY5/system/spin.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/build/.apps.aQctnNY5/system/vfs-probe.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/build/.apps.aQctnNY5/system/wait-negative.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/build/.apps.aQctnNY5/compat/linux/clock-gate.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/build/.apps.aQctnNY5/compat/linux/clock.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/build/.apps.aQctnNY5/compat/linux/file-gate.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/build/.apps.aQctnNY5/compat/linux/file.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/build/.apps.aQctnNY5/compat/linux/hello-gate.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/build/.apps.aQctnNY5/compat/linux/hello.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/build/.apps.aQctnNY5/compat/linux/memory-gate.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/build/.apps.aQctnNY5/compat/linux/memory.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/build/.apps.aQctnNY5/compat/linux/namespace-gate.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/build/.apps.aQctnNY5/compat/linux/namespace.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/build/.apps.aQctnNY5/compat/linux/tls-gate.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/build/.apps.aQctnNY5/compat/linux/tls.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/build/.apps.aQctnNY5/compat/nt/hello-gate.exe; permission declarations are not grants
+Signed 1 files into /workspace/Next/build/.apps.aQctnNY5/compat/nt/hello.exe; permission declarations are not grants
+Signed 1 files into /workspace/Next/build/.apps.aQctnNY5/system/untrusted.elf; permission declarations are not grants
+Built 33 application envelopes (one deliberately invalid negative fixture)
+Built /workspace/Next/build/esp/EFI/NEXT/INITRD.NXI (33 entries, 460896 bytes; signed application envelopes, deployment signs archive)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.01s
+     Running `target/debug/next-package keygen /workspace/Next/work/package-dev.seed /workspace/Next/work/package-dev.pub`
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.01s
+     Running `target/debug/next-package pack /workspace/Next/work/package-dev.seed org.next.development 0.1.0 0 deployment boot/helix.elf build/esp/EFI/NEXT/SYSTEM.NXP boot/helix.elf=build/esp/EFI/NEXT/HELIX.ELF boot/initrd.nxi=build/esp/EFI/NEXT/INITRD.NXI`
+Signed 2 files into build/esp/EFI/NEXT/SYSTEM.NXP; permission declarations are not grants
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.01s
+     Running `target/debug/next-package verify /workspace/Next/work/package-dev.pub build/esp/EFI/NEXT/SYSTEM.NXP`
+Verified org.next.development Deployment 2 files; permissions requested=0x0
+   Compiling next-abi v0.1.0 (/workspace/Next/crates/next-abi)
+   Compiling next-boot v0.1.0 (/workspace/Next/crates/next-boot)
+    Finished `release` profile [optimized] target(s) in 1.13s
+mkfs.fat 4.2 (2021-01-31)
+Built /workspace/Next/build/next-dev.img (68157440 bytes)
+{
+  "requirements": 195,
+  "status": {
+    "pending": 87,
+    "partial": 108,
+    "verified": 0
+  },
+  "product_ready": false,
+  "json": "/workspace/Next/build/coverage/coverage.json",
+  "html": "/workspace/Next/build/coverage/index.html"
+}

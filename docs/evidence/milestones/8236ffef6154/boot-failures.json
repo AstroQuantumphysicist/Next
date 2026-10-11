@@ -1,0 +1,108 @@
+{
+  "passed": true,
+  "source_image_sha256": "8236ffef6154ef708c37ebe1cf2ba0a750b2c1fc1c543f799fc01060d2a35bee",
+  "source_image_unchanged": true,
+  "scope": "QEMU/OVMF rejection of mutated unsigned development ELF media; no signature validation or real hardware certification",
+  "cases": [
+    {
+      "case": "missing-kernel",
+      "passed": true,
+      "checks": [
+        "expected loader rejection: open \\EFI\\NEXT\\HELIX.ELF:",
+        "no kernel entry or reboot during bounded halt observation"
+      ],
+      "artifact": "build/failures/missing-kernel/serial.log",
+      "error": null
+    },
+    {
+      "case": "truncated-header",
+      "passed": true,
+      "checks": [
+        "expected loader rejection: Helix ELF rejected: Truncated",
+        "no kernel entry or reboot during bounded halt observation"
+      ],
+      "artifact": "build/failures/truncated-header/serial.log",
+      "error": null
+    },
+    {
+      "case": "wrong-architecture",
+      "passed": true,
+      "checks": [
+        "expected loader rejection: Helix ELF rejected: Architecture",
+        "no kernel entry or reboot during bounded halt observation"
+      ],
+      "artifact": "build/failures/wrong-architecture/serial.log",
+      "error": null
+    },
+    {
+      "case": "writable-executable",
+      "passed": true,
+      "checks": [
+        "expected loader rejection: Helix ELF rejected: WritableExecutable",
+        "no kernel entry or reboot during bounded halt observation"
+      ],
+      "artifact": "build/failures/writable-executable/serial.log",
+      "error": null
+    },
+    {
+      "case": "overlapping-segments",
+      "passed": true,
+      "checks": [
+        "expected loader rejection: Helix ELF rejected: Overlap",
+        "no kernel entry or reboot during bounded halt observation"
+      ],
+      "artifact": "build/failures/overlapping-segments/serial.log",
+      "error": null
+    },
+    {
+      "case": "file-offset-overflow",
+      "passed": true,
+      "checks": [
+        "expected loader rejection: Helix ELF rejected: Overflow",
+        "no kernel entry or reboot during bounded halt observation"
+      ],
+      "artifact": "build/failures/file-offset-overflow/serial.log",
+      "error": null
+    },
+    {
+      "case": "unsupported-dynamic-kernel",
+      "passed": true,
+      "checks": [
+        "expected loader rejection: Helix ELF rejected: Type",
+        "no kernel entry or reboot during bounded halt observation"
+      ],
+      "artifact": "build/failures/unsupported-dynamic-kernel/serial.log",
+      "error": null
+    },
+    {
+      "case": "invalid-entry",
+      "passed": true,
+      "checks": [
+        "expected loader rejection: Helix ELF rejected: Entry",
+        "no kernel entry or reboot during bounded halt observation"
+      ],
+      "artifact": "build/failures/invalid-entry/serial.log",
+      "error": null
+    },
+    {
+      "case": "wrong-physical-address",
+      "passed": true,
+      "checks": [
+        "expected loader rejection: Helix ELF rejected: Address",
+        "no kernel entry or reboot during bounded halt observation"
+      ],
+      "artifact": "build/failures/wrong-physical-address/serial.log",
+      "error": null
+    },
+    {
+      "case": "oversized-kernel",
+      "passed": true,
+      "checks": [
+        "expected loader rejection: Helix ELF exceeds bounded 8 MiB",
+        "no kernel entry or reboot during bounded halt observation"
+      ],
+      "artifact": "build/failures/oversized-kernel/serial.log",
+      "error": null
+    }
+  ]
+}

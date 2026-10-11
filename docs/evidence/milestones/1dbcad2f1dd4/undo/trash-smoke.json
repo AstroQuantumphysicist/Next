@@ -1,0 +1,241 @@
+{
+  "passed": true,
+  "image_sha256": "1dbcad2f1dd45d74383f5120deb9d1530d9dc594443f98e6617f4cd69b921c83",
+  "source_binding": {
+    "compiled_source_manifest_sha256": "e577af843330b0532a6f62baa7104dfac05d90962f0ca39bdf60b8aa1f623408",
+    "frozen_source_root": "/workspace/Next/work/twelfth-wave/frozen-src",
+    "prism_sources": {
+      "crates/prism/Cargo.toml": "57973d236330697346e0d9630c65982af0eec5572613eb605357d755210caca4",
+      "crates/prism/assets/NOTICE.txt": "a49d56b73938f8f366ebd81bcdcbdb44c9fe85966848f6f07612194588c65e16",
+      "crates/prism/assets/OpenSans-LICENSE.txt": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "crates/prism/assets/open-sans-advance.bin": "7bfb26802a159e8c464aa8f17026bff36915d55240b5c0fbfd0ec8774ef3a0ee",
+      "crates/prism/assets/open-sans-atlas.bin": "d954599f44ba97e84f07b184a493087e781354176065776ad7d23a9d8a745a4b",
+      "crates/prism/assets/source/OpenSans-Regular.ttf": "e64e508b2aa2880f907e470c4550980ec4c0694d103a43f36150ac3f93189bee",
+      "crates/prism/assets/wallpaper.rgb": "85495a5a07d24342eb2797a7e416b142baf2fcbc6929f9632e2e1884a6a09d8c",
+      "crates/prism/src/appearance.rs": "cac1b530f6fa29e3718c53ba573aaae77f084363e913f995fb1e27ee3abd643d",
+      "crates/prism/src/appearance_ui.rs": "cb2ec7e0c244479dac04d913712d46671b8b80354b13874255c44c885b3037e7",
+      "crates/prism/src/calculator.rs": "3e8537719e105b24ad99b000027f587bbf470436a0de38be93263868013e2185",
+      "crates/prism/src/client_interaction.rs": "65e9e17f4b7ff6db0d30a22d04d3d08f05f774c5e40d713ffecc6c988d235a18",
+      "crates/prism/src/client_surface.rs": "7e0207b4f3805a36aac3cf15e6b4e98228cf1b43c02dd476a6aa3a976d396d22",
+      "crates/prism/src/desktop.rs": "14bb10b040282a261274efacedf39cbbe06aae725c3b090cca4e9f59d00c45f2",
+      "crates/prism/src/editor.rs": "d3facd625ed5875dd954373c0caf1849da10c2c90daa36a7f8f788c8d4ca6828",
+      "crates/prism/src/files_actions.rs": "10051beaf0e107324cdb149f193bda90c8fe0ebe63a7b91c671409ba1b2031f0",
+      "crates/prism/src/keyboard_focus.rs": "dcfadc01486f3e6e060b21a685c7255f28b67b6f120314eb77ff7fa03f6eb13a",
+      "crates/prism/src/lib.rs": "90c3c7ed94209ca8ee8ada31560135f1c24cbe9ea9618aa9732d5c38bca895fe",
+      "crates/prism/src/notifications.rs": "ec28aa2c1767bf8b6b4b3f7637d28f96180e0c1f7022a300f25092da7fca77db",
+      "crates/prism/src/palette.rs": "33a01ed09dd2f22759c13a2214ab41c01bc6965cda43f816cab8aa0439a1f62e",
+      "crates/prism/src/snap.rs": "6ac131265ed57fe098408dff66fd99e5b332649be869e2f94985122d62ccdb3e",
+      "crates/prism/src/surface_state.rs": "f852981f26a41df8afb8d898245b61f6990b9f1e9f7d39d00211063dea9a9035",
+      "crates/prism/src/theme.rs": "460e80e2b421b1bfd42bad61ebb474259d3823319abeb718f8e0363a1fe85976",
+      "crates/prism/src/trash_shell.rs": "2d100521eba12919581a359742dd9fcec1df7a9705d0a87258f5a5c22d439430",
+      "crates/prism/src/trash_ui.rs": "d394537712af02a7435e310a229c076954c171b1688efbc2c8081c3aa718aded",
+      "crates/prism/src/trash_undo_ui.rs": "fb4a31045ba4e8a525798fbb917bfd666c671e2cb0f439f9dfc211f67f6ca4c0"
+    },
+    "helper_source_sha256": "041622368133ef160e24d9ab93c11ccf51aed1e399a8e853949d1c62e551dd43",
+    "library_sha256": "aba5b450f00696d09dee5c6fb7820cea79b036d5767f1f98c8f90a1b37f569e9",
+    "helper_sha256": "d6005a4b43a1c3373f0c791d58bece81d5f9fdff4d205e99d783e57dd8afff91"
+  },
+  "phases": [
+    {
+      "phase": "create",
+      "passed": true,
+      "report": "build/twelfth-undo/create/boot-smoke.json",
+      "protected_bytes_unchanged": true,
+      "journal": {
+        "format": "NXTCOW01-development",
+        "start_lba": 131072,
+        "sectors": 132,
+        "selected_generation": 69,
+        "selected_bank": 0,
+        "mount_read_only": false,
+        "candidates": [
+          {
+            "slot": 0,
+            "valid": true,
+            "blank": false,
+            "generation": 69,
+            "bank": 0,
+            "root_crc": 2173517259,
+            "snapshot_valid": true,
+            "files": [
+              {
+                "slot": 0,
+                "path": "/native/probe",
+                "size": 23,
+                "crc32": 1361864760
+              },
+              {
+                "slot": 1,
+                "path": "/native/linux",
+                "size": 23,
+                "crc32": 4173277344
+              },
+              {
+                "slot": 2,
+                "path": "/trash/d.0000000000000045",
+                "size": 13,
+                "crc32": 541074029
+              },
+              {
+                "slot": 3,
+                "path": "/trash/m.0000000000000045",
+                "size": 128,
+                "crc32": 558161692
+              }
+            ],
+            "mount_read_only": false
+          },
+          {
+            "slot": 1,
+            "valid": true,
+            "blank": false,
+            "generation": 68,
+            "bank": 1,
+            "root_crc": 1863696821,
+            "snapshot_valid": true,
+            "files": [
+              {
+                "slot": 0,
+                "path": "/native/probe",
+                "size": 23,
+                "crc32": 1361864760
+              },
+              {
+                "slot": 1,
+                "path": "/native/linux",
+                "size": 23,
+                "crc32": 4173277344
+              },
+              {
+                "slot": 2,
+                "path": "/native/trash-proof",
+                "size": 13,
+                "crc32": 541074029
+              }
+            ]
+          }
+        ],
+        "files": [
+          {
+            "slot": 0,
+            "path": "/native/probe",
+            "size": 23,
+            "crc32": 1361864760
+          },
+          {
+            "slot": 1,
+            "path": "/native/linux",
+            "size": 23,
+            "crc32": 4173277344
+          },
+          {
+            "slot": 2,
+            "path": "/trash/d.0000000000000045",
+            "size": 13,
+            "crc32": 541074029
+          },
+          {
+            "slot": 3,
+            "path": "/trash/m.0000000000000045",
+            "size": 128,
+            "crc32": 558161692
+          }
+        ],
+        "source_sha256": "49ebb826ea202e123c78a8293fc5578c65cc705d2447afd2449ec0409625c0bb"
+      }
+    },
+    {
+      "phase": "verify",
+      "passed": true,
+      "report": "build/twelfth-undo/verify/boot-smoke.json",
+      "protected_bytes_unchanged": true,
+      "journal": {
+        "format": "NXTCOW01-development",
+        "start_lba": 131072,
+        "sectors": 132,
+        "selected_generation": 118,
+        "selected_bank": 1,
+        "mount_read_only": false,
+        "candidates": [
+          {
+            "slot": 0,
+            "valid": true,
+            "blank": false,
+            "generation": 117,
+            "bank": 0,
+            "root_crc": 1709402271,
+            "snapshot_valid": true,
+            "files": [
+              {
+                "slot": 0,
+                "path": "/native/probe",
+                "size": 23,
+                "crc32": 1361864760
+              },
+              {
+                "slot": 1,
+                "path": "/native/linux",
+                "size": 23,
+                "crc32": 4173277344
+              },
+              {
+                "slot": 2,
+                "path": "/trash/d.0000000000000045",
+                "size": 13,
+                "crc32": 541074029
+              },
+              {
+                "slot": 3,
+                "path": "/trash/m.0000000000000045",
+                "size": 128,
+                "crc32": 558161692
+              }
+            ]
+          },
+          {
+            "slot": 1,
+            "valid": true,
+            "blank": false,
+            "generation": 118,
+            "bank": 1,
+            "root_crc": 2580250130,
+            "snapshot_valid": true,
+            "files": [
+              {
+                "slot": 0,
+                "path": "/native/probe",
+                "size": 23,
+                "crc32": 1361864760
+              },
+              {
+                "slot": 1,
+                "path": "/native/linux",
+                "size": 23,
+                "crc32": 4173277344
+              }
+            ],
+            "mount_read_only": false
+          }
+        ],
+        "files": [
+          {
+            "slot": 0,
+            "path": "/native/probe",
+            "size": 23,
+            "crc32": 1361864760
+          },
+          {
+            "slot": 1,
+            "path": "/native/linux",
+            "size": 23,
+            "crc32": 4173277344
+          }
+        ],
+        "source_sha256": "c293590b1c0a11ecdde00743c72d97033c805c0fec30b5b4a7c4c04785c7a4e8"
+      }
+    }
+  ],
+  "input_image_unchanged": true,
+  "source_manifest_unchanged": true,
+  "helper_source_unchanged": true
+}

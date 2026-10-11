@@ -1,0 +1,2 @@
+persistence create: PASS
+persistence verify: PASS

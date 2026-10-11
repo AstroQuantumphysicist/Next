@@ -1,0 +1,172 @@
+[package]
+name = "next-user"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+next-abi = { path = "../next-abi" }
+helix-core = { path = "../helix-core" }
+
+[lib]
+test = false
+bench = false
+
+[[bin]]
+name = "nextd"
+path = "src/bin/nextd.rs"
+test = false
+bench = false
+
+[[bin]]
+name = "probe"
+path = "src/bin/probe.rs"
+test = false
+bench = false
+
+[[bin]]
+name = "fault"
+path = "src/bin/fault.rs"
+test = false
+bench = false
+
+[[bin]]
+name = "spin"
+path = "src/bin/spin.rs"
+test = false
+bench = false
+
+[[bin]]
+name = "fault-supervisor"
+path = "src/bin/fault-supervisor.rs"
+test = false
+bench = false
+
+[[bin]]
+name = "fault-rx"
+path = "src/bin/fault-rx.rs"
+test = false
+bench = false
+
+[[bin]]
+name = "fault-nx"
+path = "src/bin/fault-nx.rs"
+test = false
+bench = false
+
+[[bin]]
+name = "fault-guard"
+path = "src/bin/fault-guard.rs"
+test = false
+bench = false
+
+[[bin]]
+name = "fault-ud"
+path = "src/bin/fault-ud.rs"
+test = false
+bench = false
+
+[[bin]]
+name = "context"
+path = "src/bin/context.rs"
+test = false
+bench = false
+
+[[bin]]
+name = "wait-negative"
+path = "src/bin/wait-negative.rs"
+test = false
+bench = false
+
+[[bin]]
+name = "fault-avx"
+path = "src/bin/fault-avx.rs"
+test = false
+bench = false
+
+[[bin]]
+name = "fault-fsgsbase"
+path = "src/bin/fault-fsgsbase.rs"
+test = false
+bench = false
+
+[[bin]]
+name = "clock"
+path = "src/bin/clock.rs"
+test = false
+bench = false
+
+[[bin]]
+name = "event-wait"
+path = "src/bin/event-wait.rs"
+test = false
+bench = false
+
+[[bin]]
+name = "service-worker"
+path = "src/bin/service-worker.rs"
+test = false
+bench = false
+
+[[bin]]
+name = "vfs-probe"
+path = "src/bin/vfs-probe.rs"
+test = false
+bench = false
+
+[[bin]]
+name = "portal-probe"
+path = "src/bin/portal-probe.rs"
+test = false
+bench = false
+
+[[bin]]
+name = "udp-probe"
+path = "src/bin/udp-probe.rs"
+test = false
+bench = false
+
+[[bin]]
+name = "udp-block"
+path = "src/bin/udp-block.rs"
+test = false
+bench = false
+
+[[bin]]
+name = "dns-probe"
+path = "src/bin/dns-probe.rs"
+test = false
+bench = false
+
+[[bin]]
+name = "surface-probe"
+path = "src/bin/surface-probe.rs"
+test = false
+bench = false
+
+[[bin]]
+name = "client-input-probe"
+path = "src/bin/client-input-probe.rs"
+test = false
+bench = false
+
+[[bin]]
+name = "trash-probe"
+path = "src/bin/trash-probe.rs"
+test = false
+bench = false
+
+[[bin]]
+name = "client-close-probe"
+path = "src/bin/client-close-probe.rs"
+
+[[bin]]
+name = "client-input-delayed"
+path = "src/bin/client-input-delayed.rs"
+
+[[bin]]
+name = "client-reconfigure-probe"
+path = "src/bin/client-reconfigure-probe.rs"
+test = false
+bench = false

@@ -1,0 +1,6 @@
+{
+  "kind": "History summary only; no raw failed report retained",
+  "attempt_reference": "73325 as reported by parent agent",
+  "observation": "An earlier VFS fixture used an incorrect flag and was corrected before final positive validation.",
+  "limitation": "No raw log or exact image attribution retained; this summary is not a substitute for raw evidence."
+}

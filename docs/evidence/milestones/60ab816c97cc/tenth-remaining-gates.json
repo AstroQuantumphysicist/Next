@@ -1,0 +1,26 @@
+[
+  {
+    "family": "persistence",
+    "exit_status": 0,
+    "elapsed_seconds": 121.16099726700122,
+    "source_image_sha256": "60ab816c97cc2c510ac5eed76a3db2d039b924a72fe6904bc6eae63f36cbfc27"
+  },
+  {
+    "family": "pair",
+    "exit_status": 0,
+    "elapsed_seconds": 8.907110439002281,
+    "source_image_sha256": "60ab816c97cc2c510ac5eed76a3db2d039b924a72fe6904bc6eae63f36cbfc27"
+  },
+  {
+    "family": "gpt",
+    "exit_status": 0,
+    "elapsed_seconds": 143.9117698170012,
+    "source_image_sha256": "60ab816c97cc2c510ac5eed76a3db2d039b924a72fe6904bc6eae63f36cbfc27"
+  },
+  {
+    "family": "latency",
+    "exit_status": 0,
+    "elapsed_seconds": 31.4866623980015,
+    "source_image_sha256": "60ab816c97cc2c510ac5eed76a3db2d039b924a72fe6904bc6eae63f36cbfc27"
+  }
+]

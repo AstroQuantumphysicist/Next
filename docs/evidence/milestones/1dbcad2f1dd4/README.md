@@ -1,0 +1,5 @@
+# Twelfth immutable scoped milestone
+
+Exact image `1dbcad2f1dd45d74383f5120deb9d1530d9dc594443f98e6617f4cd69b921c83`; frozen193-file source SHA `e577af843330b0532a6f62baa7104dfac05d90962f0ca39bdf60b8aa1f623408`. Isolated516 workspace tests, cooperative close qemu64121, real session Undo two boots118create/119verify, and30loader refusals passed. Close Refused preserves visible client pixels/process; advisory WillClose precedes actual file save/readback, cooperative Exit51 and exact cleanup. Undo Move/Restore preserves exact bytes/id, Cancel retains eligibility, one-shot replay fails, reboot clears a fresh receipt and confirmed Purge cannot be undone.
+
+This is a scoped checkpoint. Expanded max CPU, deadline/Unresponsive/ForceQuit guest close behavior, independent runtime/persistence-export/service-pair/GPT/latency families are unrun on this image. The original Undo wrapper Terminal-focus failure and raw scratch identity are retained; no failed report was rewritten. Source13/14 capabilities are excluded. No complete GUI toolkit, general Undo history, power-loss/hardware/accessibility certification or Next1.0 readiness is claimed.

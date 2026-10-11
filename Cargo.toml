@@ -1,0 +1,18 @@
+[workspace]
+members = ["crates/next-abi", "crates/helix-core", "crates/prism", "crates/next-boot", "crates/helix-kernel", "crates/next-checks", "crates/next-fs", "crates/next-user", "crates/next-package"]
+default-members = ["crates/next-abi", "crates/helix-core", "crates/prism", "crates/next-checks", "crates/next-fs"]
+resolver = "2"
+
+[workspace.package]
+edition = "2021"
+license = "Apache-2.0"
+rust-version = "1.90"
+
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+panic = "abort"
+lto = true
+codegen-units = 1
+opt-level = 2

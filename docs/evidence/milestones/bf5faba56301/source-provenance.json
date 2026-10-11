@@ -1,0 +1,12 @@
+{
+  "scope": "Exact 157-file source snapshot copied, never recaptured from seventh working tree. Compiled sixth implementation sources preserved. Source manifest was finalized with only the service_pair_smoke.py validation fix before this copy.",
+  "snapshot_sha256": "fdfd7dc5992743a9c7f1b95d5d215f4dd0b109c1b1534b0bdc20f0bdbe498533",
+  "validation_fix": {
+    "path": "tools/service_pair_smoke.py",
+    "failed_validator_sha256": "e26de3f37af821fd90a7c3a87f34d0db00de37bdeed2640eea44805524e0848e",
+    "validated_version_sha256": "15e2250f416069393f5f9d4911ba9c529e624cf92b55158dfbbd90b1eeea9457",
+    "retained_failed_version": "docs/evidence/milestones/bf5faba56301/observations/service-pair-frame-gate/service_pair_smoke.py",
+    "reason": "Gate on complete NEXT READY response rather than an earlier initial frame before worker state is ready."
+  },
+  "excluded_capabilities": "Seventh UDP sockets, GPT integration and active APIC routing are outside this sixth image even if later source files exist."
+}

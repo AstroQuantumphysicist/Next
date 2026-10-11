@@ -1,0 +1,11 @@
+{
+  "scope": "Post-image-snapshot validation scripts only; original 134-file image source snapshot remains unchanged. Persistence validator fixes full PID matching and command-frame synchronization.",
+  "scripts": [
+    {
+      "path": "tools/boot_smoke.py",
+      "captured_source_sha256": "f81ab0b357532f14697c0687d3e2aa15611661c961fe1c8177389819b65c9fd8",
+      "validation_version_sha256": "c873b3b0487e5a3d4090ca36ed9a51ec4e57d7d321bedf2539d99a579ed10839",
+      "retained_validation_version": "docs/evidence/milestones/f42210c37acc/validator-updates/boot_smoke.py"
+    }
+  ]
+}

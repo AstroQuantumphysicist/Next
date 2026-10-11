@@ -1,0 +1,2648 @@
+{
+  "passed": true,
+  "scope": "QEMU q35/TCG, single CPU, legacy PS/2, software framebuffer, PIT/PIC timer interrupts, legacy virtio read/write/flush in dedicated trailing data region, FAT32 reads, native processes and IPC; no hardware certification",
+  "started_utc": "2026-10-11T18:30:19.920723+00:00",
+  "checks": [
+    "Ed25519 deployment signature and kernel/init-image SHA256 verified against workspace development anchor",
+    "separate validated ELF loaded from EFI boot-device filesystem",
+    "firmware boot services exited",
+    "versioned checksummed BootInfo with kernel/loader/map reservations",
+    "supervisor RX text, RO NX data, RW NX memory and guarded stacks",
+    "CPU kernel protection: RX text write",
+    "CPU kernel protection: RO data write",
+    "CPU kernel protection: user code physical alias write",
+    "CPU kernel protection: NX data execution",
+    "CPU kernel protection: kernel stack guard write",
+    "CPU kernel protection: interrupt stack guard write",
+    "kernel physical-page and handle selftest",
+    "isolated ring3 native code, bounded syscall, pointer denial and exit",
+    "CPU page fault isolation: supervisor read",
+    "CPU page fault isolation: RX code write",
+    "CPU page fault isolation: NX stack execution",
+    "PIT timer interrupts preserve tested integer registers and XMM0 sentinel",
+    "actual read-only legacy virtio block device",
+    "actual read-only FAT32 file access: /NEXT.TXT",
+    "kernel readback verifies only saved FX512 state is enabled; unsaved optional user controls and inherited TLS bases disabled",
+    "bounded boot-device init image loaded and retained",
+    "native SDK TLS setters/getters preserve private FS memory across yield, sleep and timer switches and reject invalid bases/copyout",
+    "native executable rejects invalid pointers and stale capability handles",
+    "native anonymous memory supports zeroed multi-page mappings and enforces range/permissions",
+    "PID1 reads authenticated signed service declarations with no partial writes on short, null, readonly or guard-crossing outputs",
+    "actual manual/auto events enforce wait/signal rights and copyout-before-consumption",
+    "actual blocking waits enforce deadlines, wake one auto waiter, broadcast manual events and clean up killed waiters",
+    "capability-backed COW file streams preserve offsets on denied copyout and enforce attenuated rights",
+    "cross-process file capability transfer grants read and denies write",
+    "cross-process capability move produces usable attenuated recipient authority",
+    "framed IPC request/reply between distinct native address spaces",
+    "CPU faults for supervisor access, RX write, NX execute, stack guard and invalid opcode terminate only offending child",
+    "native integer, all XMM and x87 sentinels survive noncooperative timer context switches",
+    "validated q35 HPET resource uses owned UC mapping and advancing hardware counter; PIT remains scheduler clock",
+    "actual masked LAPIC countdown calibrated against two bounded HPET windows; masked firmware timer adopted/stopped, LVT/divider restored and PIT retained",
+    "read-only BSP LAPIC identity and version discovery with owned UC mapping",
+    "actual IOAPIC pin discovery and bounded masked ISA plan before the explicit routing transition",
+    "actual PIT IRQ0 routing transition reports ISR-observed IOAPIC delivery or verified PIC rollback",
+    "independently attenuated worker NETWORK grant blocks socket creation despite signed declaration",
+    "moving a socket to an unprivileged recipient cannot bypass NETWORK authority; denied import preserves ownership until teardown",
+    "validated ACPI tables discover BSP, IOAPIC and interrupt overrides; no SMP startup",
+    "COW data store commits file write/rename/delete and remounts without touching ESP",
+    "actual AC97 DMA playback completes 12000 stereo frames at 48 kHz",
+    "actual DHCP Discover/Offer/Request/Ack obtains bounded QEMU lease",
+    "actual virtio Ethernet ARP, ICMP echo and checksummed UDP request/reply with local host peer",
+    "actual local UDP A/AAAA lookups validate framed replies, TTL cache hits, real monotonic expiry and wire refresh",
+    "actual TCP handshake, bounded HTTP response and connection teardown with local host peer",
+    "PS/2 auxiliary mouse initialized",
+    "dedicated data-sector write/read/flush and original contents restored",
+    "native child fault terminates offender while supervisor survives",
+    "timer preempts non-yielding child and supervisor kills it",
+    "process results survive repeated and duplicated waits; signed exit -7 is distinct from WouldBlock and bad copyout cannot consume result",
+    "native process exit, wait, stale handles and slot reuse",
+    "isolated native privileged VFS fixture checks independent/shared offsets, rename replacement, open unlink lifetime and recreate isolation",
+    "native PID1 executes real isolated-worker crash restart and heartbeat timeout recovery with bounded policy",
+    "live native nextd supervisor signals readiness",
+    "kernel completes bounded native startup",
+    "actual q35 CMOS UTC anchor agrees with host wall clock",
+    "framebuffer shell ready",
+    "distinct worker PIDs and exit statuses prove crash restart and watchdog recovery ordering",
+    "recovered isolated service remains live alongside PID1 after desktop readiness",
+    "serial command: status",
+    "serial command: about",
+    "serial command: help",
+    "serial command: cat /NEXT.TXT",
+    "serial command: write /smoke hello world",
+    "serial command: cat /smoke",
+    "serial command: mv /smoke /renamed",
+    "serial command: ls",
+    "serial command: rm /renamed",
+    "serial command: cat /renamed",
+    "serial command: ps",
+    "serial command: kill 1",
+    "serial command: run /system/missing.elf",
+    "serial command: run /system/untrusted.elf",
+    "serial command: trace",
+    "serial command: calc (2 + 3) * 4",
+    "serial command: calc 1 / 0",
+    "serial command: nextunknown",
+    "signed application authentication rejects tampered archive member before process creation",
+    "structured trace captures actual numeric process and namespace outcomes",
+    "interactive spawn and kill of non-yielding native child; supervisor protected",
+    "same static Linux ELF executes Linux SYSCALL subset and exits 37",
+    "Linux profile cannot invoke native readiness capability syscall",
+    "original Linux clock fixture: /compat/linux/clock.elf",
+    "original Linux clock fixture: /compat/linux/clock-gate.elf",
+    "native realtime clock normalizes UTC and rejects null, readonly and guard-crossing copyout",
+    "native clock utility uses actual monotonic time",
+    "console-owned program output reaches Prism terminal through bounded queue",
+    "original Linux brk/mmap/munmap fixture: /compat/linux/memory.elf",
+    "original Linux brk/mmap/munmap fixture: /compat/linux/memory-gate.elf",
+    "original Linux shared-open, rename/unlink lifetime fixture: /compat/linux/namespace.elf",
+    "original Linux shared-open, rename/unlink lifetime fixture: /compat/linux/namespace-gate.elf",
+    "Linux FS/GS bases survive gate, yield, preemption and bounds checks: /compat/linux/tls.elf",
+    "Linux FS/GS bases survive gate, yield, preemption and bounds checks: /compat/linux/tls-gate.elf",
+    "two overlapping Linux TLS instances preserve PID-specific private FS/GS contents across timer switches",
+    "original Linux common file-object fixture: /compat/linux/file.elf",
+    "original Linux common file-object fixture: /compat/linux/file-gate.elf",
+    "original NT PE32+ Win64 import fixture: /compat/nt/hello.exe",
+    "original NT PE32+ Win64 import fixture: /compat/nt/hello-gate.exe",
+    "native connected UDP capability sends actual nonce/empty datagrams through retained virtio device with copyout-safe receive, level wait, rights and stale-handle checks",
+    "console date reports normalized UTC from the same RTC/PIT clock",
+    "Home search matches actual file metadata and opens its authoritative content in Editor",
+    "trusted PS/2 file chooser grants scoped readonly authority to the authenticated caller; write denial, UI rejection, unattended deadline, cancellation and stale requests pass",
+    "actual Theme/Accent mouse edits save Light/Dark/HighContrast before activation and persist exactCRC-protected preferences",
+    "real GUI Create, EditorCtrlS, cancel/confirmed replacement Rename and cancel/permanent Delete agree with console bytes and committedjournal",
+    "actual native-only ReadOnly GUI error retains source/input and32-byte record; ShiftTab visible focus and AltTab/AltShiftTab window navigation",
+    "actual Super Home/search/app shortcuts preserve pending terminal command; real conditional Copy cancel/overwrite retains source; dirty AltF4 Cancel/Save/Discard agree with stored bytes",
+    "actual PS/2 Super-arrow snap preview, apply, cancel and restore preserve floating geometry and work-area bounds",
+    "Editor actual load, PS/2 editing, Ctrl-S journal save, external-change conflict and unsaved-text preservation",
+    "monotonic PIT clock advances while serial console remains responsive",
+    "PS/2 keyboard command through QMP",
+    "PS/2 backspace corrects statuz to status",
+    "keyboard Home menu opens actual Files window without executing terminal input",
+    "actual PS/2 mouse motion and left-button event reaches desktop hit testing",
+    "serial console restores Terminal focus from Files panel",
+    "bounded UART transmit FIFO preserves queued output across stalls and reports zero rejected/absent bytes",
+    "screenshot taken after completed software back-buffer presentation",
+    "nonblank framebuffer screenshot",
+    "captured AC97 PCM contains matching stereo channels and a 1 kHz waveform"
+  ],
+  "image_sha256": "60ab816c97cc2c510ac5eed76a3db2d039b924a72fe6904bc6eae63f36cbfc27",
+  "qemu_profile": "q35,accel=tcg; cpu=qemu64; 256M; smp=1; vga=std",
+  "ioapic_delivery": {
+    "gsi": 2,
+    "apic_interrupts": 3,
+    "pic_interrupts": 0
+  },
+  "service_instance_pids": [
+    20,
+    21,
+    22
+  ],
+  "concurrent_tls_pids": [
+    35,
+    36
+  ],
+  "portal_probe_pid": 42,
+  "files_appearance": {
+    "phase": "create",
+    "viewport": [
+      1280,
+      800
+    ],
+    "binding": {
+      "compiled_source_manifest_sha256": "515f63b8da57dd9e7c7180a763422d4aeb5c095a3b9f67ec7ec8db3994334674",
+      "frozen_source_root": "/workspace/Next/work/tenth-wave/frozen-src",
+      "prism_sources": {
+        "crates/prism/Cargo.toml": "57973d236330697346e0d9630c65982af0eec5572613eb605357d755210caca4",
+        "crates/prism/assets/NOTICE.txt": "a49d56b73938f8f366ebd81bcdcbdb44c9fe85966848f6f07612194588c65e16",
+        "crates/prism/assets/OpenSans-LICENSE.txt": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+        "crates/prism/assets/open-sans-advance.bin": "7bfb26802a159e8c464aa8f17026bff36915d55240b5c0fbfd0ec8774ef3a0ee",
+        "crates/prism/assets/open-sans-atlas.bin": "d954599f44ba97e84f07b184a493087e781354176065776ad7d23a9d8a745a4b",
+        "crates/prism/assets/source/OpenSans-Regular.ttf": "e64e508b2aa2880f907e470c4550980ec4c0694d103a43f36150ac3f93189bee",
+        "crates/prism/assets/wallpaper.rgb": "85495a5a07d24342eb2797a7e416b142baf2fcbc6929f9632e2e1884a6a09d8c",
+        "crates/prism/src/appearance.rs": "cac1b530f6fa29e3718c53ba573aaae77f084363e913f995fb1e27ee3abd643d",
+        "crates/prism/src/appearance_ui.rs": "cb2ec7e0c244479dac04d913712d46671b8b80354b13874255c44c885b3037e7",
+        "crates/prism/src/calculator.rs": "3e8537719e105b24ad99b000027f587bbf470436a0de38be93263868013e2185",
+        "crates/prism/src/client_surface.rs": "e16f6c0bd0537ee6f67e9a8b13eab503b8f07b8c9f0dfa25da057245cb75f055",
+        "crates/prism/src/desktop.rs": "efed05d4f8b799e3410d9713652b8d196c012fba07deebf446aa23e7911f3e4b",
+        "crates/prism/src/editor.rs": "d3facd625ed5875dd954373c0caf1849da10c2c90daa36a7f8f788c8d4ca6828",
+        "crates/prism/src/files_actions.rs": "10051beaf0e107324cdb149f193bda90c8fe0ebe63a7b91c671409ba1b2031f0",
+        "crates/prism/src/keyboard_focus.rs": "dcfadc01486f3e6e060b21a685c7255f28b67b6f120314eb77ff7fa03f6eb13a",
+        "crates/prism/src/lib.rs": "a45da89b32c4407100368e0f577a23fd8fa9961ba2420b9171147063f7d65ea2",
+        "crates/prism/src/notifications.rs": "ec28aa2c1767bf8b6b4b3f7637d28f96180e0c1f7022a300f25092da7fca77db",
+        "crates/prism/src/palette.rs": "33a01ed09dd2f22759c13a2214ab41c01bc6965cda43f816cab8aa0439a1f62e",
+        "crates/prism/src/snap.rs": "6ac131265ed57fe098408dff66fd99e5b332649be869e2f94985122d62ccdb3e",
+        "crates/prism/src/surface_state.rs": "f852981f26a41df8afb8d898245b61f6990b9f1e9f7d39d00211063dea9a9035",
+        "crates/prism/src/theme.rs": "460e80e2b421b1bfd42bad61ebb474259d3823319abeb718f8e0363a1fe85976"
+      },
+      "helper_source_sha256": "dd69db9e0f7945990baab2b10f2186d2d598763a1b155fce1ea090c8ae9273d6",
+      "library_sha256": "a1fe05ae3a79aba6aa7faa5b36bc7bc01a608030b0bcd006bcf7256a19d06920",
+      "helper_sha256": "2aa910535067caeece66dd8e27c05b2b8e9e0f6f68f5ada83006f8d332b66c15"
+    },
+    "geometry": {
+      "home_button": [
+        444,
+        734,
+        52,
+        48
+      ],
+      "terminal_button": [
+        500,
+        734,
+        52,
+        48
+      ],
+      "files_button": [
+        556,
+        734,
+        52,
+        48
+      ],
+      "monitor_button": [
+        612,
+        734,
+        52,
+        48
+      ],
+      "settings_button": [
+        668,
+        734,
+        52,
+        48
+      ],
+      "files": [
+        92,
+        124,
+        640,
+        400
+      ],
+      "terminal": [
+        24,
+        80,
+        976,
+        544
+      ],
+      "settings": [
+        148,
+        180,
+        640,
+        400
+      ],
+      "monitor": [
+        120,
+        152,
+        640,
+        400
+      ],
+      "editor": [
+        176,
+        208,
+        640,
+        400
+      ],
+      "home": [
+        330,
+        266,
+        620,
+        450
+      ],
+      "file_copy": [
+        416,
+        176,
+        96,
+        32
+      ],
+      "file_create": [
+        104,
+        176,
+        96,
+        32
+      ],
+      "file_rename": [
+        208,
+        176,
+        96,
+        32
+      ],
+      "file_delete": [
+        312,
+        176,
+        96,
+        32
+      ],
+      "dialog": [
+        340,
+        250,
+        600,
+        300
+      ],
+      "dialog_input": [
+        360,
+        338,
+        560,
+        40
+      ],
+      "dialog_cancel": [
+        360,
+        490,
+        112,
+        36
+      ],
+      "dialog_apply": [
+        484,
+        490,
+        112,
+        36
+      ],
+      "file_row_0": [
+        104,
+        230,
+        616,
+        24
+      ],
+      "file_row_1": [
+        104,
+        254,
+        616,
+        24
+      ],
+      "file_row_2": [
+        104,
+        278,
+        616,
+        24
+      ],
+      "file_row_3": [
+        104,
+        302,
+        616,
+        24
+      ],
+      "file_row_4": [
+        104,
+        326,
+        616,
+        24
+      ],
+      "file_row_5": [
+        104,
+        350,
+        616,
+        24
+      ],
+      "file_row_6": [
+        104,
+        374,
+        616,
+        24
+      ],
+      "file_row_7": [
+        104,
+        398,
+        616,
+        24
+      ],
+      "file_row_8": [
+        104,
+        422,
+        616,
+        24
+      ],
+      "appearance_0_0": [
+        160,
+        252,
+        132,
+        32
+      ],
+      "appearance_0_1": [
+        296,
+        252,
+        132,
+        32
+      ],
+      "appearance_0_2": [
+        432,
+        252,
+        132,
+        32
+      ],
+      "appearance_1_0": [
+        160,
+        316,
+        132,
+        32
+      ],
+      "appearance_1_1": [
+        296,
+        316,
+        132,
+        32
+      ],
+      "appearance_1_2": [
+        432,
+        316,
+        132,
+        32
+      ],
+      "appearance_1_3": [
+        568,
+        316,
+        132,
+        32
+      ],
+      "appearance_2_0": [
+        160,
+        376,
+        132,
+        32
+      ],
+      "appearance_2_1": [
+        296,
+        376,
+        132,
+        32
+      ],
+      "appearance_2_2": [
+        432,
+        376,
+        132,
+        32
+      ]
+    },
+    "captures": [
+      {
+        "name": "appearance-light",
+        "sha256": "c4addcb0c1a747b361f16732286be3a5839772174873c71542f26610ecfadf7b",
+        "path": "build/tenth-prism-shortcuts-copy-retry/create/files-appearance/appearance-light.ppm"
+      },
+      {
+        "name": "appearance-dark-violet",
+        "sha256": "de93b81e3ded3092ba41f24210357405b98c905635f4724c6e330d46c8ebe6de",
+        "path": "build/tenth-prism-shortcuts-copy-retry/create/files-appearance/appearance-dark-violet.ppm"
+      },
+      {
+        "name": "appearance-contrast-orange",
+        "sha256": "f2f14bbe77efe8cfe7576a32036f3582fea26a9ee5cda3038960c4146cbca6d0",
+        "path": "build/tenth-prism-shortcuts-copy-retry/create/files-appearance/appearance-contrast-orange.ppm"
+      },
+      {
+        "name": "appearance-light-blue",
+        "sha256": "4d593df7219de727d0439edce0e3b834a6a3008fcb64a6517f4b9d115ed3a16c",
+        "path": "build/tenth-prism-shortcuts-copy-retry/create/files-appearance/appearance-light-blue.ppm"
+      },
+      {
+        "name": "appearance-dark-violet",
+        "sha256": "de93b81e3ded3092ba41f24210357405b98c905635f4724c6e330d46c8ebe6de",
+        "path": "build/tenth-prism-shortcuts-copy-retry/create/files-appearance/appearance-dark-violet.ppm"
+      },
+      {
+        "name": "create-path",
+        "sha256": "8a5a0bef200ae03202594b59f49f88181d84ce47c92674410ccf06c93b53c681",
+        "path": "build/tenth-prism-shortcuts-copy-retry/create/files-appearance/create-path.ppm"
+      },
+      {
+        "name": "overwrite-cancel-default",
+        "sha256": "0dd0f189065e3b1016cdf8d5d29652b0406e9213576bc4faa1deda7b056527a6",
+        "path": "build/tenth-prism-shortcuts-copy-retry/create/files-appearance/overwrite-cancel-default.ppm"
+      },
+      {
+        "name": "permanent-delete-cancel-default",
+        "sha256": "0aab910fef067edde29cb1d6671c2763f1117edaca690b0afad41e0cc46fc2bb",
+        "path": "build/tenth-prism-shortcuts-copy-retry/create/files-appearance/permanent-delete-cancel-default.ppm"
+      },
+      {
+        "name": "rename-policy-error-preserves-input",
+        "sha256": "d900e691049409f54729f5ac2813aad70edfae04a7282d7bd9e66dd5cbff4ac4",
+        "path": "build/tenth-prism-shortcuts-copy-retry/create/files-appearance/rename-policy-error-preserves-input.ppm"
+      },
+      {
+        "name": "shift-tab-visible-create-focus",
+        "sha256": "14b1a8b3f80b64254fc9d99386460ca8c14538546d281968fccab61c2200908a",
+        "path": "build/tenth-prism-shortcuts-copy-retry/create/files-appearance/shift-tab-visible-create-focus.ppm"
+      },
+      {
+        "name": "alt-tab-window-switch",
+        "sha256": "677cb084bf48ebf162a394dccddd20406535e824a9d0ae758a2c747fa7ee959c",
+        "path": "build/tenth-prism-shortcuts-copy-retry/create/files-appearance/alt-tab-window-switch.ppm"
+      },
+      {
+        "name": "alt-shift-tab-window-restore",
+        "sha256": "65d5f16af77153782b6c29e8781373530429117fd0a4e49288dcc0910a440693",
+        "path": "build/tenth-prism-shortcuts-copy-retry/create/files-appearance/alt-shift-tab-window-restore.ppm"
+      }
+    ],
+    "timeline": [
+      {
+        "input": "click",
+        "position": [
+          694,
+          758
+        ],
+        "host_monotonic_ns": 20028959535441,
+        "serial_start": 36864
+      },
+      {
+        "input": "click",
+        "position": [
+          362,
+          268
+        ],
+        "host_monotonic_ns": 20029221043591,
+        "serial_start": 37046
+      },
+      {
+        "input": "click",
+        "position": [
+          362,
+          332
+        ],
+        "host_monotonic_ns": 20029432140797,
+        "serial_start": 37228
+      },
+      {
+        "input": "click",
+        "position": [
+          226,
+          392
+        ],
+        "host_monotonic_ns": 20029572383722,
+        "serial_start": 37410
+      },
+      {
+        "input": "click",
+        "position": [
+          498,
+          268
+        ],
+        "host_monotonic_ns": 20029811293014,
+        "serial_start": 37679
+      },
+      {
+        "input": "click",
+        "position": [
+          634,
+          332
+        ],
+        "host_monotonic_ns": 20030001441003,
+        "serial_start": 37861
+      },
+      {
+        "input": "click",
+        "position": [
+          226,
+          392
+        ],
+        "host_monotonic_ns": 20030222022247,
+        "serial_start": 38043
+      },
+      {
+        "input": "click",
+        "position": [
+          226,
+          268
+        ],
+        "host_monotonic_ns": 20030454154847,
+        "serial_start": 38320
+      },
+      {
+        "input": "click",
+        "position": [
+          226,
+          332
+        ],
+        "host_monotonic_ns": 20030583936397,
+        "serial_start": 38502
+      },
+      {
+        "input": "click",
+        "position": [
+          226,
+          392
+        ],
+        "host_monotonic_ns": 20030695377240,
+        "serial_start": 38684
+      },
+      {
+        "input": "click",
+        "position": [
+          362,
+          268
+        ],
+        "host_monotonic_ns": 20030855022430,
+        "serial_start": 38946
+      },
+      {
+        "input": "click",
+        "position": [
+          362,
+          332
+        ],
+        "host_monotonic_ns": 20030983242364,
+        "serial_start": 39134
+      },
+      {
+        "input": "click",
+        "position": [
+          226,
+          392
+        ],
+        "host_monotonic_ns": 20031121178010,
+        "serial_start": 39316
+      },
+      {
+        "input": "click",
+        "position": [
+          582,
+          758
+        ],
+        "host_monotonic_ns": 20031503201911,
+        "serial_start": 39585
+      },
+      {
+        "input": "click",
+        "position": [
+          152,
+          192
+        ],
+        "host_monotonic_ns": 20031816318123,
+        "serial_start": 39761
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "u"
+        ],
+        "host_monotonic_ns": 20032075615349,
+        "serial_start": 39935
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "i"
+        ],
+        "host_monotonic_ns": 20032148103049,
+        "serial_start": 39935
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "minus"
+        ],
+        "host_monotonic_ns": 20032222551688,
+        "serial_start": 39935
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "a"
+        ],
+        "host_monotonic_ns": 20032293104216,
+        "serial_start": 39935
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "right"
+        ],
+        "host_monotonic_ns": 20032363636825,
+        "serial_start": 39935
+      },
+      {
+        "input": "click",
+        "position": [
+          540,
+          508
+        ],
+        "host_monotonic_ns": 20032627355471,
+        "serial_start": 40027
+      },
+      {
+        "backend": "Create",
+        "request": 2,
+        "serial_start": 40027,
+        "result": "Ok"
+      },
+      {
+        "input": "click",
+        "position": [
+          526,
+          758
+        ],
+        "host_monotonic_ns": 20032917699962,
+        "serial_start": 40648
+      },
+      {
+        "input": "console",
+        "command": "cat /native/ui-a",
+        "response": "NEXT DATA: ",
+        "serial_start": 40830
+      },
+      {
+        "input": "click",
+        "position": [
+          582,
+          758
+        ],
+        "host_monotonic_ns": 20033974088958,
+        "serial_start": 40891
+      },
+      {
+        "input": "click",
+        "position": [
+          412,
+          338
+        ],
+        "host_monotonic_ns": 20034179615510,
+        "serial_start": 41067
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "a"
+        ],
+        "host_monotonic_ns": 20034356836553,
+        "serial_start": 41303
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "l"
+        ],
+        "host_monotonic_ns": 20034427409331,
+        "serial_start": 41303
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "p"
+        ],
+        "host_monotonic_ns": 20034497957754,
+        "serial_start": 41303
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "h"
+        ],
+        "host_monotonic_ns": 20034568567617,
+        "serial_start": 41303
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "a"
+        ],
+        "host_monotonic_ns": 20034639154387,
+        "serial_start": 41303
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "ctrl",
+          "s"
+        ],
+        "host_monotonic_ns": 20034709713225,
+        "serial_start": 41303
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "left"
+        ],
+        "host_monotonic_ns": 20034816916663,
+        "serial_start": 41361
+      },
+      {
+        "input": "click",
+        "position": [
+          526,
+          758
+        ],
+        "host_monotonic_ns": 20035029686505,
+        "serial_start": 41391
+      },
+      {
+        "input": "console",
+        "command": "cat /native/ui-a",
+        "response": "NEXT DATA: alpha",
+        "serial_start": 41664
+      },
+      {
+        "input": "click",
+        "position": [
+          526,
+          758
+        ],
+        "host_monotonic_ns": 20036043924709,
+        "serial_start": 41730
+      },
+      {
+        "input": "console",
+        "command": "write /native/ui-b beta",
+        "response": "NEXT DATA: Wrote 4 bytes",
+        "serial_start": 41912
+      },
+      {
+        "input": "click",
+        "position": [
+          582,
+          758
+        ],
+        "host_monotonic_ns": 20037200948566,
+        "serial_start": 42024
+      },
+      {
+        "input": "click",
+        "position": [
+          256,
+          192
+        ],
+        "host_monotonic_ns": 20037457688520,
+        "serial_start": 42200
+      },
+      {
+        "input": "click",
+        "position": [
+          640,
+          358
+        ],
+        "host_monotonic_ns": 20037784816448,
+        "serial_start": 42376
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "backspace"
+        ],
+        "host_monotonic_ns": 20037984946246,
+        "serial_start": 42552
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "backspace"
+        ],
+        "host_monotonic_ns": 20038055587120,
+        "serial_start": 42552
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "backspace"
+        ],
+        "host_monotonic_ns": 20038126288174,
+        "serial_start": 42552
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "backspace"
+        ],
+        "host_monotonic_ns": 20038196912334,
+        "serial_start": 42552
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "backspace"
+        ],
+        "host_monotonic_ns": 20038267599707,
+        "serial_start": 42552
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "backspace"
+        ],
+        "host_monotonic_ns": 20038339702380,
+        "serial_start": 42552
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "backspace"
+        ],
+        "host_monotonic_ns": 20038410286160,
+        "serial_start": 42552
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "backspace"
+        ],
+        "host_monotonic_ns": 20038481168803,
+        "serial_start": 42552
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "backspace"
+        ],
+        "host_monotonic_ns": 20038551762096,
+        "serial_start": 42552
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "backspace"
+        ],
+        "host_monotonic_ns": 20038622393205,
+        "serial_start": 42552
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "backspace"
+        ],
+        "host_monotonic_ns": 20038692971637,
+        "serial_start": 42552
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "backspace"
+        ],
+        "host_monotonic_ns": 20038763562627,
+        "serial_start": 42552
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "slash"
+        ],
+        "host_monotonic_ns": 20038834235188,
+        "serial_start": 42552
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "n"
+        ],
+        "host_monotonic_ns": 20038904768823,
+        "serial_start": 42552
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "a"
+        ],
+        "host_monotonic_ns": 20038975293455,
+        "serial_start": 42552
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "t"
+        ],
+        "host_monotonic_ns": 20039045847201,
+        "serial_start": 42552
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "i"
+        ],
+        "host_monotonic_ns": 20039116386935,
+        "serial_start": 42552
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "v"
+        ],
+        "host_monotonic_ns": 20039186915423,
+        "serial_start": 42552
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "e"
+        ],
+        "host_monotonic_ns": 20039257476358,
+        "serial_start": 42552
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "slash"
+        ],
+        "host_monotonic_ns": 20039328078846,
+        "serial_start": 42552
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "u"
+        ],
+        "host_monotonic_ns": 20039398657328,
+        "serial_start": 42552
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "i"
+        ],
+        "host_monotonic_ns": 20039469171314,
+        "serial_start": 42552
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "minus"
+        ],
+        "host_monotonic_ns": 20039539759149,
+        "serial_start": 42552
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "b"
+        ],
+        "host_monotonic_ns": 20039610334696,
+        "serial_start": 42552
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "right"
+        ],
+        "host_monotonic_ns": 20039680869613,
+        "serial_start": 42552
+      },
+      {
+        "input": "click",
+        "position": [
+          540,
+          508
+        ],
+        "host_monotonic_ns": 20040061552738,
+        "serial_start": 42642
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "ret"
+        ],
+        "host_monotonic_ns": 20040211342067,
+        "serial_start": 43058
+      },
+      {
+        "input": "click",
+        "position": [
+          526,
+          758
+        ],
+        "host_monotonic_ns": 20040389694099,
+        "serial_start": 43148
+      },
+      {
+        "input": "console",
+        "command": "cat /native/ui-a",
+        "response": "NEXT DATA: alpha",
+        "serial_start": 43330
+      },
+      {
+        "input": "click",
+        "position": [
+          526,
+          758
+        ],
+        "host_monotonic_ns": 20041225679716,
+        "serial_start": 43396
+      },
+      {
+        "input": "console",
+        "command": "cat /native/ui-b",
+        "response": "NEXT DATA: beta",
+        "serial_start": 43578
+      },
+      {
+        "input": "click",
+        "position": [
+          582,
+          758
+        ],
+        "host_monotonic_ns": 20042036833481,
+        "serial_start": 43643
+      },
+      {
+        "input": "click",
+        "position": [
+          256,
+          192
+        ],
+        "host_monotonic_ns": 20042279267242,
+        "serial_start": 43819
+      },
+      {
+        "input": "click",
+        "position": [
+          640,
+          358
+        ],
+        "host_monotonic_ns": 20042598243246,
+        "serial_start": 43995
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "backspace"
+        ],
+        "host_monotonic_ns": 20042789061230,
+        "serial_start": 44171
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "backspace"
+        ],
+        "host_monotonic_ns": 20042859665280,
+        "serial_start": 44171
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "backspace"
+        ],
+        "host_monotonic_ns": 20042930284152,
+        "serial_start": 44171
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "backspace"
+        ],
+        "host_monotonic_ns": 20043000828563,
+        "serial_start": 44171
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "backspace"
+        ],
+        "host_monotonic_ns": 20043071367116,
+        "serial_start": 44171
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "backspace"
+        ],
+        "host_monotonic_ns": 20043141923915,
+        "serial_start": 44171
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "backspace"
+        ],
+        "host_monotonic_ns": 20043212483538,
+        "serial_start": 44171
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "backspace"
+        ],
+        "host_monotonic_ns": 20043283005256,
+        "serial_start": 44171
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "backspace"
+        ],
+        "host_monotonic_ns": 20043353524825,
+        "serial_start": 44171
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "backspace"
+        ],
+        "host_monotonic_ns": 20043424097123,
+        "serial_start": 44171
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "backspace"
+        ],
+        "host_monotonic_ns": 20043494682065,
+        "serial_start": 44171
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "backspace"
+        ],
+        "host_monotonic_ns": 20043565222389,
+        "serial_start": 44171
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "slash"
+        ],
+        "host_monotonic_ns": 20043635754522,
+        "serial_start": 44171
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "n"
+        ],
+        "host_monotonic_ns": 20043706325683,
+        "serial_start": 44171
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "a"
+        ],
+        "host_monotonic_ns": 20043777007778,
+        "serial_start": 44171
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "t"
+        ],
+        "host_monotonic_ns": 20043847585199,
+        "serial_start": 44171
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "i"
+        ],
+        "host_monotonic_ns": 20043918124111,
+        "serial_start": 44171
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "v"
+        ],
+        "host_monotonic_ns": 20043988703123,
+        "serial_start": 44171
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "e"
+        ],
+        "host_monotonic_ns": 20044059234305,
+        "serial_start": 44171
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "slash"
+        ],
+        "host_monotonic_ns": 20044129815917,
+        "serial_start": 44171
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "u"
+        ],
+        "host_monotonic_ns": 20044200357123,
+        "serial_start": 44171
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "i"
+        ],
+        "host_monotonic_ns": 20044270878360,
+        "serial_start": 44171
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "minus"
+        ],
+        "host_monotonic_ns": 20044341443277,
+        "serial_start": 44171
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "b"
+        ],
+        "host_monotonic_ns": 20044412055378,
+        "serial_start": 44171
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "right"
+        ],
+        "host_monotonic_ns": 20044482579710,
+        "serial_start": 44171
+      },
+      {
+        "input": "click",
+        "position": [
+          540,
+          508
+        ],
+        "host_monotonic_ns": 20044869633546,
+        "serial_start": 44261
+      },
+      {
+        "input": "click",
+        "position": [
+          540,
+          508
+        ],
+        "host_monotonic_ns": 20045004494659,
+        "serial_start": 44677
+      },
+      {
+        "backend": "Rename",
+        "request": 5,
+        "serial_start": 44677,
+        "result": "Ok"
+      },
+      {
+        "input": "click",
+        "position": [
+          526,
+          758
+        ],
+        "host_monotonic_ns": 20045164861851,
+        "serial_start": 45768
+      },
+      {
+        "input": "console",
+        "command": "cat /native/ui-a",
+        "response": "Data store error: NotFound",
+        "serial_start": 45950
+      },
+      {
+        "input": "click",
+        "position": [
+          526,
+          758
+        ],
+        "host_monotonic_ns": 20045971586925,
+        "serial_start": 46037
+      },
+      {
+        "input": "console",
+        "command": "cat /native/ui-b",
+        "response": "NEXT DATA: alpha",
+        "serial_start": 46219
+      },
+      {
+        "input": "click",
+        "position": [
+          582,
+          758
+        ],
+        "host_monotonic_ns": 20046859280851,
+        "serial_start": 46284
+      },
+      {
+        "input": "click",
+        "position": [
+          360,
+          192
+        ],
+        "host_monotonic_ns": 20047103377257,
+        "serial_start": 46461
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "ret"
+        ],
+        "host_monotonic_ns": 20047334965388,
+        "serial_start": 46637
+      },
+      {
+        "input": "click",
+        "position": [
+          526,
+          758
+        ],
+        "host_monotonic_ns": 20047596541537,
+        "serial_start": 46725
+      },
+      {
+        "input": "console",
+        "command": "cat /native/ui-b",
+        "response": "NEXT DATA: alpha",
+        "serial_start": 46909
+      },
+      {
+        "input": "click",
+        "position": [
+          582,
+          758
+        ],
+        "host_monotonic_ns": 20048509794619,
+        "serial_start": 46975
+      },
+      {
+        "input": "click",
+        "position": [
+          360,
+          192
+        ],
+        "host_monotonic_ns": 20048754417962,
+        "serial_start": 47151
+      },
+      {
+        "input": "click",
+        "position": [
+          540,
+          508
+        ],
+        "host_monotonic_ns": 20049068084899,
+        "serial_start": 47327
+      },
+      {
+        "backend": "Delete",
+        "request": 6,
+        "serial_start": 47327,
+        "result": "Ok"
+      },
+      {
+        "input": "click",
+        "position": [
+          526,
+          758
+        ],
+        "host_monotonic_ns": 20049319711211,
+        "serial_start": 47918
+      },
+      {
+        "input": "console",
+        "command": "cat /native/ui-b",
+        "response": "Data store error: NotFound",
+        "serial_start": 48100
+      },
+      {
+        "input": "click",
+        "position": [
+          582,
+          758
+        ],
+        "host_monotonic_ns": 20050234704618,
+        "serial_start": 48187
+      },
+      {
+        "input": "click",
+        "position": [
+          412,
+          314
+        ],
+        "host_monotonic_ns": 20050442817971,
+        "serial_start": 48363
+      },
+      {
+        "input": "click",
+        "position": [
+          256,
+          192
+        ],
+        "host_monotonic_ns": 20050652738756,
+        "serial_start": 48539
+      },
+      {
+        "input": "click",
+        "position": [
+          640,
+          358
+        ],
+        "host_monotonic_ns": 20050887173626,
+        "serial_start": 48715
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "backspace"
+        ],
+        "host_monotonic_ns": 20051081199521,
+        "serial_start": 48891
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "backspace"
+        ],
+        "host_monotonic_ns": 20051151918939,
+        "serial_start": 48891
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "backspace"
+        ],
+        "host_monotonic_ns": 20051222487483,
+        "serial_start": 48891
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "backspace"
+        ],
+        "host_monotonic_ns": 20051293072452,
+        "serial_start": 48891
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "backspace"
+        ],
+        "host_monotonic_ns": 20051363603490,
+        "serial_start": 48891
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "backspace"
+        ],
+        "host_monotonic_ns": 20051434168979,
+        "serial_start": 48891
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "backspace"
+        ],
+        "host_monotonic_ns": 20051504700139,
+        "serial_start": 48891
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "backspace"
+        ],
+        "host_monotonic_ns": 20051575205769,
+        "serial_start": 48891
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "backspace"
+        ],
+        "host_monotonic_ns": 20051645740132,
+        "serial_start": 48891
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "backspace"
+        ],
+        "host_monotonic_ns": 20051716277320,
+        "serial_start": 48891
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "backspace"
+        ],
+        "host_monotonic_ns": 20051786831112,
+        "serial_start": 48891
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "backspace"
+        ],
+        "host_monotonic_ns": 20051857410803,
+        "serial_start": 48891
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "backspace"
+        ],
+        "host_monotonic_ns": 20051927957315,
+        "serial_start": 48891
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "backspace"
+        ],
+        "host_monotonic_ns": 20051998511778,
+        "serial_start": 48891
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "backspace"
+        ],
+        "host_monotonic_ns": 20052069100582,
+        "serial_start": 48891
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "backspace"
+        ],
+        "host_monotonic_ns": 20052139687023,
+        "serial_start": 48891
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "backspace"
+        ],
+        "host_monotonic_ns": 20052210256838,
+        "serial_start": 48891
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "slash"
+        ],
+        "host_monotonic_ns": 20052280809580,
+        "serial_start": 48891
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "p"
+        ],
+        "host_monotonic_ns": 20052351381133,
+        "serial_start": 48891
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "r"
+        ],
+        "host_monotonic_ns": 20052421878782,
+        "serial_start": 48891
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "e"
+        ],
+        "host_monotonic_ns": 20052492392704,
+        "serial_start": 48891
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "f"
+        ],
+        "host_monotonic_ns": 20052562889122,
+        "serial_start": 48891
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "s"
+        ],
+        "host_monotonic_ns": 20052633431437,
+        "serial_start": 48891
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "slash"
+        ],
+        "host_monotonic_ns": 20052703976005,
+        "serial_start": 48891
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "a"
+        ],
+        "host_monotonic_ns": 20052774519963,
+        "serial_start": 48891
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "p"
+        ],
+        "host_monotonic_ns": 20052845025613,
+        "serial_start": 48891
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "p"
+        ],
+        "host_monotonic_ns": 20052915581038,
+        "serial_start": 48891
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "e"
+        ],
+        "host_monotonic_ns": 20052986139157,
+        "serial_start": 48891
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "a"
+        ],
+        "host_monotonic_ns": 20053056754581,
+        "serial_start": 48891
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "r"
+        ],
+        "host_monotonic_ns": 20053127276245,
+        "serial_start": 48891
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "a"
+        ],
+        "host_monotonic_ns": 20053197845776,
+        "serial_start": 48891
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "n"
+        ],
+        "host_monotonic_ns": 20053268427039,
+        "serial_start": 48891
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "c"
+        ],
+        "host_monotonic_ns": 20053338972589,
+        "serial_start": 48891
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "e"
+        ],
+        "host_monotonic_ns": 20053409520339,
+        "serial_start": 48891
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "2"
+        ],
+        "host_monotonic_ns": 20053480058617,
+        "serial_start": 48891
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "right"
+        ],
+        "host_monotonic_ns": 20053550628235,
+        "serial_start": 48891
+      },
+      {
+        "input": "click",
+        "position": [
+          540,
+          508
+        ],
+        "host_monotonic_ns": 20054046836107,
+        "serial_start": 48981
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "esc"
+        ],
+        "host_monotonic_ns": 20054198304941,
+        "serial_start": 49233
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "shift",
+          "tab"
+        ],
+        "host_monotonic_ns": 20054311614211,
+        "serial_start": 49323
+      },
+      {
+        "input": "click",
+        "position": [
+          638,
+          758
+        ],
+        "host_monotonic_ns": 20054543488942,
+        "serial_start": 49413
+      },
+      {
+        "input": "click",
+        "position": [
+          582,
+          758
+        ],
+        "host_monotonic_ns": 20054704999530,
+        "serial_start": 49593
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "alt",
+          "tab"
+        ],
+        "host_monotonic_ns": 20054818442678,
+        "serial_start": 49769
+      },
+      {
+        "input": "keys",
+        "keys": [
+          "alt",
+          "shift",
+          "tab"
+        ],
+        "host_monotonic_ns": 20054989726102,
+        "serial_start": 49861
+      },
+      {
+        "input": "click",
+        "position": [
+          526,
+          758
+        ],
+        "host_monotonic_ns": 20055304917938,
+        "serial_start": 49951
+      }
+    ],
+    "limits": "Actual bounded Store operations and persisted theme/accent; text scaling/AT transport are not implemented. Held-inode replacement and injected-generation conflicts have separate coherent backend host tests."
+  },
+  "shortcuts_copy": {
+    "captures": [
+      {
+        "name": "super-open-settings",
+        "sha256": "c6a74a38e80fe50dcbf82972d569eb73101ed06b8fa6606bbf0ef611155f88bf",
+        "path": "build/tenth-prism-shortcuts-copy-retry/create/shortcuts-copy/super-open-settings.ppm"
+      },
+      {
+        "name": "super-open-files",
+        "sha256": "9873baa0b0d126cd6ace67af605a53653f4ef6ce475f5c758c62a7bc25e88da1",
+        "path": "build/tenth-prism-shortcuts-copy-retry/create/shortcuts-copy/super-open-files.ppm"
+      },
+      {
+        "name": "super-open-terminal",
+        "sha256": "797dd83c7a81ec4d4c169c7af7834c87a5257321013fc14ac7ba2b8d9b17b4a6",
+        "path": "build/tenth-prism-shortcuts-copy-retry/create/shortcuts-copy/super-open-terminal.ppm"
+      },
+      {
+        "name": "bare-super-home-open",
+        "sha256": "9d29195c111ef36cdb4b78c5d907ef4859fcd9aee67d875bb9b4b01b57437ced",
+        "path": "build/tenth-prism-shortcuts-copy-retry/create/shortcuts-copy/bare-super-home-open.ppm"
+      },
+      {
+        "name": "super-space-search-open",
+        "sha256": "18ddc0845a2a54240161123ed1baf7176fc04d264ef20f2d317fc95e8275bcb5",
+        "path": "build/tenth-prism-shortcuts-copy-retry/create/shortcuts-copy/super-space-search-open.ppm"
+      },
+      {
+        "name": "copy-overwrite-default-cancel",
+        "sha256": "80051fd16feaa70c8de5d72c8dcb4f89fc26354af7c4a5c567ffdc27a8e7affc",
+        "path": "build/tenth-prism-shortcuts-copy-retry/create/shortcuts-copy/copy-overwrite-default-cancel.ppm"
+      },
+      {
+        "name": "copy-confirmed-real-directory",
+        "sha256": "d66d421a5c386bb1a9b9a99aa1cc097f7da8ab975c3d8902790e614706bd6b50",
+        "path": "build/tenth-prism-shortcuts-copy-retry/create/shortcuts-copy/copy-confirmed-real-directory.ppm"
+      },
+      {
+        "name": "alt-f4-dirty-default-cancel",
+        "sha256": "688af08665ba5f82f99cedd41690206eca52492e71ac5556e3b1d3bafd967fb0",
+        "path": "build/tenth-prism-shortcuts-copy-retry/create/shortcuts-copy/alt-f4-dirty-default-cancel.ppm"
+      },
+      {
+        "name": "alt-f4-save-before-close",
+        "sha256": "661a704dac225c57d6b0446de1f6b2a10b322015447a0738c61622f1e443e6d8",
+        "path": "build/tenth-prism-shortcuts-copy-retry/create/shortcuts-copy/alt-f4-save-before-close.ppm"
+      },
+      {
+        "name": "alt-f4-discard-preserves-stored-bytes",
+        "sha256": "38dbf4269f13b8ad6c6020993bb07f16482d2a6c965201ef6be9676b8f79ca73",
+        "path": "build/tenth-prism-shortcuts-copy-retry/create/shortcuts-copy/alt-f4-discard-preserves-stored-bytes.ppm"
+      }
+    ],
+    "timeline": [
+      {
+        "keys": [
+          "meta_l",
+          "i"
+        ],
+        "serial_start": 50133
+      },
+      {
+        "keys": [
+          "meta_l",
+          "e"
+        ],
+        "serial_start": 50226
+      },
+      {
+        "keys": [
+          "meta_l",
+          "ret"
+        ],
+        "serial_start": 50316
+      },
+      {
+        "keys": [
+          "meta_l"
+        ],
+        "serial_start": 50407
+      },
+      {
+        "keys": [
+          "meta_l"
+        ],
+        "serial_start": 50501
+      },
+      {
+        "keys": [
+          "meta_l",
+          "spc"
+        ],
+        "serial_start": 50588
+      },
+      {
+        "keys": [
+          "esc"
+        ],
+        "serial_start": 50686
+      },
+      {
+        "keys": [
+          "meta_l",
+          "ret"
+        ],
+        "serial_start": 50778
+      },
+      {
+        "keys": [
+          "p"
+        ],
+        "serial_start": 50871
+      },
+      {
+        "keys": [
+          "meta_l",
+          "e"
+        ],
+        "serial_start": 50871
+      },
+      {
+        "keys": [
+          "meta_l",
+          "ret"
+        ],
+        "serial_start": 50962
+      },
+      {
+        "keys": [
+          "s"
+        ],
+        "serial_start": 51055
+      },
+      {
+        "keys": [
+          "ret"
+        ],
+        "serial_start": 51055
+      },
+      {
+        "click": [
+          526,
+          758
+        ],
+        "serial_start": 51591
+      },
+      {
+        "click": [
+          526,
+          758
+        ],
+        "serial_start": 51893
+      },
+      {
+        "click": [
+          582,
+          758
+        ],
+        "serial_start": 52194
+      },
+      {
+        "click": [
+          412,
+          338
+        ],
+        "serial_start": 52370
+      },
+      {
+        "keys": [
+          "c"
+        ],
+        "serial_start": 52546
+      },
+      {
+        "keys": [
+          "right"
+        ],
+        "serial_start": 52546
+      },
+      {
+        "click": [
+          640,
+          358
+        ],
+        "serial_start": 52636
+      },
+      {
+        "keys": [
+          "backspace"
+        ],
+        "serial_start": 52812
+      },
+      {
+        "keys": [
+          "backspace"
+        ],
+        "serial_start": 52812
+      },
+      {
+        "keys": [
+          "backspace"
+        ],
+        "serial_start": 52812
+      },
+      {
+        "keys": [
+          "backspace"
+        ],
+        "serial_start": 52812
+      },
+      {
+        "keys": [
+          "backspace"
+        ],
+        "serial_start": 52812
+      },
+      {
+        "keys": [
+          "backspace"
+        ],
+        "serial_start": 52812
+      },
+      {
+        "keys": [
+          "backspace"
+        ],
+        "serial_start": 52812
+      },
+      {
+        "keys": [
+          "backspace"
+        ],
+        "serial_start": 52812
+      },
+      {
+        "keys": [
+          "backspace"
+        ],
+        "serial_start": 52812
+      },
+      {
+        "keys": [
+          "backspace"
+        ],
+        "serial_start": 52812
+      },
+      {
+        "keys": [
+          "backspace"
+        ],
+        "serial_start": 52812
+      },
+      {
+        "keys": [
+          "backspace"
+        ],
+        "serial_start": 52812
+      },
+      {
+        "keys": [
+          "backspace"
+        ],
+        "serial_start": 52812
+      },
+      {
+        "keys": [
+          "backspace"
+        ],
+        "serial_start": 52812
+      },
+      {
+        "keys": [
+          "backspace"
+        ],
+        "serial_start": 52812
+      },
+      {
+        "keys": [
+          "backspace"
+        ],
+        "serial_start": 52812
+      },
+      {
+        "keys": [
+          "slash"
+        ],
+        "serial_start": 52812
+      },
+      {
+        "keys": [
+          "n"
+        ],
+        "serial_start": 52812
+      },
+      {
+        "keys": [
+          "a"
+        ],
+        "serial_start": 52812
+      },
+      {
+        "keys": [
+          "t"
+        ],
+        "serial_start": 52812
+      },
+      {
+        "keys": [
+          "i"
+        ],
+        "serial_start": 52812
+      },
+      {
+        "keys": [
+          "v"
+        ],
+        "serial_start": 52812
+      },
+      {
+        "keys": [
+          "e"
+        ],
+        "serial_start": 52812
+      },
+      {
+        "keys": [
+          "slash"
+        ],
+        "serial_start": 52812
+      },
+      {
+        "keys": [
+          "c"
+        ],
+        "serial_start": 52812
+      },
+      {
+        "keys": [
+          "o"
+        ],
+        "serial_start": 52812
+      },
+      {
+        "keys": [
+          "p"
+        ],
+        "serial_start": 52812
+      },
+      {
+        "keys": [
+          "y"
+        ],
+        "serial_start": 52812
+      },
+      {
+        "keys": [
+          "minus"
+        ],
+        "serial_start": 52812
+      },
+      {
+        "keys": [
+          "d"
+        ],
+        "serial_start": 52812
+      },
+      {
+        "keys": [
+          "s"
+        ],
+        "serial_start": 52812
+      },
+      {
+        "keys": [
+          "t"
+        ],
+        "serial_start": 52812
+      },
+      {
+        "keys": [
+          "right"
+        ],
+        "serial_start": 52812
+      },
+      {
+        "click": [
+          540,
+          508
+        ],
+        "serial_start": 52902
+      },
+      {
+        "keys": [
+          "ret"
+        ],
+        "serial_start": 53330
+      },
+      {
+        "click": [
+          464,
+          192
+        ],
+        "serial_start": 53420
+      },
+      {
+        "click": [
+          640,
+          358
+        ],
+        "serial_start": 53596
+      },
+      {
+        "keys": [
+          "backspace"
+        ],
+        "serial_start": 53772
+      },
+      {
+        "keys": [
+          "backspace"
+        ],
+        "serial_start": 53772
+      },
+      {
+        "keys": [
+          "backspace"
+        ],
+        "serial_start": 53772
+      },
+      {
+        "keys": [
+          "backspace"
+        ],
+        "serial_start": 53772
+      },
+      {
+        "keys": [
+          "backspace"
+        ],
+        "serial_start": 53772
+      },
+      {
+        "keys": [
+          "backspace"
+        ],
+        "serial_start": 53772
+      },
+      {
+        "keys": [
+          "backspace"
+        ],
+        "serial_start": 53772
+      },
+      {
+        "keys": [
+          "backspace"
+        ],
+        "serial_start": 53772
+      },
+      {
+        "keys": [
+          "backspace"
+        ],
+        "serial_start": 53772
+      },
+      {
+        "keys": [
+          "backspace"
+        ],
+        "serial_start": 53772
+      },
+      {
+        "keys": [
+          "backspace"
+        ],
+        "serial_start": 53772
+      },
+      {
+        "keys": [
+          "backspace"
+        ],
+        "serial_start": 53772
+      },
+      {
+        "keys": [
+          "backspace"
+        ],
+        "serial_start": 53772
+      },
+      {
+        "keys": [
+          "backspace"
+        ],
+        "serial_start": 53772
+      },
+      {
+        "keys": [
+          "backspace"
+        ],
+        "serial_start": 53772
+      },
+      {
+        "keys": [
+          "backspace"
+        ],
+        "serial_start": 53772
+      },
+      {
+        "keys": [
+          "slash"
+        ],
+        "serial_start": 53772
+      },
+      {
+        "keys": [
+          "n"
+        ],
+        "serial_start": 53772
+      },
+      {
+        "keys": [
+          "a"
+        ],
+        "serial_start": 53772
+      },
+      {
+        "keys": [
+          "t"
+        ],
+        "serial_start": 53772
+      },
+      {
+        "keys": [
+          "i"
+        ],
+        "serial_start": 53772
+      },
+      {
+        "keys": [
+          "v"
+        ],
+        "serial_start": 53772
+      },
+      {
+        "keys": [
+          "e"
+        ],
+        "serial_start": 53772
+      },
+      {
+        "keys": [
+          "slash"
+        ],
+        "serial_start": 53772
+      },
+      {
+        "keys": [
+          "c"
+        ],
+        "serial_start": 53772
+      },
+      {
+        "keys": [
+          "o"
+        ],
+        "serial_start": 53772
+      },
+      {
+        "keys": [
+          "p"
+        ],
+        "serial_start": 53772
+      },
+      {
+        "keys": [
+          "y"
+        ],
+        "serial_start": 53772
+      },
+      {
+        "keys": [
+          "minus"
+        ],
+        "serial_start": 53772
+      },
+      {
+        "keys": [
+          "d"
+        ],
+        "serial_start": 53772
+      },
+      {
+        "keys": [
+          "s"
+        ],
+        "serial_start": 53772
+      },
+      {
+        "keys": [
+          "t"
+        ],
+        "serial_start": 53772
+      },
+      {
+        "keys": [
+          "right"
+        ],
+        "serial_start": 53772
+      },
+      {
+        "click": [
+          540,
+          508
+        ],
+        "serial_start": 53862
+      },
+      {
+        "click": [
+          540,
+          508
+        ],
+        "serial_start": 54290
+      },
+      {
+        "click": [
+          526,
+          758
+        ],
+        "serial_start": 55420
+      },
+      {
+        "keys": [
+          "end"
+        ],
+        "serial_start": 55717
+      },
+      {
+        "keys": [
+          "x"
+        ],
+        "serial_start": 55717
+      },
+      {
+        "keys": [
+          "right"
+        ],
+        "serial_start": 55717
+      },
+      {
+        "keys": [
+          "alt",
+          "f4"
+        ],
+        "serial_start": 55808
+      },
+      {
+        "keys": [
+          "ret"
+        ],
+        "serial_start": 55899
+      },
+      {
+        "keys": [
+          "ctrl",
+          "s"
+        ],
+        "serial_start": 55990
+      },
+      {
+        "keys": [
+          "left"
+        ],
+        "serial_start": 56052
+      },
+      {
+        "keys": [
+          "end"
+        ],
+        "serial_start": 56082
+      },
+      {
+        "keys": [
+          "x"
+        ],
+        "serial_start": 56082
+      },
+      {
+        "keys": [
+          "right"
+        ],
+        "serial_start": 56082
+      },
+      {
+        "keys": [
+          "alt",
+          "f4"
+        ],
+        "serial_start": 56173
+      },
+      {
+        "keys": [
+          "left"
+        ],
+        "serial_start": 56264
+      },
+      {
+        "keys": [
+          "ret"
+        ],
+        "serial_start": 56355
+      },
+      {
+        "keys": [
+          "right"
+        ],
+        "serial_start": 56569
+      },
+      {
+        "click": [
+          526,
+          758
+        ],
+        "serial_start": 56692
+      },
+      {
+        "keys": [
+          "end"
+        ],
+        "serial_start": 56989
+      },
+      {
+        "keys": [
+          "x"
+        ],
+        "serial_start": 56989
+      },
+      {
+        "keys": [
+          "right"
+        ],
+        "serial_start": 56989
+      },
+      {
+        "keys": [
+          "alt",
+          "f4"
+        ],
+        "serial_start": 57080
+      },
+      {
+        "keys": [
+          "tab"
+        ],
+        "serial_start": 57171
+      },
+      {
+        "keys": [
+          "ret"
+        ],
+        "serial_start": 57262
+      },
+      {
+        "click": [
+          526,
+          758
+        ],
+        "serial_start": 57355
+      },
+      {
+        "click": [
+          526,
+          758
+        ],
+        "serial_start": 57640
+      }
+    ],
+    "limits": "Real bounded built-in app shortcuts and Copy; no secure-lock/workspace/capture or client input delivery claim."
+  },
+  "clock_samples": [
+    [
+      9673,
+      96723352346
+    ],
+    [
+      9701,
+      97003333104
+    ]
+  ],
+  "uart_metrics": {
+    "accepted": 58584,
+    "transmitted": 58584,
+    "dropped": 0,
+    "stalled": 72,
+    "absent": 0,
+    "pending": 0
+  },
+  "screenshot": {
+    "path": "build/screenshot.ppm",
+    "width": 1280,
+    "height": 800,
+    "distinct_colors": 2383,
+    "validation": "PPM dimensions and at least four colors; no visual layout or accessibility verification"
+  },
+  "dns_peer": {
+    "dropped": 1,
+    "answers": 3,
+    "requests": 4
+  },
+  "dns_boot_flow": {
+    "dropped": 1,
+    "answers": 3,
+    "validation": "First valid bootstrap UDP source flow, independently scoped from native lookup source ports"
+  },
+  "image_after_sha256": "7443705180a19cd83d25200363115664af10c4ea62602b8185f22ac38257a4c5",
+  "protected_esp_unchanged": true,
+  "audio": {
+    "path": "build/tenth-prism-shortcuts-copy-retry/create/audio.wav",
+    "sample_rate": 48000,
+    "channels": 2,
+    "active_frames": 11109
+  },
+  "finished_utc": "2026-10-11T18:32:03.210200+00:00"
+}

@@ -1,0 +1,10 @@
+missing-initrd: PASS
+truncated-initrd: PASS
+initrd-version: PASS
+initrd-size: PASS
+initrd-count: PASS
+initrd-reserved: PASS
+initrd-range-overflow: PASS
+initrd-checksum: PASS
+initrd-traversal: PASS
+initrd-missing-supervisor: PASS

@@ -1,0 +1,108 @@
+{
+  "passed": true,
+  "source_image_sha256": "e1aa0516b94e20f349cea2bbe4593bbce4d27e3ac4b014e7971fe635b267741e",
+  "source_image_unchanged": true,
+  "scope": "QEMU/OVMF corrupted unsigned init archive rejection; CRC is not authentication",
+  "cases": [
+    {
+      "case": "missing-initrd",
+      "passed": true,
+      "checks": [
+        "expected loader rejection: open \\EFI\\NEXT\\INITRD.NXI:",
+        "no kernel entry or reboot during bounded halt observation"
+      ],
+      "artifact": "build/failures/missing-initrd/serial.log",
+      "error": null
+    },
+    {
+      "case": "truncated-initrd",
+      "passed": true,
+      "checks": [
+        "expected loader rejection: init image rejected: Header",
+        "no kernel entry or reboot during bounded halt observation"
+      ],
+      "artifact": "build/failures/truncated-initrd/serial.log",
+      "error": null
+    },
+    {
+      "case": "initrd-version",
+      "passed": true,
+      "checks": [
+        "expected loader rejection: init image rejected: Version",
+        "no kernel entry or reboot during bounded halt observation"
+      ],
+      "artifact": "build/failures/initrd-version/serial.log",
+      "error": null
+    },
+    {
+      "case": "initrd-size",
+      "passed": true,
+      "checks": [
+        "expected loader rejection: init image rejected: Size",
+        "no kernel entry or reboot during bounded halt observation"
+      ],
+      "artifact": "build/failures/initrd-size/serial.log",
+      "error": null
+    },
+    {
+      "case": "initrd-count",
+      "passed": true,
+      "checks": [
+        "expected loader rejection: init image rejected: Size",
+        "no kernel entry or reboot during bounded halt observation"
+      ],
+      "artifact": "build/failures/initrd-count/serial.log",
+      "error": null
+    },
+    {
+      "case": "initrd-reserved",
+      "passed": true,
+      "checks": [
+        "expected loader rejection: init image rejected: Reserved",
+        "no kernel entry or reboot during bounded halt observation"
+      ],
+      "artifact": "build/failures/initrd-reserved/serial.log",
+      "error": null
+    },
+    {
+      "case": "initrd-range-overflow",
+      "passed": true,
+      "checks": [
+        "expected loader rejection: init image rejected: Range",
+        "no kernel entry or reboot during bounded halt observation"
+      ],
+      "artifact": "build/failures/initrd-range-overflow/serial.log",
+      "error": null
+    },
+    {
+      "case": "initrd-checksum",
+      "passed": true,
+      "checks": [
+        "expected loader rejection: init image rejected: Checksum",
+        "no kernel entry or reboot during bounded halt observation"
+      ],
+      "artifact": "build/failures/initrd-checksum/serial.log",
+      "error": null
+    },
+    {
+      "case": "initrd-traversal",
+      "passed": true,
+      "checks": [
+        "expected loader rejection: init image rejected: Path",
+        "no kernel entry or reboot during bounded halt observation"
+      ],
+      "artifact": "build/failures/initrd-traversal/serial.log",
+      "error": null
+    },
+    {
+      "case": "initrd-missing-supervisor",
+      "passed": true,
+      "checks": [
+        "expected loader rejection: init image missing /system/nextd.elf",
+        "no kernel entry or reboot during bounded halt observation"
+      ],
+      "artifact": "build/failures/initrd-missing-supervisor/serial.log",
+      "error": null
+    }
+  ]
+}

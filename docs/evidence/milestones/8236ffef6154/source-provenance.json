@@ -1,0 +1,22 @@
+{
+  "image_sha256": "8236ffef6154ef708c37ebe1cf2ba0a750b2c1fc1c543f799fc01060d2a35bee",
+  "source_files": 188,
+  "source_manifest_sha256": "c2b527efc198d5954b5c0d02d503ff68cb2d702c1f274d65128aad1f96b87379",
+  "scope": "Frozen Source11 exact compiled inputs only. Full isolated496 workspace suite passed in retry; setup failure and actual guest harness failures retained.",
+  "completed": [
+    "client-input qemu64 122 assertions",
+    "actual Trash two boots 117 assertions per phase",
+    "30 loader rejection cases",
+    "496 workspace host tests"
+  ],
+  "material_gates_not_run_on_this_image": [
+    "max CPU expanded interactive-input/Trash gate",
+    "separate runtime resource family",
+    "separate persistence export/recovery family",
+    "alternate service-pair family",
+    "GPT mount family",
+    "latency benchmark"
+  ],
+  "not_run_note": "Baseline assertions embedded in these successful runs do not substitute for unrun independent families. Source10 evidence remains historical and is not attributed to Source11.",
+  "excluded": "Source12 close/Undo and Source13 query/accessibility/three-button/fair-poll additions; newer live Source14 SDK/configuration helpers."
+}

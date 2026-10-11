@@ -1,0 +1,122 @@
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.04s
+     Running `target/debug/next-package keygen /workspace/Next/work/package-dev.seed /workspace/Next/work/fourteenth-wave/frozen-src/work/package-dev.pub`
+   Compiling version_check v0.9.5
+   Compiling typenum v1.20.1
+   Compiling proc-macro2 v1.0.107
+   Compiling unicode-ident v1.0.26
+   Compiling quote v1.0.47
+   Compiling generic-array v0.14.7
+   Compiling semver v1.0.28
+   Compiling cpufeatures v0.2.17
+   Compiling cfg-if v1.0.5
+   Compiling signature v2.2.0
+   Compiling rustc_version v0.4.1
+   Compiling subtle v2.6.1
+   Compiling ed25519 v2.2.3
+   Compiling curve25519-dalek v4.1.3
+   Compiling prism v0.1.0 (/workspace/Next/work/fourteenth-wave/frozen-src/crates/prism)
+   Compiling helix-core v0.1.0 (/workspace/Next/work/fourteenth-wave/frozen-src/crates/helix-core)
+   Compiling syn v2.0.119
+   Compiling block-buffer v0.10.4
+   Compiling crypto-common v0.1.7
+   Compiling digest v0.10.7
+   Compiling sha2 v0.10.9
+   Compiling next-fs v0.1.0 (/workspace/Next/work/fourteenth-wave/frozen-src/crates/next-fs)
+   Compiling next-abi v0.1.0 (/workspace/Next/work/fourteenth-wave/frozen-src/crates/next-abi)
+   Compiling curve25519-dalek-derive v0.1.1
+   Compiling ed25519-dalek v2.2.0
+   Compiling next-package v0.1.0 (/workspace/Next/work/fourteenth-wave/frozen-src/crates/next-package)
+   Compiling helix-kernel v0.1.0 (/workspace/Next/work/fourteenth-wave/frozen-src/crates/helix-kernel)
+    Finished `release` profile [optimized] target(s) in 11.52s
+    Finished `release` profile [optimized] target(s) in 0.03s
+Independent Linux static ELF host execution PASS (exit 37)
+Independent Linux clock ELF host execution PASS (exit 43)
+Independent Linux memory ELF host execution PASS (exit 44)
+Independent Linux file ELF host execution PASS (exit 46)
+Independent Linux TLS ELF host execution PASS (exit 47)
+Independent Linux namespace ELF host execution PASS (exit 48)
+Original fixed PE32+ fixture built: 3072 bytes, 3 kernel32 imports
+Original fixed PE32+ fixture built: 3584 bytes, 3 kernel32 imports
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.02s
+Built authenticated-member service config: active_mask=1, 2 declarations, 544 bytes
+Signed 1 files into /workspace/Next/work/fourteenth-wave/frozen-src/build/.apps.7JaWtNYA/system/client-close-probe.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/work/fourteenth-wave/frozen-src/build/.apps.7JaWtNYA/system/client-input-delayed.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/work/fourteenth-wave/frozen-src/build/.apps.7JaWtNYA/system/client-input-probe.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/work/fourteenth-wave/frozen-src/build/.apps.7JaWtNYA/system/clock.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/work/fourteenth-wave/frozen-src/build/.apps.7JaWtNYA/system/context.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/work/fourteenth-wave/frozen-src/build/.apps.7JaWtNYA/system/dns-probe.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/work/fourteenth-wave/frozen-src/build/.apps.7JaWtNYA/system/event-wait.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/work/fourteenth-wave/frozen-src/build/.apps.7JaWtNYA/system/fault-avx.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/work/fourteenth-wave/frozen-src/build/.apps.7JaWtNYA/system/fault-fsgsbase.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/work/fourteenth-wave/frozen-src/build/.apps.7JaWtNYA/system/fault-guard.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/work/fourteenth-wave/frozen-src/build/.apps.7JaWtNYA/system/fault-nx.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/work/fourteenth-wave/frozen-src/build/.apps.7JaWtNYA/system/fault-rx.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/work/fourteenth-wave/frozen-src/build/.apps.7JaWtNYA/system/fault-supervisor.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/work/fourteenth-wave/frozen-src/build/.apps.7JaWtNYA/system/fault-ud.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/work/fourteenth-wave/frozen-src/build/.apps.7JaWtNYA/system/fault.elf; permission declarations are not grants
+Signed 2 files into /workspace/Next/work/fourteenth-wave/frozen-src/build/.apps.7JaWtNYA/system/nextd.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/work/fourteenth-wave/frozen-src/build/.apps.7JaWtNYA/system/portal-probe.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/work/fourteenth-wave/frozen-src/build/.apps.7JaWtNYA/system/probe.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/work/fourteenth-wave/frozen-src/build/.apps.7JaWtNYA/system/service-worker.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/work/fourteenth-wave/frozen-src/build/.apps.7JaWtNYA/system/spin.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/work/fourteenth-wave/frozen-src/build/.apps.7JaWtNYA/system/surface-probe.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/work/fourteenth-wave/frozen-src/build/.apps.7JaWtNYA/system/trash-probe.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/work/fourteenth-wave/frozen-src/build/.apps.7JaWtNYA/system/udp-block.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/work/fourteenth-wave/frozen-src/build/.apps.7JaWtNYA/system/udp-probe.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/work/fourteenth-wave/frozen-src/build/.apps.7JaWtNYA/system/vfs-probe.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/work/fourteenth-wave/frozen-src/build/.apps.7JaWtNYA/system/wait-negative.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/work/fourteenth-wave/frozen-src/build/.apps.7JaWtNYA/compat/linux/clock-gate.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/work/fourteenth-wave/frozen-src/build/.apps.7JaWtNYA/compat/linux/clock.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/work/fourteenth-wave/frozen-src/build/.apps.7JaWtNYA/compat/linux/file-gate.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/work/fourteenth-wave/frozen-src/build/.apps.7JaWtNYA/compat/linux/file.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/work/fourteenth-wave/frozen-src/build/.apps.7JaWtNYA/compat/linux/hello-gate.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/work/fourteenth-wave/frozen-src/build/.apps.7JaWtNYA/compat/linux/hello.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/work/fourteenth-wave/frozen-src/build/.apps.7JaWtNYA/compat/linux/memory-gate.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/work/fourteenth-wave/frozen-src/build/.apps.7JaWtNYA/compat/linux/memory.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/work/fourteenth-wave/frozen-src/build/.apps.7JaWtNYA/compat/linux/namespace-gate.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/work/fourteenth-wave/frozen-src/build/.apps.7JaWtNYA/compat/linux/namespace.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/work/fourteenth-wave/frozen-src/build/.apps.7JaWtNYA/compat/linux/tls-gate.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/work/fourteenth-wave/frozen-src/build/.apps.7JaWtNYA/compat/linux/tls.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/work/fourteenth-wave/frozen-src/build/.apps.7JaWtNYA/compat/nt/hello-gate.exe; permission declarations are not grants
+Signed 1 files into /workspace/Next/work/fourteenth-wave/frozen-src/build/.apps.7JaWtNYA/compat/nt/hello.exe; permission declarations are not grants
+Signed 1 files into /workspace/Next/work/fourteenth-wave/frozen-src/build/.apps.7JaWtNYA/system/untrusted.elf; permission declarations are not grants
+Built 41 application envelopes (one deliberately invalid negative fixture)
+Built /workspace/Next/work/fourteenth-wave/frozen-src/build/esp/EFI/NEXT/INITRD.NXI (41 entries, 687320 bytes; signed application envelopes, deployment signs archive)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.01s
+     Running `target/debug/next-package keygen /workspace/Next/work/package-dev.seed /workspace/Next/work/fourteenth-wave/frozen-src/work/package-dev.pub`
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.01s
+     Running `target/debug/next-package pack /workspace/Next/work/package-dev.seed org.next.development 0.1.0 0 deployment boot/helix.elf build/esp/EFI/NEXT/SYSTEM.NXP boot/helix.elf=build/esp/EFI/NEXT/HELIX.ELF boot/initrd.nxi=build/esp/EFI/NEXT/INITRD.NXI`
+Signed 2 files into build/esp/EFI/NEXT/SYSTEM.NXP; permission declarations are not grants
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.01s
+     Running `target/debug/next-package verify /workspace/Next/work/fourteenth-wave/frozen-src/work/package-dev.pub build/esp/EFI/NEXT/SYSTEM.NXP`
+Verified org.next.development Deployment 2 files; permissions requested=0x0
+   Compiling generic-array v0.14.7
+   Compiling typenum v1.20.1
+   Compiling cpufeatures v0.2.17
+   Compiling cfg-if v1.0.5
+   Compiling curve25519-dalek v4.1.3
+   Compiling subtle v2.6.1
+   Compiling signature v2.2.0
+   Compiling next-abi v0.1.0 (/workspace/Next/work/fourteenth-wave/frozen-src/crates/next-abi)
+   Compiling ed25519 v2.2.3
+   Compiling crypto-common v0.1.7
+   Compiling block-buffer v0.10.4
+   Compiling digest v0.10.7
+   Compiling sha2 v0.10.9
+   Compiling ed25519-dalek v2.2.0
+   Compiling next-package v0.1.0 (/workspace/Next/work/fourteenth-wave/frozen-src/crates/next-package)
+   Compiling next-boot v0.1.0 (/workspace/Next/work/fourteenth-wave/frozen-src/crates/next-boot)
+    Finished `release` profile [optimized] target(s) in 2.30s
+mkfs.fat 4.2 (2021-01-31)
+Built /workspace/Next/work/fourteenth-wave/frozen-src/build/next-dev.img (68157440 bytes)
+{
+  "requirements": 195,
+  "status": {
+    "pending": 86,
+    "partial": 109,
+    "verified": 0
+  },
+  "product_ready": false,
+  "json": "/workspace/Next/work/fourteenth-wave/frozen-src/build/coverage/coverage.json",
+  "html": "/workspace/Next/work/fourteenth-wave/frozen-src/build/coverage/index.html"
+}

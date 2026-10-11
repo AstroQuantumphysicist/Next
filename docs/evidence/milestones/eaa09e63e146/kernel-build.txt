@@ -1,0 +1,2 @@
+   Compiling helix-kernel v0.1.0 (/workspace/Next/work/ninth-corrected/source/crates/helix-kernel)
+    Finished `release` profile [optimized] target(s) in 6.03s

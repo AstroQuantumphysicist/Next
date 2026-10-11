@@ -1,0 +1,28 @@
+   Compiling version_check v0.9.5
+   Compiling typenum v1.20.1
+   Compiling proc-macro2 v1.0.107
+   Compiling unicode-ident v1.0.26
+   Compiling quote v1.0.47
+   Compiling generic-array v0.14.7
+   Compiling semver v1.0.28
+   Compiling cpufeatures v0.2.17
+   Compiling cfg-if v1.0.5
+   Compiling signature v2.2.0
+   Compiling subtle v2.6.1
+   Compiling rustc_version v0.4.1
+   Compiling ed25519 v2.2.3
+   Compiling prism v0.1.0 (/workspace/Next/work/ninth-focus-corrected/source/crates/prism)
+   Compiling curve25519-dalek v4.1.3
+   Compiling syn v2.0.119
+   Compiling next-abi v0.1.0 (/workspace/Next/work/ninth-focus-corrected/source/crates/next-abi)
+   Compiling crypto-common v0.1.7
+   Compiling block-buffer v0.10.4
+   Compiling digest v0.10.7
+   Compiling sha2 v0.10.9
+   Compiling helix-core v0.1.0 (/workspace/Next/work/ninth-focus-corrected/source/crates/helix-core)
+   Compiling next-fs v0.1.0 (/workspace/Next/work/ninth-focus-corrected/source/crates/next-fs)
+   Compiling curve25519-dalek-derive v0.1.1
+   Compiling ed25519-dalek v2.2.0
+   Compiling next-package v0.1.0 (/workspace/Next/work/ninth-focus-corrected/source/crates/next-package)
+   Compiling helix-kernel v0.1.0 (/workspace/Next/work/ninth-focus-corrected/source/crates/helix-kernel)
+    Finished `release` profile [optimized] target(s) in 9.82s

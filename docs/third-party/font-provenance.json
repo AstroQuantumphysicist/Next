@@ -1,0 +1,94 @@
+{
+  "scope": "Future Prism asset source/provenance; not font/theme proof for immutable seventh image. Generated alpha/advance arrays are mechanically transformed font data with Apache-2.0 notices retained.",
+  "font": {
+    "family": "Open Sans",
+    "style": "Regular",
+    "embedded_version": "Version 1.10",
+    "installed_debian_package": "fonts-open-sans",
+    "debian_version": "1.11-2",
+    "upstream": "https://www.opensans.com/",
+    "copyright": "Digitized data copyright © 2010-2011, Google Corporation.",
+    "spdx": "Apache-2.0",
+    "source_font": "crates/prism/assets/source/OpenSans-Regular.ttf",
+    "source_sha256": "e64e508b2aa2880f907e470c4550980ec4c0694d103a43f36150ac3f93189bee"
+  },
+  "rasterization": {
+    "Pillow": "12.3.0",
+    "FreeType": "2.14.3",
+    "pixel_sizes": [
+      14,
+      16,
+      20
+    ],
+    "transform": "Rasterized glyph coverage and advance metrics into fixed byte arrays; source font retained unchanged.",
+    "generator": {
+      "path": "tools/prism_font_atlas.py",
+      "bytes": 1353,
+      "sha256": "5723ed8a9d72179c1f0e65315b4b14f4d6cd7f7469700cb4803579952a7e3758"
+    },
+    "source_digest_enforced": true,
+    "glyph_codes_inclusive": [
+      32,
+      126
+    ],
+    "cell_pixels": [
+      24,
+      32
+    ],
+    "image_mode": "L",
+    "draw_origin": [
+      0,
+      -1
+    ],
+    "advance_quantization": "Python round(font.getlength(character))",
+    "generator_runtime_version_enforcement": false,
+    "replay": {
+      "Pillow": "12.3.0",
+      "FreeType": "2.14.3",
+      "font_atlas_and_advances_byte_identical": true,
+      "method": "Retained generator copied into scratch tree; unchanged source TTF supplied; resulting files compared byte-for-byte with checked-in arrays."
+    }
+  },
+  "artifacts": [
+    {
+      "path": "crates/prism/assets/NOTICE.txt",
+      "bytes": 367,
+      "sha256": "a49d56b73938f8f366ebd81bcdcbdb44c9fe85966848f6f07612194588c65e16"
+    },
+    {
+      "path": "crates/prism/assets/OpenSans-LICENSE.txt",
+      "bytes": 11358,
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+    },
+    {
+      "path": "crates/prism/assets/open-sans-advance.bin",
+      "bytes": 285,
+      "sha256": "7bfb26802a159e8c464aa8f17026bff36915d55240b5c0fbfd0ec8774ef3a0ee"
+    },
+    {
+      "path": "crates/prism/assets/open-sans-atlas.bin",
+      "bytes": 218880,
+      "sha256": "d954599f44ba97e84f07b184a493087e781354176065776ad7d23a9d8a745a4b"
+    },
+    {
+      "path": "crates/prism/assets/source/OpenSans-Regular.ttf",
+      "bytes": 217360,
+      "sha256": "e64e508b2aa2880f907e470c4550980ec4c0694d103a43f36150ac3f93189bee"
+    },
+    {
+      "path": "docs/third-party/assets/open-sans/Apache-2.0.txt",
+      "bytes": 11358,
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+    },
+    {
+      "path": "docs/third-party/assets/open-sans/NOTICE.txt",
+      "bytes": 367,
+      "sha256": "a49d56b73938f8f366ebd81bcdcbdb44c9fe85966848f6f07612194588c65e16"
+    },
+    {
+      "path": "docs/third-party/assets/open-sans/debian-copyright.txt",
+      "bytes": 1031,
+      "sha256": "94d4b78643f99d7cfa872145b38da578299f401405ca5cba66a5c95bf13933b0"
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "status": "incomplete-integration-failure-retained",
+  "image_sha256": "eaa09e63e14603ca582207e901fcb9daa7321d25185403cf5bf6c5facd1ec3e4",
+  "source_files": 167,
+  "source_manifest_sha256": "faca17fd17dc82bde62aa0d7af6dedcc09d0113b0b18304063684a9f8a349156",
+  "scope": "Corrected ninth retained source plus only filesystem binary listing and main binary metadata label changes. Signed preparation retains original loader/initrd and excludes tenth source.",
+  "host_validation": "Corrected138 harness plus focused filesystem tests and strict kernel Clippy pass. Previous ninth411 foundation suite is historical; no fresh411 corrected-image claim.",
+  "original_failed_image_sha256": "484084f63766308d2a355de11ca9862ad87ea6b92276f2852dc4679991e68173",
+  "observations": "Original real binary preferences caused whole Files snapshot NonUtf8 refusal; raw failed guest preserved in prior milestone observations/binary-preferences-listing.",
+  "pending": "Actual two-boot corrected GUI proof and remaining runtime/CPU/refusal/persistence gates.",
+  "refusals": "All30 loader refusal cases pass on eaa source; no full GUI acceptance.",
+  "gui_observation": "Full two-boot GUI gate failed from actual active-focus registry overflow: inactive Settings5 plus Files4 entries exceed capacity8. Earlier individual file/theme actions passed but are not a full-gate success."
+}

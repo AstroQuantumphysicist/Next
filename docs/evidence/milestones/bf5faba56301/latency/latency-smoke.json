@@ -1,0 +1,3398 @@
+{
+  "passed": true,
+  "image_sha256": "bf5faba563015d40c35f04dbfd126bb236fe5654c23ba4393aaeb35224872c8f",
+  "checks": [
+    "two noncooperative children plus supervisor/worker exhaust four process slots",
+    "every noncooperative load child has actual timer preemptions; baseline tasks remain live",
+    "real PS/2 focus and typed-command actions observed through strictly subsequent completed frame generations"
+  ],
+  "samples": [
+    {
+      "phase": "idle",
+      "cycle": 0,
+      "kind": "focus_files",
+      "key": "ret",
+      "sent_monotonic_ns": 12583807156461,
+      "response_observed_monotonic_ns": 12583814975592,
+      "frame_observed_monotonic_ns": 12583828235321,
+      "latency_ms": 21.07886,
+      "frame_generation": 11,
+      "serial_response_start": 16665,
+      "serial_response_end": 16725,
+      "serial_frame_start": 16725,
+      "load_pids": []
+    },
+    {
+      "phase": "idle",
+      "cycle": 0,
+      "kind": "focus_terminal",
+      "key": "ret",
+      "sent_monotonic_ns": 12583847288280,
+      "response_observed_monotonic_ns": 12583853859131,
+      "frame_observed_monotonic_ns": 12583866982859,
+      "latency_ms": 19.694579,
+      "frame_generation": 13,
+      "serial_response_start": 16840,
+      "serial_response_end": 16903,
+      "serial_frame_start": 16903,
+      "load_pids": []
+    },
+    {
+      "phase": "idle",
+      "cycle": 0,
+      "kind": "typed_status_enter",
+      "key": "ret",
+      "sent_monotonic_ns": 12584021522396,
+      "response_observed_monotonic_ns": 12584023562427,
+      "frame_observed_monotonic_ns": 12584038345883,
+      "latency_ms": 16.823487,
+      "frame_generation": 20,
+      "serial_response_start": 16939,
+      "serial_response_end": 17026,
+      "serial_frame_start": 17089,
+      "load_pids": [],
+      "typing_events": [
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12583866997761,
+          "qmp_ack_monotonic_ns": 12583867754241
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12583892845864,
+          "qmp_ack_monotonic_ns": 12583893406274
+        },
+        {
+          "key": "a",
+          "sent_monotonic_ns": 12583918528002,
+          "qmp_ack_monotonic_ns": 12583919169532
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12583944274575,
+          "qmp_ack_monotonic_ns": 12583944877928
+        },
+        {
+          "key": "u",
+          "sent_monotonic_ns": 12583969991113,
+          "qmp_ack_monotonic_ns": 12583970686393
+        },
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12583995787580,
+          "qmp_ack_monotonic_ns": 12583996420107
+        }
+      ]
+    },
+    {
+      "phase": "idle",
+      "cycle": 1,
+      "kind": "focus_files",
+      "key": "ret",
+      "sent_monotonic_ns": 12584077324954,
+      "response_observed_monotonic_ns": 12584084901706,
+      "frame_observed_monotonic_ns": 12584097988448,
+      "latency_ms": 20.663494,
+      "frame_generation": 23,
+      "serial_response_start": 17297,
+      "serial_response_end": 17357,
+      "serial_frame_start": 17357,
+      "load_pids": []
+    },
+    {
+      "phase": "idle",
+      "cycle": 1,
+      "kind": "focus_terminal",
+      "key": "ret",
+      "sent_monotonic_ns": 12584117164450,
+      "response_observed_monotonic_ns": 12584123514424,
+      "frame_observed_monotonic_ns": 12584136609720,
+      "latency_ms": 19.44527,
+      "frame_generation": 25,
+      "serial_response_start": 17472,
+      "serial_response_end": 17535,
+      "serial_frame_start": 17535,
+      "load_pids": []
+    },
+    {
+      "phase": "idle",
+      "cycle": 1,
+      "kind": "typed_status_enter",
+      "key": "ret",
+      "sent_monotonic_ns": 12584290927918,
+      "response_observed_monotonic_ns": 12584293508340,
+      "frame_observed_monotonic_ns": 12584308172359,
+      "latency_ms": 17.244441,
+      "frame_generation": 32,
+      "serial_response_start": 17571,
+      "serial_response_end": 17658,
+      "serial_frame_start": 17721,
+      "load_pids": [],
+      "typing_events": [
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12584136619124,
+          "qmp_ack_monotonic_ns": 12584137146405
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12584162232379,
+          "qmp_ack_monotonic_ns": 12584162791497
+        },
+        {
+          "key": "a",
+          "sent_monotonic_ns": 12584187896540,
+          "qmp_ack_monotonic_ns": 12584188676034
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12584213769129,
+          "qmp_ack_monotonic_ns": 12584214342068
+        },
+        {
+          "key": "u",
+          "sent_monotonic_ns": 12584239443626,
+          "qmp_ack_monotonic_ns": 12584240046939
+        },
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12584265156058,
+          "qmp_ack_monotonic_ns": 12584265829906
+        }
+      ]
+    },
+    {
+      "phase": "idle",
+      "cycle": 2,
+      "kind": "focus_files",
+      "key": "ret",
+      "sent_monotonic_ns": 12584347363044,
+      "response_observed_monotonic_ns": 12584355257016,
+      "frame_observed_monotonic_ns": 12584368472619,
+      "latency_ms": 21.109575,
+      "frame_generation": 35,
+      "serial_response_start": 17929,
+      "serial_response_end": 17989,
+      "serial_frame_start": 17989,
+      "load_pids": []
+    },
+    {
+      "phase": "idle",
+      "cycle": 2,
+      "kind": "focus_terminal",
+      "key": "ret",
+      "sent_monotonic_ns": 12584387291281,
+      "response_observed_monotonic_ns": 12584393465095,
+      "frame_observed_monotonic_ns": 12584406637244,
+      "latency_ms": 19.345963,
+      "frame_generation": 37,
+      "serial_response_start": 18104,
+      "serial_response_end": 18167,
+      "serial_frame_start": 18167,
+      "load_pids": []
+    },
+    {
+      "phase": "idle",
+      "cycle": 2,
+      "kind": "typed_status_enter",
+      "key": "ret",
+      "sent_monotonic_ns": 12584560941142,
+      "response_observed_monotonic_ns": 12584563508574,
+      "frame_observed_monotonic_ns": 12584578408142,
+      "latency_ms": 17.467,
+      "frame_generation": 44,
+      "serial_response_start": 18203,
+      "serial_response_end": 18290,
+      "serial_frame_start": 18353,
+      "load_pids": [],
+      "typing_events": [
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12584406647970,
+          "qmp_ack_monotonic_ns": 12584407216753
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12584432307744,
+          "qmp_ack_monotonic_ns": 12584432878360
+        },
+        {
+          "key": "a",
+          "sent_monotonic_ns": 12584457970643,
+          "qmp_ack_monotonic_ns": 12584458561398
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12584483660171,
+          "qmp_ack_monotonic_ns": 12584484277856
+        },
+        {
+          "key": "u",
+          "sent_monotonic_ns": 12584509381527,
+          "qmp_ack_monotonic_ns": 12584510079831
+        },
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12584535182561,
+          "qmp_ack_monotonic_ns": 12584535839344
+        }
+      ]
+    },
+    {
+      "phase": "idle",
+      "cycle": 3,
+      "kind": "focus_files",
+      "key": "ret",
+      "sent_monotonic_ns": 12584617378971,
+      "response_observed_monotonic_ns": 12584625052606,
+      "frame_observed_monotonic_ns": 12584638603256,
+      "latency_ms": 21.224285,
+      "frame_generation": 47,
+      "serial_response_start": 18561,
+      "serial_response_end": 18621,
+      "serial_frame_start": 18621,
+      "load_pids": []
+    },
+    {
+      "phase": "idle",
+      "cycle": 3,
+      "kind": "focus_terminal",
+      "key": "ret",
+      "sent_monotonic_ns": 12584658369381,
+      "response_observed_monotonic_ns": 12584663586508,
+      "frame_observed_monotonic_ns": 12584677953187,
+      "latency_ms": 19.583806,
+      "frame_generation": 49,
+      "serial_response_start": 18736,
+      "serial_response_end": 18799,
+      "serial_frame_start": 18799,
+      "load_pids": []
+    },
+    {
+      "phase": "idle",
+      "cycle": 3,
+      "kind": "typed_status_enter",
+      "key": "ret",
+      "sent_monotonic_ns": 12584832677602,
+      "response_observed_monotonic_ns": 12584833814345,
+      "frame_observed_monotonic_ns": 12584849359479,
+      "latency_ms": 16.681877,
+      "frame_generation": 56,
+      "serial_response_start": 18835,
+      "serial_response_end": 18922,
+      "serial_frame_start": 18985,
+      "load_pids": [],
+      "typing_events": [
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12584677962491,
+          "qmp_ack_monotonic_ns": 12584678560787
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12584703662885,
+          "qmp_ack_monotonic_ns": 12584704325066
+        },
+        {
+          "key": "a",
+          "sent_monotonic_ns": 12584729425121,
+          "qmp_ack_monotonic_ns": 12584730003097
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12584755107809,
+          "qmp_ack_monotonic_ns": 12584756047972
+        },
+        {
+          "key": "u",
+          "sent_monotonic_ns": 12584781140046,
+          "qmp_ack_monotonic_ns": 12584781771180
+        },
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12584806874696,
+          "qmp_ack_monotonic_ns": 12584807571127
+        }
+      ]
+    },
+    {
+      "phase": "idle",
+      "cycle": 4,
+      "kind": "focus_files",
+      "key": "ret",
+      "sent_monotonic_ns": 12584887703515,
+      "response_observed_monotonic_ns": 12584894867846,
+      "frame_observed_monotonic_ns": 12584908304457,
+      "latency_ms": 20.600942,
+      "frame_generation": 59,
+      "serial_response_start": 19193,
+      "serial_response_end": 19253,
+      "serial_frame_start": 19253,
+      "load_pids": []
+    },
+    {
+      "phase": "idle",
+      "cycle": 4,
+      "kind": "focus_terminal",
+      "key": "ret",
+      "sent_monotonic_ns": 12584927591243,
+      "response_observed_monotonic_ns": 12584933483930,
+      "frame_observed_monotonic_ns": 12584946986268,
+      "latency_ms": 19.395025,
+      "frame_generation": 61,
+      "serial_response_start": 19368,
+      "serial_response_end": 19431,
+      "serial_frame_start": 19431,
+      "load_pids": []
+    },
+    {
+      "phase": "idle",
+      "cycle": 4,
+      "kind": "typed_status_enter",
+      "key": "ret",
+      "sent_monotonic_ns": 12585101505834,
+      "response_observed_monotonic_ns": 12585103486497,
+      "frame_observed_monotonic_ns": 12585118859416,
+      "latency_ms": 17.353582,
+      "frame_generation": 68,
+      "serial_response_start": 19467,
+      "serial_response_end": 19554,
+      "serial_frame_start": 19617,
+      "load_pids": [],
+      "typing_events": [
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12584947004705,
+          "qmp_ack_monotonic_ns": 12584947754546
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12584972848622,
+          "qmp_ack_monotonic_ns": 12584973444054
+        },
+        {
+          "key": "a",
+          "sent_monotonic_ns": 12584998538751,
+          "qmp_ack_monotonic_ns": 12584999186230
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12585024276461,
+          "qmp_ack_monotonic_ns": 12585024903770
+        },
+        {
+          "key": "u",
+          "sent_monotonic_ns": 12585049996985,
+          "qmp_ack_monotonic_ns": 12585050681860
+        },
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12585075768375,
+          "qmp_ack_monotonic_ns": 12585076418348
+        }
+      ]
+    },
+    {
+      "phase": "idle",
+      "cycle": 5,
+      "kind": "focus_files",
+      "key": "ret",
+      "sent_monotonic_ns": 12585157621256,
+      "response_observed_monotonic_ns": 12585165027796,
+      "frame_observed_monotonic_ns": 12585178515542,
+      "latency_ms": 20.894286,
+      "frame_generation": 71,
+      "serial_response_start": 19825,
+      "serial_response_end": 19885,
+      "serial_frame_start": 19885,
+      "load_pids": []
+    },
+    {
+      "phase": "idle",
+      "cycle": 5,
+      "kind": "focus_terminal",
+      "key": "ret",
+      "sent_monotonic_ns": 12585197505979,
+      "response_observed_monotonic_ns": 12585203475470,
+      "frame_observed_monotonic_ns": 12585216995955,
+      "latency_ms": 19.489976,
+      "frame_generation": 73,
+      "serial_response_start": 20000,
+      "serial_response_end": 20063,
+      "serial_frame_start": 20063,
+      "load_pids": []
+    },
+    {
+      "phase": "idle",
+      "cycle": 5,
+      "kind": "typed_status_enter",
+      "key": "ret",
+      "sent_monotonic_ns": 12585371554650,
+      "response_observed_monotonic_ns": 12585373421304,
+      "frame_observed_monotonic_ns": 12585388610711,
+      "latency_ms": 17.056061,
+      "frame_generation": 80,
+      "serial_response_start": 20099,
+      "serial_response_end": 20186,
+      "serial_frame_start": 20249,
+      "load_pids": [],
+      "typing_events": [
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12585217009144,
+          "qmp_ack_monotonic_ns": 12585217653769
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12585242784921,
+          "qmp_ack_monotonic_ns": 12585243472148
+        },
+        {
+          "key": "a",
+          "sent_monotonic_ns": 12585268586785,
+          "qmp_ack_monotonic_ns": 12585269267794
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12585294355230,
+          "qmp_ack_monotonic_ns": 12585294978243
+        },
+        {
+          "key": "u",
+          "sent_monotonic_ns": 12585320069385,
+          "qmp_ack_monotonic_ns": 12585320704456
+        },
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12585345800565,
+          "qmp_ack_monotonic_ns": 12585346455335
+        }
+      ]
+    },
+    {
+      "phase": "idle",
+      "cycle": 6,
+      "kind": "focus_files",
+      "key": "ret",
+      "sent_monotonic_ns": 12585427498497,
+      "response_observed_monotonic_ns": 12585434736157,
+      "frame_observed_monotonic_ns": 12585448276571,
+      "latency_ms": 20.778074,
+      "frame_generation": 83,
+      "serial_response_start": 20457,
+      "serial_response_end": 20517,
+      "serial_frame_start": 20517,
+      "load_pids": []
+    },
+    {
+      "phase": "idle",
+      "cycle": 6,
+      "kind": "focus_terminal",
+      "key": "ret",
+      "sent_monotonic_ns": 12585467462437,
+      "response_observed_monotonic_ns": 12585473457106,
+      "frame_observed_monotonic_ns": 12585487000845,
+      "latency_ms": 19.538408,
+      "frame_generation": 85,
+      "serial_response_start": 20632,
+      "serial_response_end": 20695,
+      "serial_frame_start": 20695,
+      "load_pids": []
+    },
+    {
+      "phase": "idle",
+      "cycle": 6,
+      "kind": "typed_status_enter",
+      "key": "ret",
+      "sent_monotonic_ns": 12585641131307,
+      "response_observed_monotonic_ns": 12585643361912,
+      "frame_observed_monotonic_ns": 12585658315946,
+      "latency_ms": 17.184639,
+      "frame_generation": 92,
+      "serial_response_start": 20731,
+      "serial_response_end": 20818,
+      "serial_frame_start": 20881,
+      "load_pids": [],
+      "typing_events": [
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12585487014936,
+          "qmp_ack_monotonic_ns": 12585487642866
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12585512755050,
+          "qmp_ack_monotonic_ns": 12585513437911
+        },
+        {
+          "key": "a",
+          "sent_monotonic_ns": 12585538527961,
+          "qmp_ack_monotonic_ns": 12585539122442
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12585564207064,
+          "qmp_ack_monotonic_ns": 12585564749858
+        },
+        {
+          "key": "u",
+          "sent_monotonic_ns": 12585589840169,
+          "qmp_ack_monotonic_ns": 12585590394620
+        },
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12585615479443,
+          "qmp_ack_monotonic_ns": 12585616047033
+        }
+      ]
+    },
+    {
+      "phase": "idle",
+      "cycle": 7,
+      "kind": "focus_files",
+      "key": "ret",
+      "sent_monotonic_ns": 12585697383745,
+      "response_observed_monotonic_ns": 12585704639193,
+      "frame_observed_monotonic_ns": 12585718155437,
+      "latency_ms": 20.771692,
+      "frame_generation": 95,
+      "serial_response_start": 21089,
+      "serial_response_end": 21149,
+      "serial_frame_start": 21149,
+      "load_pids": []
+    },
+    {
+      "phase": "idle",
+      "cycle": 7,
+      "kind": "focus_terminal",
+      "key": "ret",
+      "sent_monotonic_ns": 12585737415621,
+      "response_observed_monotonic_ns": 12585743358555,
+      "frame_observed_monotonic_ns": 12585757177307,
+      "latency_ms": 19.761686,
+      "frame_generation": 97,
+      "serial_response_start": 21264,
+      "serial_response_end": 21327,
+      "serial_frame_start": 21327,
+      "load_pids": []
+    },
+    {
+      "phase": "idle",
+      "cycle": 7,
+      "kind": "typed_status_enter",
+      "key": "ret",
+      "sent_monotonic_ns": 12585911611579,
+      "response_observed_monotonic_ns": 12585913400199,
+      "frame_observed_monotonic_ns": 12585930300226,
+      "latency_ms": 18.688647,
+      "frame_generation": 104,
+      "serial_response_start": 21363,
+      "serial_response_end": 21450,
+      "serial_frame_start": 21513,
+      "load_pids": [],
+      "typing_events": [
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12585757189335,
+          "qmp_ack_monotonic_ns": 12585757742365
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12585782836962,
+          "qmp_ack_monotonic_ns": 12585783635755
+        },
+        {
+          "key": "a",
+          "sent_monotonic_ns": 12585808727679,
+          "qmp_ack_monotonic_ns": 12585809323521
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12585834412080,
+          "qmp_ack_monotonic_ns": 12585835066649
+        },
+        {
+          "key": "u",
+          "sent_monotonic_ns": 12585860161757,
+          "qmp_ack_monotonic_ns": 12585860807544
+        },
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12585885898225,
+          "qmp_ack_monotonic_ns": 12585886515309
+        }
+      ]
+    },
+    {
+      "phase": "idle",
+      "cycle": 8,
+      "kind": "focus_files",
+      "key": "ret",
+      "sent_monotonic_ns": 12585967954640,
+      "response_observed_monotonic_ns": 12585974735937,
+      "frame_observed_monotonic_ns": 12585988969133,
+      "latency_ms": 21.014493,
+      "frame_generation": 107,
+      "serial_response_start": 21724,
+      "serial_response_end": 21784,
+      "serial_frame_start": 21784,
+      "load_pids": []
+    },
+    {
+      "phase": "idle",
+      "cycle": 8,
+      "kind": "focus_terminal",
+      "key": "ret",
+      "sent_monotonic_ns": 12586007534517,
+      "response_observed_monotonic_ns": 12586013332167,
+      "frame_observed_monotonic_ns": 12586027638261,
+      "latency_ms": 20.103744,
+      "frame_generation": 109,
+      "serial_response_start": 21901,
+      "serial_response_end": 21964,
+      "serial_frame_start": 21964,
+      "load_pids": []
+    },
+    {
+      "phase": "idle",
+      "cycle": 8,
+      "kind": "typed_status_enter",
+      "key": "ret",
+      "sent_monotonic_ns": 12586181633452,
+      "response_observed_monotonic_ns": 12586183358367,
+      "frame_observed_monotonic_ns": 12586198466209,
+      "latency_ms": 16.832757,
+      "frame_generation": 116,
+      "serial_response_start": 22001,
+      "serial_response_end": 22088,
+      "serial_frame_start": 22151,
+      "load_pids": [],
+      "typing_events": [
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12586027647074,
+          "qmp_ack_monotonic_ns": 12586028192943
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12586053274170,
+          "qmp_ack_monotonic_ns": 12586053814190
+        },
+        {
+          "key": "a",
+          "sent_monotonic_ns": 12586078900164,
+          "qmp_ack_monotonic_ns": 12586079437620
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12586104527750,
+          "qmp_ack_monotonic_ns": 12586105134249
+        },
+        {
+          "key": "u",
+          "sent_monotonic_ns": 12586130226333,
+          "qmp_ack_monotonic_ns": 12586130838790
+        },
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12586155928460,
+          "qmp_ack_monotonic_ns": 12586156539585
+        }
+      ]
+    },
+    {
+      "phase": "idle",
+      "cycle": 9,
+      "kind": "focus_files",
+      "key": "ret",
+      "sent_monotonic_ns": 12586237486336,
+      "response_observed_monotonic_ns": 12586244865569,
+      "frame_observed_monotonic_ns": 12586258394291,
+      "latency_ms": 20.907955,
+      "frame_generation": 119,
+      "serial_response_start": 22362,
+      "serial_response_end": 22422,
+      "serial_frame_start": 22422,
+      "load_pids": []
+    },
+    {
+      "phase": "idle",
+      "cycle": 9,
+      "kind": "focus_terminal",
+      "key": "ret",
+      "sent_monotonic_ns": 12586277596529,
+      "response_observed_monotonic_ns": 12586283346067,
+      "frame_observed_monotonic_ns": 12586296868130,
+      "latency_ms": 19.271601,
+      "frame_generation": 121,
+      "serial_response_start": 22539,
+      "serial_response_end": 22602,
+      "serial_frame_start": 22602,
+      "load_pids": []
+    },
+    {
+      "phase": "idle",
+      "cycle": 9,
+      "kind": "typed_status_enter",
+      "key": "ret",
+      "sent_monotonic_ns": 12586451401499,
+      "response_observed_monotonic_ns": 12586453408162,
+      "frame_observed_monotonic_ns": 12586468941043,
+      "latency_ms": 17.539544,
+      "frame_generation": 128,
+      "serial_response_start": 22639,
+      "serial_response_end": 22726,
+      "serial_frame_start": 22789,
+      "load_pids": [],
+      "typing_events": [
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12586296877193,
+          "qmp_ack_monotonic_ns": 12586297413087
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12586322503698,
+          "qmp_ack_monotonic_ns": 12586323080242
+        },
+        {
+          "key": "a",
+          "sent_monotonic_ns": 12586348200097,
+          "qmp_ack_monotonic_ns": 12586348765675
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12586373853472,
+          "qmp_ack_monotonic_ns": 12586374589582
+        },
+        {
+          "key": "u",
+          "sent_monotonic_ns": 12586399688306,
+          "qmp_ack_monotonic_ns": 12586400555431
+        },
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12586425662417,
+          "qmp_ack_monotonic_ns": 12586426301624
+        }
+      ]
+    },
+    {
+      "phase": "idle",
+      "cycle": 10,
+      "kind": "focus_files",
+      "key": "ret",
+      "sent_monotonic_ns": 12586508465778,
+      "response_observed_monotonic_ns": 12586514635219,
+      "frame_observed_monotonic_ns": 12586528398909,
+      "latency_ms": 19.933131,
+      "frame_generation": 131,
+      "serial_response_start": 23000,
+      "serial_response_end": 23060,
+      "serial_frame_start": 23060,
+      "load_pids": []
+    },
+    {
+      "phase": "idle",
+      "cycle": 10,
+      "kind": "focus_terminal",
+      "key": "ret",
+      "sent_monotonic_ns": 12586548217881,
+      "response_observed_monotonic_ns": 12586553382632,
+      "frame_observed_monotonic_ns": 12586567613034,
+      "latency_ms": 19.395153,
+      "frame_generation": 133,
+      "serial_response_start": 23177,
+      "serial_response_end": 23240,
+      "serial_frame_start": 23240,
+      "load_pids": []
+    },
+    {
+      "phase": "idle",
+      "cycle": 10,
+      "kind": "typed_status_enter",
+      "key": "ret",
+      "sent_monotonic_ns": 12586721656427,
+      "response_observed_monotonic_ns": 12586723277628,
+      "frame_observed_monotonic_ns": 12586738968364,
+      "latency_ms": 17.311937,
+      "frame_generation": 140,
+      "serial_response_start": 23277,
+      "serial_response_end": 23364,
+      "serial_frame_start": 23427,
+      "load_pids": [],
+      "typing_events": [
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12586567625262,
+          "qmp_ack_monotonic_ns": 12586568242086
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12586593319878,
+          "qmp_ack_monotonic_ns": 12586593869282
+        },
+        {
+          "key": "a",
+          "sent_monotonic_ns": 12586618956669,
+          "qmp_ack_monotonic_ns": 12586619521355
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12586644600290,
+          "qmp_ack_monotonic_ns": 12586645167720
+        },
+        {
+          "key": "u",
+          "sent_monotonic_ns": 12586670263990,
+          "qmp_ack_monotonic_ns": 12586670848846
+        },
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12586695940529,
+          "qmp_ack_monotonic_ns": 12586696567648
+        }
+      ]
+    },
+    {
+      "phase": "idle",
+      "cycle": 11,
+      "kind": "focus_files",
+      "key": "ret",
+      "sent_monotonic_ns": 12586777765171,
+      "response_observed_monotonic_ns": 12586784606106,
+      "frame_observed_monotonic_ns": 12586798842757,
+      "latency_ms": 21.077586,
+      "frame_generation": 143,
+      "serial_response_start": 23638,
+      "serial_response_end": 23698,
+      "serial_frame_start": 23698,
+      "load_pids": []
+    },
+    {
+      "phase": "idle",
+      "cycle": 11,
+      "kind": "focus_terminal",
+      "key": "ret",
+      "sent_monotonic_ns": 12586817369824,
+      "response_observed_monotonic_ns": 12586823306569,
+      "frame_observed_monotonic_ns": 12586836985164,
+      "latency_ms": 19.61534,
+      "frame_generation": 145,
+      "serial_response_start": 23815,
+      "serial_response_end": 23878,
+      "serial_frame_start": 23878,
+      "load_pids": []
+    },
+    {
+      "phase": "idle",
+      "cycle": 11,
+      "kind": "typed_status_enter",
+      "key": "ret",
+      "sent_monotonic_ns": 12586990960756,
+      "response_observed_monotonic_ns": 12586993314282,
+      "frame_observed_monotonic_ns": 12587009093399,
+      "latency_ms": 18.132643,
+      "frame_generation": 152,
+      "serial_response_start": 23915,
+      "serial_response_end": 24002,
+      "serial_frame_start": 24065,
+      "load_pids": [],
+      "typing_events": [
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12586836996090,
+          "qmp_ack_monotonic_ns": 12586837555729
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12586862653141,
+          "qmp_ack_monotonic_ns": 12586863301351
+        },
+        {
+          "key": "a",
+          "sent_monotonic_ns": 12586888365923,
+          "qmp_ack_monotonic_ns": 12586888909078
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12586913988273,
+          "qmp_ack_monotonic_ns": 12586914562063
+        },
+        {
+          "key": "u",
+          "sent_monotonic_ns": 12586939649279,
+          "qmp_ack_monotonic_ns": 12586940238041
+        },
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12586965330865,
+          "qmp_ack_monotonic_ns": 12586965864206
+        }
+      ]
+    },
+    {
+      "phase": "idle",
+      "cycle": 12,
+      "kind": "focus_files",
+      "key": "ret",
+      "sent_monotonic_ns": 12587048882796,
+      "response_observed_monotonic_ns": 12587054637111,
+      "frame_observed_monotonic_ns": 12587068812421,
+      "latency_ms": 19.929625,
+      "frame_generation": 155,
+      "serial_response_start": 24276,
+      "serial_response_end": 24336,
+      "serial_frame_start": 24336,
+      "load_pids": []
+    },
+    {
+      "phase": "idle",
+      "cycle": 12,
+      "kind": "focus_terminal",
+      "key": "ret",
+      "sent_monotonic_ns": 12587087774343,
+      "response_observed_monotonic_ns": 12587093305377,
+      "frame_observed_monotonic_ns": 12587107188685,
+      "latency_ms": 19.414342,
+      "frame_generation": 157,
+      "serial_response_start": 24453,
+      "serial_response_end": 24516,
+      "serial_frame_start": 24516,
+      "load_pids": []
+    },
+    {
+      "phase": "idle",
+      "cycle": 12,
+      "kind": "typed_status_enter",
+      "key": "ret",
+      "sent_monotonic_ns": 12587261564561,
+      "response_observed_monotonic_ns": 12587263309916,
+      "frame_observed_monotonic_ns": 12587279350160,
+      "latency_ms": 17.785599,
+      "frame_generation": 164,
+      "serial_response_start": 24553,
+      "serial_response_end": 24640,
+      "serial_frame_start": 24703,
+      "load_pids": [],
+      "typing_events": [
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12587107199922,
+          "qmp_ack_monotonic_ns": 12587107708926
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12587132814579,
+          "qmp_ack_monotonic_ns": 12587133499804
+        },
+        {
+          "key": "a",
+          "sent_monotonic_ns": 12587158602434,
+          "qmp_ack_monotonic_ns": 12587159265697
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12587184367514,
+          "qmp_ack_monotonic_ns": 12587184967954
+        },
+        {
+          "key": "u",
+          "sent_monotonic_ns": 12587210074199,
+          "qmp_ack_monotonic_ns": 12587210653006
+        },
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12587235768865,
+          "qmp_ack_monotonic_ns": 12587236465927
+        }
+      ]
+    },
+    {
+      "phase": "idle",
+      "cycle": 13,
+      "kind": "focus_files",
+      "key": "ret",
+      "sent_monotonic_ns": 12587317721095,
+      "response_observed_monotonic_ns": 12587324508952,
+      "frame_observed_monotonic_ns": 12587338631083,
+      "latency_ms": 20.909988,
+      "frame_generation": 167,
+      "serial_response_start": 24914,
+      "serial_response_end": 24974,
+      "serial_frame_start": 24974,
+      "load_pids": []
+    },
+    {
+      "phase": "idle",
+      "cycle": 13,
+      "kind": "focus_terminal",
+      "key": "ret",
+      "sent_monotonic_ns": 12587357982432,
+      "response_observed_monotonic_ns": 12587363258108,
+      "frame_observed_monotonic_ns": 12587377153123,
+      "latency_ms": 19.170691,
+      "frame_generation": 169,
+      "serial_response_start": 25091,
+      "serial_response_end": 25154,
+      "serial_frame_start": 25154,
+      "load_pids": []
+    },
+    {
+      "phase": "idle",
+      "cycle": 13,
+      "kind": "typed_status_enter",
+      "key": "ret",
+      "sent_monotonic_ns": 12587531016229,
+      "response_observed_monotonic_ns": 12587533277619,
+      "frame_observed_monotonic_ns": 12587548869248,
+      "latency_ms": 17.853019,
+      "frame_generation": 176,
+      "serial_response_start": 25191,
+      "serial_response_end": 25278,
+      "serial_frame_start": 25341,
+      "load_pids": [],
+      "typing_events": [
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12587377164059,
+          "qmp_ack_monotonic_ns": 12587377705812
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12587402805747,
+          "qmp_ack_monotonic_ns": 12587403373067
+        },
+        {
+          "key": "a",
+          "sent_monotonic_ns": 12587428462097,
+          "qmp_ack_monotonic_ns": 12587428984571
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12587454063805,
+          "qmp_ack_monotonic_ns": 12587454584757
+        },
+        {
+          "key": "u",
+          "sent_monotonic_ns": 12587479683641,
+          "qmp_ack_monotonic_ns": 12587480288497
+        },
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12587505381822,
+          "qmp_ack_monotonic_ns": 12587505881132
+        }
+      ]
+    },
+    {
+      "phase": "idle",
+      "cycle": 14,
+      "kind": "focus_files",
+      "key": "ret",
+      "sent_monotonic_ns": 12587588131023,
+      "response_observed_monotonic_ns": 12587594597554,
+      "frame_observed_monotonic_ns": 12587608239344,
+      "latency_ms": 20.108321,
+      "frame_generation": 179,
+      "serial_response_start": 25552,
+      "serial_response_end": 25612,
+      "serial_frame_start": 25612,
+      "load_pids": []
+    },
+    {
+      "phase": "idle",
+      "cycle": 14,
+      "kind": "focus_terminal",
+      "key": "ret",
+      "sent_monotonic_ns": 12587628096021,
+      "response_observed_monotonic_ns": 12587633344036,
+      "frame_observed_monotonic_ns": 12587646854101,
+      "latency_ms": 18.75808,
+      "frame_generation": 181,
+      "serial_response_start": 25729,
+      "serial_response_end": 25792,
+      "serial_frame_start": 25792,
+      "load_pids": []
+    },
+    {
+      "phase": "idle",
+      "cycle": 14,
+      "kind": "typed_status_enter",
+      "key": "ret",
+      "sent_monotonic_ns": 12587801118261,
+      "response_observed_monotonic_ns": 12587803507915,
+      "frame_observed_monotonic_ns": 12587818875332,
+      "latency_ms": 17.757071,
+      "frame_generation": 188,
+      "serial_response_start": 25829,
+      "serial_response_end": 25916,
+      "serial_frame_start": 25979,
+      "load_pids": [],
+      "typing_events": [
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12587646871206,
+          "qmp_ack_monotonic_ns": 12587647410155
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12587672557429,
+          "qmp_ack_monotonic_ns": 12587673212220
+        },
+        {
+          "key": "a",
+          "sent_monotonic_ns": 12587698309281,
+          "qmp_ack_monotonic_ns": 12587698889350
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12587723987493,
+          "qmp_ack_monotonic_ns": 12587724560632
+        },
+        {
+          "key": "u",
+          "sent_monotonic_ns": 12587749666335,
+          "qmp_ack_monotonic_ns": 12587750294526
+        },
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12587775395102,
+          "qmp_ack_monotonic_ns": 12587775982332
+        }
+      ]
+    },
+    {
+      "phase": "idle",
+      "cycle": 15,
+      "kind": "focus_files",
+      "key": "ret",
+      "sent_monotonic_ns": 12587866940480,
+      "response_observed_monotonic_ns": 12587876193738,
+      "frame_observed_monotonic_ns": 12587888996185,
+      "latency_ms": 22.055705,
+      "frame_generation": 191,
+      "serial_response_start": 26190,
+      "serial_response_end": 26250,
+      "serial_frame_start": 26250,
+      "load_pids": []
+    },
+    {
+      "phase": "idle",
+      "cycle": 15,
+      "kind": "focus_terminal",
+      "key": "ret",
+      "sent_monotonic_ns": 12587908662130,
+      "response_observed_monotonic_ns": 12587912093238,
+      "frame_observed_monotonic_ns": 12587924821450,
+      "latency_ms": 16.15932,
+      "frame_generation": 193,
+      "serial_response_start": 26367,
+      "serial_response_end": 26430,
+      "serial_frame_start": 26430,
+      "load_pids": []
+    },
+    {
+      "phase": "idle",
+      "cycle": 15,
+      "kind": "typed_status_enter",
+      "key": "ret",
+      "sent_monotonic_ns": 12588078542930,
+      "response_observed_monotonic_ns": 12588089599541,
+      "frame_observed_monotonic_ns": 12588119335434,
+      "latency_ms": 40.792504,
+      "frame_generation": 200,
+      "serial_response_start": 26467,
+      "serial_response_end": 26554,
+      "serial_frame_start": 26617,
+      "load_pids": [],
+      "typing_events": [
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12587924829141,
+          "qmp_ack_monotonic_ns": 12587925316338
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12587950419518,
+          "qmp_ack_monotonic_ns": 12587950951666
+        },
+        {
+          "key": "a",
+          "sent_monotonic_ns": 12587976044842,
+          "qmp_ack_monotonic_ns": 12587976518313
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12588001600221,
+          "qmp_ack_monotonic_ns": 12588002093392
+        },
+        {
+          "key": "u",
+          "sent_monotonic_ns": 12588027224363,
+          "qmp_ack_monotonic_ns": 12588027791153
+        },
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12588052880482,
+          "qmp_ack_monotonic_ns": 12588053454192
+        }
+      ]
+    },
+    {
+      "phase": "idle",
+      "cycle": 16,
+      "kind": "focus_files",
+      "key": "ret",
+      "sent_monotonic_ns": 12588157675444,
+      "response_observed_monotonic_ns": 12588168130868,
+      "frame_observed_monotonic_ns": 12588178514907,
+      "latency_ms": 20.839463,
+      "frame_generation": 203,
+      "serial_response_start": 26828,
+      "serial_response_end": 26888,
+      "serial_frame_start": 26888,
+      "load_pids": []
+    },
+    {
+      "phase": "idle",
+      "cycle": 16,
+      "kind": "focus_terminal",
+      "key": "ret",
+      "sent_monotonic_ns": 12588197839356,
+      "response_observed_monotonic_ns": 12588203783287,
+      "frame_observed_monotonic_ns": 12588216745876,
+      "latency_ms": 18.90652,
+      "frame_generation": 205,
+      "serial_response_start": 27005,
+      "serial_response_end": 27068,
+      "serial_frame_start": 27068,
+      "load_pids": []
+    },
+    {
+      "phase": "idle",
+      "cycle": 16,
+      "kind": "typed_status_enter",
+      "key": "ret",
+      "sent_monotonic_ns": 12588370450691,
+      "response_observed_monotonic_ns": 12588373371103,
+      "frame_observed_monotonic_ns": 12588388548808,
+      "latency_ms": 18.098117,
+      "frame_generation": 212,
+      "serial_response_start": 27105,
+      "serial_response_end": 27192,
+      "serial_frame_start": 27255,
+      "load_pids": [],
+      "typing_events": [
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12588216754478,
+          "qmp_ack_monotonic_ns": 12588217244569
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12588242335391,
+          "qmp_ack_monotonic_ns": 12588242853499
+        },
+        {
+          "key": "a",
+          "sent_monotonic_ns": 12588267944700,
+          "qmp_ack_monotonic_ns": 12588268555656
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12588293668109,
+          "qmp_ack_monotonic_ns": 12588294204995
+        },
+        {
+          "key": "u",
+          "sent_monotonic_ns": 12588319289616,
+          "qmp_ack_monotonic_ns": 12588319777679
+        },
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12588344860530,
+          "qmp_ack_monotonic_ns": 12588345349554
+        }
+      ]
+    },
+    {
+      "phase": "idle",
+      "cycle": 17,
+      "kind": "focus_files",
+      "key": "ret",
+      "sent_monotonic_ns": 12588428499204,
+      "response_observed_monotonic_ns": 12588436146878,
+      "frame_observed_monotonic_ns": 12588454265336,
+      "latency_ms": 25.766132,
+      "frame_generation": 215,
+      "serial_response_start": 27466,
+      "serial_response_end": 27526,
+      "serial_frame_start": 27526,
+      "load_pids": []
+    },
+    {
+      "phase": "idle",
+      "cycle": 17,
+      "kind": "focus_terminal",
+      "key": "ret",
+      "sent_monotonic_ns": 12588478305611,
+      "response_observed_monotonic_ns": 12588483277287,
+      "frame_observed_monotonic_ns": 12588496802845,
+      "latency_ms": 18.497234,
+      "frame_generation": 217,
+      "serial_response_start": 27643,
+      "serial_response_end": 27706,
+      "serial_frame_start": 27706,
+      "load_pids": []
+    },
+    {
+      "phase": "idle",
+      "cycle": 17,
+      "kind": "typed_status_enter",
+      "key": "ret",
+      "sent_monotonic_ns": 12588650907197,
+      "response_observed_monotonic_ns": 12588653235987,
+      "frame_observed_monotonic_ns": 12588668467282,
+      "latency_ms": 17.560085,
+      "frame_generation": 224,
+      "serial_response_start": 27743,
+      "serial_response_end": 27830,
+      "serial_frame_start": 27893,
+      "load_pids": [],
+      "typing_events": [
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12588496816034,
+          "qmp_ack_monotonic_ns": 12588497373530
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12588522474868,
+          "qmp_ack_monotonic_ns": 12588523056199
+        },
+        {
+          "key": "a",
+          "sent_monotonic_ns": 12588548195312,
+          "qmp_ack_monotonic_ns": 12588548776222
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12588573873924,
+          "qmp_ack_monotonic_ns": 12588574408506
+        },
+        {
+          "key": "u",
+          "sent_monotonic_ns": 12588599498907,
+          "qmp_ack_monotonic_ns": 12588600022112
+        },
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12588625129569,
+          "qmp_ack_monotonic_ns": 12588625767894
+        }
+      ]
+    },
+    {
+      "phase": "idle",
+      "cycle": 18,
+      "kind": "focus_files",
+      "key": "ret",
+      "sent_monotonic_ns": 12588707370357,
+      "response_observed_monotonic_ns": 12588714314034,
+      "frame_observed_monotonic_ns": 12588727909084,
+      "latency_ms": 20.538727,
+      "frame_generation": 227,
+      "serial_response_start": 28104,
+      "serial_response_end": 28164,
+      "serial_frame_start": 28164,
+      "load_pids": []
+    },
+    {
+      "phase": "idle",
+      "cycle": 18,
+      "kind": "focus_terminal",
+      "key": "ret",
+      "sent_monotonic_ns": 12588747413129,
+      "response_observed_monotonic_ns": 12588753213443,
+      "frame_observed_monotonic_ns": 12588766731008,
+      "latency_ms": 19.317879,
+      "frame_generation": 229,
+      "serial_response_start": 28281,
+      "serial_response_end": 28344,
+      "serial_frame_start": 28344,
+      "load_pids": []
+    },
+    {
+      "phase": "idle",
+      "cycle": 18,
+      "kind": "typed_status_enter",
+      "key": "ret",
+      "sent_monotonic_ns": 12588921344596,
+      "response_observed_monotonic_ns": 12588923181908,
+      "frame_observed_monotonic_ns": 12588937931539,
+      "latency_ms": 16.586943,
+      "frame_generation": 236,
+      "serial_response_start": 28381,
+      "serial_response_end": 28468,
+      "serial_frame_start": 28531,
+      "load_pids": [],
+      "typing_events": [
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12588766743186,
+          "qmp_ack_monotonic_ns": 12588767341673
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12588792466535,
+          "qmp_ack_monotonic_ns": 12588793201554
+        },
+        {
+          "key": "a",
+          "sent_monotonic_ns": 12588818310793,
+          "qmp_ack_monotonic_ns": 12588818919515
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12588844062434,
+          "qmp_ack_monotonic_ns": 12588844739106
+        },
+        {
+          "key": "u",
+          "sent_monotonic_ns": 12588869849417,
+          "qmp_ack_monotonic_ns": 12588870531087
+        },
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12588895637381,
+          "qmp_ack_monotonic_ns": 12588896239052
+        }
+      ]
+    },
+    {
+      "phase": "idle",
+      "cycle": 19,
+      "kind": "focus_files",
+      "key": "ret",
+      "sent_monotonic_ns": 12588977421523,
+      "response_observed_monotonic_ns": 12588984205283,
+      "frame_observed_monotonic_ns": 12588997805842,
+      "latency_ms": 20.384319,
+      "frame_generation": 239,
+      "serial_response_start": 28742,
+      "serial_response_end": 28802,
+      "serial_frame_start": 28802,
+      "load_pids": []
+    },
+    {
+      "phase": "idle",
+      "cycle": 19,
+      "kind": "focus_terminal",
+      "key": "ret",
+      "sent_monotonic_ns": 12589017407001,
+      "response_observed_monotonic_ns": 12589023233473,
+      "frame_observed_monotonic_ns": 12589036783226,
+      "latency_ms": 19.376225,
+      "frame_generation": 241,
+      "serial_response_start": 28919,
+      "serial_response_end": 28982,
+      "serial_frame_start": 28982,
+      "load_pids": []
+    },
+    {
+      "phase": "idle",
+      "cycle": 19,
+      "kind": "typed_status_enter",
+      "key": "ret",
+      "sent_monotonic_ns": 12589191991905,
+      "response_observed_monotonic_ns": 12589193174377,
+      "frame_observed_monotonic_ns": 12589210309553,
+      "latency_ms": 18.317648,
+      "frame_generation": 248,
+      "serial_response_start": 29019,
+      "serial_response_end": 29106,
+      "serial_frame_start": 29169,
+      "load_pids": [],
+      "typing_events": [
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12589036797137,
+          "qmp_ack_monotonic_ns": 12589037397276
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12589062497081,
+          "qmp_ack_monotonic_ns": 12589063099123
+        },
+        {
+          "key": "a",
+          "sent_monotonic_ns": 12589088223995,
+          "qmp_ack_monotonic_ns": 12589088825166
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12589113966752,
+          "qmp_ack_monotonic_ns": 12589114560402
+        },
+        {
+          "key": "u",
+          "sent_monotonic_ns": 12589139673707,
+          "qmp_ack_monotonic_ns": 12589140299734
+        },
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12589165416434,
+          "qmp_ack_monotonic_ns": 12589166786114
+        }
+      ]
+    },
+    {
+      "phase": "loaded",
+      "cycle": 0,
+      "kind": "focus_files",
+      "key": "ret",
+      "sent_monotonic_ns": 12590537420454,
+      "response_observed_monotonic_ns": 12590544248630,
+      "frame_observed_monotonic_ns": 12590557938381,
+      "latency_ms": 20.517927,
+      "frame_generation": 319,
+      "serial_response_start": 31148,
+      "serial_response_end": 31208,
+      "serial_frame_start": 31208,
+      "load_pids": [
+        23,
+        24
+      ]
+    },
+    {
+      "phase": "loaded",
+      "cycle": 0,
+      "kind": "focus_terminal",
+      "key": "ret",
+      "sent_monotonic_ns": 12590587293971,
+      "response_observed_monotonic_ns": 12590603023584,
+      "frame_observed_monotonic_ns": 12590616787906,
+      "latency_ms": 29.493935,
+      "frame_generation": 321,
+      "serial_response_start": 31325,
+      "serial_response_end": 31388,
+      "serial_frame_start": 31388,
+      "load_pids": [
+        23,
+        24
+      ]
+    },
+    {
+      "phase": "loaded",
+      "cycle": 0,
+      "kind": "typed_status_enter",
+      "key": "ret",
+      "sent_monotonic_ns": 12590770784749,
+      "response_observed_monotonic_ns": 12590776855362,
+      "frame_observed_monotonic_ns": 12590791739743,
+      "latency_ms": 20.954994,
+      "frame_generation": 328,
+      "serial_response_start": 31425,
+      "serial_response_end": 31512,
+      "serial_frame_start": 31575,
+      "load_pids": [
+        23,
+        24
+      ],
+      "typing_events": [
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12590616799062,
+          "qmp_ack_monotonic_ns": 12590617345572
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12590642444034,
+          "qmp_ack_monotonic_ns": 12590642938877
+        },
+        {
+          "key": "a",
+          "sent_monotonic_ns": 12590668086534,
+          "qmp_ack_monotonic_ns": 12590668658511
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12590693764365,
+          "qmp_ack_monotonic_ns": 12590694304235
+        },
+        {
+          "key": "u",
+          "sent_monotonic_ns": 12590719408516,
+          "qmp_ack_monotonic_ns": 12590719992852
+        },
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12590745132716,
+          "qmp_ack_monotonic_ns": 12590745678414
+        }
+      ]
+    },
+    {
+      "phase": "loaded",
+      "cycle": 1,
+      "kind": "focus_files",
+      "key": "ret",
+      "sent_monotonic_ns": 12590857388681,
+      "response_observed_monotonic_ns": 12590864192712,
+      "frame_observed_monotonic_ns": 12590877958455,
+      "latency_ms": 20.569774,
+      "frame_generation": 331,
+      "serial_response_start": 31786,
+      "serial_response_end": 31846,
+      "serial_frame_start": 31846,
+      "load_pids": [
+        23,
+        24
+      ]
+    },
+    {
+      "phase": "loaded",
+      "cycle": 1,
+      "kind": "focus_terminal",
+      "key": "ret",
+      "sent_monotonic_ns": 12590907373693,
+      "response_observed_monotonic_ns": 12590923008546,
+      "frame_observed_monotonic_ns": 12590936808771,
+      "latency_ms": 29.435078,
+      "frame_generation": 333,
+      "serial_response_start": 31963,
+      "serial_response_end": 32026,
+      "serial_frame_start": 32026,
+      "load_pids": [
+        23,
+        24
+      ]
+    },
+    {
+      "phase": "loaded",
+      "cycle": 1,
+      "kind": "typed_status_enter",
+      "key": "ret",
+      "sent_monotonic_ns": 12591090807517,
+      "response_observed_monotonic_ns": 12591111833958,
+      "frame_observed_monotonic_ns": 12591133224287,
+      "latency_ms": 42.41677,
+      "frame_generation": 340,
+      "serial_response_start": 32063,
+      "serial_response_end": 32150,
+      "serial_frame_start": 32213,
+      "load_pids": [
+        23,
+        24
+      ],
+      "typing_events": [
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12590936821039,
+          "qmp_ack_monotonic_ns": 12590937380458
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12590962496226,
+          "qmp_ack_monotonic_ns": 12590963087803
+        },
+        {
+          "key": "a",
+          "sent_monotonic_ns": 12590988183441,
+          "qmp_ack_monotonic_ns": 12590988713507
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12591013811960,
+          "qmp_ack_monotonic_ns": 12591014418268
+        },
+        {
+          "key": "u",
+          "sent_monotonic_ns": 12591039519084,
+          "qmp_ack_monotonic_ns": 12591040081507
+        },
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12591065178258,
+          "qmp_ack_monotonic_ns": 12591065677638
+        }
+      ]
+    },
+    {
+      "phase": "loaded",
+      "cycle": 2,
+      "kind": "focus_files",
+      "key": "ret",
+      "sent_monotonic_ns": 12591207542648,
+      "response_observed_monotonic_ns": 12591214164008,
+      "frame_observed_monotonic_ns": 12591227960387,
+      "latency_ms": 20.417739,
+      "frame_generation": 343,
+      "serial_response_start": 32424,
+      "serial_response_end": 32484,
+      "serial_frame_start": 32484,
+      "load_pids": [
+        23,
+        24
+      ]
+    },
+    {
+      "phase": "loaded",
+      "cycle": 2,
+      "kind": "focus_terminal",
+      "key": "ret",
+      "sent_monotonic_ns": 12591257391168,
+      "response_observed_monotonic_ns": 12591273013522,
+      "frame_observed_monotonic_ns": 12591286700018,
+      "latency_ms": 29.30885,
+      "frame_generation": 345,
+      "serial_response_start": 32601,
+      "serial_response_end": 32664,
+      "serial_frame_start": 32664,
+      "load_pids": [
+        23,
+        24
+      ]
+    },
+    {
+      "phase": "loaded",
+      "cycle": 2,
+      "kind": "typed_status_enter",
+      "key": "ret",
+      "sent_monotonic_ns": 12591440644533,
+      "response_observed_monotonic_ns": 12591446725742,
+      "frame_observed_monotonic_ns": 12591461653467,
+      "latency_ms": 21.008934,
+      "frame_generation": 352,
+      "serial_response_start": 32701,
+      "serial_response_end": 32788,
+      "serial_frame_start": 32851,
+      "load_pids": [
+        23,
+        24
+      ],
+      "typing_events": [
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12591286712907,
+          "qmp_ack_monotonic_ns": 12591287276032
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12591312391650,
+          "qmp_ack_monotonic_ns": 12591312954895
+        },
+        {
+          "key": "a",
+          "sent_monotonic_ns": 12591338082260,
+          "qmp_ack_monotonic_ns": 12591338614969
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12591363709006,
+          "qmp_ack_monotonic_ns": 12591364227814
+        },
+        {
+          "key": "u",
+          "sent_monotonic_ns": 12591389326277,
+          "qmp_ack_monotonic_ns": 12591389855811
+        },
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12591414951029,
+          "qmp_ack_monotonic_ns": 12591415542795
+        }
+      ]
+    },
+    {
+      "phase": "loaded",
+      "cycle": 3,
+      "kind": "focus_files",
+      "key": "ret",
+      "sent_monotonic_ns": 12591527219430,
+      "response_observed_monotonic_ns": 12591534077631,
+      "frame_observed_monotonic_ns": 12591547801522,
+      "latency_ms": 20.582092,
+      "frame_generation": 355,
+      "serial_response_start": 33062,
+      "serial_response_end": 33122,
+      "serial_frame_start": 33122,
+      "load_pids": [
+        23,
+        24
+      ]
+    },
+    {
+      "phase": "loaded",
+      "cycle": 3,
+      "kind": "focus_terminal",
+      "key": "ret",
+      "sent_monotonic_ns": 12591577179224,
+      "response_observed_monotonic_ns": 12591593077537,
+      "frame_observed_monotonic_ns": 12591606875598,
+      "latency_ms": 29.696374,
+      "frame_generation": 357,
+      "serial_response_start": 33239,
+      "serial_response_end": 33302,
+      "serial_frame_start": 33302,
+      "load_pids": [
+        23,
+        24
+      ]
+    },
+    {
+      "phase": "loaded",
+      "cycle": 3,
+      "kind": "typed_status_enter",
+      "key": "ret",
+      "sent_monotonic_ns": 12591761137892,
+      "response_observed_monotonic_ns": 12591766872578,
+      "frame_observed_monotonic_ns": 12591781840762,
+      "latency_ms": 20.70287,
+      "frame_generation": 364,
+      "serial_response_start": 33339,
+      "serial_response_end": 33426,
+      "serial_frame_start": 33489,
+      "load_pids": [
+        23,
+        24
+      ],
+      "typing_events": [
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12591606888327,
+          "qmp_ack_monotonic_ns": 12591607455297
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12591632553629,
+          "qmp_ack_monotonic_ns": 12591633076133
+        },
+        {
+          "key": "a",
+          "sent_monotonic_ns": 12591658171701,
+          "qmp_ack_monotonic_ns": 12591658897347
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12591684024561,
+          "qmp_ack_monotonic_ns": 12591684528959
+        },
+        {
+          "key": "u",
+          "sent_monotonic_ns": 12591709632168,
+          "qmp_ack_monotonic_ns": 12591710239268
+        },
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12591735357089,
+          "qmp_ack_monotonic_ns": 12591736018669
+        }
+      ]
+    },
+    {
+      "phase": "loaded",
+      "cycle": 4,
+      "kind": "focus_files",
+      "key": "ret",
+      "sent_monotonic_ns": 12591847339356,
+      "response_observed_monotonic_ns": 12591854124909,
+      "frame_observed_monotonic_ns": 12591867775091,
+      "latency_ms": 20.435735,
+      "frame_generation": 367,
+      "serial_response_start": 33700,
+      "serial_response_end": 33760,
+      "serial_frame_start": 33760,
+      "load_pids": [
+        23,
+        24
+      ]
+    },
+    {
+      "phase": "loaded",
+      "cycle": 4,
+      "kind": "focus_terminal",
+      "key": "ret",
+      "sent_monotonic_ns": 12591897296126,
+      "response_observed_monotonic_ns": 12591913144374,
+      "frame_observed_monotonic_ns": 12591926615170,
+      "latency_ms": 29.319044,
+      "frame_generation": 369,
+      "serial_response_start": 33877,
+      "serial_response_end": 33940,
+      "serial_frame_start": 33940,
+      "load_pids": [
+        23,
+        24
+      ]
+    },
+    {
+      "phase": "loaded",
+      "cycle": 4,
+      "kind": "typed_status_enter",
+      "key": "ret",
+      "sent_monotonic_ns": 12592081729387,
+      "response_observed_monotonic_ns": 12592087258928,
+      "frame_observed_monotonic_ns": 12592102738131,
+      "latency_ms": 21.008744,
+      "frame_generation": 376,
+      "serial_response_start": 33977,
+      "serial_response_end": 34064,
+      "serial_frame_start": 34127,
+      "load_pids": [
+        23,
+        24
+      ],
+      "typing_events": [
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12591926635791,
+          "qmp_ack_monotonic_ns": 12591927150083
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12591952243288,
+          "qmp_ack_monotonic_ns": 12591952743589
+        },
+        {
+          "key": "a",
+          "sent_monotonic_ns": 12591977843864,
+          "qmp_ack_monotonic_ns": 12591978382582
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12592003706409,
+          "qmp_ack_monotonic_ns": 12592004653732
+        },
+        {
+          "key": "u",
+          "sent_monotonic_ns": 12592029766476,
+          "qmp_ack_monotonic_ns": 12592030663605
+        },
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12592055775186,
+          "qmp_ack_monotonic_ns": 12592056594570
+        }
+      ]
+    },
+    {
+      "phase": "loaded",
+      "cycle": 5,
+      "kind": "focus_files",
+      "key": "ret",
+      "sent_monotonic_ns": 12592177198100,
+      "response_observed_monotonic_ns": 12592184243658,
+      "frame_observed_monotonic_ns": 12592198122369,
+      "latency_ms": 20.924269,
+      "frame_generation": 379,
+      "serial_response_start": 34338,
+      "serial_response_end": 34398,
+      "serial_frame_start": 34398,
+      "load_pids": [
+        23,
+        24
+      ]
+    },
+    {
+      "phase": "loaded",
+      "cycle": 5,
+      "kind": "focus_terminal",
+      "key": "ret",
+      "sent_monotonic_ns": 12592227224572,
+      "response_observed_monotonic_ns": 12592242943480,
+      "frame_observed_monotonic_ns": 12592256737354,
+      "latency_ms": 29.512782,
+      "frame_generation": 381,
+      "serial_response_start": 34515,
+      "serial_response_end": 34578,
+      "serial_frame_start": 34578,
+      "load_pids": [
+        23,
+        24
+      ]
+    },
+    {
+      "phase": "loaded",
+      "cycle": 5,
+      "kind": "typed_status_enter",
+      "key": "ret",
+      "sent_monotonic_ns": 12592412195130,
+      "response_observed_monotonic_ns": 12592417149910,
+      "frame_observed_monotonic_ns": 12592432388665,
+      "latency_ms": 20.193535,
+      "frame_generation": 388,
+      "serial_response_start": 34615,
+      "serial_response_end": 34702,
+      "serial_frame_start": 34765,
+      "load_pids": [
+        23,
+        24
+      ],
+      "typing_events": [
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12592256750434,
+          "qmp_ack_monotonic_ns": 12592257330423
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12592282487222,
+          "qmp_ack_monotonic_ns": 12592283331713
+        },
+        {
+          "key": "a",
+          "sent_monotonic_ns": 12592308446610,
+          "qmp_ack_monotonic_ns": 12592309257782
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12592334379038,
+          "qmp_ack_monotonic_ns": 12592335161347
+        },
+        {
+          "key": "u",
+          "sent_monotonic_ns": 12592360269063,
+          "qmp_ack_monotonic_ns": 12592361084431
+        },
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12592386205677,
+          "qmp_ack_monotonic_ns": 12592387074314
+        }
+      ]
+    },
+    {
+      "phase": "loaded",
+      "cycle": 6,
+      "kind": "focus_files",
+      "key": "ret",
+      "sent_monotonic_ns": 12592497303805,
+      "response_observed_monotonic_ns": 12592504118801,
+      "frame_observed_monotonic_ns": 12592517916652,
+      "latency_ms": 20.612847,
+      "frame_generation": 391,
+      "serial_response_start": 34976,
+      "serial_response_end": 35036,
+      "serial_frame_start": 35036,
+      "load_pids": [
+        23,
+        24
+      ]
+    },
+    {
+      "phase": "loaded",
+      "cycle": 6,
+      "kind": "focus_terminal",
+      "key": "ret",
+      "sent_monotonic_ns": 12592547126776,
+      "response_observed_monotonic_ns": 12592562909527,
+      "frame_observed_monotonic_ns": 12592576537757,
+      "latency_ms": 29.410981,
+      "frame_generation": 393,
+      "serial_response_start": 35153,
+      "serial_response_end": 35216,
+      "serial_frame_start": 35216,
+      "load_pids": [
+        23,
+        24
+      ]
+    },
+    {
+      "phase": "loaded",
+      "cycle": 6,
+      "kind": "typed_status_enter",
+      "key": "ret",
+      "sent_monotonic_ns": 12592732085996,
+      "response_observed_monotonic_ns": 12592737116920,
+      "frame_observed_monotonic_ns": 12592753901215,
+      "latency_ms": 21.815219,
+      "frame_generation": 400,
+      "serial_response_start": 35253,
+      "serial_response_end": 35340,
+      "serial_frame_start": 35403,
+      "load_pids": [
+        23,
+        24
+      ],
+      "typing_events": [
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12592576549845,
+          "qmp_ack_monotonic_ns": 12592577152448
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12592602261005,
+          "qmp_ack_monotonic_ns": 12592603086228
+        },
+        {
+          "key": "a",
+          "sent_monotonic_ns": 12592628202406,
+          "qmp_ack_monotonic_ns": 12592629082570
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12592654200552,
+          "qmp_ack_monotonic_ns": 12592655012805
+        },
+        {
+          "key": "u",
+          "sent_monotonic_ns": 12592680123636,
+          "qmp_ack_monotonic_ns": 12592681012934
+        },
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12592706131556,
+          "qmp_ack_monotonic_ns": 12592706942708
+        }
+      ]
+    },
+    {
+      "phase": "loaded",
+      "cycle": 7,
+      "kind": "focus_files",
+      "key": "ret",
+      "sent_monotonic_ns": 12592827226323,
+      "response_observed_monotonic_ns": 12592836786757,
+      "frame_observed_monotonic_ns": 12592850452762,
+      "latency_ms": 23.226439,
+      "frame_generation": 403,
+      "serial_response_start": 35614,
+      "serial_response_end": 35674,
+      "serial_frame_start": 35674,
+      "load_pids": [
+        23,
+        24
+      ]
+    },
+    {
+      "phase": "loaded",
+      "cycle": 7,
+      "kind": "focus_terminal",
+      "key": "ret",
+      "sent_monotonic_ns": 12592877229241,
+      "response_observed_monotonic_ns": 12592892942409,
+      "frame_observed_monotonic_ns": 12592906807129,
+      "latency_ms": 29.577888,
+      "frame_generation": 405,
+      "serial_response_start": 35791,
+      "serial_response_end": 35854,
+      "serial_frame_start": 35854,
+      "load_pids": [
+        23,
+        24
+      ]
+    },
+    {
+      "phase": "loaded",
+      "cycle": 7,
+      "kind": "typed_status_enter",
+      "key": "ret",
+      "sent_monotonic_ns": 12593061293820,
+      "response_observed_monotonic_ns": 12593066737970,
+      "frame_observed_monotonic_ns": 12593082665236,
+      "latency_ms": 21.371416,
+      "frame_generation": 412,
+      "serial_response_start": 35891,
+      "serial_response_end": 35978,
+      "serial_frame_start": 36041,
+      "load_pids": [
+        23,
+        24
+      ],
+      "typing_events": [
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12592906821180,
+          "qmp_ack_monotonic_ns": 12592907455921
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12592932568043,
+          "qmp_ack_monotonic_ns": 12592933387166
+        },
+        {
+          "key": "a",
+          "sent_monotonic_ns": 12592958503335,
+          "qmp_ack_monotonic_ns": 12592959384455
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12592984482688,
+          "qmp_ack_monotonic_ns": 12592985010810
+        },
+        {
+          "key": "u",
+          "sent_monotonic_ns": 12593010096063,
+          "qmp_ack_monotonic_ns": 12593010615122
+        },
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12593035695668,
+          "qmp_ack_monotonic_ns": 12593036205363
+        }
+      ]
+    },
+    {
+      "phase": "loaded",
+      "cycle": 8,
+      "kind": "focus_files",
+      "key": "ret",
+      "sent_monotonic_ns": 12593148114177,
+      "response_observed_monotonic_ns": 12593156174117,
+      "frame_observed_monotonic_ns": 12593172111067,
+      "latency_ms": 23.99689,
+      "frame_generation": 415,
+      "serial_response_start": 36252,
+      "serial_response_end": 36312,
+      "serial_frame_start": 36312,
+      "load_pids": [
+        23,
+        24
+      ]
+    },
+    {
+      "phase": "loaded",
+      "cycle": 8,
+      "kind": "focus_terminal",
+      "key": "ret",
+      "sent_monotonic_ns": 12593200209293,
+      "response_observed_monotonic_ns": 12593216134121,
+      "frame_observed_monotonic_ns": 12593226615774,
+      "latency_ms": 26.406481,
+      "frame_generation": 417,
+      "serial_response_start": 36429,
+      "serial_response_end": 36492,
+      "serial_frame_start": 36492,
+      "load_pids": [
+        23,
+        24
+      ]
+    },
+    {
+      "phase": "loaded",
+      "cycle": 8,
+      "kind": "typed_status_enter",
+      "key": "ret",
+      "sent_monotonic_ns": 12593380552261,
+      "response_observed_monotonic_ns": 12593386654736,
+      "frame_observed_monotonic_ns": 12593402611645,
+      "latency_ms": 22.059384,
+      "frame_generation": 424,
+      "serial_response_start": 36529,
+      "serial_response_end": 36616,
+      "serial_frame_start": 36679,
+      "load_pids": [
+        23,
+        24
+      ],
+      "typing_events": [
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12593226626089,
+          "qmp_ack_monotonic_ns": 12593227135739
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12593252220612,
+          "qmp_ack_monotonic_ns": 12593252787451
+        },
+        {
+          "key": "a",
+          "sent_monotonic_ns": 12593277878042,
+          "qmp_ack_monotonic_ns": 12593278539232
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12593303625496,
+          "qmp_ack_monotonic_ns": 12593304157364
+        },
+        {
+          "key": "u",
+          "sent_monotonic_ns": 12593329247785,
+          "qmp_ack_monotonic_ns": 12593329753123
+        },
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12593354842973,
+          "qmp_ack_monotonic_ns": 12593355463833
+        }
+      ]
+    },
+    {
+      "phase": "loaded",
+      "cycle": 9,
+      "kind": "focus_files",
+      "key": "ret",
+      "sent_monotonic_ns": 12593467054695,
+      "response_observed_monotonic_ns": 12593476127402,
+      "frame_observed_monotonic_ns": 12593492106278,
+      "latency_ms": 25.051583,
+      "frame_generation": 427,
+      "serial_response_start": 36890,
+      "serial_response_end": 36950,
+      "serial_frame_start": 36950,
+      "load_pids": [
+        23,
+        24
+      ]
+    },
+    {
+      "phase": "loaded",
+      "cycle": 9,
+      "kind": "focus_terminal",
+      "key": "ret",
+      "sent_monotonic_ns": 12593522694694,
+      "response_observed_monotonic_ns": 12593536097575,
+      "frame_observed_monotonic_ns": 12593549116587,
+      "latency_ms": 26.421893,
+      "frame_generation": 429,
+      "serial_response_start": 37067,
+      "serial_response_end": 37130,
+      "serial_frame_start": 37130,
+      "load_pids": [
+        23,
+        24
+      ]
+    },
+    {
+      "phase": "loaded",
+      "cycle": 9,
+      "kind": "typed_status_enter",
+      "key": "ret",
+      "sent_monotonic_ns": 12593703147643,
+      "response_observed_monotonic_ns": 12593706681844,
+      "frame_observed_monotonic_ns": 12593722661457,
+      "latency_ms": 19.513814,
+      "frame_generation": 436,
+      "serial_response_start": 37167,
+      "serial_response_end": 37254,
+      "serial_frame_start": 37317,
+      "load_pids": [
+        23,
+        24
+      ],
+      "typing_events": [
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12593549127243,
+          "qmp_ack_monotonic_ns": 12593549700638
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12593574788765,
+          "qmp_ack_monotonic_ns": 12593575400972
+        },
+        {
+          "key": "a",
+          "sent_monotonic_ns": 12593600493715,
+          "qmp_ack_monotonic_ns": 12593601050180
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12593626147140,
+          "qmp_ack_monotonic_ns": 12593626743864
+        },
+        {
+          "key": "u",
+          "sent_monotonic_ns": 12593651844860,
+          "qmp_ack_monotonic_ns": 12593652472140
+        },
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12593677558644,
+          "qmp_ack_monotonic_ns": 12593678068319
+        }
+      ]
+    },
+    {
+      "phase": "loaded",
+      "cycle": 10,
+      "kind": "focus_files",
+      "key": "ret",
+      "sent_monotonic_ns": 12593789182386,
+      "response_observed_monotonic_ns": 12593796204739,
+      "frame_observed_monotonic_ns": 12593812139106,
+      "latency_ms": 22.95672,
+      "frame_generation": 439,
+      "serial_response_start": 37528,
+      "serial_response_end": 37588,
+      "serial_frame_start": 37588,
+      "load_pids": [
+        23,
+        24
+      ]
+    },
+    {
+      "phase": "loaded",
+      "cycle": 10,
+      "kind": "focus_terminal",
+      "key": "ret",
+      "sent_monotonic_ns": 12593841246887,
+      "response_observed_monotonic_ns": 12593855515266,
+      "frame_observed_monotonic_ns": 12593870947157,
+      "latency_ms": 29.70027,
+      "frame_generation": 441,
+      "serial_response_start": 37705,
+      "serial_response_end": 37768,
+      "serial_frame_start": 37768,
+      "load_pids": [
+        23,
+        24
+      ]
+    },
+    {
+      "phase": "loaded",
+      "cycle": 10,
+      "kind": "typed_status_enter",
+      "key": "ret",
+      "sent_monotonic_ns": 12594024959862,
+      "response_observed_monotonic_ns": 12594026623746,
+      "frame_observed_monotonic_ns": 12594043093916,
+      "latency_ms": 18.134054,
+      "frame_generation": 448,
+      "serial_response_start": 37805,
+      "serial_response_end": 37892,
+      "serial_frame_start": 37955,
+      "load_pids": [
+        23,
+        24
+      ],
+      "typing_events": [
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12593870957853,
+          "qmp_ack_monotonic_ns": 12593871590676
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12593896682989,
+          "qmp_ack_monotonic_ns": 12593897246203
+        },
+        {
+          "key": "a",
+          "sent_monotonic_ns": 12593922333940,
+          "qmp_ack_monotonic_ns": 12593922898977
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12593948059717,
+          "qmp_ack_monotonic_ns": 12593948654819
+        },
+        {
+          "key": "u",
+          "sent_monotonic_ns": 12593973735104,
+          "qmp_ack_monotonic_ns": 12593974261914
+        },
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12593999354899,
+          "qmp_ack_monotonic_ns": 12593999868610
+        }
+      ]
+    },
+    {
+      "phase": "loaded",
+      "cycle": 11,
+      "kind": "focus_files",
+      "key": "ret",
+      "sent_monotonic_ns": 12594119604163,
+      "response_observed_monotonic_ns": 12594126384188,
+      "frame_observed_monotonic_ns": 12594142639830,
+      "latency_ms": 23.035667,
+      "frame_generation": 451,
+      "serial_response_start": 38166,
+      "serial_response_end": 38226,
+      "serial_frame_start": 38226,
+      "load_pids": [
+        23,
+        24
+      ]
+    },
+    {
+      "phase": "loaded",
+      "cycle": 11,
+      "kind": "focus_terminal",
+      "key": "ret",
+      "sent_monotonic_ns": 12594172123459,
+      "response_observed_monotonic_ns": 12594185436692,
+      "frame_observed_monotonic_ns": 12594199281252,
+      "latency_ms": 27.157793,
+      "frame_generation": 453,
+      "serial_response_start": 38343,
+      "serial_response_end": 38406,
+      "serial_frame_start": 38406,
+      "load_pids": [
+        23,
+        24
+      ]
+    },
+    {
+      "phase": "loaded",
+      "cycle": 11,
+      "kind": "typed_status_enter",
+      "key": "ret",
+      "sent_monotonic_ns": 12594352986762,
+      "response_observed_monotonic_ns": 12594356655857,
+      "frame_observed_monotonic_ns": 12594372243309,
+      "latency_ms": 19.256547,
+      "frame_generation": 460,
+      "serial_response_start": 38443,
+      "serial_response_end": 38530,
+      "serial_frame_start": 38593,
+      "load_pids": [
+        23,
+        24
+      ],
+      "typing_events": [
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12594199291307,
+          "qmp_ack_monotonic_ns": 12594199799110
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12594224888308,
+          "qmp_ack_monotonic_ns": 12594225448088
+        },
+        {
+          "key": "a",
+          "sent_monotonic_ns": 12594250534883,
+          "qmp_ack_monotonic_ns": 12594251155382
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12594276238602,
+          "qmp_ack_monotonic_ns": 12594276735688
+        },
+        {
+          "key": "u",
+          "sent_monotonic_ns": 12594301819239,
+          "qmp_ack_monotonic_ns": 12594302325328
+        },
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12594327415118,
+          "qmp_ack_monotonic_ns": 12594327896892
+        }
+      ]
+    },
+    {
+      "phase": "loaded",
+      "cycle": 12,
+      "kind": "focus_files",
+      "key": "ret",
+      "sent_monotonic_ns": 12594437657678,
+      "response_observed_monotonic_ns": 12594444164127,
+      "frame_observed_monotonic_ns": 12594460133225,
+      "latency_ms": 22.475547,
+      "frame_generation": 463,
+      "serial_response_start": 38804,
+      "serial_response_end": 38864,
+      "serial_frame_start": 38864,
+      "load_pids": [
+        23,
+        24
+      ]
+    },
+    {
+      "phase": "loaded",
+      "cycle": 12,
+      "kind": "focus_terminal",
+      "key": "ret",
+      "sent_monotonic_ns": 12594492157057,
+      "response_observed_monotonic_ns": 12594508114377,
+      "frame_observed_monotonic_ns": 12594522986360,
+      "latency_ms": 30.829303,
+      "frame_generation": 465,
+      "serial_response_start": 38981,
+      "serial_response_end": 39044,
+      "serial_frame_start": 39044,
+      "load_pids": [
+        23,
+        24
+      ]
+    },
+    {
+      "phase": "loaded",
+      "cycle": 12,
+      "kind": "typed_status_enter",
+      "key": "ret",
+      "sent_monotonic_ns": 12594678022565,
+      "response_observed_monotonic_ns": 12594687335156,
+      "frame_observed_monotonic_ns": 12594704425495,
+      "latency_ms": 26.40293,
+      "frame_generation": 472,
+      "serial_response_start": 39081,
+      "serial_response_end": 39168,
+      "serial_frame_start": 39231,
+      "load_pids": [
+        23,
+        24
+      ],
+      "typing_events": [
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12594523000401,
+          "qmp_ack_monotonic_ns": 12594523661470
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12594548762987,
+          "qmp_ack_monotonic_ns": 12594549329391
+        },
+        {
+          "key": "a",
+          "sent_monotonic_ns": 12594574422075,
+          "qmp_ack_monotonic_ns": 12594575230622
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12594600329616,
+          "qmp_ack_monotonic_ns": 12594601101429
+        },
+        {
+          "key": "u",
+          "sent_monotonic_ns": 12594626199031,
+          "qmp_ack_monotonic_ns": 12594626971775
+        },
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12594652081765,
+          "qmp_ack_monotonic_ns": 12594652912596
+        }
+      ]
+    },
+    {
+      "phase": "loaded",
+      "cycle": 13,
+      "kind": "focus_files",
+      "key": "ret",
+      "sent_monotonic_ns": 12594784861858,
+      "response_observed_monotonic_ns": 12594800125101,
+      "frame_observed_monotonic_ns": 12594811711676,
+      "latency_ms": 26.849818,
+      "frame_generation": 475,
+      "serial_response_start": 39442,
+      "serial_response_end": 39502,
+      "serial_frame_start": 39502,
+      "load_pids": [
+        23,
+        24
+      ]
+    },
+    {
+      "phase": "loaded",
+      "cycle": 13,
+      "kind": "focus_terminal",
+      "key": "ret",
+      "sent_monotonic_ns": 12594842634797,
+      "response_observed_monotonic_ns": 12594856142569,
+      "frame_observed_monotonic_ns": 12594869168616,
+      "latency_ms": 26.533819,
+      "frame_generation": 477,
+      "serial_response_start": 39619,
+      "serial_response_end": 39682,
+      "serial_frame_start": 39682,
+      "load_pids": [
+        23,
+        24
+      ]
+    },
+    {
+      "phase": "loaded",
+      "cycle": 13,
+      "kind": "typed_status_enter",
+      "key": "ret",
+      "sent_monotonic_ns": 12595024472068,
+      "response_observed_monotonic_ns": 12595027155383,
+      "frame_observed_monotonic_ns": 12595043216236,
+      "latency_ms": 18.744168,
+      "frame_generation": 484,
+      "serial_response_start": 39719,
+      "serial_response_end": 39806,
+      "serial_frame_start": 39869,
+      "load_pids": [
+        23,
+        24
+      ],
+      "typing_events": [
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12594869179281,
+          "qmp_ack_monotonic_ns": 12594869750774
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12594894848215,
+          "qmp_ack_monotonic_ns": 12594895671254
+        },
+        {
+          "key": "a",
+          "sent_monotonic_ns": 12594920768544,
+          "qmp_ack_monotonic_ns": 12594921618333
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12594946715323,
+          "qmp_ack_monotonic_ns": 12594947304546
+        },
+        {
+          "key": "u",
+          "sent_monotonic_ns": 12594972409769,
+          "qmp_ack_monotonic_ns": 12594973312326
+        },
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12594998418740,
+          "qmp_ack_monotonic_ns": 12594999366725
+        }
+      ]
+    },
+    {
+      "phase": "loaded",
+      "cycle": 14,
+      "kind": "focus_files",
+      "key": "ret",
+      "sent_monotonic_ns": 12595117366607,
+      "response_observed_monotonic_ns": 12595124702575,
+      "frame_observed_monotonic_ns": 12595138575057,
+      "latency_ms": 21.20845,
+      "frame_generation": 487,
+      "serial_response_start": 40080,
+      "serial_response_end": 40140,
+      "serial_frame_start": 40140,
+      "load_pids": [
+        23,
+        24
+      ]
+    },
+    {
+      "phase": "loaded",
+      "cycle": 14,
+      "kind": "focus_terminal",
+      "key": "ret",
+      "sent_monotonic_ns": 12595167169939,
+      "response_observed_monotonic_ns": 12595182783069,
+      "frame_observed_monotonic_ns": 12595196656172,
+      "latency_ms": 29.486233,
+      "frame_generation": 489,
+      "serial_response_start": 40257,
+      "serial_response_end": 40320,
+      "serial_frame_start": 40320,
+      "load_pids": [
+        23,
+        24
+      ]
+    },
+    {
+      "phase": "loaded",
+      "cycle": 14,
+      "kind": "typed_status_enter",
+      "key": "ret",
+      "sent_monotonic_ns": 12595352058004,
+      "response_observed_monotonic_ns": 12595356734892,
+      "frame_observed_monotonic_ns": 12595372232872,
+      "latency_ms": 20.174868,
+      "frame_generation": 496,
+      "serial_response_start": 40357,
+      "serial_response_end": 40444,
+      "serial_frame_start": 40507,
+      "load_pids": [
+        23,
+        24
+      ],
+      "typing_events": [
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12595196686567,
+          "qmp_ack_monotonic_ns": 12595197282860
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12595222386170,
+          "qmp_ack_monotonic_ns": 12595223305212
+        },
+        {
+          "key": "a",
+          "sent_monotonic_ns": 12595248414460,
+          "qmp_ack_monotonic_ns": 12595249318629
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12595274419215,
+          "qmp_ack_monotonic_ns": 12595275264868
+        },
+        {
+          "key": "u",
+          "sent_monotonic_ns": 12595300372584,
+          "qmp_ack_monotonic_ns": 12595301308781
+        },
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12595326406312,
+          "qmp_ack_monotonic_ns": 12595326967443
+        }
+      ]
+    },
+    {
+      "phase": "loaded",
+      "cycle": 15,
+      "kind": "focus_files",
+      "key": "ret",
+      "sent_monotonic_ns": 12595436980644,
+      "response_observed_monotonic_ns": 12595444089896,
+      "frame_observed_monotonic_ns": 12595457702172,
+      "latency_ms": 20.721528,
+      "frame_generation": 499,
+      "serial_response_start": 40718,
+      "serial_response_end": 40778,
+      "serial_frame_start": 40778,
+      "load_pids": [
+        23,
+        24
+      ]
+    },
+    {
+      "phase": "loaded",
+      "cycle": 15,
+      "kind": "focus_terminal",
+      "key": "ret",
+      "sent_monotonic_ns": 12595487462080,
+      "response_observed_monotonic_ns": 12595502796988,
+      "frame_observed_monotonic_ns": 12595516725883,
+      "latency_ms": 29.263803,
+      "frame_generation": 501,
+      "serial_response_start": 40895,
+      "serial_response_end": 40958,
+      "serial_frame_start": 40958,
+      "load_pids": [
+        23,
+        24
+      ]
+    },
+    {
+      "phase": "loaded",
+      "cycle": 15,
+      "kind": "typed_status_enter",
+      "key": "ret",
+      "sent_monotonic_ns": 12595670986500,
+      "response_observed_monotonic_ns": 12595702791348,
+      "frame_observed_monotonic_ns": 12595717690230,
+      "latency_ms": 46.70373,
+      "frame_generation": 508,
+      "serial_response_start": 40995,
+      "serial_response_end": 41082,
+      "serial_frame_start": 41145,
+      "load_pids": [
+        23,
+        24
+      ],
+      "typing_events": [
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12595516737761,
+          "qmp_ack_monotonic_ns": 12595517280905
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12595542413749,
+          "qmp_ack_monotonic_ns": 12595543085855
+        },
+        {
+          "key": "a",
+          "sent_monotonic_ns": 12595568218919,
+          "qmp_ack_monotonic_ns": 12595568806359
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12595593929398,
+          "qmp_ack_monotonic_ns": 12595594506833
+        },
+        {
+          "key": "u",
+          "sent_monotonic_ns": 12595619601885,
+          "qmp_ack_monotonic_ns": 12595620240361
+        },
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12595645334237,
+          "qmp_ack_monotonic_ns": 12595645880246
+        }
+      ]
+    },
+    {
+      "phase": "loaded",
+      "cycle": 16,
+      "kind": "focus_files",
+      "key": "ret",
+      "sent_monotonic_ns": 12595768356340,
+      "response_observed_monotonic_ns": 12595783863753,
+      "frame_observed_monotonic_ns": 12595797522569,
+      "latency_ms": 29.166229,
+      "frame_generation": 511,
+      "serial_response_start": 41356,
+      "serial_response_end": 41416,
+      "serial_frame_start": 41416,
+      "load_pids": [
+        23,
+        24
+      ]
+    },
+    {
+      "phase": "loaded",
+      "cycle": 16,
+      "kind": "focus_terminal",
+      "key": "ret",
+      "sent_monotonic_ns": 12595817346647,
+      "response_observed_monotonic_ns": 12595832759501,
+      "frame_observed_monotonic_ns": 12595851010148,
+      "latency_ms": 33.663501,
+      "frame_generation": 513,
+      "serial_response_start": 41533,
+      "serial_response_end": 41596,
+      "serial_frame_start": 41596,
+      "load_pids": [
+        23,
+        24
+      ]
+    },
+    {
+      "phase": "loaded",
+      "cycle": 16,
+      "kind": "typed_status_enter",
+      "key": "ret",
+      "sent_monotonic_ns": 12596004998156,
+      "response_observed_monotonic_ns": 12596022714251,
+      "frame_observed_monotonic_ns": 12596037917405,
+      "latency_ms": 32.919249,
+      "frame_generation": 520,
+      "serial_response_start": 41633,
+      "serial_response_end": 41720,
+      "serial_frame_start": 41783,
+      "load_pids": [
+        23,
+        24
+      ],
+      "typing_events": [
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12595851022106,
+          "qmp_ack_monotonic_ns": 12595851567284
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12595876650764,
+          "qmp_ack_monotonic_ns": 12595877305244
+        },
+        {
+          "key": "a",
+          "sent_monotonic_ns": 12595902402855,
+          "qmp_ack_monotonic_ns": 12595902990415
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12595928093985,
+          "qmp_ack_monotonic_ns": 12595928664100
+        },
+        {
+          "key": "u",
+          "sent_monotonic_ns": 12595953752647,
+          "qmp_ack_monotonic_ns": 12595954270074
+        },
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12595979359914,
+          "qmp_ack_monotonic_ns": 12595979908286
+        }
+      ]
+    },
+    {
+      "phase": "loaded",
+      "cycle": 17,
+      "kind": "focus_files",
+      "key": "ret",
+      "sent_monotonic_ns": 12596086691491,
+      "response_observed_monotonic_ns": 12596103898153,
+      "frame_observed_monotonic_ns": 12596117556787,
+      "latency_ms": 30.865296,
+      "frame_generation": 523,
+      "serial_response_start": 41994,
+      "serial_response_end": 42054,
+      "serial_frame_start": 42054,
+      "load_pids": [
+        23,
+        24
+      ]
+    },
+    {
+      "phase": "loaded",
+      "cycle": 17,
+      "kind": "focus_terminal",
+      "key": "ret",
+      "sent_monotonic_ns": 12596137224965,
+      "response_observed_monotonic_ns": 12596152650067,
+      "frame_observed_monotonic_ns": 12596166201693,
+      "latency_ms": 28.976728,
+      "frame_generation": 525,
+      "serial_response_start": 42171,
+      "serial_response_end": 42234,
+      "serial_frame_start": 42234,
+      "load_pids": [
+        23,
+        24
+      ]
+    },
+    {
+      "phase": "loaded",
+      "cycle": 17,
+      "kind": "typed_status_enter",
+      "key": "ret",
+      "sent_monotonic_ns": 12596320284751,
+      "response_observed_monotonic_ns": 12596342684957,
+      "frame_observed_monotonic_ns": 12596357904674,
+      "latency_ms": 37.619923,
+      "frame_generation": 532,
+      "serial_response_start": 42271,
+      "serial_response_end": 42358,
+      "serial_frame_start": 42421,
+      "load_pids": [
+        23,
+        24
+      ],
+      "typing_events": [
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12596166210997,
+          "qmp_ack_monotonic_ns": 12596166752119
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12596191854827,
+          "qmp_ack_monotonic_ns": 12596192518811
+        },
+        {
+          "key": "a",
+          "sent_monotonic_ns": 12596217608971,
+          "qmp_ack_monotonic_ns": 12596218243671
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12596243326981,
+          "qmp_ack_monotonic_ns": 12596243828374
+        },
+        {
+          "key": "u",
+          "sent_monotonic_ns": 12596268933567,
+          "qmp_ack_monotonic_ns": 12596269523991
+        },
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12596294615123,
+          "qmp_ack_monotonic_ns": 12596295193630
+        }
+      ]
+    },
+    {
+      "phase": "loaded",
+      "cycle": 18,
+      "kind": "focus_files",
+      "key": "ret",
+      "sent_monotonic_ns": 12596407195056,
+      "response_observed_monotonic_ns": 12596423703262,
+      "frame_observed_monotonic_ns": 12596437515795,
+      "latency_ms": 30.320739,
+      "frame_generation": 535,
+      "serial_response_start": 42632,
+      "serial_response_end": 42692,
+      "serial_frame_start": 42692,
+      "load_pids": [
+        23,
+        24
+      ]
+    },
+    {
+      "phase": "loaded",
+      "cycle": 18,
+      "kind": "focus_terminal",
+      "key": "ret",
+      "sent_monotonic_ns": 12596456745533,
+      "response_observed_monotonic_ns": 12596472641172,
+      "frame_observed_monotonic_ns": 12596486148913,
+      "latency_ms": 29.40338,
+      "frame_generation": 537,
+      "serial_response_start": 42809,
+      "serial_response_end": 42872,
+      "serial_frame_start": 42872,
+      "load_pids": [
+        23,
+        24
+      ]
+    },
+    {
+      "phase": "loaded",
+      "cycle": 18,
+      "kind": "typed_status_enter",
+      "key": "ret",
+      "sent_monotonic_ns": 12596639956313,
+      "response_observed_monotonic_ns": 12596662697178,
+      "frame_observed_monotonic_ns": 12596677516352,
+      "latency_ms": 37.560039,
+      "frame_generation": 544,
+      "serial_response_start": 42909,
+      "serial_response_end": 42996,
+      "serial_frame_start": 43059,
+      "load_pids": [
+        23,
+        24
+      ],
+      "typing_events": [
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12596486159669,
+          "qmp_ack_monotonic_ns": 12596486657897
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12596511749880,
+          "qmp_ack_monotonic_ns": 12596512342218
+        },
+        {
+          "key": "a",
+          "sent_monotonic_ns": 12596537432007,
+          "qmp_ack_monotonic_ns": 12596537970095
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12596563056509,
+          "qmp_ack_monotonic_ns": 12596563538333
+        },
+        {
+          "key": "u",
+          "sent_monotonic_ns": 12596588633761,
+          "qmp_ack_monotonic_ns": 12596589188112
+        },
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12596614282919,
+          "qmp_ack_monotonic_ns": 12596614863229
+        }
+      ]
+    },
+    {
+      "phase": "loaded",
+      "cycle": 19,
+      "kind": "focus_files",
+      "key": "ret",
+      "sent_monotonic_ns": 12596726760125,
+      "response_observed_monotonic_ns": 12596743666661,
+      "frame_observed_monotonic_ns": 12596757791767,
+      "latency_ms": 31.031642,
+      "frame_generation": 547,
+      "serial_response_start": 43270,
+      "serial_response_end": 43330,
+      "serial_frame_start": 43330,
+      "load_pids": [
+        23,
+        24
+      ]
+    },
+    {
+      "phase": "loaded",
+      "cycle": 19,
+      "kind": "focus_terminal",
+      "key": "ret",
+      "sent_monotonic_ns": 12596777242112,
+      "response_observed_monotonic_ns": 12596792679852,
+      "frame_observed_monotonic_ns": 12596806601828,
+      "latency_ms": 29.359716,
+      "frame_generation": 549,
+      "serial_response_start": 43447,
+      "serial_response_end": 43510,
+      "serial_frame_start": 43510,
+      "load_pids": [
+        23,
+        24
+      ]
+    },
+    {
+      "phase": "loaded",
+      "cycle": 19,
+      "kind": "typed_status_enter",
+      "key": "ret",
+      "sent_monotonic_ns": 12596960739377,
+      "response_observed_monotonic_ns": 12596982637929,
+      "frame_observed_monotonic_ns": 12596997952106,
+      "latency_ms": 37.212729,
+      "frame_generation": 556,
+      "serial_response_start": 43547,
+      "serial_response_end": 43634,
+      "serial_frame_start": 43697,
+      "load_pids": [
+        23,
+        24
+      ],
+      "typing_events": [
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12596806613515,
+          "qmp_ack_monotonic_ns": 12596807164511
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12596832258407,
+          "qmp_ack_monotonic_ns": 12596832797966
+        },
+        {
+          "key": "a",
+          "sent_monotonic_ns": 12596857923198,
+          "qmp_ack_monotonic_ns": 12596858536967
+        },
+        {
+          "key": "t",
+          "sent_monotonic_ns": 12596883651904,
+          "qmp_ack_monotonic_ns": 12596884224463
+        },
+        {
+          "key": "u",
+          "sent_monotonic_ns": 12596909351868,
+          "qmp_ack_monotonic_ns": 12596909887442
+        },
+        {
+          "key": "s",
+          "sent_monotonic_ns": 12596935004872,
+          "qmp_ack_monotonic_ns": 12596935645280
+        }
+      ]
+    }
+  ],
+  "qemu_profile": "q35/TCG cpu=qemu64 smp=1 RAM=256MiB software framebuffer PS/2",
+  "scope": "Host wall-clock QMP keyboard action/typed-command Enter to serial-observed completed software frame. Includes QEMU TCG, host scheduling, QMP/serial and instrumentation delays; not kernel IRQ latency, physical hardware certification or guaranteed display/vblank latency.",
+  "idle_definition": "PID1 and its persistent worker remain active; idle means no added noncooperative console children.",
+  "phase_order": [
+    "idle",
+    "loaded"
+  ],
+  "phase_order_limit": "Fixed same-run order; cache/warmup/drift effects are not isolated.",
+  "development_vm_budget_p95_ms": null,
+  "validator_sha256": "b666540d2c0598f1a608d34925a91a90454b56230ea5cea694f6639eea93772e",
+  "baseline_pids": [
+    1,
+    22
+  ],
+  "statistics": {
+    "idle": {
+      "all": {
+        "samples": 60,
+        "median_ms": 19.4047475,
+        "p95_ms": 21.224285,
+        "max_ms": 40.792504,
+        "p95_definition": "nearest-rank ceiling(0.95*N), sorted host-observed milliseconds"
+      },
+      "focus": {
+        "samples": 40,
+        "median_ms": 19.931378000000002,
+        "p95_ms": 21.224285,
+        "max_ms": 25.766132,
+        "p95_definition": "nearest-rank ceiling(0.95*N), sorted host-observed milliseconds"
+      },
+      "typed_command": {
+        "samples": 20,
+        "median_ms": 17.503272,
+        "p95_ms": 18.688647,
+        "max_ms": 40.792504,
+        "p95_definition": "nearest-rank ceiling(0.95*N), sorted host-observed milliseconds"
+      }
+    },
+    "loaded": {
+      "all": {
+        "samples": 60,
+        "median_ms": 26.414187,
+        "p95_ms": 37.560039,
+        "max_ms": 46.70373,
+        "p95_definition": "nearest-rank ceiling(0.95*N), sorted host-observed milliseconds"
+      },
+      "focus": {
+        "samples": 40,
+        "median_ms": 28.067260500000003,
+        "p95_ms": 30.865296,
+        "max_ms": 33.663501,
+        "p95_definition": "nearest-rank ceiling(0.95*N), sorted host-observed milliseconds"
+      },
+      "typed_command": {
+        "samples": 20,
+        "median_ms": 21.190175,
+        "p95_ms": 42.41677,
+        "max_ms": 46.70373,
+        "p95_definition": "nearest-rank ceiling(0.95*N), sorted host-observed milliseconds"
+      }
+    }
+  },
+  "load_pids": [
+    23,
+    24
+  ],
+  "loaded_process_states_before": {
+    "1": {
+      "state": "sleeping",
+      "preemptions": 2,
+      "console": "false"
+    },
+    "22": {
+      "state": "sleeping",
+      "preemptions": 0,
+      "console": "false"
+    },
+    "23": {
+      "state": "runnable",
+      "preemptions": 13,
+      "console": "true"
+    },
+    "24": {
+      "state": "runnable",
+      "preemptions": 6,
+      "console": "true"
+    }
+  },
+  "loaded_process_states_before_monotonic_ns": 12590476609413,
+  "loaded_process_states_after_monotonic_ns": 12597079726252,
+  "loaded_process_states": {
+    "1": {
+      "state": "runnable",
+      "preemptions": 2,
+      "console": "false"
+    },
+    "22": {
+      "state": "runnable",
+      "preemptions": 0,
+      "console": "false"
+    },
+    "23": {
+      "state": "runnable",
+      "preemptions": 94,
+      "console": "true"
+    },
+    "24": {
+      "state": "runnable",
+      "preemptions": 87,
+      "console": "true"
+    }
+  },
+  "loaded_to_idle_ratio": {
+    "all": {
+      "median": 1.3612229172268282,
+      "p95": 1.7696727592943653
+    },
+    "focus": {
+      "median": 1.40819468177263,
+      "p95": 1.4542443243671108
+    },
+    "typed_command": {
+      "median": 1.2106407876195948,
+      "p95": 2.2696544056934673
+    }
+  },
+  "source_image_unchanged": true
+}

@@ -1,0 +1,21 @@
+{
+  "image_sha256": "75b7eee4a19b9451d0c31214ce2a2d0404270ed3e0c02ad03997efc4428709d6",
+  "source_files": 201,
+  "source_manifest_sha256": "e40e61e7e0be81022ce32b0f314391094466f698080cee3a4183019f9ef42594",
+  "completed": [
+    "541 isolated workspace tests",
+    "actual native input qemu64 124 assertions",
+    "actual F9 accessibility qemu64 119 assertions",
+    "actual Files query qemu64 119 assertions",
+    "30 loader refusals"
+  ],
+  "material_gates_not_run_on_this_image": [
+    "max CPU expanded native input/accessibility/query",
+    "independent runtime resource family",
+    "separate two-boot persistence/recovery-export family",
+    "alternate service-pair family",
+    "GPT mount family",
+    "latency benchmark"
+  ],
+  "scope": "Scoped Source13 only; manual F9 metadata readback is not speech, application accessibility trees or external transport. Semantic keyboard press pipeline does not provide physical releases/modifiers. No AP activation. Source14 windows/guarded emergency stacks/SDK session and Source15 resize are excluded."
+}

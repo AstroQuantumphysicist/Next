@@ -1,0 +1,16 @@
+{
+  "status": "original-required-calibration-gate-failed; not a new successful VM run",
+  "scope": "Read-only analysis of retained raw log; no original report altered",
+  "lapic_calibration": {
+    "calibration_verified": false,
+    "reason": "Unstable",
+    "divider": null,
+    "divided_hz": null,
+    "pit_retained": true
+  },
+  "independent_continuation": {
+    "pit_timer_verified": true,
+    "ioapic_interrupts": 3,
+    "preemption_verified": true
+  }
+}

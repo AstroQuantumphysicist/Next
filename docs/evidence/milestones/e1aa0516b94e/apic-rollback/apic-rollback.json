@@ -1,0 +1,40 @@
+{
+  "passed": true,
+  "scope": "q35/TCG BSP PIT IRQ0 after-unmask injection; actual ISR-observed APIC delivery, restored controls and PIC fallback plus PS/2 desktop action. No SMP or hardware certification.",
+  "started_utc": "2026-10-11T17:27:27.519620+00:00",
+  "image": "/workspace/Next/work/apic-rollback-eighth/next-apic-rollback.img",
+  "image_sha256": "77a400960fe8399c8f839b43224e3db1b052ab10b3c4456eb1aa5733fc72d340",
+  "default_image_sha256": "e1aa0516b94e20f349cea2bbe4593bbce4d27e3ac4b014e7971fe635b267741e",
+  "checks": [
+    "one genuine IOAPIC IRQ preceded injected Hardware failure; masked route/SVR/TPR/PIC controls restored and three fresh PIC ISR IRQs observed",
+    "signed diagnostic deployment reached Prism after ordinary verified rollback",
+    "actual QMP PS/2 status command and subsequent framebuffer presentation after PIC fallback",
+    "PIT monotonic ticks/nanoseconds continue advancing under restored PIC IRQ delivery"
+  ],
+  "kernel_sha256": "5e8d14fabce7c08c71fb69b7b30ce46da605578279f6828465d9dab7fd157845",
+  "deployment_sha256": "1d3999d0c70e2942553b12a5928cd2afffa544fadbb9fe17faa6b53e2617a58f",
+  "package_verification": "Verified org.next.development Deployment 2 files; permissions requested=0x0",
+  "routing": {
+    "gsi": 2,
+    "apic_interrupts": 1,
+    "pic_interrupts": 1,
+    "rollback_pic_interrupts": 3,
+    "injected": true,
+    "restored_controls": true,
+    "owner_retained": false,
+    "result": "Err(Hardware)"
+  },
+  "clock_samples": [
+    [
+      670,
+      6699539550
+    ],
+    [
+      692,
+      6919524431
+    ]
+  ],
+  "lapic_after_rollback": "dumping local APIC state for CPU 0 \r\n\r\nLVT0\t 0x00000700 active-hi edge                              ExtINT (vec 0)\r\nLVT1\t 0x00000400 active-hi edge                              NMI   \r\nLVTPC\t 0x00010000 active-hi edge  masked                      Fixed  (vec 0)\r\nLVTERR\t 0x00010000 active-hi edge  masked                      Fixed  (vec 0)\r\nLVTTHMR\t 0x00010000 active-hi edge  masked                      Fixed  (vec 0)\r\nLVTT\t 0x00030020 active-hi edge  masked         periodic     Fixed  (vec 32)\r\nTimer\t DCR=0xb (divide by 1) initial_count = 0 current_count = 0\r\nSPIV\t 0x0000010f APIC enabled, focus=off, spurious vec 15\r\nICR\t 0x00000000 physical edge de-assert no-shorthand\r\nICR2\t 0x00000000 cpu 0 (APIC ID)\r\nESR\t 0x00000000\r\nISR\t (none)\r\nIRR\t (none)\r\n\r\nAPR 0x00 TPR 0x00 DFR 0x0f LDR 0x00 PPR 0x00\r\n",
+  "image_sha256_after": "77a400960fe8399c8f839b43224e3db1b052ab10b3c4456eb1aa5733fc72d340",
+  "default_image_sha256_after": "e1aa0516b94e20f349cea2bbe4593bbce4d27e3ac4b014e7971fe635b267741e"
+}

@@ -1,0 +1,64 @@
+{
+  "passed": true,
+  "error": null,
+  "guarded_emergency_stack_verified": true,
+  "surface_source_binding": {
+    "manifest_path": "/workspace/Next/work/fifteenth-wave/source-manifest.json",
+    "manifest_sha256": "b2f44957600996f6954ddf729fe1ca1011083cdeb71fae9a0ab9107683489e21",
+    "image_sha256": "5500b615bd61d7b2275c049f04bff546da999607db63f3e361b421553e6d9b7f",
+    "surface_fixture_sha256": "b764958deb8866ca8a93942505a1028426e3e5ac22619e01bc9ef1d60a839b66",
+    "workspace_policy": "Mutable concurrent source is not substituted for retained compiled evidence",
+    "manifest_unchanged": true,
+    "image_unchanged": true
+  },
+  "uart_metrics": {
+    "accepted": 216065,
+    "transmitted": 216065,
+    "dropped": 0,
+    "stalled": 2398,
+    "absent": 0,
+    "pending": 0
+  },
+  "checks_count": 123,
+  "native_resize": {
+    "pid": 43,
+    "slot": 0,
+    "generation": 1,
+    "package": "org.next.development.native.client-reconfigure-probe",
+    "transactions": [
+      {
+        "request": 1,
+        "configuration": 2,
+        "pixel_width": 81,
+        "pixel_height": 59,
+        "frame": 2,
+        "presented_frame": 1252
+      },
+      {
+        "request": 2,
+        "configuration": 3,
+        "pixel_width": 73,
+        "pixel_height": 53,
+        "frame": 3,
+        "presented_frame": 1258
+      }
+    ],
+    "exit_code": 52
+  },
+  "raw_report_sha256": "7296193ed3befa58df4ec45f4285e30c24ee4811373d710f2a2f4c22fdb52064",
+  "loaded_image_sha256": "5500b615bd61d7b2275c049f04bff546da999607db63f3e361b421553e6d9b7f",
+  "source_manifest_sha256": "b2f44957600996f6954ddf729fe1ca1011083cdeb71fae9a0ab9107683489e21",
+  "live_validator_sha256": "4eebbe2b2e744565eee335a33ea8de5c958cc23031c706c2a20a06987d45c93b",
+  "lapic_calibration": {
+    "calibration_verified": true,
+    "reason": null,
+    "divider": 16,
+    "divided_hz": 62712859,
+    "pit_retained": true,
+    "continuation": {
+      "pit_timer_verified": true,
+      "ioapic_interrupts": 3,
+      "preemption_verified": true
+    }
+  }
+}

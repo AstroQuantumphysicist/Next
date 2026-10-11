@@ -1,0 +1,41 @@
+[2J[01;01H[=3h[2J[01;01H[2J[01;01H[=3h[2J[01;01H[2J[01;01H[=3h[2J[01;01HBdsDxe: loading Boot0001 "UEFI Misc Device" from PciRoot(0x0)/Pci(0x3,0x0)
+BdsDxe: starting Boot0001 "UEFI Misc Device" from PciRoot(0x0)/Pci(0x3,0x0)
+NEXT BOOT development 0.2 | unsigned EFI loader | owner-signed development payloads | Secure Boot/TPM not certified
+NEXT BOOT: SIGNATURE PASS Ed25519 + SHA-256 owner development key; EFI loader unsigned; Secure Boot/TPM not certified
+NEXT BOOT: ELF LOAD PASS entry=0x4000000 base=0x4000000 bytes=14827520
+NEXT BOOT: INITRD LOAD PASS base=0xcf06000 bytes=569056 CRC archive authenticated by signed deployment
+NEXT AP TRAMPOLINE RESERVED base=0x80000 bytes=4096; APs not started
+HELIX: ExitBootServices succeeded; independent ELF kernel control
+HELIX AP RESERVATION PASS base=0x80000 bytes=4096; loader-owned page retained, APs remain stopped
+HELIX: validated 120 memory regions; RAM 249 MiB; ACPI 0xf77e014
+HELIX: BOOTINFO SELFTEST PASS checksum, version, kernel/loader/map reservations; init image retained
+HELIX: SELFTEST PASS physical page write/zero/free; handle attenuation/stale rejection
+HELIX: CPU CONTEXT PROFILE PASS FX512 only; OSXSAVE=0 FSGSBASE=0 PKE=0 CET=0 UINTR=0 FSBASE=0 GSBASE=0 KERNELGSBASE=0 PKRU reset; inherited TLS bases zero; explicit profile TLS restored
+HELIX: KERNEL MAPPINGS PASS RX text, RO NX data, RW NX memory, guarded stack
+HELIX: KERNEL PROTECTION PASS RX text write denied by CPU page fault
+HELIX: KERNEL PROTECTION PASS RO data write denied by CPU page fault
+HELIX: KERNEL PROTECTION PASS user code physical alias write denied by CPU page fault
+HELIX: KERNEL PROTECTION PASS NX data execution denied by CPU page fault
+HELIX: KERNEL PROTECTION PASS kernel stack guard write denied by CPU page fault
+HELIX: KERNEL PROTECTION PASS interrupt stack guard write denied by CPU page fault
+HELIX: entering ring3; supervisor-only low memory, user RX code, RW NX stack
+HELIX USER: ring3 isolated native code
+HELIX USER: invalid syscall pointer rejected
+HELIX: USER PROTECTION PASS supervisor read denied by CPU page fault
+HELIX: USER PROTECTION PASS RX code write denied by CPU page fault
+HELIX: USER PROTECTION PASS NX stack execution denied by CPU page fault
+HELIX: USER SELFTEST PASS CPL3 entry, bounded syscall, pointer denial, exit
+HELIX: TIMER SELFTEST PASS PIT IRQ0, monotonic ticks=6, integer/XMM0 sentinels preserved; no IRQ allocation or locks
+HELIX UTC PASS seconds=1791744878 source=q35-CMOS/PIT; second-precision initial anchor
+HELIX ACPI PASS cpus=1 io_apics=1 overrides=5 tables=7 bsp=0; discovery only
+HELIX LAPIC PASS id=0 version=20 address=0xfee00000; read-only discovery
+HELIX IOAPIC PASS controllers=1 pins=24 isa_routes=15; redirection untouched, PIC retained
+HELIX HPET PASS frequency=100000000 timers=3 advanced=1547 elapsed_ns=15470; PIT remains scheduler clock
+HELIX LAPIC TIMER STATE lvt=0x30020 divide=0xb initial=10000000 current=4882776 svr=0x10f pending=false
+HELIX LAPIC TIMER PASS divider=16 divided_hz=62670702 samples=[Sample { reference_ticks: 1000030, countdown_ticks: 626794 }, Sample { reference_ticks: 1000013, countdown_ticks: 626647 }] count_1ms=62671 adopted=true; masked firmware timer left stopped, PIT retained
+HELIX IOAPIC IRQ RESULT Report { gsi: 2, apic_interrupts: 3, pic_interrupts: 0, owner_retained: true, result: Ok(Delivery { apic_interrupts: 3 }), injected: false, restored_controls: false, rollback_pic_interrupts: 0 }; PIT remains time source
+HELIX DISK SELFTEST PASS read-only virtio-blk 143360 sectors; boot-signature=true FAT32-BPB=false
+HELIX GPT DISCOVERY PASS esp_start=2048 esp_blocks=131072 data_start=137216 data_blocks=4096 note_bytes=46; read-only discovery
+HELIX GPT ESP NOTE: Read by Helix from the Next development disk.
+HELIX GPT STORE PASS generation=1 read_only=true formatted=false selftest=false; authenticated prefix mount
+HELIX NETWORK FAILED NotFound

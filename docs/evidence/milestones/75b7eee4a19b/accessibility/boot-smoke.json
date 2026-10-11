@@ -1,0 +1,1502 @@
+{
+  "passed": true,
+  "scope": "QEMU q35/TCG, single CPU, legacy PS/2, software framebuffer, PIT/PIC timer interrupts, legacy virtio read/write/flush in dedicated trailing data region, FAT32 reads, native processes and IPC; no hardware certification",
+  "started_utc": "2026-10-11T19:46:32.881469+00:00",
+  "checks": [
+    "Ed25519 deployment signature and kernel/init-image SHA256 verified against workspace development anchor",
+    "separate validated ELF loaded from EFI boot-device filesystem",
+    "firmware boot services exited",
+    "versioned checksummed BootInfo with kernel/loader/map reservations",
+    "supervisor RX text, RO NX data, RW NX memory and guarded stacks",
+    "CPU kernel protection: RX text write",
+    "CPU kernel protection: RO data write",
+    "CPU kernel protection: user code physical alias write",
+    "CPU kernel protection: NX data execution",
+    "CPU kernel protection: kernel stack guard write",
+    "CPU kernel protection: interrupt stack guard write",
+    "kernel physical-page and handle selftest",
+    "isolated ring3 native code, bounded syscall, pointer denial and exit",
+    "CPU page fault isolation: supervisor read",
+    "CPU page fault isolation: RX code write",
+    "CPU page fault isolation: NX stack execution",
+    "PIT timer interrupts preserve tested integer registers and XMM0 sentinel",
+    "actual read-only legacy virtio block device",
+    "actual read-only FAT32 file access: /NEXT.TXT",
+    "kernel readback verifies only saved FX512 state is enabled; unsaved optional user controls and inherited TLS bases disabled",
+    "bounded boot-device init image loaded and retained",
+    "native SDK TLS setters/getters preserve private FS memory across yield, sleep and timer switches and reject invalid bases/copyout",
+    "native executable rejects invalid pointers and stale capability handles",
+    "native anonymous memory supports zeroed multi-page mappings and enforces range/permissions",
+    "PID1 reads authenticated signed service declarations with no partial writes on short, null, readonly or guard-crossing outputs",
+    "actual manual/auto events enforce wait/signal rights and copyout-before-consumption",
+    "actual blocking waits enforce deadlines, wake one auto waiter, broadcast manual events and clean up killed waiters",
+    "capability-backed COW file streams preserve offsets on denied copyout and enforce attenuated rights",
+    "cross-process file capability transfer grants read and denies write",
+    "cross-process capability move produces usable attenuated recipient authority",
+    "framed IPC request/reply between distinct native address spaces",
+    "CPU faults for supervisor access, RX write, NX execute, stack guard and invalid opcode terminate only offending child",
+    "native integer, all XMM and x87 sentinels survive noncooperative timer context switches",
+    "validated q35 HPET resource uses owned UC mapping and advancing hardware counter; PIT remains scheduler clock",
+    "read-only BSP LAPIC identity and version discovery with owned UC mapping",
+    "actual IOAPIC pin discovery and bounded masked ISA plan before the explicit routing transition",
+    "actual PIT IRQ0 routing transition reports ISR-observed IOAPIC delivery or verified PIC rollback",
+    "independently attenuated worker NETWORK grant blocks socket creation despite signed declaration",
+    "moving a socket to an unprivileged recipient cannot bypass NETWORK authority; denied import preserves ownership until teardown",
+    "validated ACPI tables discover BSP, IOAPIC and interrupt overrides; no SMP startup",
+    "COW data store commits file write/rename/delete and remounts without touching ESP",
+    "actual AC97 DMA playback completes 12000 stereo frames at 48 kHz",
+    "actual DHCP Discover/Offer/Request/Ack obtains bounded QEMU lease",
+    "actual virtio Ethernet ARP, ICMP echo and checksummed UDP request/reply with local host peer",
+    "actual local UDP A/AAAA lookups validate framed replies, TTL cache hits, real monotonic expiry and wire refresh",
+    "actual TCP handshake, bounded HTTP response and connection teardown with local host peer",
+    "PS/2 auxiliary mouse initialized",
+    "dedicated data-sector write/read/flush and original contents restored",
+    "native child fault terminates offender while supervisor survives",
+    "timer preempts non-yielding child and supervisor kills it",
+    "process results survive repeated and duplicated waits; signed exit -7 is distinct from WouldBlock and bad copyout cannot consume result",
+    "native process exit, wait, stale handles and slot reuse",
+    "isolated native privileged VFS fixture checks independent/shared offsets, rename replacement, open unlink lifetime and recreate isolation",
+    "native PID1 executes real isolated-worker crash restart and heartbeat timeout recovery with bounded policy",
+    "live native nextd supervisor signals readiness",
+    "kernel completes bounded native startup",
+    "actual masked LAPIC countdown calibrated against two bounded HPET windows; masked firmware timer adopted/stopped, LVT/divider restored and PIT retained",
+    "actual q35 CMOS UTC anchor agrees with host wall clock",
+    "framebuffer shell ready",
+    "distinct worker PIDs and exit statuses prove crash restart and watchdog recovery ordering",
+    "recovered isolated service remains live alongside PID1 after desktop readiness",
+    "serial command: status",
+    "serial command: about",
+    "serial command: help",
+    "serial command: cat /NEXT.TXT",
+    "serial command: write /smoke hello world",
+    "serial command: cat /smoke",
+    "serial command: mv /smoke /renamed",
+    "serial command: ls",
+    "serial command: rm /renamed",
+    "serial command: cat /renamed",
+    "serial command: ps",
+    "serial command: kill 1",
+    "serial command: run /system/missing.elf",
+    "serial command: run /system/untrusted.elf",
+    "serial command: trace",
+    "serial command: calc (2 + 3) * 4",
+    "serial command: calc 1 / 0",
+    "serial command: nextunknown",
+    "signed application authentication rejects tampered archive member before process creation",
+    "structured trace captures actual numeric process and namespace outcomes",
+    "interactive spawn and kill of non-yielding native child; supervisor protected",
+    "same static Linux ELF executes Linux SYSCALL subset and exits 37",
+    "Linux profile cannot invoke native readiness capability syscall",
+    "original Linux clock fixture: /compat/linux/clock.elf",
+    "original Linux clock fixture: /compat/linux/clock-gate.elf",
+    "native realtime clock normalizes UTC and rejects null, readonly and guard-crossing copyout",
+    "native clock utility uses actual monotonic time",
+    "console-owned program output reaches Prism terminal through bounded queue",
+    "original Linux brk/mmap/munmap fixture: /compat/linux/memory.elf",
+    "original Linux brk/mmap/munmap fixture: /compat/linux/memory-gate.elf",
+    "original Linux shared-open, rename/unlink lifetime fixture: /compat/linux/namespace.elf",
+    "original Linux shared-open, rename/unlink lifetime fixture: /compat/linux/namespace-gate.elf",
+    "Linux FS/GS bases survive gate, yield, preemption and bounds checks: /compat/linux/tls.elf",
+    "Linux FS/GS bases survive gate, yield, preemption and bounds checks: /compat/linux/tls-gate.elf",
+    "two overlapping Linux TLS instances preserve PID-specific private FS/GS contents across timer switches",
+    "original Linux common file-object fixture: /compat/linux/file.elf",
+    "original Linux common file-object fixture: /compat/linux/file-gate.elf",
+    "original NT PE32+ Win64 import fixture: /compat/nt/hello.exe",
+    "original NT PE32+ Win64 import fixture: /compat/nt/hello-gate.exe",
+    "native connected UDP capability sends actual nonce/empty datagrams through retained virtio device with copyout-safe receive, level wait, rights and stale-handle checks",
+    "console date reports normalized UTC from the same RTC/PIT clock",
+    "Home search matches actual file metadata and opens its authoritative content in Editor",
+    "actual signed native DNS capability fixture passes answers/cache/copyout/rights/duplicates/terminal outcomes/timeouts/quota and cleanup",
+    "configured worker cannot turn a signed NETWORK request into a DNS execution grant",
+    "trusted PS/2 file chooser grants scoped readonly authority to the authenticated caller; write denial, UI rejection, unattended deadline, cancellation and stale requests pass",
+    "actual post-present F9 names/roles/focus/Files selection and exposed bounds; Settings Tab, trusted portal/query modal precedence and cancellation; readback does not mutate context",
+    "actual PS/2 Super-arrow snap preview, apply, cancel and restore preserve floating geometry and work-area bounds",
+    "Editor actual load, PS/2 editing, Ctrl-S journal save, external-change conflict and unsaved-text preservation",
+    "monotonic PIT clock advances while serial console remains responsive",
+    "PS/2 keyboard command through QMP",
+    "PS/2 backspace corrects statuz to status",
+    "keyboard Home menu opens actual Files window without executing terminal input",
+    "actual PS/2 mouse motion and left-button event reaches desktop hit testing",
+    "serial console restores Terminal focus from Files panel",
+    "bounded UART transmit FIFO preserves queued output across stalls and reports zero rejected/absent bytes",
+    "screenshot taken after completed software back-buffer presentation",
+    "nonblank framebuffer screenshot",
+    "captured AC97 PCM contains matching stereo channels and a 1 kHz waveform"
+  ],
+  "image_sha256": "75b7eee4a19b9451d0c31214ce2a2d0404270ed3e0c02ad03997efc4428709d6",
+  "qemu_profile": "q35,accel=tcg; cpu=qemu64; 256M; smp=1; vga=std",
+  "guarded_emergency_stack_verified": false,
+  "ioapic_delivery": {
+    "gsi": 2,
+    "apic_interrupts": 3,
+    "pic_interrupts": 0
+  },
+  "lapic_calibration": {
+    "calibration_verified": true,
+    "reason": null,
+    "divider": 16,
+    "divided_hz": 62691271,
+    "pit_retained": true,
+    "continuation": {
+      "pit_timer_verified": true,
+      "ioapic_interrupts": 3,
+      "preemption_verified": true
+    }
+  },
+  "service_instance_pids": [
+    20,
+    21,
+    22
+  ],
+  "concurrent_tls_pids": [
+    35,
+    36
+  ],
+  "dns_capability": {
+    "probe_pid": 42,
+    "package_id": "org.next.development.native.dns-probe",
+    "exit_code": 48,
+    "actual_park_count": 8,
+    "marker": "DNS PROBE: actual A/AAAA peer answers, cache, readonly/short copyout, retained duplicate results, stale handles, negative/unsupported and malformed/timeout passed",
+    "authority": "Worker signed NETWORK declaration is denied when actual execution grant is zero",
+    "checks": [
+      "A=10.0.2.2 and AAAA=::1 over fixed trusted resolver",
+      "cached answer and complete144-byte bounded wire output",
+      "READ/WAIT separation, short/readonly/null/guard output without result destruction",
+      "duplicate lifetime, repeated terminal results and stale generation checks",
+      "NXDOMAIN/TC/CNAME/referral explicit negative or unsupported results",
+      "omitted and malformed replies reach bounded timeout",
+      "four held requests exhaust broker; failed fifth allocation rolls back; close permits reuse"
+    ],
+    "limits": "Development UDP resolver only; no recursive search, DNSSEC, TCP fallback, alias/referral completion or production network consent"
+  },
+  "portal_probe_pid": 43,
+  "accessibility": {
+    "snapshots": [
+      {
+        "frame": 1259,
+        "generation": 1234,
+        "context": 20,
+        "token": 4294967296,
+        "count": 6,
+        "focused": 2,
+        "nodes": [
+          {
+            "id": 1,
+            "parent": 0,
+            "role": "Dialog",
+            "name": "File access request",
+            "enabled": true,
+            "visible": true,
+            "focused": false,
+            "selected": false,
+            "checked": null,
+            "busy": false,
+            "bounds": [
+              320,
+              170,
+              640,
+              460
+            ]
+          },
+          {
+            "id": 10,
+            "parent": 1,
+            "role": "ListItem",
+            "name": "/native/probe",
+            "enabled": true,
+            "visible": true,
+            "focused": false,
+            "selected": true,
+            "checked": null,
+            "busy": false,
+            "bounds": null
+          },
+          {
+            "id": 11,
+            "parent": 1,
+            "role": "ListItem",
+            "name": "/native/linux",
+            "enabled": true,
+            "visible": true,
+            "focused": false,
+            "selected": false,
+            "checked": null,
+            "busy": false,
+            "bounds": null
+          },
+          {
+            "id": 12,
+            "parent": 1,
+            "role": "ListItem",
+            "name": "/native/portal-demo",
+            "enabled": true,
+            "visible": true,
+            "focused": false,
+            "selected": false,
+            "checked": null,
+            "busy": false,
+            "bounds": null
+          },
+          {
+            "id": 2,
+            "parent": 1,
+            "role": "Button",
+            "name": "Cancel",
+            "enabled": true,
+            "visible": true,
+            "focused": true,
+            "selected": false,
+            "checked": null,
+            "busy": false,
+            "bounds": null
+          },
+          {
+            "id": 3,
+            "parent": 1,
+            "role": "Button",
+            "name": "Allow read only",
+            "enabled": true,
+            "visible": true,
+            "focused": false,
+            "selected": false,
+            "checked": null,
+            "busy": false,
+            "bounds": null
+          }
+        ],
+        "label": "trusted-file-portal",
+        "serial_start": 176482,
+        "host_monotonic_ns": 24606652610433
+      },
+      {
+        "frame": 1327,
+        "generation": 1290,
+        "context": 4,
+        "token": 0,
+        "count": 7,
+        "focused": 101,
+        "nodes": [
+          {
+            "id": 1,
+            "parent": 0,
+            "role": "Window",
+            "name": "Next Settings",
+            "enabled": true,
+            "visible": true,
+            "focused": false,
+            "selected": false,
+            "checked": null,
+            "busy": false,
+            "bounds": [
+              148,
+              180,
+              640,
+              400
+            ]
+          },
+          {
+            "id": 101,
+            "parent": 1,
+            "role": "List",
+            "name": "Theme",
+            "enabled": true,
+            "visible": true,
+            "focused": true,
+            "selected": false,
+            "checked": null,
+            "busy": false,
+            "bounds": [
+              160,
+              252,
+              404,
+              32
+            ]
+          },
+          {
+            "id": 102,
+            "parent": 1,
+            "role": "List",
+            "name": "Accent color",
+            "enabled": true,
+            "visible": true,
+            "focused": false,
+            "selected": false,
+            "checked": null,
+            "busy": false,
+            "bounds": [
+              160,
+              316,
+              540,
+              32
+            ]
+          },
+          {
+            "id": 103,
+            "parent": 1,
+            "role": "Button",
+            "name": "Save appearance",
+            "enabled": true,
+            "visible": true,
+            "focused": false,
+            "selected": false,
+            "checked": null,
+            "busy": false,
+            "bounds": [
+              160,
+              376,
+              132,
+              32
+            ]
+          },
+          {
+            "id": 104,
+            "parent": 1,
+            "role": "Button",
+            "name": "Revert unsaved appearance",
+            "enabled": true,
+            "visible": true,
+            "focused": false,
+            "selected": false,
+            "checked": null,
+            "busy": false,
+            "bounds": [
+              296,
+              376,
+              132,
+              32
+            ]
+          },
+          {
+            "id": 105,
+            "parent": 1,
+            "role": "Button",
+            "name": "System diagnostics",
+            "enabled": true,
+            "visible": true,
+            "focused": false,
+            "selected": false,
+            "checked": null,
+            "busy": false,
+            "bounds": [
+              432,
+              376,
+              132,
+              32
+            ]
+          },
+          {
+            "id": 40,
+            "parent": 1,
+            "role": "Status",
+            "name": "Text size",
+            "enabled": true,
+            "visible": true,
+            "focused": false,
+            "selected": false,
+            "checked": null,
+            "busy": false,
+            "bounds": null
+          }
+        ],
+        "label": "settings",
+        "serial_start": 188637,
+        "host_monotonic_ns": 24609642133457
+      },
+      {
+        "frame": 1327,
+        "generation": 1290,
+        "context": 4,
+        "token": 0,
+        "count": 7,
+        "focused": 101,
+        "nodes": [
+          {
+            "id": 1,
+            "parent": 0,
+            "role": "Window",
+            "name": "Next Settings",
+            "enabled": true,
+            "visible": true,
+            "focused": false,
+            "selected": false,
+            "checked": null,
+            "busy": false,
+            "bounds": [
+              148,
+              180,
+              640,
+              400
+            ]
+          },
+          {
+            "id": 101,
+            "parent": 1,
+            "role": "List",
+            "name": "Theme",
+            "enabled": true,
+            "visible": true,
+            "focused": true,
+            "selected": false,
+            "checked": null,
+            "busy": false,
+            "bounds": [
+              160,
+              252,
+              404,
+              32
+            ]
+          },
+          {
+            "id": 102,
+            "parent": 1,
+            "role": "List",
+            "name": "Accent color",
+            "enabled": true,
+            "visible": true,
+            "focused": false,
+            "selected": false,
+            "checked": null,
+            "busy": false,
+            "bounds": [
+              160,
+              316,
+              540,
+              32
+            ]
+          },
+          {
+            "id": 103,
+            "parent": 1,
+            "role": "Button",
+            "name": "Save appearance",
+            "enabled": true,
+            "visible": true,
+            "focused": false,
+            "selected": false,
+            "checked": null,
+            "busy": false,
+            "bounds": [
+              160,
+              376,
+              132,
+              32
+            ]
+          },
+          {
+            "id": 104,
+            "parent": 1,
+            "role": "Button",
+            "name": "Revert unsaved appearance",
+            "enabled": true,
+            "visible": true,
+            "focused": false,
+            "selected": false,
+            "checked": null,
+            "busy": false,
+            "bounds": [
+              296,
+              376,
+              132,
+              32
+            ]
+          },
+          {
+            "id": 105,
+            "parent": 1,
+            "role": "Button",
+            "name": "System diagnostics",
+            "enabled": true,
+            "visible": true,
+            "focused": false,
+            "selected": false,
+            "checked": null,
+            "busy": false,
+            "bounds": [
+              432,
+              376,
+              132,
+              32
+            ]
+          },
+          {
+            "id": 40,
+            "parent": 1,
+            "role": "Status",
+            "name": "Text size",
+            "enabled": true,
+            "visible": true,
+            "focused": false,
+            "selected": false,
+            "checked": null,
+            "busy": false,
+            "bounds": null
+          }
+        ],
+        "label": "settings-readback-no-mutation",
+        "serial_start": 189910,
+        "host_monotonic_ns": 24609722507244
+      },
+      {
+        "frame": 1328,
+        "generation": 1291,
+        "context": 4,
+        "token": 0,
+        "count": 7,
+        "focused": 102,
+        "nodes": [
+          {
+            "id": 1,
+            "parent": 0,
+            "role": "Window",
+            "name": "Next Settings",
+            "enabled": true,
+            "visible": true,
+            "focused": false,
+            "selected": false,
+            "checked": null,
+            "busy": false,
+            "bounds": [
+              148,
+              180,
+              640,
+              400
+            ]
+          },
+          {
+            "id": 101,
+            "parent": 1,
+            "role": "List",
+            "name": "Theme",
+            "enabled": true,
+            "visible": true,
+            "focused": false,
+            "selected": false,
+            "checked": null,
+            "busy": false,
+            "bounds": [
+              160,
+              252,
+              404,
+              32
+            ]
+          },
+          {
+            "id": 102,
+            "parent": 1,
+            "role": "List",
+            "name": "Accent color",
+            "enabled": true,
+            "visible": true,
+            "focused": true,
+            "selected": false,
+            "checked": null,
+            "busy": false,
+            "bounds": [
+              160,
+              316,
+              540,
+              32
+            ]
+          },
+          {
+            "id": 103,
+            "parent": 1,
+            "role": "Button",
+            "name": "Save appearance",
+            "enabled": true,
+            "visible": true,
+            "focused": false,
+            "selected": false,
+            "checked": null,
+            "busy": false,
+            "bounds": [
+              160,
+              376,
+              132,
+              32
+            ]
+          },
+          {
+            "id": 104,
+            "parent": 1,
+            "role": "Button",
+            "name": "Revert unsaved appearance",
+            "enabled": true,
+            "visible": true,
+            "focused": false,
+            "selected": false,
+            "checked": null,
+            "busy": false,
+            "bounds": [
+              296,
+              376,
+              132,
+              32
+            ]
+          },
+          {
+            "id": 105,
+            "parent": 1,
+            "role": "Button",
+            "name": "System diagnostics",
+            "enabled": true,
+            "visible": true,
+            "focused": false,
+            "selected": false,
+            "checked": null,
+            "busy": false,
+            "bounds": [
+              432,
+              376,
+              132,
+              32
+            ]
+          },
+          {
+            "id": 40,
+            "parent": 1,
+            "role": "Status",
+            "name": "Text size",
+            "enabled": true,
+            "visible": true,
+            "focused": false,
+            "selected": false,
+            "checked": null,
+            "busy": false,
+            "bounds": null
+          }
+        ],
+        "label": "settings-tab",
+        "serial_start": 191501,
+        "host_monotonic_ns": 24609882650562
+      },
+      {
+        "frame": 1336,
+        "generation": 1292,
+        "context": 2,
+        "token": 0,
+        "count": 12,
+        "focused": 101,
+        "nodes": [
+          {
+            "id": 1,
+            "parent": 0,
+            "role": "Window",
+            "name": "Prism Files",
+            "enabled": true,
+            "visible": true,
+            "focused": false,
+            "selected": false,
+            "checked": null,
+            "busy": false,
+            "bounds": [
+              92,
+              124,
+              640,
+              400
+            ]
+          },
+          {
+            "id": 101,
+            "parent": 1,
+            "role": "List",
+            "name": "File list",
+            "enabled": true,
+            "visible": true,
+            "focused": true,
+            "selected": false,
+            "checked": null,
+            "busy": false,
+            "bounds": null
+          },
+          {
+            "id": 102,
+            "parent": 1,
+            "role": "Button",
+            "name": "Create file",
+            "enabled": true,
+            "visible": true,
+            "focused": false,
+            "selected": false,
+            "checked": null,
+            "busy": false,
+            "bounds": [
+              104,
+              176,
+              96,
+              32
+            ]
+          },
+          {
+            "id": 103,
+            "parent": 1,
+            "role": "Button",
+            "name": "Rename selected file",
+            "enabled": false,
+            "visible": true,
+            "focused": false,
+            "selected": false,
+            "checked": null,
+            "busy": false,
+            "bounds": [
+              208,
+              176,
+              96,
+              32
+            ]
+          },
+          {
+            "id": 104,
+            "parent": 1,
+            "role": "Button",
+            "name": "Move selected file to Trash",
+            "enabled": false,
+            "visible": true,
+            "focused": false,
+            "selected": false,
+            "checked": null,
+            "busy": false,
+            "bounds": [
+              312,
+              176,
+              96,
+              32
+            ]
+          },
+          {
+            "id": 105,
+            "parent": 1,
+            "role": "Button",
+            "name": "Copy selected file",
+            "enabled": false,
+            "visible": true,
+            "focused": false,
+            "selected": false,
+            "checked": null,
+            "busy": false,
+            "bounds": [
+              416,
+              176,
+              96,
+              32
+            ]
+          },
+          {
+            "id": 106,
+            "parent": 1,
+            "role": "Button",
+            "name": "Open Trash",
+            "enabled": true,
+            "visible": true,
+            "focused": false,
+            "selected": false,
+            "checked": null,
+            "busy": false,
+            "bounds": [
+              520,
+              176,
+              96,
+              32
+            ]
+          },
+          {
+            "id": 107,
+            "parent": 1,
+            "role": "Button",
+            "name": "Find and sort files",
+            "enabled": true,
+            "visible": true,
+            "focused": false,
+            "selected": false,
+            "checked": null,
+            "busy": false,
+            "bounds": [
+              624,
+              176,
+              96,
+              32
+            ]
+          },
+          {
+            "id": 20,
+            "parent": 1,
+            "role": "ListItem",
+            "name": "/NEXT.TXT",
+            "enabled": true,
+            "visible": true,
+            "focused": false,
+            "selected": true,
+            "checked": null,
+            "busy": false,
+            "bounds": [
+              100,
+              230,
+              624,
+              24
+            ]
+          },
+          {
+            "id": 22,
+            "parent": 1,
+            "role": "ListItem",
+            "name": "/native/linux",
+            "enabled": true,
+            "visible": true,
+            "focused": false,
+            "selected": false,
+            "checked": null,
+            "busy": false,
+            "bounds": [
+              100,
+              254,
+              624,
+              24
+            ]
+          },
+          {
+            "id": 21,
+            "parent": 1,
+            "role": "ListItem",
+            "name": "/native/probe",
+            "enabled": true,
+            "visible": true,
+            "focused": false,
+            "selected": false,
+            "checked": null,
+            "busy": false,
+            "bounds": [
+              100,
+              278,
+              624,
+              24
+            ]
+          },
+          {
+            "id": 40,
+            "parent": 1,
+            "role": "Status",
+            "name": "File operation status",
+            "enabled": true,
+            "visible": true,
+            "focused": false,
+            "selected": false,
+            "checked": null,
+            "busy": false,
+            "bounds": null
+          }
+        ],
+        "label": "files",
+        "serial_start": 194346,
+        "host_monotonic_ns": 24610284827772
+      },
+      {
+        "frame": 1338,
+        "generation": 1293,
+        "context": 27,
+        "token": 0,
+        "count": 7,
+        "focused": 10,
+        "nodes": [
+          {
+            "id": 1,
+            "parent": 0,
+            "role": "Dialog",
+            "name": "Find and sort files",
+            "enabled": true,
+            "visible": true,
+            "focused": false,
+            "selected": false,
+            "checked": null,
+            "busy": false,
+            "bounds": [
+              400,
+              230,
+              480,
+              340
+            ]
+          },
+          {
+            "id": 10,
+            "parent": 1,
+            "role": "TextBox",
+            "name": "File query",
+            "enabled": true,
+            "visible": true,
+            "focused": true,
+            "selected": false,
+            "checked": null,
+            "busy": false,
+            "bounds": [
+              420,
+              282,
+              440,
+              36
+            ]
+          },
+          {
+            "id": 11,
+            "parent": 1,
+            "role": "Button",
+            "name": "Sort by",
+            "enabled": true,
+            "visible": true,
+            "focused": false,
+            "selected": false,
+            "checked": null,
+            "busy": false,
+            "bounds": [
+              420,
+              326,
+              440,
+              32
+            ]
+          },
+          {
+            "id": 12,
+            "parent": 1,
+            "role": "Button",
+            "name": "Sort order",
+            "enabled": true,
+            "visible": true,
+            "focused": false,
+            "selected": false,
+            "checked": null,
+            "busy": false,
+            "bounds": [
+              420,
+              364,
+              440,
+              32
+            ]
+          },
+          {
+            "id": 13,
+            "parent": 1,
+            "role": "Button",
+            "name": "Search scope",
+            "enabled": true,
+            "visible": true,
+            "focused": false,
+            "selected": false,
+            "checked": null,
+            "busy": false,
+            "bounds": [
+              420,
+              402,
+              440,
+              32
+            ]
+          },
+          {
+            "id": 14,
+            "parent": 1,
+            "role": "Button",
+            "name": "Cancel",
+            "enabled": true,
+            "visible": true,
+            "focused": false,
+            "selected": false,
+            "checked": null,
+            "busy": false,
+            "bounds": [
+              420,
+              518,
+              128,
+              36
+            ]
+          },
+          {
+            "id": 15,
+            "parent": 1,
+            "role": "Button",
+            "name": "Apply file query",
+            "enabled": true,
+            "visible": true,
+            "focused": false,
+            "selected": false,
+            "checked": null,
+            "busy": false,
+            "bounds": [
+              560,
+              518,
+              128,
+              36
+            ]
+          }
+        ],
+        "label": "file-query-modal",
+        "serial_start": 196890,
+        "host_monotonic_ns": 24610523160338
+      },
+      {
+        "frame": 1339,
+        "generation": 1294,
+        "context": 27,
+        "token": 0,
+        "count": 7,
+        "focused": 11,
+        "nodes": [
+          {
+            "id": 1,
+            "parent": 0,
+            "role": "Dialog",
+            "name": "Find and sort files",
+            "enabled": true,
+            "visible": true,
+            "focused": false,
+            "selected": false,
+            "checked": null,
+            "busy": false,
+            "bounds": [
+              400,
+              230,
+              480,
+              340
+            ]
+          },
+          {
+            "id": 10,
+            "parent": 1,
+            "role": "TextBox",
+            "name": "File query",
+            "enabled": true,
+            "visible": true,
+            "focused": false,
+            "selected": false,
+            "checked": null,
+            "busy": false,
+            "bounds": [
+              420,
+              282,
+              440,
+              36
+            ]
+          },
+          {
+            "id": 11,
+            "parent": 1,
+            "role": "Button",
+            "name": "Sort by",
+            "enabled": true,
+            "visible": true,
+            "focused": true,
+            "selected": false,
+            "checked": null,
+            "busy": false,
+            "bounds": [
+              420,
+              326,
+              440,
+              32
+            ]
+          },
+          {
+            "id": 12,
+            "parent": 1,
+            "role": "Button",
+            "name": "Sort order",
+            "enabled": true,
+            "visible": true,
+            "focused": false,
+            "selected": false,
+            "checked": null,
+            "busy": false,
+            "bounds": [
+              420,
+              364,
+              440,
+              32
+            ]
+          },
+          {
+            "id": 13,
+            "parent": 1,
+            "role": "Button",
+            "name": "Search scope",
+            "enabled": true,
+            "visible": true,
+            "focused": false,
+            "selected": false,
+            "checked": null,
+            "busy": false,
+            "bounds": [
+              420,
+              402,
+              440,
+              32
+            ]
+          },
+          {
+            "id": 14,
+            "parent": 1,
+            "role": "Button",
+            "name": "Cancel",
+            "enabled": true,
+            "visible": true,
+            "focused": false,
+            "selected": false,
+            "checked": null,
+            "busy": false,
+            "bounds": [
+              420,
+              518,
+              128,
+              36
+            ]
+          },
+          {
+            "id": 15,
+            "parent": 1,
+            "role": "Button",
+            "name": "Apply file query",
+            "enabled": true,
+            "visible": true,
+            "focused": false,
+            "selected": false,
+            "checked": null,
+            "busy": false,
+            "bounds": [
+              560,
+              518,
+              128,
+              36
+            ]
+          }
+        ],
+        "label": "file-query-tab",
+        "serial_start": 198454,
+        "host_monotonic_ns": 24610683006566
+      },
+      {
+        "frame": 1340,
+        "generation": 1295,
+        "context": 2,
+        "token": 0,
+        "count": 12,
+        "focused": 101,
+        "nodes": [
+          {
+            "id": 1,
+            "parent": 0,
+            "role": "Window",
+            "name": "Prism Files",
+            "enabled": true,
+            "visible": true,
+            "focused": false,
+            "selected": false,
+            "checked": null,
+            "busy": false,
+            "bounds": [
+              92,
+              124,
+              640,
+              400
+            ]
+          },
+          {
+            "id": 101,
+            "parent": 1,
+            "role": "List",
+            "name": "File list",
+            "enabled": true,
+            "visible": true,
+            "focused": true,
+            "selected": false,
+            "checked": null,
+            "busy": false,
+            "bounds": null
+          },
+          {
+            "id": 102,
+            "parent": 1,
+            "role": "Button",
+            "name": "Create file",
+            "enabled": true,
+            "visible": true,
+            "focused": false,
+            "selected": false,
+            "checked": null,
+            "busy": false,
+            "bounds": [
+              104,
+              176,
+              96,
+              32
+            ]
+          },
+          {
+            "id": 103,
+            "parent": 1,
+            "role": "Button",
+            "name": "Rename selected file",
+            "enabled": false,
+            "visible": true,
+            "focused": false,
+            "selected": false,
+            "checked": null,
+            "busy": false,
+            "bounds": [
+              208,
+              176,
+              96,
+              32
+            ]
+          },
+          {
+            "id": 104,
+            "parent": 1,
+            "role": "Button",
+            "name": "Move selected file to Trash",
+            "enabled": false,
+            "visible": true,
+            "focused": false,
+            "selected": false,
+            "checked": null,
+            "busy": false,
+            "bounds": [
+              312,
+              176,
+              96,
+              32
+            ]
+          },
+          {
+            "id": 105,
+            "parent": 1,
+            "role": "Button",
+            "name": "Copy selected file",
+            "enabled": false,
+            "visible": true,
+            "focused": false,
+            "selected": false,
+            "checked": null,
+            "busy": false,
+            "bounds": [
+              416,
+              176,
+              96,
+              32
+            ]
+          },
+          {
+            "id": 106,
+            "parent": 1,
+            "role": "Button",
+            "name": "Open Trash",
+            "enabled": true,
+            "visible": true,
+            "focused": false,
+            "selected": false,
+            "checked": null,
+            "busy": false,
+            "bounds": [
+              520,
+              176,
+              96,
+              32
+            ]
+          },
+          {
+            "id": 107,
+            "parent": 1,
+            "role": "Button",
+            "name": "Find and sort files",
+            "enabled": true,
+            "visible": true,
+            "focused": false,
+            "selected": false,
+            "checked": null,
+            "busy": false,
+            "bounds": [
+              624,
+              176,
+              96,
+              32
+            ]
+          },
+          {
+            "id": 20,
+            "parent": 1,
+            "role": "ListItem",
+            "name": "/NEXT.TXT",
+            "enabled": true,
+            "visible": true,
+            "focused": false,
+            "selected": true,
+            "checked": null,
+            "busy": false,
+            "bounds": [
+              100,
+              230,
+              624,
+              24
+            ]
+          },
+          {
+            "id": 22,
+            "parent": 1,
+            "role": "ListItem",
+            "name": "/native/linux",
+            "enabled": true,
+            "visible": true,
+            "focused": false,
+            "selected": false,
+            "checked": null,
+            "busy": false,
+            "bounds": [
+              100,
+              254,
+              624,
+              24
+            ]
+          },
+          {
+            "id": 21,
+            "parent": 1,
+            "role": "ListItem",
+            "name": "/native/probe",
+            "enabled": true,
+            "visible": true,
+            "focused": false,
+            "selected": false,
+            "checked": null,
+            "busy": false,
+            "bounds": [
+              100,
+              278,
+              624,
+              24
+            ]
+          },
+          {
+            "id": 40,
+            "parent": 1,
+            "role": "Status",
+            "name": "File operation status",
+            "enabled": true,
+            "visible": true,
+            "focused": false,
+            "selected": false,
+            "checked": null,
+            "busy": false,
+            "bounds": null
+          }
+        ],
+        "label": "query-cancel-restores-files",
+        "serial_start": 200131,
+        "host_monotonic_ns": 24610849868019
+      }
+    ],
+    "captures": [
+      {
+        "path": "build/thirteenth-accessibility/trusted-file-portal.ppm",
+        "sha256": "8c91544101af08e8fd200dfe38ae922c9e264975c07460d64afa5b1a05ff9430",
+        "snapshot_frame": 1259,
+        "semantic_generation": 1234
+      },
+      {
+        "path": "build/thirteenth-accessibility/settings-tab.ppm",
+        "sha256": "d16cb33a72b930cff93d4a63e0e823f5ed20255b8caf7576e396c5e3ca5b297e",
+        "snapshot_frame": 1328,
+        "semantic_generation": 1291
+      },
+      {
+        "path": "build/thirteenth-accessibility/file-query-modal.ppm",
+        "sha256": "46f7b46165272a2d91649d7a9d2b18acfd57797e890220ec8d74c2787b3a70d4",
+        "snapshot_frame": 1339,
+        "semantic_generation": 1294
+      }
+    ],
+    "host_binding": {
+      "compiled_source_manifest_sha256": "e40e61e7e0be81022ce32b0f314391094466f698080cee3a4183019f9ef42594",
+      "frozen_source_root": "/workspace/Next/work/thirteenth-wave/frozen-src",
+      "prism_sources": {
+        "crates/prism/Cargo.toml": "57973d236330697346e0d9630c65982af0eec5572613eb605357d755210caca4",
+        "crates/prism/assets/NOTICE.txt": "a49d56b73938f8f366ebd81bcdcbdb44c9fe85966848f6f07612194588c65e16",
+        "crates/prism/assets/OpenSans-LICENSE.txt": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+        "crates/prism/assets/open-sans-advance.bin": "7bfb26802a159e8c464aa8f17026bff36915d55240b5c0fbfd0ec8774ef3a0ee",
+        "crates/prism/assets/open-sans-atlas.bin": "d954599f44ba97e84f07b184a493087e781354176065776ad7d23a9d8a745a4b",
+        "crates/prism/assets/source/OpenSans-Regular.ttf": "e64e508b2aa2880f907e470c4550980ec4c0694d103a43f36150ac3f93189bee",
+        "crates/prism/assets/wallpaper.rgb": "85495a5a07d24342eb2797a7e416b142baf2fcbc6929f9632e2e1884a6a09d8c",
+        "crates/prism/src/accessibility.rs": "9961aa82747e7700da386de6e9fe072b3503eeaabbb87e5acb1e3b0f9df80991",
+        "crates/prism/src/accessibility_shell.rs": "3841dd1e38ad41158bdabf40b4b04f634f3a823519a33bd9246c21c0fc78ce5c",
+        "crates/prism/src/appearance.rs": "cac1b530f6fa29e3718c53ba573aaae77f084363e913f995fb1e27ee3abd643d",
+        "crates/prism/src/appearance_ui.rs": "cb2ec7e0c244479dac04d913712d46671b8b80354b13874255c44c885b3037e7",
+        "crates/prism/src/calculator.rs": "3e8537719e105b24ad99b000027f587bbf470436a0de38be93263868013e2185",
+        "crates/prism/src/client_interaction.rs": "05d337962004ada3053bac4dd9db5dcdfaa1963129e064fd6de7eb88b0fa0f3e",
+        "crates/prism/src/client_surface.rs": "88aa5ba3b8dc61b594178f48fd2aff9fc239302e814c2877a5c2d3693d5413c0",
+        "crates/prism/src/desktop.rs": "14bb10b040282a261274efacedf39cbbe06aae725c3b090cca4e9f59d00c45f2",
+        "crates/prism/src/editor.rs": "d3facd625ed5875dd954373c0caf1849da10c2c90daa36a7f8f788c8d4ca6828",
+        "crates/prism/src/files_actions.rs": "10051beaf0e107324cdb149f193bda90c8fe0ebe63a7b91c671409ba1b2031f0",
+        "crates/prism/src/files_query.rs": "263965b90055d0347a280a9a881dc4d9344c9db8f5f95ca7b196fccc2a747aa9",
+        "crates/prism/src/files_query_shell.rs": "dbbd9155acd902facf95df78d2692df57316dc2b2bbc40f196605f951719106c",
+        "crates/prism/src/keyboard_focus.rs": "dcfadc01486f3e6e060b21a685c7255f28b67b6f120314eb77ff7fa03f6eb13a",
+        "crates/prism/src/lib.rs": "03884010aced27cfcd7737fd1b14e5329207eab5341ec84b4c659c98404cefac",
+        "crates/prism/src/notifications.rs": "ec28aa2c1767bf8b6b4b3f7637d28f96180e0c1f7022a300f25092da7fca77db",
+        "crates/prism/src/palette.rs": "33a01ed09dd2f22759c13a2214ab41c01bc6965cda43f816cab8aa0439a1f62e",
+        "crates/prism/src/snap.rs": "6ac131265ed57fe098408dff66fd99e5b332649be869e2f94985122d62ccdb3e",
+        "crates/prism/src/surface_state.rs": "f852981f26a41df8afb8d898245b61f6990b9f1e9f7d39d00211063dea9a9035",
+        "crates/prism/src/theme.rs": "460e80e2b421b1bfd42bad61ebb474259d3823319abeb718f8e0363a1fe85976",
+        "crates/prism/src/trash_shell.rs": "b6c44a915935ce2605d50a6f1e351caf0c28bbe462a777c7eea2fcb381c16578",
+        "crates/prism/src/trash_ui.rs": "d394537712af02a7435e310a229c076954c171b1688efbc2c8081c3aa718aded",
+        "crates/prism/src/trash_undo_ui.rs": "fb4a31045ba4e8a525798fbb917bfd666c671e2cb0f439f9dfc211f67f6ca4c0"
+      },
+      "helper_source_sha256": "3d5de06a4b8d3fdbee3a6e0a08fa81f1b7de5c09fd628e9def013b86652fb397",
+      "library_sha256": "f02fb852ea44fbc13bb71be416d8d8fd7ecafa4bcb05507b073163d6db6eba79",
+      "helper_sha256": "2fe51a9d8980abf99140c68d5a00d3d7141e21b4ea97708cee5fb2755bf2bcfe"
+    },
+    "scope": "Active trusted shell contexts only; optional geometry; no app tree, speech, braille or external accessibility service claim"
+  },
+  "clock_samples": [
+    [
+      6189,
+      61885746684
+    ],
+    [
+      6219,
+      62185726066
+    ]
+  ],
+  "uart_metrics": {
+    "accepted": 210428,
+    "transmitted": 210428,
+    "dropped": 0,
+    "stalled": 2419,
+    "absent": 0,
+    "pending": 0
+  },
+  "screenshot": {
+    "path": "build/screenshot.ppm",
+    "width": 1280,
+    "height": 800,
+    "distinct_colors": 2378,
+    "validation": "PPM dimensions and at least four colors; no visual layout or accessibility verification"
+  },
+  "dns_peer": {
+    "dropped": 3,
+    "answers": 10,
+    "requests": 13
+  },
+  "dns_boot_flow": {
+    "dropped": 1,
+    "answers": 3,
+    "validation": "First valid bootstrap UDP source flow, independently scoped from native lookup source ports"
+  },
+  "audio": {
+    "path": "build/thirteenth-accessibility/audio.wav",
+    "sample_rate": 48000,
+    "channels": 2,
+    "active_frames": 11110
+  },
+  "finished_utc": "2026-10-11T19:47:40.067391+00:00",
+  "surface_source_binding": {
+    "manifest_path": "/workspace/Next/work/thirteenth-wave/source-manifest.json",
+    "manifest_sha256": "e40e61e7e0be81022ce32b0f314391094466f698080cee3a4183019f9ef42594",
+    "image_sha256": "75b7eee4a19b9451d0c31214ce2a2d0404270ed3e0c02ad03997efc4428709d6",
+    "surface_fixture_sha256": "b764958deb8866ca8a93942505a1028426e3e5ac22619e01bc9ef1d60a839b66",
+    "workspace_policy": "Mutable concurrent source is not substituted for retained compiled evidence",
+    "manifest_unchanged": true,
+    "image_unchanged": true
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "base_image_sha256": "e1aa0516b94e20f349cea2bbe4593bbce4d27e3ac4b014e7971fe635b267741e",
+  "source_files": 207,
+  "source_manifest_sha256": "37b72e7d411ae6f37bbd845fbe8c3c9d4c8dda6db6ebfde96fe4566fd3bc9ee1",
+  "scope": "Exact frozen eighth source copied unchanged; no newer source recapture. Host validation separately scoped, original observations preserved.",
+  "alternate_ap_prepare_sha256": "b591602de582d178850d3bf312f597b5a2d0a28db47100f5371171f0f57acf24",
+  "alternate_ap_source_sha256": "8ebe88db0922338c7a929d094a1330c491289aa0b2689aac9f29f829b637701a",
+  "alternate_ap_scope": "Actual separately signed diagnostic kernel derivative77a400 on eighth base loader/initrd: after-unmask injection observes real APIC ISR then restores route controls/PIC fresh3 with PS2/time/frame continuity. Full prepare.json retains own source stage SHA8ebe88..., not the default compiled kernel e1aa.",
+  "excluded": "Newer ninth preferences/Files GUI/focus/DNS modules and surface protocol/lifetime foundations are not eighth image claims."
+}

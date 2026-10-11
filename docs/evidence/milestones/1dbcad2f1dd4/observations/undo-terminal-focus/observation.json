@@ -1,0 +1,7 @@
+{
+  "classification": "validation-wrapper integration assumption; base restored Terminal, extension sent U without reopening Trash; no Undo dispatched",
+  "source_image_sha256": "1dbcad2f1dd45d74383f5120deb9d1530d9dc594443f98e6617f4cd69b921c83",
+  "raw_scratch_original_path": "build/twelfth-undo-attempt1-failed/failed-live-scratch.img",
+  "raw_scratch_sha256": "efed8ee4ca57541b60f567cc028c5a8f86b1a41fe14dd10ec66a67c81964c7d8",
+  "scope": "Original failed report/log/captures unchanged; scratch retained build rather than duplicated into docs."
+}

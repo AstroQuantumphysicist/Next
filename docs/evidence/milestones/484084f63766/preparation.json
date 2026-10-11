@@ -1,0 +1,7 @@
+{
+  "status": "preparing-not-finalized",
+  "image_sha256": "484084f63766308d2a355de11ca9862ad87ea6b92276f2852dc4679991e68173",
+  "source_files": 167,
+  "source_manifest_sha256": "a60aaa16f4636cc5fa50240bd71e144dd66b66134e6fc91557fc0f446b83c674",
+  "scope": "Ninth snapshot uses all crates and15build inputs, omitting docs/test tooling; file count is not comparable with eighth207 or a feature score. Unwired protocol/broker files are source-only. Host411 passes; guest integration proof pending. Newer tenth exports/syscalls/helper code excluded."
+}

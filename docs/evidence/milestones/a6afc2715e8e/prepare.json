@@ -1,0 +1,15 @@
+{
+  "source_files": 3592,
+  "source_manifest_sha256": "3bee43295ce414960cac5ca41855966c57f7f79407e67a9d6adae1473fc07989",
+  "source_manifest": "work/eighteenth-wave/source-manifest.json",
+  "frozen_source": "work/eighteenth-wave/frozen-src",
+  "tests_exit": 0,
+  "build_exit": 0,
+  "image": "work/eighteenth-wave/frozen-src/build/next-dev.img",
+  "image_sha256": "a6afc2715e8e0775c53a41f429ba0c84b4626f53c5d4017625d87f0ba85bc0f6",
+  "image_bytes": 68157440,
+  "sha256": {
+    "next-dev.img": "a6afc2715e8e0775c53a41f429ba0c84b4626f53c5d4017625d87f0ba85bc0f6"
+  },
+  "validator_source_manifest_sha256": "a7c69e80ca33e1e40ffaf228433bdf0347a78e6aea0aa97573a40211ed743f41"
+}

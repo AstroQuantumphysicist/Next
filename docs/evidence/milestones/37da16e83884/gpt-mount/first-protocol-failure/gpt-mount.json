@@ -1,0 +1,17 @@
+{
+  "passed": false,
+  "requested_cases": [
+    "valid",
+    "corrupt-backup",
+    "unsigned-supervisor",
+    "tampered-policy",
+    "mismatched-policy",
+    "blank-journal",
+    "readonly-policy",
+    "readonly-attribute"
+  ],
+  "scope": "Fresh owned GPT images; owner-signed exact-layout132-sector journal mount, actual Prism editor and clean VM reboot persistence, readonly/refusal gates. No installer, unknown-disk formatting, power-loss or hardware certification.",
+  "cases": [],
+  "error": "GPT full-boot phase failed: boot smoke exceeded 150 seconds",
+  "source_image_unchanged": true
+}

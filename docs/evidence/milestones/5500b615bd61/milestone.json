@@ -1,0 +1,33 @@
+{
+  "milestone": "Source15 trusted native surface resize and quota-runtime integration",
+  "image_sha256": "5500b615bd61d7b2275c049f04bff546da999607db63f3e361b421553e6d9b7f",
+  "source_manifest_sha256": "b2f44957600996f6954ddf729fe1ca1011083cdeb71fae9a0ab9107683489e21",
+  "source_files": 3553,
+  "full_tests_exit_code": 0,
+  "native_resize_guest_passed": true,
+  "native_resize_checks": 123,
+  "native_resize_report_sha256": "7296193ed3befa58df4ec45f4285e30c24ee4811373d710f2a2f4c22fdb52064",
+  "native_resize_binding_unchanged": true,
+  "cpu_budget_guest_passed": false,
+  "cpu_budget_error": "boot smoke exceeded 300 seconds",
+  "cpu_budget_no_throttle_evidence": "build/fifteenth-observations/cpu-budget-no-throttle",
+  "scope_limits": [
+    "CPU budget is not guest-accepted in this milestone; interactive spinner did not produce a throttle marker by the 300-second timeout.",
+    "No Max CPU resize run.",
+    "No nested directory guest run.",
+    "No production trust chain, Secure Boot certification, isolated compositor, GPU, SMP, or real hardware claim."
+  ],
+  "artifacts": {
+    "native-resize/actual-desktop-files.ppm": "7c905dd6bfa8f679910ca61e536bf91e935069cf450d4404f10cfc45c449b457",
+    "native-resize/actual-desktop-home.ppm": "94e7b15e88397d6925ca7d8f9b46e08b46691b2bd1d224feae9b89580499edca",
+    "native-resize/actual-desktop-settings.ppm": "5e4ba28187a32ad3d317407beab4b4965bc46dcad6561744ff0dfadef1372765",
+    "native-resize/boot-smoke.json": "7296193ed3befa58df4ec45f4285e30c24ee4811373d710f2a2f4c22fdb52064",
+    "native-resize/grow-owned-checkerboard.ppm": "d876e3f51f171c2e97ed373bd1cfa459e713e1b47a2471eff84996db8d33dd76",
+    "native-resize/initial-display.ppm": "415136613431d67682d6c1b029e2df457739287afb3c4f5e42037ca2c92564bd",
+    "native-resize/initial-owned-checkerboard.ppm": "ace5ecb96b39de1991fc6f4bdab6827c45fa2ff04940cfa817ca2824c7e36c67",
+    "native-resize/qemu-smoke.log": "a63389a2f51fcb43f4c1333c1bb3264f4608807548f740c2aa4eddb50ceb6b10",
+    "native-resize/retention-summary.json": "cb832592e99a78aec91994688b806af87c397f12a63bfb98c1d41a800bdd3172",
+    "native-resize/serial.log": "c17fe4a7a1981b2ae32655ca48f8db11a7b6ef5f0f208bdeb4d10e9b1adef8c5",
+    "native-resize/shrink-owned-checkerboard.ppm": "299ec9048395c334856d84a1735a490827543c461d65e9eb095fa0e47e8a6bf1"
+  }
+}

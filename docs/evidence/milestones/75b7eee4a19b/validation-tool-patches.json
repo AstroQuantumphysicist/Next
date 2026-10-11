@@ -1,0 +1,9 @@
+{
+  "scope": "Executed guest validators may differ from compiled source snapshot; original failed harness observations retained without rewriting results. No source recapture.",
+  "sha256": {
+    "tools/accessibility_smoke.py": "a7cf1276e75142a4d5f827ce1fea2c1d1dffd197991bd2988de40efa98198bd0",
+    "tools/accessibility_readback.py": "f9a3cc820afe9e8314303c7240630391aca8ea42b6dbf897168086ce08237c4b",
+    "tools/files_query_smoke.py": "ade29195890aabe2c274c495cb360d00d1236da99436c312438447190ef46922",
+    "tools/files_query_host.rs": "d16818cb2ab9c5c557c02612c82564d7d867761ba1f4907875b6d80f5f0981d4"
+  }
+}

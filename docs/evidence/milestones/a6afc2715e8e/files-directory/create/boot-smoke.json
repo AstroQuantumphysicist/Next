@@ -1,0 +1,2226 @@
+{
+  "passed": true,
+  "scope": "QEMU q35/TCG, single CPU, legacy PS/2, software framebuffer, PIT/PIC timer interrupts, legacy virtio read/write/flush in dedicated trailing data region, FAT32 reads, native processes and IPC; no hardware certification",
+  "started_utc": "2026-10-11T21:26:45.161493+00:00",
+  "checks": [
+    "Ed25519 deployment signature and kernel/init-image SHA256 verified against workspace development anchor",
+    "separate validated ELF loaded from EFI boot-device filesystem",
+    "firmware boot services exited",
+    "versioned checksummed BootInfo with kernel/loader/map reservations",
+    "supervisor RX text, RO NX data, RW NX memory and guarded stacks",
+    "CPU kernel protection: RX text write",
+    "CPU kernel protection: RO data write",
+    "CPU kernel protection: user code physical alias write",
+    "CPU kernel protection: NX data execution",
+    "CPU kernel protection: kernel stack guard write",
+    "CPU kernel protection: interrupt stack guard write",
+    "kernel physical-page and handle selftest",
+    "isolated ring3 native code, bounded syscall, pointer denial and exit",
+    "CPU page fault isolation: supervisor read",
+    "CPU page fault isolation: RX code write",
+    "CPU page fault isolation: NX stack execution",
+    "PIT timer interrupts preserve tested integer registers and XMM0 sentinel",
+    "actual read-only legacy virtio block device",
+    "actual read-only FAT32 file access: /NEXT.TXT",
+    "kernel readback verifies only saved FX512 state is enabled; unsaved optional user controls and inherited TLS bases disabled",
+    "bounded boot-device init image loaded and retained",
+    "native SDK TLS setters/getters preserve private FS memory across yield, sleep and timer switches and reject invalid bases/copyout",
+    "native executable rejects invalid pointers and stale capability handles",
+    "native anonymous memory supports zeroed multi-page mappings and enforces range/permissions",
+    "PID1 reads authenticated signed service declarations with no partial writes on short, null, readonly or guard-crossing outputs",
+    "actual manual/auto events enforce wait/signal rights and copyout-before-consumption",
+    "actual blocking waits enforce deadlines, wake one auto waiter, broadcast manual events and clean up killed waiters",
+    "capability-backed COW file streams preserve offsets on denied copyout and enforce attenuated rights",
+    "cross-process file capability transfer grants read and denies write",
+    "cross-process capability move produces usable attenuated recipient authority",
+    "framed IPC request/reply between distinct native address spaces",
+    "CPU faults for supervisor access, RX write, NX execute, stack guard and invalid opcode terminate only offending child",
+    "native integer, all XMM and x87 sentinels survive noncooperative timer context switches",
+    "validated q35 HPET resource uses owned UC mapping and advancing hardware counter; PIT remains scheduler clock",
+    "read-only BSP LAPIC identity and version discovery with owned UC mapping",
+    "actual IOAPIC pin discovery and bounded masked ISA plan before the explicit routing transition",
+    "actual PIT IRQ0 routing transition reports ISR-observed IOAPIC delivery or verified PIC rollback",
+    "independently attenuated worker NETWORK grant blocks socket creation despite signed declaration",
+    "moving a socket to an unprivileged recipient cannot bypass NETWORK authority; denied import preserves ownership until teardown",
+    "validated ACPI tables discover BSP, IOAPIC and interrupt overrides; no SMP startup",
+    "COW data store commits file write/rename/delete and remounts without touching ESP",
+    "actual AC97 DMA playback completes 12000 stereo frames at 48 kHz",
+    "actual DHCP Discover/Offer/Request/Ack obtains bounded QEMU lease",
+    "actual virtio Ethernet ARP, ICMP echo and checksummed UDP request/reply with local host peer",
+    "actual local UDP A/AAAA lookups validate framed replies, TTL cache hits, real monotonic expiry and wire refresh",
+    "actual TCP handshake, bounded HTTP response and connection teardown with local host peer",
+    "PS/2 auxiliary mouse initialized",
+    "dedicated data-sector write/read/flush and original contents restored",
+    "native child fault terminates offender while supervisor survives",
+    "timer preempts non-yielding child and supervisor kills it",
+    "process results survive repeated and duplicated waits; signed exit -7 is distinct from WouldBlock and bad copyout cannot consume result",
+    "native process exit, wait, stale handles and slot reuse",
+    "isolated native privileged VFS fixture checks independent/shared offsets, rename replacement, open unlink lifetime and recreate isolation",
+    "native PID1 executes real isolated-worker crash restart and heartbeat timeout recovery with bounded policy",
+    "live native nextd supervisor signals readiness",
+    "kernel completes bounded native startup",
+    "actual masked LAPIC countdown calibrated against two bounded HPET windows; masked firmware timer adopted/stopped, LVT/divider restored and PIT retained",
+    "actual q35 CMOS UTC anchor agrees with host wall clock",
+    "framebuffer shell ready",
+    "distinct worker PIDs and exit statuses prove crash restart and watchdog recovery ordering",
+    "recovered isolated service remains live alongside PID1 after desktop readiness",
+    "serial command: status",
+    "serial command: about",
+    "serial command: help",
+    "serial command: cat /NEXT.TXT",
+    "serial command: write /smoke hello world",
+    "serial command: cat /smoke",
+    "serial command: mv /smoke /renamed",
+    "serial command: ls",
+    "serial command: rm /renamed",
+    "serial command: cat /renamed",
+    "serial command: ps",
+    "serial command: kill 1",
+    "serial command: run /system/missing.elf",
+    "serial command: run /system/untrusted.elf",
+    "serial command: trace",
+    "serial command: calc (2 + 3) * 4",
+    "serial command: calc 1 / 0",
+    "serial command: nextunknown",
+    "signed application authentication rejects tampered archive member before process creation",
+    "structured trace captures actual numeric process and namespace outcomes",
+    "interactive spawn and kill of non-yielding native child; supervisor protected",
+    "same static Linux ELF executes Linux SYSCALL subset and exits 37",
+    "Linux profile cannot invoke native readiness capability syscall",
+    "original Linux clock fixture: /compat/linux/clock.elf",
+    "original Linux clock fixture: /compat/linux/clock-gate.elf",
+    "native realtime clock normalizes UTC and rejects null, readonly and guard-crossing copyout",
+    "native clock utility uses actual monotonic time",
+    "console-owned program output reaches Prism terminal through bounded queue",
+    "original Linux brk/mmap/munmap fixture: /compat/linux/memory.elf",
+    "original Linux brk/mmap/munmap fixture: /compat/linux/memory-gate.elf",
+    "original Linux shared-open, rename/unlink lifetime fixture: /compat/linux/namespace.elf",
+    "original Linux shared-open, rename/unlink lifetime fixture: /compat/linux/namespace-gate.elf",
+    "Linux FS/GS bases survive gate, yield, preemption and bounds checks: /compat/linux/tls.elf",
+    "Linux FS/GS bases survive gate, yield, preemption and bounds checks: /compat/linux/tls-gate.elf",
+    "two overlapping Linux TLS instances preserve PID-specific private FS/GS contents across timer switches",
+    "original Linux common file-object fixture: /compat/linux/file.elf",
+    "original Linux common file-object fixture: /compat/linux/file-gate.elf",
+    "original NT PE32+ Win64 import fixture: /compat/nt/hello.exe",
+    "original NT PE32+ Win64 import fixture: /compat/nt/hello-gate.exe",
+    "native connected UDP capability sends actual nonce/empty datagrams through retained virtio device with copyout-safe receive, level wait, rights and stale-handle checks",
+    "console date reports normalized UTC from the same RTC/PIT clock",
+    "Home search matches actual file metadata and opens its authoritative content in Editor",
+    "actual Files QMP create/navigate/nested create/rename/cross-parent move/NotEmpty reject/empty remove operations agree with paused read-only journal oracle",
+    "actual PS/2 Super-arrow snap preview, apply, cancel and restore preserve floating geometry and work-area bounds",
+    "Editor actual load, PS/2 editing, Ctrl-S journal save, external-change conflict and unsaved-text preservation",
+    "monotonic PIT clock advances while serial console remains responsive",
+    "PS/2 keyboard command through QMP",
+    "PS/2 backspace corrects statuz to status",
+    "keyboard Home menu opens actual Files window without executing terminal input",
+    "actual PS/2 mouse motion and left-button event reaches desktop hit testing",
+    "serial console restores Terminal focus from Files panel",
+    "bounded UART transmit FIFO preserves queued output across stalls and reports zero rejected/absent bytes",
+    "screenshot taken after completed software back-buffer presentation",
+    "nonblank framebuffer screenshot",
+    "captured AC97 PCM contains matching stereo channels and a 1 kHz waveform"
+  ],
+  "image_sha256": "a6afc2715e8e0775c53a41f429ba0c84b4626f53c5d4017625d87f0ba85bc0f6",
+  "qemu_profile": "q35,accel=tcg; cpu=qemu64; 256M; smp=1; vga=std",
+  "guarded_emergency_stack_verified": false,
+  "ioapic_delivery": {
+    "gsi": 2,
+    "apic_interrupts": 3,
+    "pic_interrupts": 0
+  },
+  "lapic_calibration": {
+    "calibration_verified": true,
+    "reason": null,
+    "divider": 16,
+    "divided_hz": 62692452,
+    "pit_retained": true,
+    "continuation": {
+      "pit_timer_verified": true,
+      "ioapic_interrupts": 3,
+      "preemption_verified": true
+    }
+  },
+  "service_instance_pids": [
+    20,
+    21,
+    22
+  ],
+  "concurrent_tls_pids": [
+    35,
+    36
+  ],
+  "files_directories": {
+    "phase": "create",
+    "root_revision": 50,
+    "nested_listing": {
+      "path": "/native/alpha",
+      "id": 51,
+      "revision": 53,
+      "entries": {
+        "/native/alpha/deep": {
+          "kind": "directory",
+          "id": 53,
+          "size": 0
+        }
+      }
+    },
+    "renamed_listing": {
+      "path": "/native/alpha",
+      "id": 51,
+      "revision": 54,
+      "entries": {
+        "/native/alpha/renamed": {
+          "kind": "directory",
+          "id": 53,
+          "size": 0
+        }
+      }
+    },
+    "moved_listing": {
+      "path": "/native/beta",
+      "id": 52,
+      "revision": 55,
+      "entries": {
+        "/native/beta/moved": {
+          "kind": "directory",
+          "id": 53,
+          "size": 0
+        }
+      }
+    },
+    "actions": [
+      {
+        "intent": "Navigate { path: Path { bytes: [47, 110, 97, 116, 105, 118, 101, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], len: 7 } }",
+        "outcome": "Ok(50)",
+        "serial_start": 170201
+      },
+      {
+        "intent": "CreateFolder { parent: FolderSnapshot { path: Path { bytes: [47, 110, 97, 116, 105, 118, 101, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], len: 7 }, revision: 50, id: 0 }, path: Path { bytes: [47, 110, 97, 116, 105, 118, 101, 47, 97, 108, 112, 104, 97, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], len: 13 } }",
+        "outcome": "Ok(51)",
+        "serial_start": 171302
+      },
+      {
+        "intent": "CreateFolder { parent: FolderSnapshot { path: Path { bytes: [47, 110, 97, 116, 105, 118, 101, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], len: 7 }, revision: 51, id: 0 }, path: Path { bytes: [47, 110, 97, 116, 105, 118, 101, 47, 98, 101, 116, 97, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], len: 12 } }",
+        "outcome": "Ok(52)",
+        "serial_start": 171890
+      },
+      {
+        "intent": "Navigate { path: Path { bytes: [47, 110, 97, 116, 105, 118, 101, 47, 97, 108, 112, 104, 97, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], len: 13 } }",
+        "outcome": "Ok(52)",
+        "serial_start": 172386
+      },
+      {
+        "intent": "CreateFolder { parent: FolderSnapshot { path: Path { bytes: [47, 110, 97, 116, 105, 118, 101, 47, 97, 108, 112, 104, 97, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], len: 13 }, revision: 52, id: 51 }, path: Path { bytes: [47, 110, 97, 116, 105, 118, 101, 47, 97, 108, 112, 104, 97, 47, 100, 101, 101, 112, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], len: 18 } }",
+        "outcome": "Ok(53)",
+        "serial_start": 172865
+      },
+      {
+        "intent": "MoveFolder { source: FolderSnapshot { path: Path { bytes: [47, 110, 97, 116, 105, 118, 101, 47, 97, 108, 112, 104, 97, 47, 100, 101, 101, 112, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], len: 18 }, revision: 53, id: 53 }, destination: Path { bytes: [47, 110, 97, 116, 105, 118, 101, 47, 97, 108, 112, 104, 97, 47, 114, 101, 110, 97, 109, 101, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], len: 21 } }",
+        "outcome": "Ok(54)",
+        "serial_start": 173556
+      },
+      {
+        "intent": "Navigate { path: Path { bytes: [47, 110, 97, 116, 105, 118, 101, 47, 97, 108, 112, 104, 97, 47, 114, 101, 110, 97, 109, 101, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], len: 21 } }",
+        "outcome": "Ok(54)",
+        "serial_start": 174093
+      },
+      {
+        "intent": "Navigate { path: Path { bytes: [47, 110, 97, 116, 105, 118, 101, 47, 97, 108, 112, 104, 97, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], len: 13 } }",
+        "outcome": "Ok(54)",
+        "serial_start": 174496
+      },
+      {
+        "intent": "MoveFolder { source: FolderSnapshot { path: Path { bytes: [47, 110, 97, 116, 105, 118, 101, 47, 97, 108, 112, 104, 97, 47, 114, 101, 110, 97, 109, 101, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], len: 21 }, revision: 54, id: 53 }, destination: Path { bytes: [47, 110, 97, 116, 105, 118, 101, 47, 98, 101, 116, 97, 47, 109, 111, 118, 101, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], len: 18 } }",
+        "outcome": "Ok(55)",
+        "serial_start": 174975
+      },
+      {
+        "intent": "Navigate { path: Path { bytes: [47, 110, 97, 116, 105, 118, 101, 47, 98, 101, 116, 97, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], len: 12 } }",
+        "outcome": "Ok(55)",
+        "serial_start": 175595
+      },
+      {
+        "intent": "Navigate { path: Path { bytes: [47, 110, 97, 116, 105, 118, 101, 47, 98, 101, 116, 97, 47, 109, 111, 118, 101, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], len: 18 } }",
+        "outcome": "Ok(55)",
+        "serial_start": 175983
+      },
+      {
+        "intent": "Navigate { path: Path { bytes: [47, 110, 97, 116, 105, 118, 101, 47, 98, 101, 116, 97, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], len: 12 } }",
+        "outcome": "Ok(55)",
+        "serial_start": 176382
+      },
+      {
+        "intent": "Navigate { path: Path { bytes: [47, 110, 97, 116, 105, 118, 101, 47, 97, 108, 112, 104, 97, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], len: 13 } }",
+        "outcome": "Ok(55)",
+        "serial_start": 176597
+      },
+      {
+        "intent": "CreateFolder { parent: FolderSnapshot { path: Path { bytes: [47, 110, 97, 116, 105, 118, 101, 47, 97, 108, 112, 104, 97, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], len: 13 }, revision: 55, id: 51 }, path: Path { bytes: [47, 110, 97, 116, 105, 118, 101, 47, 97, 108, 112, 104, 97, 47, 112, 111, 112, 117, 108, 97, 116, 101, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0], len: 23 } }",
+        "outcome": "Ok(56)",
+        "serial_start": 177160
+      },
+      {
+        "intent": "Navigate { path: Path { bytes: [47, 110, 97, 116, 105, 118, 101, 47, 97, 108, 112, 104, 97, 47, 112, 111, 112, 117, 108, 97, 116, 101, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0], len: 23 } }",
+        "outcome": "Ok(56)",
+        "serial_start": 177771
+      },
+      {
+        "intent": "CreateFolder { parent: FolderSnapshot { path: Path { bytes: [47, 110, 97, 116, 105, 118, 101, 47, 97, 108, 112, 104, 97, 47, 112, 111, 112, 117, 108, 97, 116, 101, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0], len: 23 }, revision: 56, id: 56 }, path: Path { bytes: [47, 110, 97, 116, 105, 118, 101, 47, 97, 108, 112, 104, 97, 47, 112, 111, 112, 117, 108, 97, 116, 101, 100, 47, 99, 104, 105, 108, 100, 0, 0, 0], len: 29 } }",
+        "outcome": "Ok(57)",
+        "serial_start": 178269
+      },
+      {
+        "intent": "Navigate { path: Path { bytes: [47, 110, 97, 116, 105, 118, 101, 47, 97, 108, 112, 104, 97, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], len: 13 } }",
+        "outcome": "Ok(57)",
+        "serial_start": 178908
+      },
+      {
+        "intent": "RemoveFolder { source: FolderSnapshot { path: Path { bytes: [47, 110, 97, 116, 105, 118, 101, 47, 97, 108, 112, 104, 97, 47, 112, 111, 112, 117, 108, 97, 116, 101, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0], len: 23 }, revision: 57, id: 56 } }",
+        "outcome": "Err(NotEmpty)",
+        "serial_start": 179485
+      },
+      {
+        "intent": "Navigate { path: Path { bytes: [47, 110, 97, 116, 105, 118, 101, 47, 97, 108, 112, 104, 97, 47, 112, 111, 112, 117, 108, 97, 116, 101, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0], len: 23 } }",
+        "outcome": "Ok(57)",
+        "serial_start": 180185
+      },
+      {
+        "intent": "RemoveFolder { source: FolderSnapshot { path: Path { bytes: [47, 110, 97, 116, 105, 118, 101, 47, 97, 108, 112, 104, 97, 47, 112, 111, 112, 117, 108, 97, 116, 101, 100, 47, 99, 104, 105, 108, 100, 0, 0, 0], len: 29 }, revision: 57, id: 57 } }",
+        "outcome": "Ok(58)",
+        "serial_start": 180943
+      },
+      {
+        "intent": "Navigate { path: Path { bytes: [47, 110, 97, 116, 105, 118, 101, 47, 97, 108, 112, 104, 97, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], len: 13 } }",
+        "outcome": "Ok(58)",
+        "serial_start": 181414
+      },
+      {
+        "intent": "RemoveFolder { source: FolderSnapshot { path: Path { bytes: [47, 110, 97, 116, 105, 118, 101, 47, 97, 108, 112, 104, 97, 47, 112, 111, 112, 117, 108, 97, 116, 101, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0], len: 23 }, revision: 58, id: 56 } }",
+        "outcome": "Ok(59)",
+        "serial_start": 182074
+      },
+      {
+        "intent": "Navigate { path: Path { bytes: [47, 110, 97, 116, 105, 118, 101, 47, 98, 101, 116, 97, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], len: 12 } }",
+        "outcome": "Ok(59)",
+        "serial_start": 182535
+      },
+      {
+        "intent": "RemoveFolder { source: FolderSnapshot { path: Path { bytes: [47, 110, 97, 116, 105, 118, 101, 47, 98, 101, 116, 97, 47, 109, 111, 118, 101, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], len: 18 }, revision: 59, id: 53 } }",
+        "outcome": "Ok(60)",
+        "serial_start": 183193
+      }
+    ],
+    "captures": [
+      {
+        "name": "files-root-initial",
+        "path": "build/eighteenth-files-directory-final-proof/create/files-root-initial.ppm",
+        "sha256": "95d935e016c47310966ac7463e70874cc318356fe6180231141449b9b8ef027d"
+      },
+      {
+        "name": "files-nested-child-created",
+        "path": "build/eighteenth-files-directory-final-proof/create/files-nested-child-created.ppm",
+        "sha256": "977f6e2ad6c13b1641ffc1bfc995d1104d75fa8bd1bb10c5fe4302118f2903e7"
+      },
+      {
+        "name": "files-renamed-folder-open",
+        "path": "build/eighteenth-files-directory-final-proof/create/files-renamed-folder-open.ppm",
+        "sha256": "92b346281bf331541d3037a96948738151088f4726ec6a2a18297e8b42282347"
+      },
+      {
+        "name": "files-cross-parent-move",
+        "path": "build/eighteenth-files-directory-final-proof/create/files-cross-parent-move.ppm",
+        "sha256": "95e0b4727f18b4567a27a798422bd2b4329625558fa5f0d3eb555df0b499af4f"
+      },
+      {
+        "name": "files-nonempty-remove-rejected",
+        "path": "build/eighteenth-files-directory-final-proof/create/files-nonempty-remove-rejected.ppm",
+        "sha256": "346a35b5fee61227952110e2a48b7f1c538d2034d08298f733300c949c679f72"
+      },
+      {
+        "name": "files-empty-directories-final",
+        "path": "build/eighteenth-files-directory-final-proof/create/files-empty-directories-final.ppm",
+        "sha256": "7574fdcaae231a03aa9bdac5c5f5980b585ff5b74a2ebe776d203801c305d367"
+      }
+    ],
+    "timeline": [
+      {
+        "input": "click",
+        "position": [
+          582,
+          758
+        ],
+        "host_monotonic_ns": 30612214791110,
+        "serial_start": 170201
+      },
+      {
+        "input": "key",
+        "key": "n",
+        "host_monotonic_ns": 30612226745207,
+        "serial_start": 171047
+      },
+      {
+        "input": "key",
+        "key": "a",
+        "host_monotonic_ns": 30612282100275,
+        "serial_start": 171047
+      },
+      {
+        "input": "key",
+        "key": "l",
+        "host_monotonic_ns": 30612337790230,
+        "serial_start": 171047
+      },
+      {
+        "input": "key",
+        "key": "p",
+        "host_monotonic_ns": 30612393249383,
+        "serial_start": 171047
+      },
+      {
+        "input": "key",
+        "key": "h",
+        "host_monotonic_ns": 30612448638091,
+        "serial_start": 171047
+      },
+      {
+        "input": "key",
+        "key": "a",
+        "host_monotonic_ns": 30612504175650,
+        "serial_start": 171047
+      },
+      {
+        "input": "key",
+        "key": "tab",
+        "host_monotonic_ns": 30612559653600,
+        "serial_start": 171047
+      },
+      {
+        "input": "key",
+        "key": "ret",
+        "host_monotonic_ns": 30612804864437,
+        "serial_start": 171302
+      },
+      {
+        "input": "key",
+        "key": "n",
+        "host_monotonic_ns": 30612946418617,
+        "serial_start": 171800
+      },
+      {
+        "input": "key",
+        "key": "b",
+        "host_monotonic_ns": 30613001778052,
+        "serial_start": 171800
+      },
+      {
+        "input": "key",
+        "key": "e",
+        "host_monotonic_ns": 30613057352596,
+        "serial_start": 171800
+      },
+      {
+        "input": "key",
+        "key": "t",
+        "host_monotonic_ns": 30613112994259,
+        "serial_start": 171800
+      },
+      {
+        "input": "key",
+        "key": "a",
+        "host_monotonic_ns": 30613168610299,
+        "serial_start": 171800
+      },
+      {
+        "input": "key",
+        "key": "tab",
+        "host_monotonic_ns": 30613224255227,
+        "serial_start": 171800
+      },
+      {
+        "input": "key",
+        "key": "ret",
+        "host_monotonic_ns": 30613461199679,
+        "serial_start": 171890
+      },
+      {
+        "input": "key",
+        "key": "g",
+        "host_monotonic_ns": 30613632925272,
+        "serial_start": 172386
+      },
+      {
+        "input": "key",
+        "key": "slash",
+        "host_monotonic_ns": 30613688338848,
+        "serial_start": 172386
+      },
+      {
+        "input": "key",
+        "key": "n",
+        "host_monotonic_ns": 30613743863578,
+        "serial_start": 172386
+      },
+      {
+        "input": "key",
+        "key": "a",
+        "host_monotonic_ns": 30613799368709,
+        "serial_start": 172386
+      },
+      {
+        "input": "key",
+        "key": "t",
+        "host_monotonic_ns": 30613854892047,
+        "serial_start": 172386
+      },
+      {
+        "input": "key",
+        "key": "i",
+        "host_monotonic_ns": 30613910504707,
+        "serial_start": 172386
+      },
+      {
+        "input": "key",
+        "key": "v",
+        "host_monotonic_ns": 30613966176735,
+        "serial_start": 172386
+      },
+      {
+        "input": "key",
+        "key": "e",
+        "host_monotonic_ns": 30614021799170,
+        "serial_start": 172386
+      },
+      {
+        "input": "key",
+        "key": "slash",
+        "host_monotonic_ns": 30614077365562,
+        "serial_start": 172386
+      },
+      {
+        "input": "key",
+        "key": "a",
+        "host_monotonic_ns": 30614132872435,
+        "serial_start": 172386
+      },
+      {
+        "input": "key",
+        "key": "l",
+        "host_monotonic_ns": 30614188563261,
+        "serial_start": 172386
+      },
+      {
+        "input": "key",
+        "key": "p",
+        "host_monotonic_ns": 30614244188761,
+        "serial_start": 172386
+      },
+      {
+        "input": "key",
+        "key": "h",
+        "host_monotonic_ns": 30614299672189,
+        "serial_start": 172386
+      },
+      {
+        "input": "key",
+        "key": "a",
+        "host_monotonic_ns": 30614355382875,
+        "serial_start": 172386
+      },
+      {
+        "input": "key",
+        "key": "ret",
+        "host_monotonic_ns": 30614411128172,
+        "serial_start": 172386
+      },
+      {
+        "input": "key",
+        "key": "n",
+        "host_monotonic_ns": 30614893435491,
+        "serial_start": 172775
+      },
+      {
+        "input": "key",
+        "key": "d",
+        "host_monotonic_ns": 30614949082532,
+        "serial_start": 172775
+      },
+      {
+        "input": "key",
+        "key": "e",
+        "host_monotonic_ns": 30615004578028,
+        "serial_start": 172775
+      },
+      {
+        "input": "key",
+        "key": "e",
+        "host_monotonic_ns": 30615060182641,
+        "serial_start": 172775
+      },
+      {
+        "input": "key",
+        "key": "p",
+        "host_monotonic_ns": 30615115692099,
+        "serial_start": 172775
+      },
+      {
+        "input": "key",
+        "key": "tab",
+        "host_monotonic_ns": 30615171215346,
+        "serial_start": 172775
+      },
+      {
+        "input": "key",
+        "key": "ret",
+        "host_monotonic_ns": 30615398647480,
+        "serial_start": 172865
+      },
+      {
+        "input": "key",
+        "key": "m",
+        "host_monotonic_ns": 30615585914723,
+        "serial_start": 173466
+      },
+      {
+        "input": "key",
+        "key": "backspace",
+        "host_monotonic_ns": 30615641387486,
+        "serial_start": 173466
+      },
+      {
+        "input": "key",
+        "key": "backspace",
+        "host_monotonic_ns": 30615696944193,
+        "serial_start": 173466
+      },
+      {
+        "input": "key",
+        "key": "backspace",
+        "host_monotonic_ns": 30615752575065,
+        "serial_start": 173466
+      },
+      {
+        "input": "key",
+        "key": "backspace",
+        "host_monotonic_ns": 30615808251530,
+        "serial_start": 173466
+      },
+      {
+        "input": "key",
+        "key": "backspace",
+        "host_monotonic_ns": 30615863770161,
+        "serial_start": 173466
+      },
+      {
+        "input": "key",
+        "key": "backspace",
+        "host_monotonic_ns": 30615919425575,
+        "serial_start": 173466
+      },
+      {
+        "input": "key",
+        "key": "backspace",
+        "host_monotonic_ns": 30615974979773,
+        "serial_start": 173466
+      },
+      {
+        "input": "key",
+        "key": "backspace",
+        "host_monotonic_ns": 30616030799741,
+        "serial_start": 173466
+      },
+      {
+        "input": "key",
+        "key": "slash",
+        "host_monotonic_ns": 30616086399722,
+        "serial_start": 173466
+      },
+      {
+        "input": "key",
+        "key": "n",
+        "host_monotonic_ns": 30616141998256,
+        "serial_start": 173466
+      },
+      {
+        "input": "key",
+        "key": "a",
+        "host_monotonic_ns": 30616197536697,
+        "serial_start": 173466
+      },
+      {
+        "input": "key",
+        "key": "t",
+        "host_monotonic_ns": 30616253083455,
+        "serial_start": 173466
+      },
+      {
+        "input": "key",
+        "key": "i",
+        "host_monotonic_ns": 30616308711417,
+        "serial_start": 173466
+      },
+      {
+        "input": "key",
+        "key": "v",
+        "host_monotonic_ns": 30616364808236,
+        "serial_start": 173466
+      },
+      {
+        "input": "key",
+        "key": "e",
+        "host_monotonic_ns": 30616422403474,
+        "serial_start": 173466
+      },
+      {
+        "input": "key",
+        "key": "slash",
+        "host_monotonic_ns": 30616477952410,
+        "serial_start": 173466
+      },
+      {
+        "input": "key",
+        "key": "a",
+        "host_monotonic_ns": 30616533497160,
+        "serial_start": 173466
+      },
+      {
+        "input": "key",
+        "key": "l",
+        "host_monotonic_ns": 30616589112454,
+        "serial_start": 173466
+      },
+      {
+        "input": "key",
+        "key": "p",
+        "host_monotonic_ns": 30616644818723,
+        "serial_start": 173466
+      },
+      {
+        "input": "key",
+        "key": "h",
+        "host_monotonic_ns": 30616700449760,
+        "serial_start": 173466
+      },
+      {
+        "input": "key",
+        "key": "a",
+        "host_monotonic_ns": 30616756064714,
+        "serial_start": 173466
+      },
+      {
+        "input": "key",
+        "key": "slash",
+        "host_monotonic_ns": 30616811602253,
+        "serial_start": 173466
+      },
+      {
+        "input": "key",
+        "key": "r",
+        "host_monotonic_ns": 30616867211538,
+        "serial_start": 173466
+      },
+      {
+        "input": "key",
+        "key": "e",
+        "host_monotonic_ns": 30616922808615,
+        "serial_start": 173466
+      },
+      {
+        "input": "key",
+        "key": "n",
+        "host_monotonic_ns": 30616978438150,
+        "serial_start": 173466
+      },
+      {
+        "input": "key",
+        "key": "a",
+        "host_monotonic_ns": 30617033983411,
+        "serial_start": 173466
+      },
+      {
+        "input": "key",
+        "key": "m",
+        "host_monotonic_ns": 30617089553598,
+        "serial_start": 173466
+      },
+      {
+        "input": "key",
+        "key": "e",
+        "host_monotonic_ns": 30617145025169,
+        "serial_start": 173466
+      },
+      {
+        "input": "key",
+        "key": "d",
+        "host_monotonic_ns": 30617200609648,
+        "serial_start": 173466
+      },
+      {
+        "input": "key",
+        "key": "tab",
+        "host_monotonic_ns": 30617256209740,
+        "serial_start": 173466
+      },
+      {
+        "input": "key",
+        "key": "ret",
+        "host_monotonic_ns": 30618082834182,
+        "serial_start": 173556
+      },
+      {
+        "input": "key",
+        "key": "g",
+        "host_monotonic_ns": 30618237872865,
+        "serial_start": 174093
+      },
+      {
+        "input": "key",
+        "key": "slash",
+        "host_monotonic_ns": 30618293289969,
+        "serial_start": 174093
+      },
+      {
+        "input": "key",
+        "key": "n",
+        "host_monotonic_ns": 30618348762725,
+        "serial_start": 174093
+      },
+      {
+        "input": "key",
+        "key": "a",
+        "host_monotonic_ns": 30618404235983,
+        "serial_start": 174093
+      },
+      {
+        "input": "key",
+        "key": "t",
+        "host_monotonic_ns": 30618459718283,
+        "serial_start": 174093
+      },
+      {
+        "input": "key",
+        "key": "i",
+        "host_monotonic_ns": 30618515282985,
+        "serial_start": 174093
+      },
+      {
+        "input": "key",
+        "key": "v",
+        "host_monotonic_ns": 30618570832896,
+        "serial_start": 174093
+      },
+      {
+        "input": "key",
+        "key": "e",
+        "host_monotonic_ns": 30618626346293,
+        "serial_start": 174093
+      },
+      {
+        "input": "key",
+        "key": "slash",
+        "host_monotonic_ns": 30618681871075,
+        "serial_start": 174093
+      },
+      {
+        "input": "key",
+        "key": "a",
+        "host_monotonic_ns": 30618737397031,
+        "serial_start": 174093
+      },
+      {
+        "input": "key",
+        "key": "l",
+        "host_monotonic_ns": 30618792959149,
+        "serial_start": 174093
+      },
+      {
+        "input": "key",
+        "key": "p",
+        "host_monotonic_ns": 30618848471013,
+        "serial_start": 174093
+      },
+      {
+        "input": "key",
+        "key": "h",
+        "host_monotonic_ns": 30618903966053,
+        "serial_start": 174093
+      },
+      {
+        "input": "key",
+        "key": "a",
+        "host_monotonic_ns": 30618959497946,
+        "serial_start": 174093
+      },
+      {
+        "input": "key",
+        "key": "slash",
+        "host_monotonic_ns": 30619015000897,
+        "serial_start": 174093
+      },
+      {
+        "input": "key",
+        "key": "r",
+        "host_monotonic_ns": 30619070542195,
+        "serial_start": 174093
+      },
+      {
+        "input": "key",
+        "key": "e",
+        "host_monotonic_ns": 30619126025067,
+        "serial_start": 174093
+      },
+      {
+        "input": "key",
+        "key": "n",
+        "host_monotonic_ns": 30619181630399,
+        "serial_start": 174093
+      },
+      {
+        "input": "key",
+        "key": "a",
+        "host_monotonic_ns": 30619237144066,
+        "serial_start": 174093
+      },
+      {
+        "input": "key",
+        "key": "m",
+        "host_monotonic_ns": 30619292713516,
+        "serial_start": 174093
+      },
+      {
+        "input": "key",
+        "key": "e",
+        "host_monotonic_ns": 30619348260312,
+        "serial_start": 174093
+      },
+      {
+        "input": "key",
+        "key": "d",
+        "host_monotonic_ns": 30619403791264,
+        "serial_start": 174093
+      },
+      {
+        "input": "key",
+        "key": "ret",
+        "host_monotonic_ns": 30619459381525,
+        "serial_start": 174093
+      },
+      {
+        "input": "key",
+        "key": "backspace",
+        "host_monotonic_ns": 30620126619618,
+        "serial_start": 174496
+      },
+      {
+        "input": "key",
+        "key": "down",
+        "host_monotonic_ns": 30620183072286,
+        "serial_start": 174712
+      },
+      {
+        "input": "key",
+        "key": "m",
+        "host_monotonic_ns": 30620301938768,
+        "serial_start": 174880
+      },
+      {
+        "input": "key",
+        "key": "backspace",
+        "host_monotonic_ns": 30620357473316,
+        "serial_start": 174880
+      },
+      {
+        "input": "key",
+        "key": "backspace",
+        "host_monotonic_ns": 30620412942717,
+        "serial_start": 174880
+      },
+      {
+        "input": "key",
+        "key": "backspace",
+        "host_monotonic_ns": 30620468480500,
+        "serial_start": 174880
+      },
+      {
+        "input": "key",
+        "key": "backspace",
+        "host_monotonic_ns": 30620524087255,
+        "serial_start": 174880
+      },
+      {
+        "input": "key",
+        "key": "backspace",
+        "host_monotonic_ns": 30620579610686,
+        "serial_start": 174880
+      },
+      {
+        "input": "key",
+        "key": "backspace",
+        "host_monotonic_ns": 30620635187918,
+        "serial_start": 174880
+      },
+      {
+        "input": "key",
+        "key": "backspace",
+        "host_monotonic_ns": 30620690809816,
+        "serial_start": 174880
+      },
+      {
+        "input": "key",
+        "key": "backspace",
+        "host_monotonic_ns": 30620746317984,
+        "serial_start": 174880
+      },
+      {
+        "input": "key",
+        "key": "slash",
+        "host_monotonic_ns": 30620801839773,
+        "serial_start": 174880
+      },
+      {
+        "input": "key",
+        "key": "n",
+        "host_monotonic_ns": 30620857398626,
+        "serial_start": 174880
+      },
+      {
+        "input": "key",
+        "key": "a",
+        "host_monotonic_ns": 30620912903610,
+        "serial_start": 174880
+      },
+      {
+        "input": "key",
+        "key": "t",
+        "host_monotonic_ns": 30620968431889,
+        "serial_start": 174880
+      },
+      {
+        "input": "key",
+        "key": "i",
+        "host_monotonic_ns": 30621023933768,
+        "serial_start": 174880
+      },
+      {
+        "input": "key",
+        "key": "v",
+        "host_monotonic_ns": 30621079450820,
+        "serial_start": 174880
+      },
+      {
+        "input": "key",
+        "key": "e",
+        "host_monotonic_ns": 30621134973520,
+        "serial_start": 174880
+      },
+      {
+        "input": "key",
+        "key": "slash",
+        "host_monotonic_ns": 30621190517502,
+        "serial_start": 174880
+      },
+      {
+        "input": "key",
+        "key": "b",
+        "host_monotonic_ns": 30621246256113,
+        "serial_start": 174880
+      },
+      {
+        "input": "key",
+        "key": "e",
+        "host_monotonic_ns": 30621301788448,
+        "serial_start": 174880
+      },
+      {
+        "input": "key",
+        "key": "t",
+        "host_monotonic_ns": 30621357387421,
+        "serial_start": 174880
+      },
+      {
+        "input": "key",
+        "key": "a",
+        "host_monotonic_ns": 30621412942179,
+        "serial_start": 174880
+      },
+      {
+        "input": "key",
+        "key": "slash",
+        "host_monotonic_ns": 30621468502926,
+        "serial_start": 174880
+      },
+      {
+        "input": "key",
+        "key": "m",
+        "host_monotonic_ns": 30621524088078,
+        "serial_start": 174880
+      },
+      {
+        "input": "key",
+        "key": "o",
+        "host_monotonic_ns": 30621579587224,
+        "serial_start": 174880
+      },
+      {
+        "input": "key",
+        "key": "v",
+        "host_monotonic_ns": 30621635108312,
+        "serial_start": 174880
+      },
+      {
+        "input": "key",
+        "key": "e",
+        "host_monotonic_ns": 30621690718973,
+        "serial_start": 174880
+      },
+      {
+        "input": "key",
+        "key": "d",
+        "host_monotonic_ns": 30621746240311,
+        "serial_start": 174880
+      },
+      {
+        "input": "key",
+        "key": "tab",
+        "host_monotonic_ns": 30621801900605,
+        "serial_start": 174880
+      },
+      {
+        "input": "key",
+        "key": "ret",
+        "host_monotonic_ns": 30622565232620,
+        "serial_start": 174975
+      },
+      {
+        "input": "key",
+        "key": "g",
+        "host_monotonic_ns": 30622713570902,
+        "serial_start": 175595
+      },
+      {
+        "input": "key",
+        "key": "slash",
+        "host_monotonic_ns": 30622768953084,
+        "serial_start": 175595
+      },
+      {
+        "input": "key",
+        "key": "n",
+        "host_monotonic_ns": 30622824489064,
+        "serial_start": 175595
+      },
+      {
+        "input": "key",
+        "key": "a",
+        "host_monotonic_ns": 30622880106775,
+        "serial_start": 175595
+      },
+      {
+        "input": "key",
+        "key": "t",
+        "host_monotonic_ns": 30622935671868,
+        "serial_start": 175595
+      },
+      {
+        "input": "key",
+        "key": "i",
+        "host_monotonic_ns": 30622991342487,
+        "serial_start": 175595
+      },
+      {
+        "input": "key",
+        "key": "v",
+        "host_monotonic_ns": 30623046963363,
+        "serial_start": 175595
+      },
+      {
+        "input": "key",
+        "key": "e",
+        "host_monotonic_ns": 30623102646201,
+        "serial_start": 175595
+      },
+      {
+        "input": "key",
+        "key": "slash",
+        "host_monotonic_ns": 30623158236581,
+        "serial_start": 175595
+      },
+      {
+        "input": "key",
+        "key": "b",
+        "host_monotonic_ns": 30623213931817,
+        "serial_start": 175595
+      },
+      {
+        "input": "key",
+        "key": "e",
+        "host_monotonic_ns": 30623269653923,
+        "serial_start": 175595
+      },
+      {
+        "input": "key",
+        "key": "t",
+        "host_monotonic_ns": 30623325279345,
+        "serial_start": 175595
+      },
+      {
+        "input": "key",
+        "key": "a",
+        "host_monotonic_ns": 30623380804589,
+        "serial_start": 175595
+      },
+      {
+        "input": "key",
+        "key": "ret",
+        "host_monotonic_ns": 30623436576469,
+        "serial_start": 175595
+      },
+      {
+        "input": "key",
+        "key": "g",
+        "host_monotonic_ns": 30623886989728,
+        "serial_start": 175983
+      },
+      {
+        "input": "key",
+        "key": "slash",
+        "host_monotonic_ns": 30623942789288,
+        "serial_start": 175983
+      },
+      {
+        "input": "key",
+        "key": "n",
+        "host_monotonic_ns": 30623998366950,
+        "serial_start": 175983
+      },
+      {
+        "input": "key",
+        "key": "a",
+        "host_monotonic_ns": 30624053880246,
+        "serial_start": 175983
+      },
+      {
+        "input": "key",
+        "key": "t",
+        "host_monotonic_ns": 30624109391209,
+        "serial_start": 175983
+      },
+      {
+        "input": "key",
+        "key": "i",
+        "host_monotonic_ns": 30624164898146,
+        "serial_start": 175983
+      },
+      {
+        "input": "key",
+        "key": "v",
+        "host_monotonic_ns": 30624220390812,
+        "serial_start": 175983
+      },
+      {
+        "input": "key",
+        "key": "e",
+        "host_monotonic_ns": 30624275880533,
+        "serial_start": 175983
+      },
+      {
+        "input": "key",
+        "key": "slash",
+        "host_monotonic_ns": 30624331517121,
+        "serial_start": 175983
+      },
+      {
+        "input": "key",
+        "key": "b",
+        "host_monotonic_ns": 30624387008255,
+        "serial_start": 175983
+      },
+      {
+        "input": "key",
+        "key": "e",
+        "host_monotonic_ns": 30624442521251,
+        "serial_start": 175983
+      },
+      {
+        "input": "key",
+        "key": "t",
+        "host_monotonic_ns": 30624498023191,
+        "serial_start": 175983
+      },
+      {
+        "input": "key",
+        "key": "a",
+        "host_monotonic_ns": 30624553537809,
+        "serial_start": 175983
+      },
+      {
+        "input": "key",
+        "key": "slash",
+        "host_monotonic_ns": 30624609015502,
+        "serial_start": 175983
+      },
+      {
+        "input": "key",
+        "key": "m",
+        "host_monotonic_ns": 30624664510572,
+        "serial_start": 175983
+      },
+      {
+        "input": "key",
+        "key": "o",
+        "host_monotonic_ns": 30624719984850,
+        "serial_start": 175983
+      },
+      {
+        "input": "key",
+        "key": "v",
+        "host_monotonic_ns": 30624775506188,
+        "serial_start": 175983
+      },
+      {
+        "input": "key",
+        "key": "e",
+        "host_monotonic_ns": 30624830992785,
+        "serial_start": 175983
+      },
+      {
+        "input": "key",
+        "key": "d",
+        "host_monotonic_ns": 30624886530918,
+        "serial_start": 175983
+      },
+      {
+        "input": "key",
+        "key": "ret",
+        "host_monotonic_ns": 30624942042593,
+        "serial_start": 175983
+      },
+      {
+        "input": "key",
+        "key": "backspace",
+        "host_monotonic_ns": 30625524701265,
+        "serial_start": 176382
+      },
+      {
+        "input": "key",
+        "key": "g",
+        "host_monotonic_ns": 30625581485623,
+        "serial_start": 176597
+      },
+      {
+        "input": "key",
+        "key": "slash",
+        "host_monotonic_ns": 30625637125222,
+        "serial_start": 176597
+      },
+      {
+        "input": "key",
+        "key": "n",
+        "host_monotonic_ns": 30625692702760,
+        "serial_start": 176597
+      },
+      {
+        "input": "key",
+        "key": "a",
+        "host_monotonic_ns": 30625748189161,
+        "serial_start": 176597
+      },
+      {
+        "input": "key",
+        "key": "t",
+        "host_monotonic_ns": 30625803705718,
+        "serial_start": 176597
+      },
+      {
+        "input": "key",
+        "key": "i",
+        "host_monotonic_ns": 30625859429461,
+        "serial_start": 176597
+      },
+      {
+        "input": "key",
+        "key": "v",
+        "host_monotonic_ns": 30625915100226,
+        "serial_start": 176597
+      },
+      {
+        "input": "key",
+        "key": "e",
+        "host_monotonic_ns": 30625970613768,
+        "serial_start": 176597
+      },
+      {
+        "input": "key",
+        "key": "slash",
+        "host_monotonic_ns": 30626026110645,
+        "serial_start": 176597
+      },
+      {
+        "input": "key",
+        "key": "a",
+        "host_monotonic_ns": 30626081733930,
+        "serial_start": 176597
+      },
+      {
+        "input": "key",
+        "key": "l",
+        "host_monotonic_ns": 30626137256355,
+        "serial_start": 176597
+      },
+      {
+        "input": "key",
+        "key": "p",
+        "host_monotonic_ns": 30626192782756,
+        "serial_start": 176597
+      },
+      {
+        "input": "key",
+        "key": "h",
+        "host_monotonic_ns": 30626248420302,
+        "serial_start": 176597
+      },
+      {
+        "input": "key",
+        "key": "a",
+        "host_monotonic_ns": 30626303939152,
+        "serial_start": 176597
+      },
+      {
+        "input": "key",
+        "key": "ret",
+        "host_monotonic_ns": 30626359439684,
+        "serial_start": 176597
+      },
+      {
+        "input": "key",
+        "key": "n",
+        "host_monotonic_ns": 30626848399531,
+        "serial_start": 177070
+      },
+      {
+        "input": "key",
+        "key": "p",
+        "host_monotonic_ns": 30626903967071,
+        "serial_start": 177070
+      },
+      {
+        "input": "key",
+        "key": "o",
+        "host_monotonic_ns": 30626959551816,
+        "serial_start": 177070
+      },
+      {
+        "input": "key",
+        "key": "p",
+        "host_monotonic_ns": 30627015254186,
+        "serial_start": 177070
+      },
+      {
+        "input": "key",
+        "key": "u",
+        "host_monotonic_ns": 30627070937648,
+        "serial_start": 177070
+      },
+      {
+        "input": "key",
+        "key": "l",
+        "host_monotonic_ns": 30627126492520,
+        "serial_start": 177070
+      },
+      {
+        "input": "key",
+        "key": "a",
+        "host_monotonic_ns": 30627182148181,
+        "serial_start": 177070
+      },
+      {
+        "input": "key",
+        "key": "t",
+        "host_monotonic_ns": 30627237724945,
+        "serial_start": 177070
+      },
+      {
+        "input": "key",
+        "key": "e",
+        "host_monotonic_ns": 30627293564759,
+        "serial_start": 177070
+      },
+      {
+        "input": "key",
+        "key": "d",
+        "host_monotonic_ns": 30627349116286,
+        "serial_start": 177070
+      },
+      {
+        "input": "key",
+        "key": "tab",
+        "host_monotonic_ns": 30627404777515,
+        "serial_start": 177070
+      },
+      {
+        "input": "key",
+        "key": "ret",
+        "host_monotonic_ns": 30627752059915,
+        "serial_start": 177160
+      },
+      {
+        "input": "key",
+        "key": "g",
+        "host_monotonic_ns": 30627936247452,
+        "serial_start": 177771
+      },
+      {
+        "input": "key",
+        "key": "slash",
+        "host_monotonic_ns": 30627991621435,
+        "serial_start": 177771
+      },
+      {
+        "input": "key",
+        "key": "n",
+        "host_monotonic_ns": 30628047165279,
+        "serial_start": 177771
+      },
+      {
+        "input": "key",
+        "key": "a",
+        "host_monotonic_ns": 30628102659511,
+        "serial_start": 177771
+      },
+      {
+        "input": "key",
+        "key": "t",
+        "host_monotonic_ns": 30628158174373,
+        "serial_start": 177771
+      },
+      {
+        "input": "key",
+        "key": "i",
+        "host_monotonic_ns": 30628213725539,
+        "serial_start": 177771
+      },
+      {
+        "input": "key",
+        "key": "v",
+        "host_monotonic_ns": 30628269399176,
+        "serial_start": 177771
+      },
+      {
+        "input": "key",
+        "key": "e",
+        "host_monotonic_ns": 30628325008248,
+        "serial_start": 177771
+      },
+      {
+        "input": "key",
+        "key": "slash",
+        "host_monotonic_ns": 30628380583510,
+        "serial_start": 177771
+      },
+      {
+        "input": "key",
+        "key": "a",
+        "host_monotonic_ns": 30628436156528,
+        "serial_start": 177771
+      },
+      {
+        "input": "key",
+        "key": "l",
+        "host_monotonic_ns": 30628491714534,
+        "serial_start": 177771
+      },
+      {
+        "input": "key",
+        "key": "p",
+        "host_monotonic_ns": 30628547404416,
+        "serial_start": 177771
+      },
+      {
+        "input": "key",
+        "key": "h",
+        "host_monotonic_ns": 30628602962331,
+        "serial_start": 177771
+      },
+      {
+        "input": "key",
+        "key": "a",
+        "host_monotonic_ns": 30628658508450,
+        "serial_start": 177771
+      },
+      {
+        "input": "key",
+        "key": "slash",
+        "host_monotonic_ns": 30628714118933,
+        "serial_start": 177771
+      },
+      {
+        "input": "key",
+        "key": "p",
+        "host_monotonic_ns": 30628769679314,
+        "serial_start": 177771
+      },
+      {
+        "input": "key",
+        "key": "o",
+        "host_monotonic_ns": 30628825359120,
+        "serial_start": 177771
+      },
+      {
+        "input": "key",
+        "key": "p",
+        "host_monotonic_ns": 30628880884067,
+        "serial_start": 177771
+      },
+      {
+        "input": "key",
+        "key": "u",
+        "host_monotonic_ns": 30628936381114,
+        "serial_start": 177771
+      },
+      {
+        "input": "key",
+        "key": "l",
+        "host_monotonic_ns": 30628993352625,
+        "serial_start": 177771
+      },
+      {
+        "input": "key",
+        "key": "a",
+        "host_monotonic_ns": 30629048869380,
+        "serial_start": 177771
+      },
+      {
+        "input": "key",
+        "key": "t",
+        "host_monotonic_ns": 30629104498901,
+        "serial_start": 177771
+      },
+      {
+        "input": "key",
+        "key": "e",
+        "host_monotonic_ns": 30629160147362,
+        "serial_start": 177771
+      },
+      {
+        "input": "key",
+        "key": "d",
+        "host_monotonic_ns": 30629215764575,
+        "serial_start": 177771
+      },
+      {
+        "input": "key",
+        "key": "ret",
+        "host_monotonic_ns": 30629271412745,
+        "serial_start": 177771
+      },
+      {
+        "input": "key",
+        "key": "n",
+        "host_monotonic_ns": 30630012061288,
+        "serial_start": 178179
+      },
+      {
+        "input": "key",
+        "key": "c",
+        "host_monotonic_ns": 30630067660957,
+        "serial_start": 178179
+      },
+      {
+        "input": "key",
+        "key": "h",
+        "host_monotonic_ns": 30630123218457,
+        "serial_start": 178179
+      },
+      {
+        "input": "key",
+        "key": "i",
+        "host_monotonic_ns": 30630178813287,
+        "serial_start": 178179
+      },
+      {
+        "input": "key",
+        "key": "l",
+        "host_monotonic_ns": 30630234320157,
+        "serial_start": 178179
+      },
+      {
+        "input": "key",
+        "key": "d",
+        "host_monotonic_ns": 30630289884954,
+        "serial_start": 178179
+      },
+      {
+        "input": "key",
+        "key": "tab",
+        "host_monotonic_ns": 30630345465533,
+        "serial_start": 178179
+      },
+      {
+        "input": "key",
+        "key": "ret",
+        "host_monotonic_ns": 30630592419700,
+        "serial_start": 178269
+      },
+      {
+        "input": "key",
+        "key": "g",
+        "host_monotonic_ns": 30630751146754,
+        "serial_start": 178908
+      },
+      {
+        "input": "key",
+        "key": "slash",
+        "host_monotonic_ns": 30630806522901,
+        "serial_start": 178908
+      },
+      {
+        "input": "key",
+        "key": "n",
+        "host_monotonic_ns": 30630862306822,
+        "serial_start": 178908
+      },
+      {
+        "input": "key",
+        "key": "a",
+        "host_monotonic_ns": 30630917826912,
+        "serial_start": 178908
+      },
+      {
+        "input": "key",
+        "key": "t",
+        "host_monotonic_ns": 30630973410711,
+        "serial_start": 178908
+      },
+      {
+        "input": "key",
+        "key": "i",
+        "host_monotonic_ns": 30631028943064,
+        "serial_start": 178908
+      },
+      {
+        "input": "key",
+        "key": "v",
+        "host_monotonic_ns": 30631084481140,
+        "serial_start": 178908
+      },
+      {
+        "input": "key",
+        "key": "e",
+        "host_monotonic_ns": 30631139997495,
+        "serial_start": 178908
+      },
+      {
+        "input": "key",
+        "key": "slash",
+        "host_monotonic_ns": 30631195546597,
+        "serial_start": 178908
+      },
+      {
+        "input": "key",
+        "key": "a",
+        "host_monotonic_ns": 30631251092786,
+        "serial_start": 178908
+      },
+      {
+        "input": "key",
+        "key": "l",
+        "host_monotonic_ns": 30631306672994,
+        "serial_start": 178908
+      },
+      {
+        "input": "key",
+        "key": "p",
+        "host_monotonic_ns": 30631362198883,
+        "serial_start": 178908
+      },
+      {
+        "input": "key",
+        "key": "h",
+        "host_monotonic_ns": 30631417730159,
+        "serial_start": 178908
+      },
+      {
+        "input": "key",
+        "key": "a",
+        "host_monotonic_ns": 30631473368249,
+        "serial_start": 178908
+      },
+      {
+        "input": "key",
+        "key": "ret",
+        "host_monotonic_ns": 30631528896190,
+        "serial_start": 178908
+      },
+      {
+        "input": "key",
+        "key": "down",
+        "host_monotonic_ns": 30631997143340,
+        "serial_start": 179215
+      },
+      {
+        "input": "key",
+        "key": "delete",
+        "host_monotonic_ns": 30632093679427,
+        "serial_start": 179305
+      },
+      {
+        "input": "key",
+        "key": "tab",
+        "host_monotonic_ns": 30632195559711,
+        "serial_start": 179395
+      },
+      {
+        "input": "key",
+        "key": "ret",
+        "host_monotonic_ns": 30632294811568,
+        "serial_start": 179485
+      },
+      {
+        "input": "key",
+        "key": "esc",
+        "host_monotonic_ns": 30632418541306,
+        "serial_start": 179870
+      },
+      {
+        "input": "key",
+        "key": "g",
+        "host_monotonic_ns": 30632523500432,
+        "serial_start": 180185
+      },
+      {
+        "input": "key",
+        "key": "slash",
+        "host_monotonic_ns": 30632579085148,
+        "serial_start": 180185
+      },
+      {
+        "input": "key",
+        "key": "n",
+        "host_monotonic_ns": 30632634663183,
+        "serial_start": 180185
+      },
+      {
+        "input": "key",
+        "key": "a",
+        "host_monotonic_ns": 30632690216282,
+        "serial_start": 180185
+      },
+      {
+        "input": "key",
+        "key": "t",
+        "host_monotonic_ns": 30632745752346,
+        "serial_start": 180185
+      },
+      {
+        "input": "key",
+        "key": "i",
+        "host_monotonic_ns": 30632801362489,
+        "serial_start": 180185
+      },
+      {
+        "input": "key",
+        "key": "v",
+        "host_monotonic_ns": 30632857078269,
+        "serial_start": 180185
+      },
+      {
+        "input": "key",
+        "key": "e",
+        "host_monotonic_ns": 30632912639510,
+        "serial_start": 180185
+      },
+      {
+        "input": "key",
+        "key": "slash",
+        "host_monotonic_ns": 30632968196925,
+        "serial_start": 180185
+      },
+      {
+        "input": "key",
+        "key": "a",
+        "host_monotonic_ns": 30633023755773,
+        "serial_start": 180185
+      },
+      {
+        "input": "key",
+        "key": "l",
+        "host_monotonic_ns": 30633079311906,
+        "serial_start": 180185
+      },
+      {
+        "input": "key",
+        "key": "p",
+        "host_monotonic_ns": 30633134822171,
+        "serial_start": 180185
+      },
+      {
+        "input": "key",
+        "key": "h",
+        "host_monotonic_ns": 30633190320368,
+        "serial_start": 180185
+      },
+      {
+        "input": "key",
+        "key": "a",
+        "host_monotonic_ns": 30633245807194,
+        "serial_start": 180185
+      },
+      {
+        "input": "key",
+        "key": "slash",
+        "host_monotonic_ns": 30633301294961,
+        "serial_start": 180185
+      },
+      {
+        "input": "key",
+        "key": "p",
+        "host_monotonic_ns": 30633356818927,
+        "serial_start": 180185
+      },
+      {
+        "input": "key",
+        "key": "o",
+        "host_monotonic_ns": 30633412409852,
+        "serial_start": 180185
+      },
+      {
+        "input": "key",
+        "key": "p",
+        "host_monotonic_ns": 30633467984019,
+        "serial_start": 180185
+      },
+      {
+        "input": "key",
+        "key": "u",
+        "host_monotonic_ns": 30633523495113,
+        "serial_start": 180185
+      },
+      {
+        "input": "key",
+        "key": "l",
+        "host_monotonic_ns": 30633579052620,
+        "serial_start": 180185
+      },
+      {
+        "input": "key",
+        "key": "a",
+        "host_monotonic_ns": 30633634622922,
+        "serial_start": 180185
+      },
+      {
+        "input": "key",
+        "key": "t",
+        "host_monotonic_ns": 30633690229573,
+        "serial_start": 180185
+      },
+      {
+        "input": "key",
+        "key": "e",
+        "host_monotonic_ns": 30633745726255,
+        "serial_start": 180185
+      },
+      {
+        "input": "key",
+        "key": "d",
+        "host_monotonic_ns": 30633801224941,
+        "serial_start": 180185
+      },
+      {
+        "input": "key",
+        "key": "ret",
+        "host_monotonic_ns": 30633856742910,
+        "serial_start": 180185
+      },
+      {
+        "input": "key",
+        "key": "down",
+        "host_monotonic_ns": 30634581378159,
+        "serial_start": 180510
+      },
+      {
+        "input": "key",
+        "key": "delete",
+        "host_monotonic_ns": 30634681375176,
+        "serial_start": 180600
+      },
+      {
+        "input": "key",
+        "key": "tab",
+        "host_monotonic_ns": 30634785919378,
+        "serial_start": 180853
+      },
+      {
+        "input": "key",
+        "key": "ret",
+        "host_monotonic_ns": 30634884908817,
+        "serial_start": 180943
+      },
+      {
+        "input": "key",
+        "key": "g",
+        "host_monotonic_ns": 30635080223996,
+        "serial_start": 181414
+      },
+      {
+        "input": "key",
+        "key": "slash",
+        "host_monotonic_ns": 30635135796376,
+        "serial_start": 181414
+      },
+      {
+        "input": "key",
+        "key": "n",
+        "host_monotonic_ns": 30635191556409,
+        "serial_start": 181414
+      },
+      {
+        "input": "key",
+        "key": "a",
+        "host_monotonic_ns": 30635247067243,
+        "serial_start": 181414
+      },
+      {
+        "input": "key",
+        "key": "t",
+        "host_monotonic_ns": 30635302567551,
+        "serial_start": 181414
+      },
+      {
+        "input": "key",
+        "key": "i",
+        "host_monotonic_ns": 30635358102360,
+        "serial_start": 181414
+      },
+      {
+        "input": "key",
+        "key": "v",
+        "host_monotonic_ns": 30635413807120,
+        "serial_start": 181414
+      },
+      {
+        "input": "key",
+        "key": "e",
+        "host_monotonic_ns": 30635469494566,
+        "serial_start": 181414
+      },
+      {
+        "input": "key",
+        "key": "slash",
+        "host_monotonic_ns": 30635525110695,
+        "serial_start": 181414
+      },
+      {
+        "input": "key",
+        "key": "a",
+        "host_monotonic_ns": 30635580662244,
+        "serial_start": 181414
+      },
+      {
+        "input": "key",
+        "key": "l",
+        "host_monotonic_ns": 30635636191115,
+        "serial_start": 181414
+      },
+      {
+        "input": "key",
+        "key": "p",
+        "host_monotonic_ns": 30635691725307,
+        "serial_start": 181414
+      },
+      {
+        "input": "key",
+        "key": "h",
+        "host_monotonic_ns": 30635747380265,
+        "serial_start": 181414
+      },
+      {
+        "input": "key",
+        "key": "a",
+        "host_monotonic_ns": 30635803116933,
+        "serial_start": 181414
+      },
+      {
+        "input": "key",
+        "key": "ret",
+        "host_monotonic_ns": 30635858839591,
+        "serial_start": 181414
+      },
+      {
+        "input": "key",
+        "key": "down",
+        "host_monotonic_ns": 30636316326509,
+        "serial_start": 181804
+      },
+      {
+        "input": "key",
+        "key": "delete",
+        "host_monotonic_ns": 30636414799508,
+        "serial_start": 181894
+      },
+      {
+        "input": "key",
+        "key": "tab",
+        "host_monotonic_ns": 30636521367720,
+        "serial_start": 181984
+      },
+      {
+        "input": "key",
+        "key": "ret",
+        "host_monotonic_ns": 30636633590707,
+        "serial_start": 182074
+      },
+      {
+        "input": "key",
+        "key": "g",
+        "host_monotonic_ns": 30636795018667,
+        "serial_start": 182535
+      },
+      {
+        "input": "key",
+        "key": "slash",
+        "host_monotonic_ns": 30636850391075,
+        "serial_start": 182535
+      },
+      {
+        "input": "key",
+        "key": "n",
+        "host_monotonic_ns": 30636905988396,
+        "serial_start": 182535
+      },
+      {
+        "input": "key",
+        "key": "a",
+        "host_monotonic_ns": 30636961529855,
+        "serial_start": 182535
+      },
+      {
+        "input": "key",
+        "key": "t",
+        "host_monotonic_ns": 30637017143561,
+        "serial_start": 182535
+      },
+      {
+        "input": "key",
+        "key": "i",
+        "host_monotonic_ns": 30637072705350,
+        "serial_start": 182535
+      },
+      {
+        "input": "key",
+        "key": "v",
+        "host_monotonic_ns": 30637128300638,
+        "serial_start": 182535
+      },
+      {
+        "input": "key",
+        "key": "e",
+        "host_monotonic_ns": 30637183881847,
+        "serial_start": 182535
+      },
+      {
+        "input": "key",
+        "key": "slash",
+        "host_monotonic_ns": 30637239534440,
+        "serial_start": 182535
+      },
+      {
+        "input": "key",
+        "key": "b",
+        "host_monotonic_ns": 30637295196367,
+        "serial_start": 182535
+      },
+      {
+        "input": "key",
+        "key": "e",
+        "host_monotonic_ns": 30637350777324,
+        "serial_start": 182535
+      },
+      {
+        "input": "key",
+        "key": "t",
+        "host_monotonic_ns": 30637406383409,
+        "serial_start": 182535
+      },
+      {
+        "input": "key",
+        "key": "a",
+        "host_monotonic_ns": 30637461934792,
+        "serial_start": 182535
+      },
+      {
+        "input": "key",
+        "key": "ret",
+        "host_monotonic_ns": 30637517552144,
+        "serial_start": 182535
+      },
+      {
+        "input": "key",
+        "key": "down",
+        "host_monotonic_ns": 30637957113164,
+        "serial_start": 182923
+      },
+      {
+        "input": "key",
+        "key": "delete",
+        "host_monotonic_ns": 30638057737866,
+        "serial_start": 183013
+      },
+      {
+        "input": "key",
+        "key": "tab",
+        "host_monotonic_ns": 30638159312852,
+        "serial_start": 183103
+      },
+      {
+        "input": "key",
+        "key": "ret",
+        "host_monotonic_ns": 30638259221619,
+        "serial_start": 183193
+      }
+    ],
+    "limits": "Bounded explicit folders; empty-folder rename/move/remove; guest UI uses actual QMP PS/2 input; source-bound oracle is read-only."
+  },
+  "clock_samples": [
+    [
+      7719,
+      77184695209
+    ],
+    [
+      7748,
+      77474675280
+    ]
+  ],
+  "uart_metrics": {
+    "accepted": 191494,
+    "transmitted": 191494,
+    "dropped": 0,
+    "stalled": 2060,
+    "absent": 0,
+    "pending": 0
+  },
+  "screenshot": {
+    "path": "build/screenshot.ppm",
+    "width": 1280,
+    "height": 800,
+    "distinct_colors": 2464,
+    "validation": "PPM dimensions and at least four colors; no visual layout or accessibility verification"
+  },
+  "dns_peer": {
+    "dropped": 1,
+    "answers": 3,
+    "requests": 4
+  },
+  "dns_boot_flow": {
+    "dropped": 1,
+    "answers": 3,
+    "validation": "First valid bootstrap UDP source flow, independently scoped from native lookup source ports"
+  },
+  "image_after_sha256": "07965a743bbc0535755ba62ff013ffcc70b1296cffa4913797c38d0519c9ba93",
+  "protected_esp_unchanged": true,
+  "audio": {
+    "path": "build/eighteenth-files-directory-final-proof/create/audio.wav",
+    "sample_rate": 48000,
+    "channels": 2,
+    "active_frames": 11102
+  },
+  "finished_utc": "2026-10-11T21:28:07.793355+00:00"
+}

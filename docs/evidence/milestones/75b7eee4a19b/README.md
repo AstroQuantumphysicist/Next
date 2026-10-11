@@ -1,0 +1,5 @@
+# Thirteenth immutable scoped milestone
+
+Exact image `75b7eee4a19b9451d0c31214ce2a2d0404270ed3e0c02ad03997efc4428709d6`; frozen 201-file source SHA `e40e61e7e0be81022ce32b0f314391094466f698080cee3a4183019f9ef42594`. Isolated 541 workspace tests, actual native input 124 assertions, accessibility 119, Files query 119 and 30 loader refusals passed. F9 observes the last complete rendered snapshot: names, roles, bounds, selected/focused state, modal token and frame identity; eight guest dumps cover portal, Settings, Files and query modal. Query proof exercises ten applied queries, Cancel, storage-byte oracle and content beyond the 186-byte preview.
+
+Material max CPU, independent runtime, persistence recovery/export, service-pair, GPT and latency families are unrun on this checkpoint. Original pointer/focus and accessibility portal action-mark harness failures remain under observations. No screen reader, external accessibility transport, application accessibility trees, physical keyboard state, user compositor isolation, hardware certification or complete Next 1.0 readiness is claimed. Source14/15 are excluded.

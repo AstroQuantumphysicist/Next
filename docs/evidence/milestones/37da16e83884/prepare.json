@@ -1,0 +1,19 @@
+{
+  "prepared": true,
+  "scope": "Corrected frozen ninth kernel only. Original bootloader, initrd and all signed apps preserved. Source10 excluded.",
+  "changed_sources": [
+    "crates/helix-kernel/src/filesystem.rs",
+    "crates/helix-kernel/src/main.rs",
+    "crates/prism/src/lib.rs"
+  ],
+  "base_image_sha256": "484084f63766308d2a355de11ca9862ad87ea6b92276f2852dc4679991e68173",
+  "image_sha256": "37da16e8388427af8182c4535f951f67e4879498e1b908d61499d6d29181cd79",
+  "source_manifest_sha256": "0dcc95ad2b267e6a2400be28e20f65228927a32217d4ba813c9b7df4d8f7f38e",
+  "source_files": 167,
+  "kernel_sha256": "e036794aa09b9c3339ff7e60235d8805bade70df1d75f12751ea54704c568299",
+  "deployment_sha256": "ad6907432464db4c226beb638ef226408662aa119eae3e780719fe4f387a7d32",
+  "initrd_sha256": "305a586fa0f516582af80ff529e6831aad02959c8cea5bd8d746c0254c913f53",
+  "package_verification": "Verified org.next.development Deployment 2 files; permissions requested=0x0",
+  "builder_sha256": "7ba1fb3280cfd717c1be5abe95895238bb9d39fc6a415b61100a2f32ad0e21af",
+  "base_unchanged": true
+}

@@ -1,0 +1,12 @@
+{
+  "source_image_sha256": "31e7e89ec2396a625bbdd90b5624c0377c8dfa8d5c54c64f28746cfccae1a7a9",
+  "alternate_image_sha256": "58ea8d1fe5823e643757d9a7768bc51f211119fed47d4b761aa0b568bd91f933",
+  "esp_start": 2048,
+  "esp_blocks": 131072,
+  "data_start": 137216,
+  "data_blocks": 4096,
+  "corrupt_backup": false,
+  "alternate_unchanged": true,
+  "source_unchanged": true,
+  "passed": true
+}

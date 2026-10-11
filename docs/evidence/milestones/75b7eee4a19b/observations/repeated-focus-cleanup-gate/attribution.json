@@ -1,0 +1,6 @@
+{
+  "classification": "validator assumption",
+  "reason": "Cleanup requested a second same-client FocusGain; Source13 intentionally suppresses it. Existing real focus was already established after portal denial. Gate stalled, bounded fixture waits exited361; original false report preserved.",
+  "compiled_image_changed": false,
+  "validator_sha256": "b1e40c95403878a328c098befca43ce31b3b6f3e3076cf35747c50ea5ddbf61a"
+}

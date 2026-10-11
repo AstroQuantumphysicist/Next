@@ -1,0 +1,111 @@
+{
+  "scope": "Current development Prism typography asset set. The raster atlas is designed for future Prism integration; this record alone is not evidence of a rebuilt image or guest-visible typography.",
+  "identity": {
+    "family": "Selawik",
+    "style": "Regular",
+    "version": "1.001",
+    "postscript_name": "Selawik-Regular",
+    "relationship": "Microsoft’s open-source, metrically compatible replacement for Segoe UI. This is not Segoe UI Variable and is not represented as the Windows system font.",
+    "upstream": "https://github.com/microsoft/Selawik",
+    "upstream_commit": "89362e84731d1f5777fa078fd4d5ebbd339e4378",
+    "windows_typography_reference": "https://learn.microsoft.com/en-us/windows/apps/design/signature-experiences/typography",
+    "upstream_known_issues": [
+      "Kerning is missing compared with Segoe UI.",
+      "Hinting needs improvement."
+    ],
+    "copyright": "Copyright 2015 Microsoft Corporation; Selawik is a Microsoft trademark.",
+    "license": "SIL Open Font License 1.1",
+    "spdx": "OFL-1.1",
+    "reserved_font_name": "Selawik",
+    "license_file": "crates/prism/assets/Selawik-OFL.txt",
+    "license_sha256": "77b7c2506d4efb22e09c8ccf10159f4956eab3ef7c007fef95de136bcf45300c"
+  },
+  "source": {
+    "upstream_source": "Source files/UFO/Selawik-Regular.ufo",
+    "archive": "crates/prism/assets/source/Selawik-Regular.ufo.zip",
+    "archive_sha256": "640369d5f5c5372d16011d038c3bad54477b9f796f0179a41de17eb4cd513eca",
+    "archive_bytes": 175076,
+    "build_command": "python tools/prism_selawik_assets.py"
+  },
+  "build": {
+    "python": "3.12.14",
+    "fontmake": "3.11.0",
+    "fonttools": "4.59.2",
+    "Pillow": "12.3.0",
+    "FreeType": "2.14.3",
+    "requirements": "docs/third-party/selawik-build-requirements.txt",
+    "generator": {
+      "path": "tools/prism_selawik_assets.py",
+      "sha256": "908d35c4f990293fd8214b42b01bfe309d662340c7bec7194196893fbe80999a",
+      "bytes": 4884
+    },
+    "normalization": "OpenType head.created and head.modified are normalized to the Mac epoch; SOURCE_DATE_EPOCH=0.",
+    "outputs": [
+      {
+        "path": "crates/prism/assets/source/Selawik-Regular.ttf",
+        "name": "Selawik Regular reproducibly built TTF",
+        "version": "1.001",
+        "bytes": 27552,
+        "sha256": "e6887e017dd26cdb234de6aed7c15c7a4e808d1a2d1df5bd7b95fe1f555d6b63",
+        "license": "SIL-OFL-1.1"
+      },
+      {
+        "path": "crates/prism/assets/Selawik-OFL.txt",
+        "name": "Selawik SIL Open Font License 1.1",
+        "version": "1.1",
+        "bytes": 4509,
+        "sha256": "77b7c2506d4efb22e09c8ccf10159f4956eab3ef7c007fef95de136bcf45300c",
+        "license": "SIL-OFL-1.1"
+      },
+      {
+        "path": "crates/prism/assets/selawik-regular-atlas.bin",
+        "name": "Prism Selawik Regular alpha raster atlas",
+        "version": "14-16-20px-ascii",
+        "bytes": 218880,
+        "sha256": "99ef630e7dd19fd91d798371fe250d818caa9877af8bd82ca68452a6bafb3abe",
+        "license": "SIL-OFL-1.1"
+      },
+      {
+        "path": "crates/prism/assets/selawik-regular-advance.bin",
+        "name": "Prism Selawik Regular advance metrics",
+        "version": "14-16-20px-ascii",
+        "bytes": 285,
+        "sha256": "dab46444c1abd6958c782a0103b09039e0a6a4867ddf67d2b2f501c5ec7945fa",
+        "license": "SIL-OFL-1.1"
+      },
+      {
+        "path": "crates/prism/assets/selawik-regular-x-offset.bin",
+        "name": "Prism Selawik Regular signed x bearings",
+        "version": "14-16-20px-ascii",
+        "bytes": 285,
+        "sha256": "a1583d42a37d7017cbf28b3a006e21f97094131272ba409b936581496f0770ca",
+        "license": "SIL-OFL-1.1"
+      }
+    ],
+    "replay_verified": "Two isolated builds produced byte-identical built TTF and all raster tables.",
+    "dependency_lock_enforced": true
+  },
+  "rasterization": {
+    "pixel_sizes": [
+      14,
+      16,
+      20
+    ],
+    "glyph_codes_inclusive": [
+      32,
+      126
+    ],
+    "cell_pixels": [
+      24,
+      32
+    ],
+    "image_mode": "L",
+    "draw_origin_y": -1,
+    "negative_bearing_policy": "Glyph bitmap is shifted right within its cell to preserve negative side bearings; signed i8 x-offset table restores the original pen-relative position.",
+    "advance_quantization": "Python round(font.getlength(character))",
+    "atlas_bytes": 218880,
+    "advance_bytes": 285,
+    "x_offset_bytes": 285,
+    "replay": "Running the pinned generator twice produced byte-identical TTF, atlas, advance, and x-offset outputs."
+  }
+}

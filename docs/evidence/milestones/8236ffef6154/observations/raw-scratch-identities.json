@@ -1,0 +1,20 @@
+[
+  {
+    "original_path": "build/eleventh-trash-attempt2-failed/failed-live-scratch.img",
+    "sha256": "c202e5d7f922d94840a2ede33aa23e291c7d1f2cef9a1fd2f11d84e16af22d8f",
+    "bytes": 68157440,
+    "scope": "Retained original scratch image in build; not duplicated into docs evidence."
+  },
+  {
+    "original_path": "build/eleventh-trash-attempt3-failed/failed-live-scratch.img",
+    "sha256": "95377b50ca1738199fa7689d6a80f485a551ed86fba9c19b18465d9ff0394d56",
+    "bytes": 68157440,
+    "scope": "Retained original scratch image in build; not duplicated into docs evidence."
+  },
+  {
+    "original_path": "build/eleventh-trash-attempt5-failed/failed-live-scratch.img",
+    "sha256": "0a35c1e24cff2914fd7802a4320c47b854173b3e948bdfffeae09dc41564fa0c",
+    "bytes": 68157440,
+    "scope": "Retained original scratch image in build; not duplicated into docs evidence."
+  }
+]

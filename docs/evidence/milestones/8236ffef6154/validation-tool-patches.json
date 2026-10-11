@@ -1,0 +1,8 @@
+{
+  "scope": "Final successful harness tools after source freeze, separately hashed; compiled188-source manifest never regenerated. Source11 actual input motion/frame fixes, Trash Home/frame/selected-AA/focus fixes; raw failed attempts retained.",
+  "sha256": {
+    "tools/trash_smoke.py": "ffd8fb558e372885e11fad5310c267cb6742efcb8d9836a9d843d3c381f62a36",
+    "tools/trash_smoke_host.rs": "7d0dacb6fc3261bb3a903867d1990a61b3c04168a20207ec83b72f05f2c54c06",
+    "tools/client_input_smoke.py": "b1e40c95403878a328c098befca43ce31b3b6f3e3076cf35747c50ea5ddbf61a"
+  }
+}

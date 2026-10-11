@@ -1,0 +1,85 @@
+{
+  "manifest_sha256": "3bee43295ce414960cac5ca41855966c57f7f79407e67a9d6adae1473fc07989",
+  "sources": {
+    "crates/helix-kernel/src/file.rs": "2268522e8389b0ba07ee24b6bc25f1f8ee2852b3c810692ead77abcccaaa4aca",
+    "crates/helix-kernel/src/filesystem.rs": "ca73feaab98e450d5617f90637ba3cd3d328688d0327a2a261b50627829b2d01",
+    "crates/helix-kernel/src/gui_directories.rs": "58bfc1fe37ed2850cf6a77a0971e1b1a99d8ca83614b0ac90f2906459d48063a",
+    "crates/helix-kernel/src/main.rs": "0f115ec96c6ac0d957880618cd25e789305cd1f6d2371c2af977783caa999612",
+    "crates/next-fs/Cargo.toml": "842a143c0991f7b8e4cfc699d2c4a26546586fb9dce0a86b2c337208992ad65f",
+    "crates/next-fs/GPT-PROFILE.md": "086ca01dad3ceb976bb04a4a228eab0640eac97acf4c20059adbfbad6805cc55",
+    "crates/next-fs/src/gpt.rs": "ee18ee4b80a5c1e7ad5c49cdb6345fa342ec4739da03745b890b4d26ad05dad1",
+    "crates/next-fs/src/journal.rs": "5cd4ff5a648257eff4860e94c7d3e0280a6c625fefa97b7dafcb1e5985e1e62c",
+    "crates/next-fs/src/journal/directories.rs": "6f9d2360eddc0d723a3bc9a3b3adcedc3a9b66e99fe1bb4e4a48166bb0c932ef",
+    "crates/next-fs/src/journal/directory_tests.rs": "a5f071e037e8140b2d4c3ff0defbad6789ccd503d0bb79e2629bc65420c2d5ad",
+    "crates/next-fs/src/journal/tests/transaction_tests.rs": "b18cc7c035cdfab0da04ea4ff56ff516f5d23d15b747136bef662cec26541af5",
+    "crates/next-fs/src/journal/transaction.rs": "3c90c4c728d5a306a4eeecf57c70c7a81f84675cfc4aa40cfe7381c3ca3f07c9",
+    "crates/next-fs/src/lib.rs": "296d280f075ddd7c363690b51f63894b154434f6d94ca2d92e1dbd947c869eb3",
+    "crates/next-fs/src/storage_policy.rs": "61368472ea165bf865a5a4be898b52a663ba98e6fa39d78c7009809c6187aa76",
+    "crates/next-fs/src/trash_record.rs": "8e6eaf61531a11f045238b0e0f647e8568a2d8257ab5fa0849bd2953d7ec94e8",
+    "crates/prism/Cargo.toml": "57973d236330697346e0d9630c65982af0eec5572613eb605357d755210caca4",
+    "crates/prism/assets/NOTICE.txt": "a49d56b73938f8f366ebd81bcdcbdb44c9fe85966848f6f07612194588c65e16",
+    "crates/prism/assets/OpenSans-LICENSE.txt": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+    "crates/prism/assets/Selawik-OFL.txt": "77b7c2506d4efb22e09c8ccf10159f4956eab3ef7c007fef95de136bcf45300c",
+    "crates/prism/assets/open-sans-advance.bin": "7bfb26802a159e8c464aa8f17026bff36915d55240b5c0fbfd0ec8774ef3a0ee",
+    "crates/prism/assets/open-sans-atlas.bin": "d954599f44ba97e84f07b184a493087e781354176065776ad7d23a9d8a745a4b",
+    "crates/prism/assets/selawik-regular-advance.bin": "dab46444c1abd6958c782a0103b09039e0a6a4867ddf67d2b2f501c5ec7945fa",
+    "crates/prism/assets/selawik-regular-atlas.bin": "99ef630e7dd19fd91d798371fe250d818caa9877af8bd82ca68452a6bafb3abe",
+    "crates/prism/assets/selawik-regular-x-offset.bin": "a1583d42a37d7017cbf28b3a006e21f97094131272ba409b936581496f0770ca",
+    "crates/prism/assets/source/OpenSans-Regular.ttf": "e64e508b2aa2880f907e470c4550980ec4c0694d103a43f36150ac3f93189bee",
+    "crates/prism/assets/source/Selawik-Regular.ttf": "e6887e017dd26cdb234de6aed7c15c7a4e808d1a2d1df5bd7b95fe1f555d6b63",
+    "crates/prism/assets/source/Selawik-Regular.ufo.zip": "640369d5f5c5372d16011d038c3bad54477b9f796f0179a41de17eb4cd513eca",
+    "crates/prism/assets/wallpaper.rgb": "85495a5a07d24342eb2797a7e416b142baf2fcbc6929f9632e2e1884a6a09d8c",
+    "crates/prism/src/accessibility.rs": "70320426a031b2d6387bea04d7e866a2c1c32d5e2bc751d94a089c2bf368ba14",
+    "crates/prism/src/accessibility_shell.rs": "9952aede95caf64acf1ba5a1628f2eb0a21850dd81ee762a98cac169756165a5",
+    "crates/prism/src/appearance.rs": "cac1b530f6fa29e3718c53ba573aaae77f084363e913f995fb1e27ee3abd643d",
+    "crates/prism/src/appearance_ui.rs": "cb2ec7e0c244479dac04d913712d46671b8b80354b13874255c44c885b3037e7",
+    "crates/prism/src/calculator.rs": "3e8537719e105b24ad99b000027f587bbf470436a0de38be93263868013e2185",
+    "crates/prism/src/client_interaction.rs": "e862ee71d43f1db488129408e4037a2bb53ffcdb8142ee91d2dc6075651704fe",
+    "crates/prism/src/client_surface.rs": "be05b5cdc7d06fa404a896ba76de42d6aa5e41091a7548ed59d162667b3f075a",
+    "crates/prism/src/cursor.rs": "f5f31bbc685d9ce2ff2d2fa00738e66941cf54c5a2049715390a6420fde7716a",
+    "crates/prism/src/desktop.rs": "14bb10b040282a261274efacedf39cbbe06aae725c3b090cca4e9f59d00c45f2",
+    "crates/prism/src/editor.rs": "d3facd625ed5875dd954373c0caf1849da10c2c90daa36a7f8f788c8d4ca6828",
+    "crates/prism/src/files_actions.rs": "10051beaf0e107324cdb149f193bda90c8fe0ebe63a7b91c671409ba1b2031f0",
+    "crates/prism/src/files_directory.rs": "22b055b415d642abf7a101de5a0cbcd563082ab02d61e6957e38dd4d9e8e9ac2",
+    "crates/prism/src/files_query.rs": "263965b90055d0347a280a9a881dc4d9344c9db8f5f95ca7b196fccc2a747aa9",
+    "crates/prism/src/files_query_shell.rs": "dbbd9155acd902facf95df78d2692df57316dc2b2bbc40f196605f951719106c",
+    "crates/prism/src/keyboard_focus.rs": "dcfadc01486f3e6e060b21a685c7255f28b67b6f120314eb77ff7fa03f6eb13a",
+    "crates/prism/src/lib.rs": "de3284fc97d216766104844e102dfe9503761ea051ded29624e9aa45c3d5e861",
+    "crates/prism/src/native_resize.rs": "cc537833b4b0085238f7d37ba159ce105ae562f61f7df28d98970981f1a51185",
+    "crates/prism/src/native_window_shell.rs": "a716e7d836e5d3f1232857606b5e422ecf99d06f568248257eced4cd5734c3fb",
+    "crates/prism/src/native_windows.rs": "3bb5598b63a1c73788aa3f6a717cd0ae2124f023a93e989a5b6a0e2e5a71b624",
+    "crates/prism/src/notifications.rs": "ec28aa2c1767bf8b6b4b3f7637d28f96180e0c1f7022a300f25092da7fca77db",
+    "crates/prism/src/palette.rs": "3118113180432e58287143ce36e43a042fc72f26af03bc050d97d2740585af95",
+    "crates/prism/src/snap.rs": "6ac131265ed57fe098408dff66fd99e5b332649be869e2f94985122d62ccdb3e",
+    "crates/prism/src/surface_state.rs": "f852981f26a41df8afb8d898245b61f6990b9f1e9f7d39d00211063dea9a9035",
+    "crates/prism/src/theme.rs": "d1f4a894971ab79ae732ce81fc7cf14947d3ce75ede16644384e998898815e7d",
+    "crates/prism/src/trash_shell.rs": "b6c44a915935ce2605d50a6f1e351caf0c28bbe462a777c7eea2fcb381c16578",
+    "crates/prism/src/trash_ui.rs": "d394537712af02a7435e310a229c076954c171b1688efbc2c8081c3aa718aded",
+    "crates/prism/src/trash_undo_ui.rs": "fb4a31045ba4e8a525798fbb917bfd666c671e2cb0f439f9dfc211f67f6ca4c0"
+  },
+  "directory_producer_markers": {
+    "crates/helix-kernel/src/main.rs": [
+      "PRISM DIRECTORY ACTION",
+      "take_files_directory_action"
+    ],
+    "crates/helix-kernel/src/file.rs": [
+      "directory_action",
+      "gui_directories::perform"
+    ],
+    "crates/helix-kernel/src/gui_directories.rs": [
+      "Intent::MoveFolder",
+      "rename_between_snapshots"
+    ],
+    "crates/helix-kernel/src/filesystem.rs": [
+      "DEVELOPMENT_VOLUME_OWNER",
+      "with_directory_store"
+    ]
+  },
+  "helper_source_sha256": "7477c0b4b993d1a0159ac963ddb31a9a052d430d2aaf9e9de05d7ceee70f6dad",
+  "validator_sha256": "ec448919a14d6a5b609d82d96c80675b3888a1567033a22d578a5bff38b9fb8d",
+  "helper_sha256": "bb5021634cb7edf73d7c081acfc57c867a7132331fd0e2383f47fde5bedb58d0",
+  "libraries": {
+    "next_fs": "02f6ee70ee2894dbacf5848aa27d3a42a9c0183503c752aaabf0f0f2529209a7",
+    "prism": "392cafd433a5ac6382693e24a04d9da73424b63557faa2b5ba236077b9b22c7a"
+  }
+}

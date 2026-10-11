@@ -1,0 +1,12 @@
+{
+  "passed": true,
+  "scope": "QEMU q35/TCG, single CPU, legacy PS/2, software framebuffer, PIT/PIC timer interrupts, legacy virtio read/write/flush in dedicated trailing data region, FAT32 reads, native processes and IPC; no hardware certification",
+  "started_utc": "2026-10-11T19:35:55.941001+00:00",
+  "checks": [
+    "expected loader rejection: init image rejected: Checksum",
+    "no kernel entry or reboot during bounded halt observation"
+  ],
+  "image_sha256": "215865aadef99d2b4e4832ba095456e569677a59d38cd992e93a9d0118f2cff0",
+  "qemu_profile": "q35,accel=tcg; cpu=qemu64; 256M; smp=1; vga=std",
+  "finished_utc": "2026-10-11T19:35:59.359909+00:00"
+}

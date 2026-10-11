@@ -1,0 +1,397 @@
+{
+  "passed": true,
+  "scope": "QEMU q35/TCG, single CPU, legacy PS/2, software framebuffer, PIT/PIC timer interrupts, legacy virtio read/write/flush in dedicated trailing data region, FAT32 reads, native processes and IPC; no hardware certification",
+  "started_utc": "2026-10-11T17:31:26.548008+00:00",
+  "checks": [
+    "Ed25519 deployment signature and kernel/init-image SHA256 verified against workspace development anchor",
+    "separate validated ELF loaded from EFI boot-device filesystem",
+    "firmware boot services exited",
+    "versioned checksummed BootInfo with kernel/loader/map reservations",
+    "supervisor RX text, RO NX data, RW NX memory and guarded stacks",
+    "CPU kernel protection: RX text write",
+    "CPU kernel protection: RO data write",
+    "CPU kernel protection: user code physical alias write",
+    "CPU kernel protection: NX data execution",
+    "CPU kernel protection: kernel stack guard write",
+    "CPU kernel protection: interrupt stack guard write",
+    "kernel physical-page and handle selftest",
+    "isolated ring3 native code, bounded syscall, pointer denial and exit",
+    "CPU page fault isolation: supervisor read",
+    "CPU page fault isolation: RX code write",
+    "CPU page fault isolation: NX stack execution",
+    "PIT timer interrupts preserve tested integer registers and XMM0 sentinel",
+    "actual read-only legacy virtio block device",
+    "actual read-only FAT32 file access: /NEXT.TXT",
+    "kernel readback verifies only saved FX512 state is enabled; unsaved optional user controls and inherited TLS bases disabled",
+    "bounded boot-device init image loaded and retained",
+    "native SDK TLS setters/getters preserve private FS memory across yield, sleep and timer switches and reject invalid bases/copyout",
+    "native executable rejects invalid pointers and stale capability handles",
+    "native anonymous memory supports zeroed multi-page mappings and enforces range/permissions",
+    "PID1 reads authenticated signed service declarations with no partial writes on short, null, readonly or guard-crossing outputs",
+    "actual manual/auto events enforce wait/signal rights and copyout-before-consumption",
+    "actual blocking waits enforce deadlines, wake one auto waiter, broadcast manual events and clean up killed waiters",
+    "capability-backed COW file streams preserve offsets on denied copyout and enforce attenuated rights",
+    "cross-process file capability transfer grants read and denies write",
+    "cross-process capability move produces usable attenuated recipient authority",
+    "framed IPC request/reply between distinct native address spaces",
+    "CPU faults for supervisor access, RX write, NX execute, stack guard and invalid opcode terminate only offending child",
+    "native integer, all XMM and x87 sentinels survive noncooperative timer context switches",
+    "validated q35 HPET resource uses owned UC mapping and advancing hardware counter; PIT remains scheduler clock",
+    "actual masked LAPIC countdown calibrated against two bounded HPET windows; masked firmware timer adopted/stopped, LVT/divider restored and PIT retained",
+    "read-only BSP LAPIC identity and version discovery with owned UC mapping",
+    "actual IOAPIC pin discovery and bounded masked ISA plan before the explicit routing transition",
+    "actual PIT IRQ0 routing transition reports ISR-observed IOAPIC delivery or verified PIC rollback",
+    "independently attenuated worker NETWORK grant blocks socket creation despite signed declaration",
+    "moving a socket to an unprivileged recipient cannot bypass NETWORK authority; denied import preserves ownership until teardown",
+    "validated ACPI tables discover BSP, IOAPIC and interrupt overrides; no SMP startup",
+    "COW data store commits file write/rename/delete and remounts without touching ESP",
+    "actual AC97 DMA playback completes 12000 stereo frames at 48 kHz",
+    "actual DHCP Discover/Offer/Request/Ack obtains bounded QEMU lease",
+    "actual virtio Ethernet ARP, ICMP echo and checksummed UDP request/reply with local host peer",
+    "actual local UDP A/AAAA lookups validate framed replies, TTL cache hits, real monotonic expiry and wire refresh",
+    "actual TCP handshake, bounded HTTP response and connection teardown with local host peer",
+    "PS/2 auxiliary mouse initialized",
+    "dedicated data-sector write/read/flush and original contents restored",
+    "native child fault terminates offender while supervisor survives",
+    "timer preempts non-yielding child and supervisor kills it",
+    "process results survive repeated and duplicated waits; signed exit -7 is distinct from WouldBlock and bad copyout cannot consume result",
+    "native process exit, wait, stale handles and slot reuse",
+    "isolated native privileged VFS fixture checks independent/shared offsets, rename replacement, open unlink lifetime and recreate isolation",
+    "native PID1 executes real isolated-worker crash restart and heartbeat timeout recovery with bounded policy",
+    "live native nextd supervisor signals readiness",
+    "kernel completes bounded native startup",
+    "actual q35 CMOS UTC anchor agrees with host wall clock",
+    "framebuffer shell ready",
+    "distinct worker PIDs and exit statuses prove crash restart and watchdog recovery ordering",
+    "recovered isolated service remains live alongside PID1 after desktop readiness",
+    "serial command: status",
+    "serial command: about",
+    "serial command: help",
+    "serial command: cat /NEXT.TXT",
+    "serial command: write /smoke hello world",
+    "serial command: cat /smoke",
+    "serial command: mv /smoke /renamed",
+    "serial command: ls",
+    "serial command: rm /renamed",
+    "serial command: cat /renamed",
+    "serial command: ps",
+    "serial command: kill 1",
+    "serial command: run /system/missing.elf",
+    "serial command: run /system/untrusted.elf",
+    "serial command: trace",
+    "serial command: calc (2 + 3) * 4",
+    "serial command: calc 1 / 0",
+    "serial command: nextunknown",
+    "signed application authentication rejects tampered archive member before process creation",
+    "structured trace captures actual numeric process and namespace outcomes",
+    "interactive spawn and kill of non-yielding native child; supervisor protected",
+    "same static Linux ELF executes Linux SYSCALL subset and exits 37",
+    "Linux profile cannot invoke native readiness capability syscall",
+    "original Linux clock fixture: /compat/linux/clock.elf",
+    "original Linux clock fixture: /compat/linux/clock-gate.elf",
+    "native realtime clock normalizes UTC and rejects null, readonly and guard-crossing copyout",
+    "native clock utility uses actual monotonic time",
+    "console-owned program output reaches Prism terminal through bounded queue",
+    "original Linux brk/mmap/munmap fixture: /compat/linux/memory.elf",
+    "original Linux brk/mmap/munmap fixture: /compat/linux/memory-gate.elf",
+    "original Linux shared-open, rename/unlink lifetime fixture: /compat/linux/namespace.elf",
+    "original Linux shared-open, rename/unlink lifetime fixture: /compat/linux/namespace-gate.elf",
+    "Linux FS/GS bases survive gate, yield, preemption and bounds checks: /compat/linux/tls.elf",
+    "Linux FS/GS bases survive gate, yield, preemption and bounds checks: /compat/linux/tls-gate.elf",
+    "two overlapping Linux TLS instances preserve PID-specific private FS/GS contents across timer switches",
+    "original Linux common file-object fixture: /compat/linux/file.elf",
+    "original Linux common file-object fixture: /compat/linux/file-gate.elf",
+    "original NT PE32+ Win64 import fixture: /compat/nt/hello.exe",
+    "original NT PE32+ Win64 import fixture: /compat/nt/hello-gate.exe",
+    "native connected UDP capability sends actual nonce/empty datagrams through retained virtio device with copyout-safe receive, level wait, rights and stale-handle checks",
+    "console date reports normalized UTC from the same RTC/PIT clock",
+    "Home search matches actual file metadata and opens its authoritative content in Editor",
+    "actual delayed readable and pressure-blocked writable socket waits, timeout, authority and nonconsuming copyout",
+    "two actual blocked socket processes killed and collected; identical connected port49207 reopened after teardown",
+    "trusted bootstrap exit notifications retain exact newest eight PIDs/statuses with counted queue loss",
+    "actual PS/2 centered taskbar Home click and Home Files launch use shared resolution-specific geometry",
+    "actual F8 notification center read, dismiss and persistent session DND transitions match shared font rasters",
+    "actual F8 is ignored by the active file consent modal; exact modal framebuffer preserved",
+    "trusted PS/2 file chooser grants scoped readonly authority to the authenticated caller; write denial, UI rejection, unattended deadline, cancellation and stale requests pass",
+    "actual PS/2 Super-arrow snap preview, apply, cancel and restore preserve floating geometry and work-area bounds",
+    "Editor actual load, PS/2 editing, Ctrl-S journal save, external-change conflict and unsaved-text preservation",
+    "monotonic PIT clock advances while serial console remains responsive",
+    "PS/2 keyboard command through QMP",
+    "PS/2 backspace corrects statuz to status",
+    "keyboard Home menu opens actual Files window without executing terminal input",
+    "actual PS/2 mouse motion and left-button event reaches desktop hit testing",
+    "serial console restores Terminal focus from Files panel",
+    "bounded UART transmit FIFO preserves queued output across stalls and reports zero rejected/absent bytes",
+    "screenshot taken after completed software back-buffer presentation",
+    "nonblank framebuffer screenshot",
+    "captured AC97 PCM contains matching stereo channels and a 1 kHz waveform"
+  ],
+  "image_sha256": "e1aa0516b94e20f349cea2bbe4593bbce4d27e3ac4b014e7971fe635b267741e",
+  "qemu_profile": "q35,accel=tcg; cpu=qemu64; 256M; smp=1; vga=std",
+  "ioapic_delivery": {
+    "gsi": 2,
+    "apic_interrupts": 3,
+    "pic_interrupts": 0
+  },
+  "service_instance_pids": [
+    20,
+    21,
+    22
+  ],
+  "concurrent_tls_pids": [
+    35,
+    36
+  ],
+  "udp_wait_probe_pid": 41,
+  "udp_blocked_killed_pids": [
+    42,
+    43
+  ],
+  "boot_notifications": {
+    "boot_exit_count": 20,
+    "retained_pids": [
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21
+    ],
+    "overwritten": 12
+  },
+  "portal_probe_pid": 44,
+  "prism_interaction": {
+    "host_helper_sha256": "4fead58fa66954f7abadf206eeadf09aeab4f39f9cc317c63059b3c84b3e8ba0",
+    "compiled_source_manifest_sha256": "37b72e7d411ae6f37bbd845fbe8c3c9d4c8dda6db6ebfde96fe4566fd3bc9ee1",
+    "frozen_source_root": "work/eighth-wave/frozen-src",
+    "frozen_prism_library_sha256": "b2acbee7455c7a8cdee5a1abcb6e2d3380afd9acdd36e785446aff42f286d6e8",
+    "viewport": [
+      1280,
+      800
+    ],
+    "geometry": {
+      "home_button": [
+        444,
+        734,
+        52,
+        48
+      ],
+      "terminal_button": [
+        500,
+        734,
+        52,
+        48
+      ],
+      "files_button": [
+        556,
+        734,
+        52,
+        48
+      ],
+      "settings_button": [
+        668,
+        734,
+        52,
+        48
+      ],
+      "home": [
+        330,
+        266,
+        620,
+        450
+      ],
+      "home_files": [
+        470,
+        392,
+        104,
+        88
+      ],
+      "notices": [
+        788,
+        196,
+        480,
+        520
+      ],
+      "portal": [
+        320,
+        170,
+        640,
+        460
+      ]
+    },
+    "notification_counts": {
+      "initial": [
+        8,
+        8
+      ],
+      "read": [
+        7,
+        8
+      ],
+      "dismissed": [
+        7,
+        7
+      ]
+    },
+    "authenticated_notification": {
+      "pid": 43,
+      "package_id": "org.next.development.native.udp-block",
+      "exit_code": -13,
+      "read_then_dismissed": true
+    },
+    "captures": [
+      {
+        "name": "home-pointer",
+        "path": "build/eighth-prism-qemu64/prism-interaction/00-home-pointer.ppm",
+        "sha256": "3822abbbbd4f05d75e60fb74dc57fe1dcf82f4afb2dcd35359b9a28527e5c742"
+      },
+      {
+        "name": "files-pointer",
+        "path": "build/eighth-prism-qemu64/prism-interaction/01-files-pointer.ppm",
+        "sha256": "02597fcf93985813501dbfb094cfb5be4cf6c80429349e08f38430542e58d200"
+      },
+      {
+        "name": "settings-pointer",
+        "path": "build/eighth-prism-qemu64/prism-interaction/02-settings-pointer.ppm",
+        "sha256": "a254885eff938269260e873bcf320bfcbea9e496c7ddb6f199153b08c718ab1f"
+      },
+      {
+        "name": "notices-unread",
+        "path": "build/eighth-prism-qemu64/prism-interaction/03-notices-unread.ppm",
+        "sha256": "6132bfa47ca91d1d31f38e58453963260777a7fccf0e52563de8dd288e4738a2"
+      },
+      {
+        "name": "notices-source-select",
+        "path": "build/eighth-prism-qemu64/prism-interaction/04-notices-source-select.ppm",
+        "sha256": "c64067eb36b1d4d5d0390db9af81c59c317e8212799a685dddebbcd4749c3755"
+      },
+      {
+        "name": "notices-source-select",
+        "path": "build/eighth-prism-qemu64/prism-interaction/05-notices-source-select.ppm",
+        "sha256": "d356c6460a036580648af47daba2af9ea375a1624f559e27cb65a45d8c9cc6b4"
+      },
+      {
+        "name": "notices-source-select",
+        "path": "build/eighth-prism-qemu64/prism-interaction/06-notices-source-select.ppm",
+        "sha256": "78aba6f20d1db3b440f9a27a7c530872838c9c9d33af38db60b6fea2896dbab3"
+      },
+      {
+        "name": "notices-source-select",
+        "path": "build/eighth-prism-qemu64/prism-interaction/07-notices-source-select.ppm",
+        "sha256": "fcdda3e1c39164d2d4349e47e7d7b601c6efeb8c3506c15d86720f54fa04975c"
+      },
+      {
+        "name": "notices-source-select",
+        "path": "build/eighth-prism-qemu64/prism-interaction/08-notices-source-select.ppm",
+        "sha256": "c8001b91349252967e3fe24b56463d98b1b5c48fd5834b5fab4c1a0e5b020ef8"
+      },
+      {
+        "name": "notices-source-select",
+        "path": "build/eighth-prism-qemu64/prism-interaction/09-notices-source-select.ppm",
+        "sha256": "d14ec0d7e041a1d7f40378b7d7ebd0011217bb19812ec77ae9abf4c972fced53"
+      },
+      {
+        "name": "notices-source-select",
+        "path": "build/eighth-prism-qemu64/prism-interaction/10-notices-source-select.ppm",
+        "sha256": "3ee45e018785f7c31caf07bdf30fc32224b8ce34a12a43b0a3f036b008ebf014"
+      },
+      {
+        "name": "notices-read",
+        "path": "build/eighth-prism-qemu64/prism-interaction/11-notices-read.ppm",
+        "sha256": "fbb37ef400b6e60111eaf73bbd13fcb7dfeeea3f9f1826bb343014755dcea163"
+      },
+      {
+        "name": "notices-dismissed",
+        "path": "build/eighth-prism-qemu64/prism-interaction/12-notices-dismissed.ppm",
+        "sha256": "ae780e25df503e0c148118f328873a1eaf2634d8523f27233d9684b6287d1c45"
+      },
+      {
+        "name": "notices-source-dismissed",
+        "path": "build/eighth-prism-qemu64/prism-interaction/13-notices-source-dismissed.ppm",
+        "sha256": "ae780e25df503e0c148118f328873a1eaf2634d8523f27233d9684b6287d1c45"
+      },
+      {
+        "name": "notices-dnd-on",
+        "path": "build/eighth-prism-qemu64/prism-interaction/14-notices-dnd-on.ppm",
+        "sha256": "4d585cb9df0a253300831cef7fdca566939113d1126c9f20cebecac78221a737"
+      },
+      {
+        "name": "notices-dnd-persisted",
+        "path": "build/eighth-prism-qemu64/prism-interaction/15-notices-dnd-persisted.ppm",
+        "sha256": "27eed4850b1da8f621a807f77d2f3721cdc1ec4eb6585abf65e6d3747d299889"
+      },
+      {
+        "name": "notices-dnd-off",
+        "path": "build/eighth-prism-qemu64/prism-interaction/16-notices-dnd-off.ppm",
+        "sha256": "52e0a56b6a9c9c726f556524cf860fec5fb7a2b14e3294009d7655dfef87b0d8"
+      },
+      {
+        "name": "consent-before-f8",
+        "path": "build/eighth-prism-qemu64/prism-interaction/17-consent-before-f8.ppm",
+        "sha256": "89725c0924c03ed1441bbfa72f70c68c7a686a5d2b3ac167712e7d0a9b86334a"
+      },
+      {
+        "name": "consent-after-f8",
+        "path": "build/eighth-prism-qemu64/prism-interaction/18-consent-after-f8.ppm",
+        "sha256": "89725c0924c03ed1441bbfa72f70c68c7a686a5d2b3ac167712e7d0a9b86334a"
+      }
+    ],
+    "limits": "Guest proves existing process notices and consent-modal priority. Critical-priority event injection is not exposed by this image; that DND exception remains a host-model test."
+  },
+  "clock_samples": [
+    [
+      6450,
+      64495567314
+    ],
+    [
+      6482,
+      64815545323
+    ]
+  ],
+  "uart_metrics": {
+    "accepted": 43630,
+    "transmitted": 43630,
+    "dropped": 0,
+    "stalled": 28,
+    "absent": 0,
+    "pending": 0
+  },
+  "screenshot": {
+    "path": "build/screenshot.ppm",
+    "width": 1280,
+    "height": 800,
+    "distinct_colors": 2378,
+    "validation": "PPM dimensions and at least four colors; no visual layout or accessibility verification"
+  },
+  "dns_peer": {
+    "dropped": 1,
+    "answers": 3,
+    "requests": 4
+  },
+  "dns_boot_flow": {
+    "dropped": 1,
+    "answers": 3,
+    "validation": "First valid bootstrap UDP source flow, independently scoped from native lookup source ports"
+  },
+  "audio": {
+    "path": "build/eighth-prism-qemu64/audio.wav",
+    "sample_rate": 48000,
+    "channels": 2,
+    "active_frames": 11087
+  },
+  "finished_utc": "2026-10-11T17:32:36.153475+00:00",
+  "source_before_sha256": "254e5757b95d1a43e63085961133dce62c1fb58921a816df74ce3020a2a77934",
+  "source_after_sha256": "f2d50f25f8b8740e18fada012d0f9ac7b5f964eaf1723953caee5dd88d96c2a1",
+  "source_unchanged": false,
+  "workspace_source_drift": true,
+  "source_drift_policy": "Informational: other agents may continue authorized source work; guest claims bind to immutable image and frozen compiled-source manifest.",
+  "compiled_source_manifest": {
+    "path": "work/eighth-wave/source-manifest.json",
+    "files": 207,
+    "before_sha256": "37b72e7d411ae6f37bbd845fbe8c3c9d4c8dda6db6ebfde96fe4566fd3bc9ee1",
+    "after_sha256": "37b72e7d411ae6f37bbd845fbe8c3c9d4c8dda6db6ebfde96fe4566fd3bc9ee1",
+    "unchanged": true
+  }
+}

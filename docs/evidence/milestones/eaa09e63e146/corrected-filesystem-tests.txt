@@ -1,0 +1,13 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.01s
+     Running unittests src/lib.rs (/workspace/Next/work/ninth-corrected/target/debug/deps/next_checks-b384e22bc5b79d9e)
+
+running 6 tests
+test filesystem::tests::device_write_authority_refuses_outside_prefix_and_read_only_before_port_io ... ok
+test filesystem::tests::preference_records_are_listed_without_poisoning_other_previews ... ok
+test filesystem::tests::reply_bounds_preserve_complete_utf8_and_command_arguments ... ok
+test filesystem::tests::snapshots_preserve_verified_lengths_and_utf8_boundaries ... ok
+test filesystem::tests::only_explicit_development_geometry_is_authorized ... ok
+test filesystem::tests::snapshots_keep_binary_metadata_and_refuse_inconsistent_lengths ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 132 filtered out; finished in 0.00s
+

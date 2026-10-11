@@ -1,0 +1,11 @@
+{
+  "scope": "Exact173-file snapshot copied unchanged; no recapture of newer eighth/UI source. Older milestones preserved.",
+  "source_manifest_sha256": "3e323b707665896f419aab7aa8d40ac0168e12c10f152d8c58cca6e293d9dadd",
+  "base_image_sha256": "31e7e89ec2396a625bbdd90b5624c0377c8dfa8d5c54c64f28746cfccae1a7a9",
+  "alternate_service_image_sha256": "ca439497c4ec270043d395524f7091a6020c2dcdb6ef9163bc5b5372960d146f",
+  "alternate_gpt_images": [
+    "58ea8d1fe5823e643757d9a7768bc51f211119fed47d4b761aa0b568bd91f933",
+    "1d4fa9a393886726aae65d0cd0018f67ce58bf2cac6a03ef30a6d7d8bb482b8e"
+  ],
+  "excluded": "Later Open Sans/theme, socket writable/blocked-wait proof and signed GPT mount changes are outside this milestone."
+}

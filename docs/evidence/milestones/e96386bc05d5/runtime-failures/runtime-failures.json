@@ -1,0 +1,15 @@
+{
+  "passed": true,
+  "image_sha256": "e96386bc05d56fbb70612b95d8c686e819f24b19a2607802ea016c71c9f7c18c",
+  "checks": [
+    "persistent isolated worker is live and console cannot kill supervisor-owned service",
+    "PID1 and persistent worker plus two console children fill four process slots; further spawn returns NoMemory",
+    "console, supervisor and persistent service remain responsive while two non-yielding executables run",
+    "kill frees slots and stale numeric PIDs cannot address dead processes",
+    "slot reuse allocates a fresh PID after exhaustion recovery",
+    "fresh user page fault is contained; console remains usable and missing executable rejects"
+  ],
+  "scope": "Single-CPU QEMU bounded process-slot exhaustion/reuse, non-yielding preemption, stale PID denial and user-fault survival; no SMP, resource-wide exhaustion or hardware certification.",
+  "persistent_worker_pid": 22,
+  "source_image_unchanged": true
+}

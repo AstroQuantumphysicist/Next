@@ -1,0 +1,16 @@
+{
+  "artifact": "Next development ESP image; NOT Next 1.0 or an installer",
+  "uefi_secure_boot_certified": false,
+  "deployment_bundle": "SHA256/Ed25519 signed with workspace development key; not a production trust chain",
+  "sha256": {
+    "BOOTX64.EFI": "acd3789f7637120b8cf8c1b63b223443bed5758b9c2fb41895e3cff7694b388f",
+    "HELIX.ELF": "623fd832959422f1ad1e05bdb4d6dcf1ddde1729d554efc9cd9a751bf5ef2983",
+    "INITRD.NXI": "e2f8894704b0650fb4e93065c5f37c4e0104363b099ed0389ef9236e1fd76162",
+    "SYSTEM.NXP": "b5cca719bcf4eb164ed2547888a132df88bb39dfd436b5dd8a5479b7f11ffee2",
+    "next-dev.img": "fd4b9165d26927e9a0a2783ee271b406f72f413b24ebafcca0b26bf1030c02b7"
+  },
+  "source_manifest_sha256": "8000ab910920bf5230ced65af5ab172b7e4bd4fe1cd798845cea0919f2a2260e",
+  "source_files": 206,
+  "frozen_source_unchanged": true,
+  "scope": "Frozen Source14 native window movement/minimize/restore/unified stacking, guarded emergency IST, checked SDK session and status contrast; excludes live Source15"
+}

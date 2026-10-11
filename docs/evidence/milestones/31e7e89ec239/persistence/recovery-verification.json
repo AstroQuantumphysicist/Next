@@ -1,0 +1,16 @@
+{
+  "passed": true,
+  "checks": {
+    "scratch_image_unchanged": true,
+    "source_hash_matches_journal": true,
+    "generation_matches_journal": true,
+    "bank_matches_journal": true,
+    "files_match_journal": true,
+    "verified_manifest_matches_export": true
+  },
+  "scratch_sha256_before": "a229392df2937a0664d93a9b9ad2323c97dbb3381445f3e68711a1994bd68980",
+  "scratch_sha256_after": "a229392df2937a0664d93a9b9ad2323c97dbb3381445f3e68711a1994bd68980",
+  "manifest_sha256": "9a15524a36bbf33ecd0972d6989a455136202d9aea2d3e6df29876fa35f54c79",
+  "manifest": "build/persistence/recovery-disibyjq/snapshot/manifest.json",
+  "scope": "Read-only export of bounded verified committed guest files; no repair, full fsck, encryption or backup authentication."
+}

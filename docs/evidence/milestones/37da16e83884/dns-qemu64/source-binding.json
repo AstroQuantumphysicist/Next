@@ -1,0 +1,8 @@
+{
+  "compiled_source_manifest": "work/ninth-focus-corrected/source-manifest.json",
+  "sha256": "0dcc95ad2b267e6a2400be28e20f65228927a32217d4ba813c9b7df4d8f7f38e",
+  "unchanged": true,
+  "image_sha256": "37da16e8388427af8182c4535f951f67e4879498e1b908d61499d6d29181cd79",
+  "image_unchanged": true,
+  "workspace_source_changes": "Concurrent tenth-wave edits authorized; retained ninth manifest and loaded image remain immutable"
+}

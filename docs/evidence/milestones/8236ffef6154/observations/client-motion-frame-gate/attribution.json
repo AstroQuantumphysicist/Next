@@ -1,0 +1,4 @@
+{
+  "cause": "Validator waited PRISM FRAME after pure motion; frozen11 logs that marker only when mouse buttons change. Both fixtures launched correctly, no client focus reached.",
+  "corrective_action": "Use actual middle-button transitions with each bounded motion packet; wait actual PRISM POINTER coordinate+FRAME and release0+FRAME before next packet. Middle movement never invents left focus gesture."
+}

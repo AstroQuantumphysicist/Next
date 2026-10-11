@@ -1,0 +1,8 @@
+{
+  "image_sha256": "60ab816c97cc2c510ac5eed76a3db2d039b924a72fe6904bc6eae63f36cbfc27",
+  "source_files": 177,
+  "source_manifest_sha256": "515f63b8da57dd9e7c7180a763422d4aeb5c095a3b9f67ec7ec8db3994334674",
+  "scope": "Exact retained corrected tenth source only; editor-layering and bounded pressure backports tracked by historical source manifests and prepare metadata. Earlier454 suite and failed fixture setup kept separate from corrected455 retry. Unwired files included in source snapshot do not establish guest capabilities.",
+  "alternate_pair_sha256": "4148413d4f4fae88afd189ceb47061b3730e2cc42cd4b3c5f73c88203e9fb2fc",
+  "excluded": "Source11 interactive input/Trash/explicit FileNamespace and Source12 negotiated close; current live tree is newer."
+}

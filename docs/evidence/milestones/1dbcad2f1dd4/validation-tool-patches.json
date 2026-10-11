@@ -1,0 +1,10 @@
+{
+  "scope": "Final guest tooling after frozen compiled193 source; no source recapture. Undo wrapper opens actual Trash after base restores Terminal; failed attempt retained. Selected-row raster template and final focus contract matched inherited source-bound base.",
+  "sha256": {
+    "tools/client_close_smoke.py": "a020f520f31ed90f7b6bba6eafe99b6c4e9705137afc01fb14cdde867eb659c6",
+    "tools/trash_undo_smoke.py": "75fe93a75ec1a0649d479fbeef342660c82fbc99ade341726edede825c85e582",
+    "tools/trash_undo_smoke_host.rs": "041622368133ef160e24d9ab93c11ccf51aed1e399a8e853949d1c62e551dd43",
+    "tools/trash_smoke.py": "ffd8fb558e372885e11fad5310c267cb6742efcb8d9836a9d843d3c381f62a36",
+    "tools/trash_smoke_host.rs": "7d0dacb6fc3261bb3a903867d1990a61b3c04168a20207ec83b72f05f2c54c06"
+  }
+}

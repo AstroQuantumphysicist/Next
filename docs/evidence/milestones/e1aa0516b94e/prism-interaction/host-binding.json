@@ -1,0 +1,24 @@
+{
+  "compiled_source_manifest_sha256": "37b72e7d411ae6f37bbd845fbe8c3c9d4c8dda6db6ebfde96fe4566fd3bc9ee1",
+  "prism_sources": {
+    "crates/prism/Cargo.toml": "57973d236330697346e0d9630c65982af0eec5572613eb605357d755210caca4",
+    "crates/prism/assets/NOTICE.txt": "a49d56b73938f8f366ebd81bcdcbdb44c9fe85966848f6f07612194588c65e16",
+    "crates/prism/assets/OpenSans-LICENSE.txt": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+    "crates/prism/assets/open-sans-advance.bin": "7bfb26802a159e8c464aa8f17026bff36915d55240b5c0fbfd0ec8774ef3a0ee",
+    "crates/prism/assets/open-sans-atlas.bin": "d954599f44ba97e84f07b184a493087e781354176065776ad7d23a9d8a745a4b",
+    "crates/prism/assets/source/OpenSans-Regular.ttf": "e64e508b2aa2880f907e470c4550980ec4c0694d103a43f36150ac3f93189bee",
+    "crates/prism/assets/wallpaper.rgb": "85495a5a07d24342eb2797a7e416b142baf2fcbc6929f9632e2e1884a6a09d8c",
+    "crates/prism/src/calculator.rs": "3e8537719e105b24ad99b000027f587bbf470436a0de38be93263868013e2185",
+    "crates/prism/src/desktop.rs": "99add3b68c9cfa71f58011744800e3f64f600d886c9092ae2ea34fd439d13171",
+    "crates/prism/src/editor.rs": "d3facd625ed5875dd954373c0caf1849da10c2c90daa36a7f8f788c8d4ca6828",
+    "crates/prism/src/lib.rs": "0b7bcc679c9d5825f2d6cff70bc0f78e10b93b922cab4561fcea56b9355e8b31",
+    "crates/prism/src/notifications.rs": "ec28aa2c1767bf8b6b4b3f7637d28f96180e0c1f7022a300f25092da7fca77db",
+    "crates/prism/src/snap.rs": "6ac131265ed57fe098408dff66fd99e5b332649be869e2f94985122d62ccdb3e",
+    "crates/prism/src/theme.rs": "349e91f548366430745c172cee088fd4bc20e36036c51f952caf16daf2a7d733"
+  },
+  "frozen_source_root": "work/eighth-wave/frozen-src",
+  "helper_sha256": "4fead58fa66954f7abadf206eeadf09aeab4f39f9cc317c63059b3c84b3e8ba0",
+  "library_sha256": "b2acbee7455c7a8cdee5a1abcb6e2d3380afd9acdd36e785446aff42f286d6e8",
+  "probe_source_sha256": "088454d17a94012db9f31b918a7ee9186fe522bc9ffe79cc07cef669f9a1fbbb",
+  "panic_strategy": "abort"
+}

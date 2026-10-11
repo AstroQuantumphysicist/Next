@@ -1,0 +1,10 @@
+pkg-missing: PASS
+pkg-truncated-header: PASS
+pkg-version: PASS
+pkg-unknown-signer: PASS
+pkg-permissions: PASS
+pkg-signature: PASS
+pkg-payload-digest: PASS
+pkg-kernel-binding: PASS
+pkg-initrd-binding: PASS
+pkg-oversized: PASS

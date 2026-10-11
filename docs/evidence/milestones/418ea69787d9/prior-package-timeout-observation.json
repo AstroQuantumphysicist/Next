@@ -1,0 +1,12 @@
+{
+  "kind": "Retained observation summary, not original complete failed-run report or raw serial log",
+  "image_sha256": "418ea69787d9167202dcf8a0d98db74335c2f3d456bb8ffe68aca0f6048b5dc1",
+  "concurrent_attempt": {
+    "suite_passed": false,
+    "failed_case": "pkg-missing",
+    "error": "boot smoke exceeded 45 seconds",
+    "other_cases_passed": 9
+  },
+  "subsequent_standalone_suite": "all ten cases passed; complete passing report in package-failures.json",
+  "limitation": "Original failed suite report and case files were overwritten by rerun. Timeout cause was not independently established."
+}

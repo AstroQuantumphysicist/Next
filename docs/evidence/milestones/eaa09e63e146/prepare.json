@@ -1,0 +1,14 @@
+{
+  "prepared": true,
+  "scope": "Corrected frozen ninth kernel only; two production source files changed. Original bootloader, initrd and all signed apps preserved. Source10 excluded.",
+  "base_image_sha256": "484084f63766308d2a355de11ca9862ad87ea6b92276f2852dc4679991e68173",
+  "image_sha256": "eaa09e63e14603ca582207e901fcb9daa7321d25185403cf5bf6c5facd1ec3e4",
+  "source_manifest_sha256": "faca17fd17dc82bde62aa0d7af6dedcc09d0113b0b18304063684a9f8a349156",
+  "source_files": 167,
+  "kernel_sha256": "70fc6a65ac05c2fba491905667cce64a64838686eab3156a8225d25b7a52e2e2",
+  "deployment_sha256": "a051a0578b1014bc8c75ed5572e15c1b503be048e97d267d9e18889e3ad948a1",
+  "initrd_sha256": "305a586fa0f516582af80ff529e6831aad02959c8cea5bd8d746c0254c913f53",
+  "package_verification": "Verified org.next.development Deployment 2 files; permissions requested=0x0",
+  "builder_sha256": "6af92a1c6797181b8e4bac79dfc1dccbb32eaab4a860554e59d59a24baf5dd6f",
+  "base_unchanged": true
+}

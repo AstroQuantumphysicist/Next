@@ -1,0 +1,12 @@
+{
+  "passed": true,
+  "scope": "QEMU q35/TCG, single CPU, legacy PS/2, software framebuffer, PIT/PIC timer interrupts, legacy virtio read/write/flush in dedicated trailing data region, FAT32 reads, native processes and IPC; no hardware certification",
+  "started_utc": "2026-10-11T15:57:54.086258+00:00",
+  "checks": [
+    "expected loader rejection: signed deployment rejected: Signature",
+    "no kernel entry or reboot during bounded halt observation"
+  ],
+  "image_sha256": "df9c8342baf6ca9a1e1a0f4945ada3f4f7ef17354ef336b0a788dd228b7bb506",
+  "qemu_profile": "q35,accel=tcg; cpu=qemu64; 256M; smp=1; vga=std",
+  "finished_utc": "2026-10-11T15:57:56.599057+00:00"
+}

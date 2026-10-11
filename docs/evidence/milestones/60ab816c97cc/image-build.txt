@@ -1,0 +1,126 @@
+   Compiling next-user v0.1.0 (/workspace/Next/work/tenth-wave/frozen-src/crates/next-user)
+   Compiling next-abi v0.1.0 (/workspace/Next/work/tenth-wave/frozen-src/crates/next-abi)
+   Compiling helix-core v0.1.0 (/workspace/Next/work/tenth-wave/frozen-src/crates/helix-core)
+    Finished `release` profile [optimized] target(s) in 1.48s
+Independent Linux static ELF host execution PASS (exit 37)
+Independent Linux clock ELF host execution PASS (exit 43)
+Independent Linux memory ELF host execution PASS (exit 44)
+Independent Linux file ELF host execution PASS (exit 46)
+Independent Linux TLS ELF host execution PASS (exit 47)
+Independent Linux namespace ELF host execution PASS (exit 48)
+Original fixed PE32+ fixture built: 3072 bytes, 3 kernel32 imports
+Original fixed PE32+ fixture built: 3584 bytes, 3 kernel32 imports
+   Compiling version_check v0.9.5
+   Compiling typenum v1.20.1
+   Compiling proc-macro2 v1.0.107
+   Compiling unicode-ident v1.0.26
+   Compiling quote v1.0.47
+   Compiling generic-array v0.14.7
+   Compiling semver v1.0.28
+   Compiling cpufeatures v0.2.17
+   Compiling cfg-if v1.0.5
+   Compiling rustc_version v0.4.1
+   Compiling signature v2.2.0
+   Compiling subtle v2.6.1
+   Compiling curve25519-dalek v4.1.3
+   Compiling ed25519 v2.2.3
+   Compiling syn v2.0.119
+   Compiling block-buffer v0.10.4
+   Compiling crypto-common v0.1.7
+   Compiling digest v0.10.7
+   Compiling sha2 v0.10.9
+   Compiling curve25519-dalek-derive v0.1.1
+   Compiling ed25519-dalek v2.2.0
+   Compiling next-package v0.1.0 (/workspace/Next/work/tenth-wave/frozen-src/crates/next-package)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 4.24s
+Built authenticated-member service config: active_mask=1, 2 declarations, 544 bytes
+Signed 1 files into /workspace/Next/work/tenth-wave/frozen-src/build/.apps.I3zpiHIv/system/clock.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/work/tenth-wave/frozen-src/build/.apps.I3zpiHIv/system/context.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/work/tenth-wave/frozen-src/build/.apps.I3zpiHIv/system/dns-probe.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/work/tenth-wave/frozen-src/build/.apps.I3zpiHIv/system/event-wait.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/work/tenth-wave/frozen-src/build/.apps.I3zpiHIv/system/fault-avx.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/work/tenth-wave/frozen-src/build/.apps.I3zpiHIv/system/fault-fsgsbase.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/work/tenth-wave/frozen-src/build/.apps.I3zpiHIv/system/fault-guard.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/work/tenth-wave/frozen-src/build/.apps.I3zpiHIv/system/fault-nx.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/work/tenth-wave/frozen-src/build/.apps.I3zpiHIv/system/fault-rx.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/work/tenth-wave/frozen-src/build/.apps.I3zpiHIv/system/fault-supervisor.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/work/tenth-wave/frozen-src/build/.apps.I3zpiHIv/system/fault-ud.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/work/tenth-wave/frozen-src/build/.apps.I3zpiHIv/system/fault.elf; permission declarations are not grants
+Signed 2 files into /workspace/Next/work/tenth-wave/frozen-src/build/.apps.I3zpiHIv/system/nextd.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/work/tenth-wave/frozen-src/build/.apps.I3zpiHIv/system/portal-probe.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/work/tenth-wave/frozen-src/build/.apps.I3zpiHIv/system/probe.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/work/tenth-wave/frozen-src/build/.apps.I3zpiHIv/system/service-worker.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/work/tenth-wave/frozen-src/build/.apps.I3zpiHIv/system/spin.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/work/tenth-wave/frozen-src/build/.apps.I3zpiHIv/system/surface-probe.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/work/tenth-wave/frozen-src/build/.apps.I3zpiHIv/system/udp-block.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/work/tenth-wave/frozen-src/build/.apps.I3zpiHIv/system/udp-probe.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/work/tenth-wave/frozen-src/build/.apps.I3zpiHIv/system/vfs-probe.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/work/tenth-wave/frozen-src/build/.apps.I3zpiHIv/system/wait-negative.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/work/tenth-wave/frozen-src/build/.apps.I3zpiHIv/compat/linux/clock-gate.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/work/tenth-wave/frozen-src/build/.apps.I3zpiHIv/compat/linux/clock.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/work/tenth-wave/frozen-src/build/.apps.I3zpiHIv/compat/linux/file-gate.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/work/tenth-wave/frozen-src/build/.apps.I3zpiHIv/compat/linux/file.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/work/tenth-wave/frozen-src/build/.apps.I3zpiHIv/compat/linux/hello-gate.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/work/tenth-wave/frozen-src/build/.apps.I3zpiHIv/compat/linux/hello.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/work/tenth-wave/frozen-src/build/.apps.I3zpiHIv/compat/linux/memory-gate.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/work/tenth-wave/frozen-src/build/.apps.I3zpiHIv/compat/linux/memory.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/work/tenth-wave/frozen-src/build/.apps.I3zpiHIv/compat/linux/namespace-gate.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/work/tenth-wave/frozen-src/build/.apps.I3zpiHIv/compat/linux/namespace.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/work/tenth-wave/frozen-src/build/.apps.I3zpiHIv/compat/linux/tls-gate.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/work/tenth-wave/frozen-src/build/.apps.I3zpiHIv/compat/linux/tls.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/work/tenth-wave/frozen-src/build/.apps.I3zpiHIv/compat/nt/hello-gate.exe; permission declarations are not grants
+Signed 1 files into /workspace/Next/work/tenth-wave/frozen-src/build/.apps.I3zpiHIv/compat/nt/hello.exe; permission declarations are not grants
+Signed 1 files into /workspace/Next/work/tenth-wave/frozen-src/build/.apps.I3zpiHIv/system/untrusted.elf; permission declarations are not grants
+Built 37 application envelopes (one deliberately invalid negative fixture)
+Built /workspace/Next/work/tenth-wave/frozen-src/build/esp/EFI/NEXT/INITRD.NXI (37 entries, 568848 bytes; signed application envelopes, deployment signs archive)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.01s
+     Running `target/debug/next-package keygen /workspace/Next/work/package-dev.seed /workspace/Next/work/package-dev.pub`
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.01s
+     Running `target/debug/next-package pack /workspace/Next/work/package-dev.seed org.next.development 0.1.0 0 deployment boot/helix.elf build/esp/EFI/NEXT/SYSTEM.NXP boot/helix.elf=build/esp/EFI/NEXT/HELIX.ELF boot/initrd.nxi=build/esp/EFI/NEXT/INITRD.NXI`
+Signed 2 files into build/esp/EFI/NEXT/SYSTEM.NXP; permission declarations are not grants
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.01s
+     Running `target/debug/next-package verify /workspace/Next/work/package-dev.pub build/esp/EFI/NEXT/SYSTEM.NXP`
+Verified org.next.development Deployment 2 files; permissions requested=0x0
+   Compiling version_check v0.9.5
+   Compiling typenum v1.20.1
+   Compiling proc-macro2 v1.0.107
+   Compiling unicode-ident v1.0.26
+   Compiling quote v1.0.47
+   Compiling generic-array v0.14.7
+   Compiling semver v1.0.28
+   Compiling cpufeatures v0.2.17
+   Compiling cfg-if v1.0.5
+   Compiling subtle v2.6.1
+   Compiling rustc_version v0.4.1
+   Compiling signature v2.2.0
+   Compiling ed25519 v2.2.3
+   Compiling curve25519-dalek v4.1.3
+   Compiling next-abi v0.1.0 (/workspace/Next/work/tenth-wave/frozen-src/crates/next-abi)
+   Compiling syn v2.0.119
+   Compiling crypto-common v0.1.7
+   Compiling block-buffer v0.10.4
+   Compiling digest v0.10.7
+   Compiling sha2 v0.10.9
+   Compiling curve25519-dalek-derive v0.1.1
+   Compiling ed25519-dalek v2.2.0
+   Compiling next-package v0.1.0 (/workspace/Next/work/tenth-wave/frozen-src/crates/next-package)
+   Compiling next-boot v0.1.0 (/workspace/Next/work/tenth-wave/frozen-src/crates/next-boot)
+    Finished `release` profile [optimized] target(s) in 3.92s
+mkfs.fat 4.2 (2021-01-31)
+Built /workspace/Next/work/tenth-wave/frozen-src/build/next-dev.img (68157440 bytes)
+{
+  "artifact": "Next development ESP image; NOT Next 1.0 or an installer",
+  "uefi_secure_boot_certified": false,
+  "deployment_bundle": "SHA256/Ed25519 signed with workspace development key; not a production trust chain",
+  "sha256": {
+    "BOOTX64.EFI": "e09dd75a78f7c5d23d88be8ea217ee7a281beceeec69addb8cb408e50f1a1c31",
+    "HELIX.ELF": "3d9775cf44ce262d0b5f5c0d73d9896349376a9d798da37eb9495491b199a373",
+    "INITRD.NXI": "a3095c58c266de9713891ca653c2bd32a1b3c64d78735e5d2cf9afc0c47df4f1",
+    "SYSTEM.NXP": "2f7173601878d533b600c4c96322bbd81dc2984687ed646a99175c1fe3fb6682",
+    "next-dev.img": "60ab816c97cc2c510ac5eed76a3db2d039b924a72fe6904bc6eae63f36cbfc27"
+  },
+  "source_manifest_sha256": "515f63b8da57dd9e7c7180a763422d4aeb5c095a3b9f67ec7ec8db3994334674",
+  "source_files": 177,
+  "frozen_source_unchanged": true,
+  "scope": "Corrected frozen Source10 build, excludes live Source11"
+}

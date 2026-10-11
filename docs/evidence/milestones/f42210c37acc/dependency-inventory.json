@@ -1,0 +1,1096 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "version": 1,
+  "metadata": {
+    "component": {
+      "type": "application",
+      "name": "Next development operating system",
+      "version": "0.1.0"
+    },
+    "properties": [
+      {
+        "name": "next:scope",
+        "value": "Cargo.lock and cargo metadata dependency graph; includes host/build and target-specific packages, not a target-specific runtime inventory"
+      }
+    ]
+  },
+  "components": [
+    {
+      "type": "library",
+      "bom-ref": "registry+https://github.com/rust-lang/crates.io-index#block-buffer@0.10.4",
+      "name": "block-buffer",
+      "version": "0.10.4",
+      "purl": "pkg:cargo/block-buffer@0.10.4",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "3078c7629b62d3f0439517fa394996acacc5cbc91c5a20d8c658e77abd503a71"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://crates.io/api/v1/crates/block-buffer/0.10.4/download"
+        }
+      ],
+      "properties": [
+        {
+          "name": "next:license-notices",
+          "value": "licenses/block-buffer-0.10.4/LICENSE-APACHE,licenses/block-buffer-0.10.4/LICENSE-MIT"
+        },
+        {
+          "name": "next:resolved-features",
+          "value": ""
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "registry+https://github.com/rust-lang/crates.io-index#cfg-if@1.0.5",
+      "name": "cfg-if",
+      "version": "1.0.5",
+      "purl": "pkg:cargo/cfg-if@1.0.5",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "4e7648175b45a9a48536d676f68d918270699102aa8dab5496df06904c914600"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://crates.io/api/v1/crates/cfg-if/1.0.5/download"
+        }
+      ],
+      "properties": [
+        {
+          "name": "next:license-notices",
+          "value": "licenses/cfg-if-1.0.5/LICENSE-APACHE,licenses/cfg-if-1.0.5/LICENSE-MIT"
+        },
+        {
+          "name": "next:resolved-features",
+          "value": ""
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "registry+https://github.com/rust-lang/crates.io-index#cpufeatures@0.2.17",
+      "name": "cpufeatures",
+      "version": "0.2.17",
+      "purl": "pkg:cargo/cpufeatures@0.2.17",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "59ed5838eebb26a2bb2e58f6d5b5316989ae9d08bab10e0e6d103e656d1b0280"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://crates.io/api/v1/crates/cpufeatures/0.2.17/download"
+        }
+      ],
+      "properties": [
+        {
+          "name": "next:license-notices",
+          "value": "licenses/cpufeatures-0.2.17/LICENSE-APACHE,licenses/cpufeatures-0.2.17/LICENSE-MIT"
+        },
+        {
+          "name": "next:resolved-features",
+          "value": ""
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "registry+https://github.com/rust-lang/crates.io-index#crypto-common@0.1.7",
+      "name": "crypto-common",
+      "version": "0.1.7",
+      "purl": "pkg:cargo/crypto-common@0.1.7",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "78c8292055d1c1df0cce5d180393dc8cce0abec0a7102adb6c7b1eef6016d60a"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://crates.io/api/v1/crates/crypto-common/0.1.7/download"
+        }
+      ],
+      "properties": [
+        {
+          "name": "next:license-notices",
+          "value": "licenses/crypto-common-0.1.7/LICENSE-APACHE,licenses/crypto-common-0.1.7/LICENSE-MIT"
+        },
+        {
+          "name": "next:resolved-features",
+          "value": ""
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "registry+https://github.com/rust-lang/crates.io-index#curve25519-dalek@4.1.3",
+      "name": "curve25519-dalek",
+      "version": "4.1.3",
+      "purl": "pkg:cargo/curve25519-dalek@4.1.3",
+      "licenses": [
+        {
+          "expression": "BSD-3-Clause"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "97fb8b7c4503de7d6ae7b42ab72a5a59857b4c937ec27a3d4539dba95b5ab2be"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://crates.io/api/v1/crates/curve25519-dalek/4.1.3/download"
+        }
+      ],
+      "properties": [
+        {
+          "name": "next:license-notices",
+          "value": "licenses/curve25519-dalek-4.1.3/LICENSE"
+        },
+        {
+          "name": "next:resolved-features",
+          "value": "digest"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "registry+https://github.com/rust-lang/crates.io-index#curve25519-dalek-derive@0.1.1",
+      "name": "curve25519-dalek-derive",
+      "version": "0.1.1",
+      "purl": "pkg:cargo/curve25519-dalek-derive@0.1.1",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "f46882e17999c6cc590af592290432be3bce0428cb0d5f8b6715e4dc7b383eb3"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://crates.io/api/v1/crates/curve25519-dalek-derive/0.1.1/download"
+        }
+      ],
+      "properties": [
+        {
+          "name": "next:license-notices",
+          "value": "licenses/curve25519-dalek-derive-0.1.1/LICENSE-APACHE,licenses/curve25519-dalek-derive-0.1.1/LICENSE-MIT"
+        },
+        {
+          "name": "next:resolved-features",
+          "value": ""
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "registry+https://github.com/rust-lang/crates.io-index#digest@0.10.7",
+      "name": "digest",
+      "version": "0.10.7",
+      "purl": "pkg:cargo/digest@0.10.7",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "9ed9a281f7bc9b7576e61468ba615a66a5c8cfdff42420a70aa82701a3b1e292"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://crates.io/api/v1/crates/digest/0.10.7/download"
+        }
+      ],
+      "properties": [
+        {
+          "name": "next:license-notices",
+          "value": "licenses/digest-0.10.7/LICENSE-APACHE,licenses/digest-0.10.7/LICENSE-MIT"
+        },
+        {
+          "name": "next:resolved-features",
+          "value": "block-buffer,core-api,default"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "registry+https://github.com/rust-lang/crates.io-index#ed25519@2.2.3",
+      "name": "ed25519",
+      "version": "2.2.3",
+      "purl": "pkg:cargo/ed25519@2.2.3",
+      "licenses": [
+        {
+          "expression": "Apache-2.0 OR MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "115531babc129696a58c64a4fef0a8bf9e9698629fb97e9e40767d235cfbcd53"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://crates.io/api/v1/crates/ed25519/2.2.3/download"
+        }
+      ],
+      "properties": [
+        {
+          "name": "next:license-notices",
+          "value": "licenses/ed25519-2.2.3/LICENSE-APACHE,licenses/ed25519-2.2.3/LICENSE-MIT"
+        },
+        {
+          "name": "next:resolved-features",
+          "value": ""
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "registry+https://github.com/rust-lang/crates.io-index#ed25519-dalek@2.2.0",
+      "name": "ed25519-dalek",
+      "version": "2.2.0",
+      "purl": "pkg:cargo/ed25519-dalek@2.2.0",
+      "licenses": [
+        {
+          "expression": "BSD-3-Clause"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "70e796c081cee67dc755e1a36a0a172b897fab85fc3f6bc48307991f64e4eca9"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://crates.io/api/v1/crates/ed25519-dalek/2.2.0/download"
+        }
+      ],
+      "properties": [
+        {
+          "name": "next:license-notices",
+          "value": "licenses/ed25519-dalek-2.2.0/LICENSE"
+        },
+        {
+          "name": "next:resolved-features",
+          "value": ""
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "registry+https://github.com/rust-lang/crates.io-index#fiat-crypto@0.2.9",
+      "name": "fiat-crypto",
+      "version": "0.2.9",
+      "purl": "pkg:cargo/fiat-crypto@0.2.9",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0 OR BSD-1-Clause"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "28dea519a9695b9977216879a3ebfddf92f1c08c05d984f8996aecd6ecdc811d"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://crates.io/api/v1/crates/fiat-crypto/0.2.9/download"
+        }
+      ],
+      "properties": [
+        {
+          "name": "next:license-notices",
+          "value": "licenses/fiat-crypto-0.2.9/COPYRIGHT,licenses/fiat-crypto-0.2.9/LICENSE-APACHE,licenses/fiat-crypto-0.2.9/LICENSE-BSD-1,licenses/fiat-crypto-0.2.9/LICENSE-MIT"
+        },
+        {
+          "name": "next:resolved-features",
+          "value": ""
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "registry+https://github.com/rust-lang/crates.io-index#generic-array@0.14.7",
+      "name": "generic-array",
+      "version": "0.14.7",
+      "purl": "pkg:cargo/generic-array@0.14.7",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "85649ca51fd72272d7821adaf274ad91c288277713d9c18820d8499a7ff69e9a"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://crates.io/api/v1/crates/generic-array/0.14.7/download"
+        }
+      ],
+      "properties": [
+        {
+          "name": "next:license-notices",
+          "value": "licenses/generic-array-0.14.7/LICENSE"
+        },
+        {
+          "name": "next:resolved-features",
+          "value": "more_lengths"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "registry+https://github.com/rust-lang/crates.io-index#libc@0.2.190",
+      "name": "libc",
+      "version": "0.2.190",
+      "purl": "pkg:cargo/libc@0.2.190",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "ce5d3ddc6d3fa000eb1536d85e147bfe31aacaba692ed6a876f95cb7c855be78"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://crates.io/api/v1/crates/libc/0.2.190/download"
+        }
+      ],
+      "properties": [
+        {
+          "name": "next:license-notices",
+          "value": "licenses/libc-0.2.190/LICENSE-APACHE,licenses/libc-0.2.190/LICENSE-MIT"
+        },
+        {
+          "name": "next:resolved-features",
+          "value": ""
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "registry+https://github.com/rust-lang/crates.io-index#proc-macro2@1.0.107",
+      "name": "proc-macro2",
+      "version": "1.0.107",
+      "purl": "pkg:cargo/proc-macro2@1.0.107",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "985e7ec9bb745e6ce6535b544d84d6cd6f7ad8bd711c398938ae983b91a766d9"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://crates.io/api/v1/crates/proc-macro2/1.0.107/download"
+        }
+      ],
+      "properties": [
+        {
+          "name": "next:license-notices",
+          "value": "licenses/proc-macro2-1.0.107/LICENSE-APACHE,licenses/proc-macro2-1.0.107/LICENSE-MIT"
+        },
+        {
+          "name": "next:resolved-features",
+          "value": "default,proc-macro"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "registry+https://github.com/rust-lang/crates.io-index#quote@1.0.47",
+      "name": "quote",
+      "version": "1.0.47",
+      "purl": "pkg:cargo/quote@1.0.47",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "1fbf4db142a473a8d80c26bbf18454ed458bf8d26c8219c331daecfdbd079001"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://crates.io/api/v1/crates/quote/1.0.47/download"
+        }
+      ],
+      "properties": [
+        {
+          "name": "next:license-notices",
+          "value": "licenses/quote-1.0.47/LICENSE-APACHE,licenses/quote-1.0.47/LICENSE-MIT"
+        },
+        {
+          "name": "next:resolved-features",
+          "value": "default,proc-macro"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "registry+https://github.com/rust-lang/crates.io-index#rustc_version@0.4.1",
+      "name": "rustc_version",
+      "version": "0.4.1",
+      "purl": "pkg:cargo/rustc_version@0.4.1",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "cfcb3a22ef46e85b45de6ee7e79d063319ebb6594faafcf1c225ea92ab6e9b92"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://crates.io/api/v1/crates/rustc_version/0.4.1/download"
+        }
+      ],
+      "properties": [
+        {
+          "name": "next:license-notices",
+          "value": "licenses/rustc_version-0.4.1/LICENSE-APACHE,licenses/rustc_version-0.4.1/LICENSE-MIT"
+        },
+        {
+          "name": "next:resolved-features",
+          "value": ""
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "registry+https://github.com/rust-lang/crates.io-index#semver@1.0.28",
+      "name": "semver",
+      "version": "1.0.28",
+      "purl": "pkg:cargo/semver@1.0.28",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "8a7852d02fc848982e0c167ef163aaff9cd91dc640ba85e263cb1ce46fae51cd"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://crates.io/api/v1/crates/semver/1.0.28/download"
+        }
+      ],
+      "properties": [
+        {
+          "name": "next:license-notices",
+          "value": "licenses/semver-1.0.28/LICENSE-APACHE,licenses/semver-1.0.28/LICENSE-MIT"
+        },
+        {
+          "name": "next:resolved-features",
+          "value": "default,std"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "registry+https://github.com/rust-lang/crates.io-index#sha2@0.10.9",
+      "name": "sha2",
+      "version": "0.10.9",
+      "purl": "pkg:cargo/sha2@0.10.9",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "a7507d819769d01a365ab707794a4084392c824f54a7a6a7862f8c3d0892b283"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://crates.io/api/v1/crates/sha2/0.10.9/download"
+        }
+      ],
+      "properties": [
+        {
+          "name": "next:license-notices",
+          "value": "licenses/sha2-0.10.9/LICENSE-APACHE,licenses/sha2-0.10.9/LICENSE-MIT"
+        },
+        {
+          "name": "next:resolved-features",
+          "value": ""
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "registry+https://github.com/rust-lang/crates.io-index#signature@2.2.0",
+      "name": "signature",
+      "version": "2.2.0",
+      "purl": "pkg:cargo/signature@2.2.0",
+      "licenses": [
+        {
+          "expression": "Apache-2.0 OR MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "77549399552de45a898a580c1b41d445bf730df867cc44e6c0233bbc4b8329de"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://crates.io/api/v1/crates/signature/2.2.0/download"
+        }
+      ],
+      "properties": [
+        {
+          "name": "next:license-notices",
+          "value": "licenses/signature-2.2.0/LICENSE-APACHE,licenses/signature-2.2.0/LICENSE-MIT"
+        },
+        {
+          "name": "next:resolved-features",
+          "value": ""
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "registry+https://github.com/rust-lang/crates.io-index#subtle@2.6.1",
+      "name": "subtle",
+      "version": "2.6.1",
+      "purl": "pkg:cargo/subtle@2.6.1",
+      "licenses": [
+        {
+          "expression": "BSD-3-Clause"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "13c2bddecc57b384dee18652358fb23172facb8a2c51ccc10d74c157bdea3292"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://crates.io/api/v1/crates/subtle/2.6.1/download"
+        }
+      ],
+      "properties": [
+        {
+          "name": "next:license-notices",
+          "value": "licenses/subtle-2.6.1/LICENSE"
+        },
+        {
+          "name": "next:resolved-features",
+          "value": ""
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "registry+https://github.com/rust-lang/crates.io-index#syn@2.0.119",
+      "name": "syn",
+      "version": "2.0.119",
+      "purl": "pkg:cargo/syn@2.0.119",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "872831b642d1a07999a962a351ed35b955ea2cfc8f3862091e2a240a84f17297"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://crates.io/api/v1/crates/syn/2.0.119/download"
+        }
+      ],
+      "properties": [
+        {
+          "name": "next:license-notices",
+          "value": "licenses/syn-2.0.119/LICENSE-APACHE,licenses/syn-2.0.119/LICENSE-MIT"
+        },
+        {
+          "name": "next:resolved-features",
+          "value": "clone-impls,default,derive,full,parsing,printing,proc-macro"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "registry+https://github.com/rust-lang/crates.io-index#typenum@1.20.1",
+      "name": "typenum",
+      "version": "1.20.1",
+      "purl": "pkg:cargo/typenum@1.20.1",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "b6f5e870be6c3b371b77fe0ee0bafb859fa4964b4404c27de1d380043c4dda20"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://crates.io/api/v1/crates/typenum/1.20.1/download"
+        }
+      ],
+      "properties": [
+        {
+          "name": "next:license-notices",
+          "value": "licenses/typenum-1.20.1/LICENSE,licenses/typenum-1.20.1/LICENSE-APACHE,licenses/typenum-1.20.1/LICENSE-MIT"
+        },
+        {
+          "name": "next:resolved-features",
+          "value": ""
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "registry+https://github.com/rust-lang/crates.io-index#unicode-ident@1.0.26",
+      "name": "unicode-ident",
+      "version": "1.0.26",
+      "purl": "pkg:cargo/unicode-ident@1.0.26",
+      "licenses": [
+        {
+          "expression": "(MIT OR Apache-2.0) AND Unicode-3.0"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "d245f478577f809a851594d02313b640fb437e0bb33866753cff937863096954"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://crates.io/api/v1/crates/unicode-ident/1.0.26/download"
+        }
+      ],
+      "properties": [
+        {
+          "name": "next:license-notices",
+          "value": "licenses/unicode-ident-1.0.26/LICENSE-APACHE,licenses/unicode-ident-1.0.26/LICENSE-MIT,licenses/unicode-ident-1.0.26/LICENSE-UNICODE"
+        },
+        {
+          "name": "next:resolved-features",
+          "value": ""
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "registry+https://github.com/rust-lang/crates.io-index#version_check@0.9.5",
+      "name": "version_check",
+      "version": "0.9.5",
+      "purl": "pkg:cargo/version_check@0.9.5",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://crates.io/api/v1/crates/version_check/0.9.5/download"
+        }
+      ],
+      "properties": [
+        {
+          "name": "next:license-notices",
+          "value": "licenses/version_check-0.9.5/LICENSE-APACHE,licenses/version_check-0.9.5/LICENSE-MIT"
+        },
+        {
+          "name": "next:resolved-features",
+          "value": ""
+        }
+      ]
+    },
+    {
+      "type": "application",
+      "bom-ref": "path+file:///workspace/Next/crates/helix-core#0.1.0",
+      "name": "helix-core",
+      "version": "0.1.0",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ]
+    },
+    {
+      "type": "application",
+      "bom-ref": "path+file:///workspace/Next/crates/helix-kernel#0.1.0",
+      "name": "helix-kernel",
+      "version": "0.1.0",
+      "licenses": [
+        {
+          "expression": "Apache-2.0"
+        }
+      ]
+    },
+    {
+      "type": "application",
+      "bom-ref": "path+file:///workspace/Next/crates/next-abi#0.1.0",
+      "name": "next-abi",
+      "version": "0.1.0",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ]
+    },
+    {
+      "type": "application",
+      "bom-ref": "path+file:///workspace/Next/crates/next-boot#0.1.0",
+      "name": "next-boot",
+      "version": "0.1.0",
+      "licenses": [
+        {
+          "expression": "Apache-2.0"
+        }
+      ]
+    },
+    {
+      "type": "application",
+      "bom-ref": "path+file:///workspace/Next/crates/next-checks#0.1.0",
+      "name": "next-checks",
+      "version": "0.1.0",
+      "licenses": [
+        {
+          "expression": "Apache-2.0"
+        }
+      ]
+    },
+    {
+      "type": "application",
+      "bom-ref": "path+file:///workspace/Next/crates/next-fs#0.1.0",
+      "name": "next-fs",
+      "version": "0.1.0",
+      "licenses": [
+        {
+          "expression": "Apache-2.0"
+        }
+      ]
+    },
+    {
+      "type": "application",
+      "bom-ref": "path+file:///workspace/Next/crates/next-package#0.1.0",
+      "name": "next-package",
+      "version": "0.1.0",
+      "licenses": [
+        {
+          "expression": "Apache-2.0"
+        }
+      ]
+    },
+    {
+      "type": "application",
+      "bom-ref": "path+file:///workspace/Next/crates/next-user#0.1.0",
+      "name": "next-user",
+      "version": "0.1.0",
+      "licenses": [
+        {
+          "expression": "Apache-2.0"
+        }
+      ]
+    },
+    {
+      "type": "application",
+      "bom-ref": "path+file:///workspace/Next/crates/prism#0.1.0",
+      "name": "prism",
+      "version": "0.1.0",
+      "licenses": [
+        {
+          "expression": "Apache-2.0"
+        }
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "registry+https://github.com/rust-lang/crates.io-index#block-buffer@0.10.4",
+      "dependsOn": [
+        "registry+https://github.com/rust-lang/crates.io-index#generic-array@0.14.7"
+      ]
+    },
+    {
+      "ref": "registry+https://github.com/rust-lang/crates.io-index#cfg-if@1.0.5",
+      "dependsOn": []
+    },
+    {
+      "ref": "registry+https://github.com/rust-lang/crates.io-index#cpufeatures@0.2.17",
+      "dependsOn": [
+        "registry+https://github.com/rust-lang/crates.io-index#libc@0.2.190"
+      ]
+    },
+    {
+      "ref": "registry+https://github.com/rust-lang/crates.io-index#crypto-common@0.1.7",
+      "dependsOn": [
+        "registry+https://github.com/rust-lang/crates.io-index#generic-array@0.14.7",
+        "registry+https://github.com/rust-lang/crates.io-index#typenum@1.20.1"
+      ]
+    },
+    {
+      "ref": "registry+https://github.com/rust-lang/crates.io-index#curve25519-dalek@4.1.3",
+      "dependsOn": [
+        "registry+https://github.com/rust-lang/crates.io-index#cfg-if@1.0.5",
+        "registry+https://github.com/rust-lang/crates.io-index#cpufeatures@0.2.17",
+        "registry+https://github.com/rust-lang/crates.io-index#curve25519-dalek-derive@0.1.1",
+        "registry+https://github.com/rust-lang/crates.io-index#digest@0.10.7",
+        "registry+https://github.com/rust-lang/crates.io-index#fiat-crypto@0.2.9",
+        "registry+https://github.com/rust-lang/crates.io-index#rustc_version@0.4.1",
+        "registry+https://github.com/rust-lang/crates.io-index#subtle@2.6.1"
+      ]
+    },
+    {
+      "ref": "registry+https://github.com/rust-lang/crates.io-index#curve25519-dalek-derive@0.1.1",
+      "dependsOn": [
+        "registry+https://github.com/rust-lang/crates.io-index#proc-macro2@1.0.107",
+        "registry+https://github.com/rust-lang/crates.io-index#quote@1.0.47",
+        "registry+https://github.com/rust-lang/crates.io-index#syn@2.0.119"
+      ]
+    },
+    {
+      "ref": "registry+https://github.com/rust-lang/crates.io-index#digest@0.10.7",
+      "dependsOn": [
+        "registry+https://github.com/rust-lang/crates.io-index#block-buffer@0.10.4",
+        "registry+https://github.com/rust-lang/crates.io-index#crypto-common@0.1.7"
+      ]
+    },
+    {
+      "ref": "registry+https://github.com/rust-lang/crates.io-index#ed25519@2.2.3",
+      "dependsOn": [
+        "registry+https://github.com/rust-lang/crates.io-index#signature@2.2.0"
+      ]
+    },
+    {
+      "ref": "registry+https://github.com/rust-lang/crates.io-index#ed25519-dalek@2.2.0",
+      "dependsOn": [
+        "registry+https://github.com/rust-lang/crates.io-index#curve25519-dalek@4.1.3",
+        "registry+https://github.com/rust-lang/crates.io-index#ed25519@2.2.3",
+        "registry+https://github.com/rust-lang/crates.io-index#sha2@0.10.9",
+        "registry+https://github.com/rust-lang/crates.io-index#subtle@2.6.1"
+      ]
+    },
+    {
+      "ref": "registry+https://github.com/rust-lang/crates.io-index#fiat-crypto@0.2.9",
+      "dependsOn": []
+    },
+    {
+      "ref": "registry+https://github.com/rust-lang/crates.io-index#generic-array@0.14.7",
+      "dependsOn": [
+        "registry+https://github.com/rust-lang/crates.io-index#typenum@1.20.1",
+        "registry+https://github.com/rust-lang/crates.io-index#version_check@0.9.5"
+      ]
+    },
+    {
+      "ref": "registry+https://github.com/rust-lang/crates.io-index#libc@0.2.190",
+      "dependsOn": []
+    },
+    {
+      "ref": "registry+https://github.com/rust-lang/crates.io-index#proc-macro2@1.0.107",
+      "dependsOn": [
+        "registry+https://github.com/rust-lang/crates.io-index#unicode-ident@1.0.26"
+      ]
+    },
+    {
+      "ref": "registry+https://github.com/rust-lang/crates.io-index#quote@1.0.47",
+      "dependsOn": [
+        "registry+https://github.com/rust-lang/crates.io-index#proc-macro2@1.0.107"
+      ]
+    },
+    {
+      "ref": "registry+https://github.com/rust-lang/crates.io-index#rustc_version@0.4.1",
+      "dependsOn": [
+        "registry+https://github.com/rust-lang/crates.io-index#semver@1.0.28"
+      ]
+    },
+    {
+      "ref": "registry+https://github.com/rust-lang/crates.io-index#semver@1.0.28",
+      "dependsOn": []
+    },
+    {
+      "ref": "registry+https://github.com/rust-lang/crates.io-index#sha2@0.10.9",
+      "dependsOn": [
+        "registry+https://github.com/rust-lang/crates.io-index#cfg-if@1.0.5",
+        "registry+https://github.com/rust-lang/crates.io-index#cpufeatures@0.2.17",
+        "registry+https://github.com/rust-lang/crates.io-index#digest@0.10.7"
+      ]
+    },
+    {
+      "ref": "registry+https://github.com/rust-lang/crates.io-index#signature@2.2.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "registry+https://github.com/rust-lang/crates.io-index#subtle@2.6.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "registry+https://github.com/rust-lang/crates.io-index#syn@2.0.119",
+      "dependsOn": [
+        "registry+https://github.com/rust-lang/crates.io-index#proc-macro2@1.0.107",
+        "registry+https://github.com/rust-lang/crates.io-index#quote@1.0.47",
+        "registry+https://github.com/rust-lang/crates.io-index#unicode-ident@1.0.26"
+      ]
+    },
+    {
+      "ref": "registry+https://github.com/rust-lang/crates.io-index#typenum@1.20.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "registry+https://github.com/rust-lang/crates.io-index#unicode-ident@1.0.26",
+      "dependsOn": []
+    },
+    {
+      "ref": "registry+https://github.com/rust-lang/crates.io-index#version_check@0.9.5",
+      "dependsOn": []
+    },
+    {
+      "ref": "path+file:///workspace/Next/crates/helix-core#0.1.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "path+file:///workspace/Next/crates/helix-kernel#0.1.0",
+      "dependsOn": [
+        "path+file:///workspace/Next/crates/helix-core#0.1.0",
+        "path+file:///workspace/Next/crates/next-abi#0.1.0",
+        "path+file:///workspace/Next/crates/next-fs#0.1.0",
+        "path+file:///workspace/Next/crates/prism#0.1.0"
+      ]
+    },
+    {
+      "ref": "path+file:///workspace/Next/crates/next-abi#0.1.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "path+file:///workspace/Next/crates/next-boot#0.1.0",
+      "dependsOn": [
+        "path+file:///workspace/Next/crates/next-abi#0.1.0",
+        "path+file:///workspace/Next/crates/next-package#0.1.0"
+      ]
+    },
+    {
+      "ref": "path+file:///workspace/Next/crates/next-checks#0.1.0",
+      "dependsOn": [
+        "path+file:///workspace/Next/crates/helix-core#0.1.0",
+        "path+file:///workspace/Next/crates/next-abi#0.1.0",
+        "path+file:///workspace/Next/crates/next-fs#0.1.0",
+        "path+file:///workspace/Next/crates/next-package#0.1.0",
+        "path+file:///workspace/Next/crates/prism#0.1.0"
+      ]
+    },
+    {
+      "ref": "path+file:///workspace/Next/crates/next-fs#0.1.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "path+file:///workspace/Next/crates/next-package#0.1.0",
+      "dependsOn": [
+        "registry+https://github.com/rust-lang/crates.io-index#ed25519-dalek@2.2.0",
+        "registry+https://github.com/rust-lang/crates.io-index#sha2@0.10.9"
+      ]
+    },
+    {
+      "ref": "path+file:///workspace/Next/crates/next-user#0.1.0",
+      "dependsOn": [
+        "path+file:///workspace/Next/crates/next-abi#0.1.0"
+      ]
+    },
+    {
+      "ref": "path+file:///workspace/Next/crates/prism#0.1.0",
+      "dependsOn": []
+    }
+  ]
+}

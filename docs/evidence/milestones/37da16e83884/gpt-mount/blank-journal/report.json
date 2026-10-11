@@ -1,0 +1,21 @@
+{
+  "case": "blank-journal",
+  "source_image_sha256": "37da16e8388427af8182c4535f951f67e4879498e1b908d61499d6d29181cd79",
+  "prepared_sha256": "6a8d59b3a3b23d3f0303def4cdd28129fbf4f08fc86bbee7589d817c308362c9",
+  "disk_guid": "581e9794-9947-4e3e-925f-8d4f2d0099c6",
+  "data_guid": "494feabb-6202-4295-b06a-425ab4262936",
+  "esp_start": 2048,
+  "data_start": 137216,
+  "data_blocks": 4096,
+  "journal_sectors": 132,
+  "kernel_sha256": "e036794aa09b9c3339ff7e60235d8805bade70df1d75f12751ea54704c568299",
+  "gate": {
+    "passed": true,
+    "expected": "HELIX GPT STORE REJECT InvalidFormat",
+    "artifact": "build/gpt-mount/blank-journal/serial.log"
+  },
+  "whole_image_unchanged": true,
+  "protected_outside_prefix_unchanged": true,
+  "source_unchanged": true,
+  "passed": true
+}

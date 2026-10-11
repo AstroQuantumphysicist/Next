@@ -1,0 +1,10 @@
+missing-kernel: PASS
+truncated-header: PASS
+wrong-architecture: PASS
+writable-executable: PASS
+overlapping-segments: PASS
+file-offset-overflow: PASS
+unsupported-dynamic-kernel: PASS
+invalid-entry: PASS
+wrong-physical-address: PASS
+oversized-kernel: PASS

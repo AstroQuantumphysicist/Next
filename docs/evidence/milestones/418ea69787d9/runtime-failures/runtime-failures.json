@@ -1,0 +1,13 @@
+{
+  "passed": true,
+  "image_sha256": "418ea69787d9167202dcf8a0d98db74335c2f3d456bb8ffe68aca0f6048b5dc1",
+  "checks": [
+    "all three non-supervisor slots occupied; further executable spawn returns NoMemory",
+    "console and supervisor remain responsive while three non-yielding executables run",
+    "kill frees slots and stale numeric PIDs cannot address dead processes",
+    "slot reuse allocates a fresh PID after exhaustion recovery",
+    "fresh user page fault is contained; console remains usable and missing executable rejects"
+  ],
+  "scope": "Single-CPU QEMU bounded process-slot exhaustion/reuse, non-yielding preemption, stale PID denial and user-fault survival; no SMP, resource-wide exhaustion or hardware certification.",
+  "source_image_unchanged": true
+}

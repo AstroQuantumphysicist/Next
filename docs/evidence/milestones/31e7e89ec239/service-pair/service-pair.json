@@ -1,0 +1,22 @@
+{
+  "base_image_sha256": "31e7e89ec2396a625bbdd90b5624c0377c8dfa8d5c54c64f28746cfccae1a7a9",
+  "image_sha256": "ca439497c4ec270043d395524f7091a6020c2dcdb6ef9163bc5b5372960d146f",
+  "kernel_sha256": "a2ca71f7f511c88e0bd24c1a9031b51264fdda94b92119a7111396a5db70b525",
+  "nextd_payload_sha256": "f25e1467521e5561a1cb91a740ba0cbe33edd8e652fc9011e95bbf850381bb8c",
+  "configuration_sha256": "aa7f4c6ea2e64b5f839a8d7a5584f74f0801598798e08f632c40ecd93edc66bb",
+  "active_mask": 3,
+  "passed": true,
+  "scope": "signed two-worker alternate configuration; q35 single-CPU development profile",
+  "checks": [
+    "authenticated alternate mask3 boots exact default kernel and executable payloads",
+    "primary ready precedes dependent process creation and readiness",
+    "both services have distinct process PIDs across actual restarts",
+    "primary exit stops dependent before dependency recovery",
+    "both final services remain alive alongside PID1"
+  ],
+  "final_worker_pids": {
+    "0": 24,
+    "1": 25
+  },
+  "cpu": "qemu64"
+}

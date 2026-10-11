@@ -1,0 +1,21 @@
+{
+  "case": "mismatched-policy",
+  "source_image_sha256": "60ab816c97cc2c510ac5eed76a3db2d039b924a72fe6904bc6eae63f36cbfc27",
+  "prepared_sha256": "5ba771b2bfd08a661ce3b316d087bebcb9e8f85e59a8a605773d334d2a9bc28b",
+  "disk_guid": "795b4f61-1b4c-488b-a160-d11fdb61164e",
+  "data_guid": "6eb9e1d5-14ee-407a-acbf-f967aa8bff4a",
+  "esp_start": 2048,
+  "data_start": 137216,
+  "data_blocks": 4096,
+  "journal_sectors": 132,
+  "kernel_sha256": "3d9775cf44ce262d0b5f5c0d73d9896349376a9d798da37eb9495491b199a373",
+  "gate": {
+    "passed": true,
+    "expected": "HELIX GPT STORE REJECT Policy(Binding)",
+    "artifact": "build/gpt-mount/mismatched-policy/serial.log"
+  },
+  "whole_image_unchanged": true,
+  "protected_outside_prefix_unchanged": true,
+  "source_unchanged": true,
+  "passed": true
+}

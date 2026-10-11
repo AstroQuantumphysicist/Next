@@ -1,0 +1,27 @@
+{
+  "bank": 1,
+  "files": [
+    {
+      "crc32": 1361864760,
+      "file": "slot-0.bin",
+      "path": "/native/probe",
+      "sha256": "bd62b5202a2ae033c68f30a12dfb277e89828873e3dab64e7e8e2dd17aba2d24",
+      "size": 23,
+      "slot": 0
+    },
+    {
+      "crc32": 4173277344,
+      "file": "slot-1.bin",
+      "path": "/native/linux",
+      "sha256": "6772bd1de692cd74ff3bfe8010958e6e7c92ac0b520305a18522b14d21edbf5d",
+      "size": 23,
+      "slot": 1
+    }
+  ],
+  "format": "NXTCOW01-recovery-export",
+  "generation": 102,
+  "sectors": 132,
+  "source_sha256": "9b18a7f92f8ffd7048fa5648dc840fe3aece65b86d5e02b6747d43756c944e0a",
+  "start_lba": 131072,
+  "version": 1
+}

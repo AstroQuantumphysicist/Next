@@ -1,0 +1,26 @@
+{
+  "image_sha256": "fd4b9165d26927e9a0a2783ee271b406f72f413b24ebafcca0b26bf1030c02b7",
+  "source_manifest_sha256": "8000ab910920bf5230ced65af5ab172b7e4bd4fe1cd798845cea0919f2a2260e",
+  "source_files": 206,
+  "workspace_tests": 562,
+  "completed": [
+    "actual qemu64 native windows123",
+    "30loader refusals",
+    "guarded emergency IST guest CPU probes",
+    "max CPU baseline118 with guarded emergency IST; native-window expanded max interactions remain unrun"
+  ],
+  "material_gates_not_run_on_this_image": [
+    "expanded max CPU native-window interaction",
+    "independent runtime resource family",
+    "two-boot persistence/recovery export",
+    "alternate service pair",
+    "GPT mount",
+    "latency benchmark"
+  ],
+  "scope": "Trusted kernel-hosted native window consumer, copied immutable app pixels and gesture focus. Drag/minimize/restore maintain client process; no isolated userspace compositor, general toolkit, hardware acceptance or source15 live resize/budget capability implied.",
+  "validation_tool_patch": {
+    "path": "tools/boot_smoke.py",
+    "sha256": "3441e9f4fcfcc5f3cf08c7bb82152384eaba2557ba8696ced29762d331d9b31b",
+    "scope": "Portal initial/down selected full-line and actual frame barrier correct harness action attribution; original failed signedExit88/SIGINT attempt retained."
+  }
+}

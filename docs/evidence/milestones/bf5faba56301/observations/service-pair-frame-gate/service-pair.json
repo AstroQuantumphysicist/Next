@@ -1,0 +1,12 @@
+{
+  "base_image_sha256": "bf5faba563015d40c35f04dbfd126bb236fe5654c23ba4393aaeb35224872c8f",
+  "image_sha256": "9f3eca5d858ac7c26e6b1815683c57bc358cc29a5d3213751705c47c797f4632",
+  "kernel_sha256": "52f89f7e87ef3b8d618bc7e209c0a20ee3d8989526b437d62cf9dd88ff3e9847",
+  "nextd_payload_sha256": "819763a49b36371d7d661368d693da883c4b865934ddd8bacd7908f39e34813c",
+  "configuration_sha256": "651d31e6cb3a16885de7bb6f0d7ce51585e8b228acffb9ecc79b06e51d31bfca",
+  "active_mask": 3,
+  "passed": false,
+  "scope": "signed two-worker alternate configuration; q35 single-CPU development profile",
+  "checks": [],
+  "error": "two-worker guest gate timeout"
+}

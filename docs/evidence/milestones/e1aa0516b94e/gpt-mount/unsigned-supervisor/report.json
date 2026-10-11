@@ -1,0 +1,21 @@
+{
+  "case": "unsigned-supervisor",
+  "source_image_sha256": "e1aa0516b94e20f349cea2bbe4593bbce4d27e3ac4b014e7971fe635b267741e",
+  "prepared_sha256": "b9405b289d4558e3280bf385157e822d77924878091151d85b28d14251d174f4",
+  "disk_guid": "6f6970b3-108d-4995-9e6a-6578f59585b9",
+  "data_guid": "b72c5046-e5d9-4d9f-9819-634e805c1f79",
+  "esp_start": 2048,
+  "data_start": 137216,
+  "data_blocks": 4096,
+  "journal_sectors": 132,
+  "kernel_sha256": "5e3d3d0733c907b1033857d14d0c23705e4f6bf77b0d69a442711c7f0d4a2aee",
+  "gate": {
+    "passed": true,
+    "expected": "HELIX GPT STORE REJECT Package(Header)",
+    "artifact": "build/gpt-mount/unsigned-supervisor/serial.log"
+  },
+  "whole_image_unchanged": true,
+  "protected_outside_prefix_unchanged": true,
+  "source_unchanged": true,
+  "passed": true
+}

@@ -1,0 +1,35 @@
+   Compiling prism v0.1.0 (/workspace/Next/crates/prism)
+   Compiling helix-kernel v0.1.0 (/workspace/Next/crates/helix-kernel)
+    Finished `release` profile [optimized] target(s) in 3.70s
+    Finished `release` profile [optimized] target(s) in 0.03s
+Independent Linux static ELF host execution PASS (exit 37)
+Independent Linux clock ELF host execution PASS (exit 43)
+Independent Linux memory ELF host execution PASS (exit 44)
+Independent Linux file ELF host execution PASS (exit 46)
+Independent Linux TLS ELF host execution PASS (exit 47)
+Independent Linux namespace ELF host execution PASS (exit 48)
+Original fixed PE32+ fixture built: 3072 bytes, 3 kernel32 imports
+Original fixed PE32+ fixture built: 3584 bytes, 3 kernel32 imports
+Built /workspace/Next/build/esp/EFI/NEXT/INITRD.NXI (31 entries, 409656 bytes; unsigned)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.01s
+     Running `target/debug/next-package keygen /workspace/Next/work/package-dev.seed /workspace/Next/work/package-dev.pub`
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.01s
+     Running `target/debug/next-package pack /workspace/Next/work/package-dev.seed org.next.development 0.1.0 0 deployment boot/helix.elf build/esp/EFI/NEXT/SYSTEM.NXP boot/helix.elf=build/esp/EFI/NEXT/HELIX.ELF boot/initrd.nxi=build/esp/EFI/NEXT/INITRD.NXI`
+Signed 2 files into build/esp/EFI/NEXT/SYSTEM.NXP; permission declarations are not grants
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.01s
+     Running `target/debug/next-package verify /workspace/Next/work/package-dev.pub build/esp/EFI/NEXT/SYSTEM.NXP`
+Verified org.next.development Deployment 2 files; permissions requested=0x0
+    Finished `release` profile [optimized] target(s) in 0.04s
+mkfs.fat 4.2 (2021-01-31)
+Built /workspace/Next/build/next-dev.img (68157440 bytes)
+{
+  "requirements": 195,
+  "status": {
+    "pending": 92,
+    "partial": 103,
+    "verified": 0
+  },
+  "product_ready": false,
+  "json": "/workspace/Next/build/coverage/coverage.json",
+  "html": "/workspace/Next/build/coverage/index.html"
+}

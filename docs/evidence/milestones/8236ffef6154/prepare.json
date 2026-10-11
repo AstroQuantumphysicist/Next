@@ -1,0 +1,16 @@
+{
+  "artifact": "Next development ESP image; NOT Next 1.0 or an installer",
+  "uefi_secure_boot_certified": false,
+  "deployment_bundle": "SHA256/Ed25519 signed with workspace development key; not a production trust chain",
+  "sha256": {
+    "BOOTX64.EFI": "60ae2a8242a6ab96ceff1992351cda0e3ef0f3c843d5b60a1c4de1488dae81a7",
+    "HELIX.ELF": "be04b5ab26422fa568a56ce10d854ef4f617507fbe26e29f6771b6605e2baff5",
+    "INITRD.NXI": "e00a2ebcafa0fd1e24daebf5d56546bccc9755078a616fdf9d11e4d51d6ff7a3",
+    "SYSTEM.NXP": "ec6da6450ebacd025100aa946f17ec5d3e797b729e37d579a00abb9da95414b4",
+    "next-dev.img": "8236ffef6154ef708c37ebe1cf2ba0a750b2c1fc1c543f799fc01060d2a35bee"
+  },
+  "source_manifest_sha256": "c2b527efc198d5954b5c0d02d503ff68cb2d702c1f274d65128aad1f96b87379",
+  "source_files": 188,
+  "frozen_source_unchanged": true,
+  "scope": "Frozen Source11 build, excludes live Source12; AP activation remains disabled"
+}

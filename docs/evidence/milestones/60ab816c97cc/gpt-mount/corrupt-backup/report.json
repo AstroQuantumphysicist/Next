@@ -1,0 +1,21 @@
+{
+  "case": "corrupt-backup",
+  "source_image_sha256": "60ab816c97cc2c510ac5eed76a3db2d039b924a72fe6904bc6eae63f36cbfc27",
+  "prepared_sha256": "a98ee28ed22c16ccbbd6b40cb7b8be12c1d919744832d95a39cd16fcbac3abe4",
+  "disk_guid": "7926518c-0e18-49fd-b37d-581e4d29033c",
+  "data_guid": "760d3108-86c7-4140-9b4e-e8e98e9c184a",
+  "esp_start": 2048,
+  "data_start": 137216,
+  "data_blocks": 4096,
+  "journal_sectors": 132,
+  "kernel_sha256": "3d9775cf44ce262d0b5f5c0d73d9896349376a9d798da37eb9495491b199a373",
+  "gate": {
+    "passed": true,
+    "expected": "HELIX GPT DISCOVERY REJECT Gpt(CopiesDisagree)",
+    "artifact": "build/gpt-mount/corrupt-backup/serial.log"
+  },
+  "whole_image_unchanged": true,
+  "protected_outside_prefix_unchanged": true,
+  "source_unchanged": true,
+  "passed": true
+}

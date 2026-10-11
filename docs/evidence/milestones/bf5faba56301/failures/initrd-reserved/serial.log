@@ -1,0 +1,6 @@
+[2J[01;01H[=3h[2J[01;01H[2J[01;01H[=3h[2J[01;01H[2J[01;01H[=3h[2J[01;01HBdsDxe: loading Boot0001 "UEFI Non-Block Boot Device" from PciRoot(0x0)/Pci(0x2,0x0)
+BdsDxe: starting Boot0001 "UEFI Non-Block Boot Device" from PciRoot(0x0)/Pci(0x2,0x0)
+NEXT BOOT development 0.2 | unsigned EFI loader | owner-signed development payloads | Secure Boot/TPM not certified
+NEXT BOOT: SIGNATURE PASS Ed25519 + SHA-256 owner development key; EFI loader unsigned; Secure Boot/TPM not certified
+NEXT BOOT: ELF LOAD PASS entry=0x4000000 base=0x4000000 bytes=11694080
+NEXT BOOT FAILED: init image rejected: Reserved; rebuild or restore boot media

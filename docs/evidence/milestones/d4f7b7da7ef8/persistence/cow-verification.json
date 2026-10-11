@@ -1,0 +1,78 @@
+{
+  "format": "NXTCOW01-development",
+  "start_lba": 131072,
+  "sectors": 132,
+  "selected_generation": 94,
+  "selected_bank": 1,
+  "mount_read_only": false,
+  "candidates": [
+    {
+      "slot": 0,
+      "valid": true,
+      "blank": false,
+      "generation": 93,
+      "bank": 0,
+      "root_crc": 2504383072,
+      "snapshot_valid": true,
+      "files": [
+        {
+          "slot": 0,
+          "path": "/native/probe",
+          "size": 23,
+          "crc32": 1361864760
+        },
+        {
+          "slot": 1,
+          "path": "/native/linux",
+          "size": 23,
+          "crc32": 4173277344
+        },
+        {
+          "slot": 2,
+          "path": "/persistent",
+          "size": 15,
+          "crc32": 2248143176
+        }
+      ]
+    },
+    {
+      "slot": 1,
+      "valid": true,
+      "blank": false,
+      "generation": 94,
+      "bank": 1,
+      "root_crc": 261226988,
+      "snapshot_valid": true,
+      "files": [
+        {
+          "slot": 0,
+          "path": "/native/probe",
+          "size": 23,
+          "crc32": 1361864760
+        },
+        {
+          "slot": 1,
+          "path": "/native/linux",
+          "size": 23,
+          "crc32": 4173277344
+        }
+      ],
+      "mount_read_only": false
+    }
+  ],
+  "files": [
+    {
+      "slot": 0,
+      "path": "/native/probe",
+      "size": 23,
+      "crc32": 1361864760
+    },
+    {
+      "slot": 1,
+      "path": "/native/linux",
+      "size": 23,
+      "crc32": 4173277344
+    }
+  ],
+  "source_sha256": "0544a96aaba7ec0ed2eefbe3c06a26b71b9d3e17309e557521a5469ebce8790f"
+}

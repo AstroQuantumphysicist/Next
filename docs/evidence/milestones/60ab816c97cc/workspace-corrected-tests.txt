@@ -1,0 +1,394 @@
+   Compiling version_check v0.9.5
+   Compiling proc-macro2 v1.0.107
+   Compiling typenum v1.20.1
+   Compiling unicode-ident v1.0.26
+   Compiling quote v1.0.47
+   Compiling generic-array v0.14.7
+   Compiling semver v1.0.28
+   Compiling cfg-if v1.0.5
+   Compiling cpufeatures v0.2.17
+   Compiling subtle v2.6.1
+   Compiling rustc_version v0.4.1
+   Compiling signature v2.2.0
+   Compiling ed25519 v2.2.3
+   Compiling helix-core v0.1.0 (/workspace/Next/work/tenth-wave/frozen-src/crates/helix-core)
+   Compiling syn v2.0.119
+   Compiling curve25519-dalek v4.1.3
+   Compiling prism v0.1.0 (/workspace/Next/work/tenth-wave/frozen-src/crates/prism)
+   Compiling crypto-common v0.1.7
+   Compiling block-buffer v0.10.4
+   Compiling digest v0.10.7
+   Compiling sha2 v0.10.9
+   Compiling next-fs v0.1.0 (/workspace/Next/work/tenth-wave/frozen-src/crates/next-fs)
+   Compiling next-abi v0.1.0 (/workspace/Next/work/tenth-wave/frozen-src/crates/next-abi)
+   Compiling curve25519-dalek-derive v0.1.1
+   Compiling ed25519-dalek v2.2.0
+   Compiling next-package v0.1.0 (/workspace/Next/work/tenth-wave/frozen-src/crates/next-package)
+   Compiling next-checks v0.1.0 (/workspace/Next/work/tenth-wave/frozen-src/crates/next-checks)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 7.59s
+     Running unittests src/lib.rs (/workspace/Next/work/tenth-wave/target/debug/deps/helix_core-5ab62fed4fc2ccf3)
+
+running 86 tests
+test channel::tests::attached_objects_survive_short_buffer_and_installation_rollback ... ok
+test channel::tests::bounded_fifo_and_direction_isolation ... ok
+test channel::tests::capability_attenuation_and_process_teardown_preserve_peer ... ok
+test channel::tests::attachment_count_and_byte_only_consumers_never_drop_objects ... ok
+test channel::tests::exhausted_generation_retires_slot ... ok
+test channel::tests::expiry_and_endpoint_close_return_every_queued_reference ... ok
+test channel::tests::framing_deadlines_and_handle_transfer_fail_closed ... ok
+test channel::tests::reference_overflow_does_not_wrap_or_close_live_endpoint ... ok
+test channel::tests::references_close_reuse_and_stale_tokens ... ok
+test datagram::tests::capacity_bind_collisions_reference_close_and_generation_reuse ... ok
+test datagram::tests::fair_device_selection_and_zero_capacity_model_are_bounded ... ok
+test datagram::tests::maximum_and_zero_datagrams_tx_retry_rx_tx_separation ... ok
+test datagram::tests::receive_scope_fifo_copyout_failure_and_ticket_replay ... ok
+test datagram::tests::manifest_requests_are_not_grants_and_unscoped_endpoints_reject ... ok
+test datagram::tests::reference_sequence_and_generation_exhaustion_fail_closed ... ok
+test descriptor::tests::arbitrary_descriptors_and_teardown_never_leak_reserved_or_live_objects ... ok
+test descriptor::tests::capacity_is_reserved_before_mutation_and_numbers_reuse_after_close ... ok
+test dns::tests::cache_ttl_expiry_type_server_isolation_and_zero_ttl_are_bounded ... ok
+test datagram::tests::wraparound_queue_clear_and_late_completion_cannot_touch_reused_socket ... ok
+test dns::tests::question_encoding_normalizes_case_and_bounds_all_labels ... ok
+test dns::tests::response_id_source_question_class_and_type_never_cross_queries ... ok
+test dns::tests::compressed_name_cycles_pointer_bounds_reserved_bits_and_hops_are_rejected ... ok
+test dns::tests::compressed_a_aaaa_answers_and_all_truncations_are_checked ... ok
+test dns::tests::retries_have_fixed_max_and_invalid_replies_do_not_complete_query ... ok
+test dns::tests::truncation_referrals_and_negative_soa_ttls_are_explicit ... ok
+test dns_lookup::tests::late_reply_retry_exhaustion_and_generation_reuse_are_explicit ... ok
+test dns_lookup::tests::negative_soa_cache_expires_and_failed_encoding_does_not_charge_retry ... ok
+test dns_lookup::tests::truncated_udp_explicitly_needs_tcp_and_is_never_cached ... ok
+test dns_lookup::tests::malformed_packets_never_complete_or_replace_cached_records ... ok
+test dns_lookup::tests::typed_addresses_cache_expiry_and_peer_family_partitioning ... ok
+test dns_lookup::tests::zero_capacity_and_generation_exhaustion_fail_closed ... ok
+test event::tests::auto_reset_is_consumptive_and_repeated_signals_coalesce ... ok
+test event::tests::manual_broadcast_and_cancelled_waiter_reference_cleanup ... ok
+test event::tests::duplicate_transfer_reference_close_and_generation_are_distinct ... ok
+test event::tests::manual_reset_remains_level_triggered_until_reset ... ok
+test event::tests::masked_registration_signal_order_and_auto_reset_wake_one ... ok
+test event::tests::queued_transfer_keeps_event_alive_and_receiver_close_reclaims_it ... ok
+test event::tests::reference_overflow_and_generation_exhaustion_never_wrap ... ok
+test file::tests::bounds_no_mutation_and_path_exclusion ... ok
+test file::tests::duplicate_shared_offset_final_close_stale_and_zero_holes ... ok
+test file::tests::failed_commit_preserves_cache_and_offset ... ok
+test file::tests::failed_namespace_commits_leave_names_inodes_offsets_and_content_unchanged ... ok
+test file::tests::independent_opens_share_inode_and_live_contents_but_not_offsets ... ok
+test file::tests::reference_overflow_and_generation_retirement_never_reuse_authority ... ok
+test file::tests::replacement_rename_keeps_old_destination_open_as_separate_anonymous_inode ... ok
+test file::tests::open_rename_follows_name_and_unlink_never_recreates_anonymous_inode ... ok
+test handle::tests::arbitrary_user_values_are_denied ... ok
+test handle::tests::generation_never_wraps ... ok
+test handle::tests::signed_result_generation_boundary_retires_without_negative_handles ... ok
+test handle::tests::stale_and_attenuated ... ok
+test handle::tests::transfer_is_attenuated_and_failure_atomic ... ok
+test handle::tests::unrepresentable_generations_cannot_produce_success_tokens ... ok
+test ipc::tests::rejects_malformed_fields_and_trailing_bytes ... ok
+test ipc::tests::roundtrip_quotas_and_deadlines ... ok
+test memory::tests::nonusable_memory_never_allocates ... ok
+test memory::tests::rejects_hostile_maps ... ok
+test memory::tests::reserves_and_detects_double_free ... ok
+test portal::tests::approval_is_attenuated_recipient_bound_and_consumed_once ... ok
+test portal::tests::cancellation_denial_and_release_invalidate_stale_ui_tokens ... ok
+test portal::tests::expiry_applies_to_pending_and_approved_exactly_at_deadline ... ok
+test portal::tests::global_per_process_zero_budget_and_generation_exhaustion_are_bounded ... ok
+test portal::tests::identity_digest_and_pid_generation_prevent_confused_deputy_replies ... ok
+test portal::tests::invalid_paths_never_change_approval_state_or_offer_ambient_authority ... ok
+test portal::tests::process_death_clears_choices_and_old_pid_cannot_claim_new_lifetime ... ok
+test scheduler::tests::empty_and_invalid_operations ... ok
+test service::tests::dependencies_are_ready_before_start_and_lost_parent_stops_child ... ok
+test scheduler::tests::fair_rotation_and_lifecycle ... ok
+test service::tests::dependency_cycle_missing_and_quota_configuration_are_rejected ... ok
+test service::tests::eight_services_rotate_fairly_and_failed_spawn_spends_one_budget ... ok
+test service::tests::expired_budget_window_does_not_bypass_restart_backoff ... ok
+test service::tests::restart_backoff_budget_breaker_and_window_recovery_are_deterministic ... ok
+test service::tests::stale_instances_late_health_and_reversed_clock_never_restore_service ... ok
+test service::tests::unbound_startup_deadline_backoffs_without_fabricating_process_token ... ok
+test time::tests::converts_fractional_hardware_period_without_accumulated_rounding ... ok
+test time::tests::deadline_and_conversion_saturate_without_wrapping ... ok
+test trace::tests::clock_regressions_are_visible_and_export_timestamps_stay_monotonic ... ok
+test trace::tests::filters_capture_and_export_without_consuming_or_overwriting ... ok
+test trace::tests::wraps_oldest_first_without_duplicate_sequence ... ok
+test trace::tests::zero_capacity_and_sequence_exhaustion_fail_without_wrapping ... ok
+test uart::tests::absent_and_zero_budget_are_bounded_and_observable ... ok
+test uart::tests::crlf_translation_is_atomic_and_counts_wire_bytes ... ok
+test uart::tests::delayed_readiness_and_empty_zero_capacity_are_safe ... ok
+test uart::tests::saturation_rejects_whole_chunk_and_wrap_preserves_fifo ... ok
+test uart::tests::stalled_uart_retains_number_bytes_until_later_progress ... ok
+test ipc::tests::deterministic_parser_fuzz_smoke ... ok
+test dns::tests::deterministic_hostile_packet_sweep_never_panics ... ok
+
+test result: ok. 86 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests/descriptor_model.rs (/workspace/Next/work/tenth-wave/target/debug/deps/descriptor_model-345f88f0af7b8265)
+
+running 2 tests
+test capacity_and_failed_creation_roll_back_reserved_descriptors_before_side_effects ... ok
+test seeded_descriptor_and_stream_sequences_match_independent_content_model ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running unittests src/lib.rs (/workspace/Next/work/tenth-wave/target/debug/deps/next_abi-005e91415cd727b8)
+
+running 55 tests
+test boot::tests::boot_layout_and_checksum ... ok
+test boot::tests::boot_versions_and_lengths_fail_closed ... ok
+test boot::tests::descriptor_lengths_rejected_without_panicking ... ok
+test boot::tests::framebuffer_bounds_and_overflow ... ok
+test boot::tests::initrd_presence_alignment_size_and_overflow_are_required ... ok
+test boot::tests::excessive_descriptor_counts_fail_before_overlap_scan ... ok
+test boot::tests::kernel_and_loader_cannot_overlap_or_wrap ... ok
+test boot::tests::memory_map_validation ... ok
+test boot::tests::occupied_ranges_require_contiguous_loader_descriptors ... ok
+test boot::tests::retained_page_spans_cannot_alias_even_in_unused_padding ... ok
+test boot::tests::trampoline_map_boundaries_and_retained_aliases_fail_closed ... ok
+test dns_lookup::tests::canonical_labels_are_bounded_ascii_without_implicit_search_or_folding ... ok
+test boot::tests::trampoline_requires_known_sealed_flag_and_exact_nonruntime_loader_data ... ok
+test dns_lookup::tests::wire_layout_preserves_all_eight_answers_and_rejects_ambiguous_output ... ok
+test elf::tests::accepts_valid_image ... ok
+test elf::tests::rejects_segment_overflow_and_invalid_alignment ... ok
+test elf::tests::rejects_shared_page_and_noncanonical_addresses ... ok
+test elf::tests::rejects_wrong_machine_and_headers ... ok
+test elf::tests::rejects_wx_and_non_executable_or_bss_entry ... ok
+test initrd::tests::crc_matches_standard_polynomial_and_ignores_only_its_field ... ok
+test initrd::tests::canonical_paths_require_terminated_zero_padding ... ok
+test elf::tests::every_truncated_prefix_is_rejected ... ok
+test initrd::tests::header_version_size_reserved_and_count_fail_closed ... ok
+test initrd::tests::multi_entry_table_preserves_order_and_rejects_duplicates_and_gaps ... ok
+test initrd::tests::rejects_corruption_aliases_and_hostile_ranges ... ok
+test initrd::tests::rejects_empty_alias_overflow_and_out_of_image_payloads ... ok
+test initrd::tests::validated_lookup_and_every_truncated_prefix ... ok
+test kernel::tests::copies_only_file_bytes_and_zeroes_bss_and_gaps ... ok
+test kernel::tests::unsupported_load_profiles_are_rejected_before_copy ... ok
+test native::tests::maps_permissions_and_zero_fills_bss_and_unmapped_gaps ... ok
+test native::tests::metadata_must_be_file_backed_read_only_and_exactly_mapped ... ok
+test native::tests::program_header_order_does_not_change_mapping ... ok
+test native::tests::rejects_foreign_dynamic_unknown_and_unsafe_load_profiles ... ok
+test initrd::tests::exact_entry_limit_and_complete_table_boundaries_are_checked ... ok
+test native::tests::rejects_page_overlap_misalignment_window_escape_and_overflow ... ok
+test native::tests::requires_unique_exact_abi_metadata ... ok
+test native::tests::startup_layout_and_version_are_explicit ... ok
+test elf::tests::bounded_mutations_never_panic ... ok
+test pe::tests::copies_headers_sections_zero_bss_gaps_and_reserved_shims ... ok
+test pe::tests::enforces_wx_disjoint_pages_file_ranges_entry_and_capacity ... ok
+test pe::tests::refuses_readonly_iat_prebound_ordinal_duplicate_and_hostile_rvas ... ok
+test pe::tests::rejects_dll_pe32_wrong_arch_foreign_dirs_and_dynamic_base ... ok
+test pe::tests::resolves_only_closed_builtin_imports ... ok
+test service::tests::active_mask_limits_admission_without_hiding_declared_graph_errors ... ok
+test initrd::tests::resealed_mutations_and_truncated_inputs_never_panic ... ok
+test service::tests::dependencies_cycles_and_maximum_graph_masks ... ok
+test service::tests::graph_identity_ceilings_and_bounded_lifetimes ... ok
+test service::tests::resealed_hostile_strings_rights_policy_reserved_and_dimensions ... ok
+test surface::configure_tests::configure_canonical_wire_and_every_truncation_are_checked ... ok
+test surface::tests::fractional_geometry_exact_bytes_and_damage_are_validated ... ok
+test surface::tests::hostile_privileged_roles_handles_geometry_and_overflow_are_rejected ... ok
+test tests::rights_fail_closed ... ok
+test native::tests::truncated_images_and_bounded_header_mutations_never_panic ... ok
+test pe::tests::bounded_mutations_and_all_truncated_prefixes_never_panic ... ok
+test service::tests::all_truncations_and_unsigned_corruption_rejected_without_panics ... ok
+
+test result: ok. 55 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.35s
+
+     Running unittests src/lib.rs (/workspace/Next/work/tenth-wave/target/debug/deps/next_checks-b384e22bc5b79d9e)
+
+running 156 tests
+test acpi::tests::duplicate_roots_cpus_and_bad_madt_sizes_are_rejected ... ok
+test acpi::tests::physical_ranges_require_retained_acpi_coverage_without_gaps ... ok
+test acpi::tests::valid_xsdt_topology_and_hpet_are_discovered ... ok
+test acpi::tests::interrupt_reserved_encodings_and_hpet_gas_are_checked ... ok
+test acpi::tests::rsdt_v1_and_bounded_unknown_madt_entries_are_supported ... ok
+test acpi::tests::wrong_checksums_lengths_and_root_pointers_fail_closed ... ok
+test ap_startup::tests::all_stacks_are_disjoint_with_two_unmapped_guard_pages ... ok
+test ap_startup::tests::parked_identity_token_and_features_are_explicit ... ok
+test ap_startup::tests::set_serializes_requests_and_burns_tokens_after_failure ... ok
+test ap_startup::tests::timeout_quarantine_never_reuses_stack_or_accepts_late_ap ... ok
+test ap_trampoline::tests::changed_huge_mapping_and_unowned_handoff_are_refused ... ok
+test ap_trampoline::tests::only_owned_page_is_supervisor_readonly_executable ... ok
+test ap_transition::tests::all_candidate_low_stacks_are_disjoint_and_do_not_claim_ownership ... ok
+test ap_trampoline::tests::startup_image_must_fit_immutable_kernel_span ... ok
+test ap_transition::tests::nmi_only_layout_cannot_be_used_as_a_complete_realmode_ivt ... ok
+test ap_transition::tests::every_early_phase_stays_explicitly_unsupported ... ok
+test ap_transition::tests::vector2_decodes_to_own_handler_in_each_architectural_format ... ok
+test apic::tests::controllers_require_nonoverlapping_bounded_pin_registers ... ok
+test apic::tests::isa_flags_cover_all_encodings_and_reserved_bits ... ok
+test apic::tests::duplicate_iso_and_default_gsi_collisions_fail_closed ... ok
+test apic::tests::local_id_version_and_physical_destination_are_checked ... ok
+test apic::tests::qemu_isa_timer_override_skips_pic_cascade_without_aliasing ... ok
+test apic_fault_injection::tests::absent_policy_and_exact_diagnostic_stage_are_explicit ... ok
+test apic_fault_injection::tests::injection_requires_a_genuine_apic_delivery_and_explicit_build_policy ... ok
+test apic_fault_injection::tests::malformed_policy_is_refused_instead_of_ignored ... ok
+test apic_irq::tests::every_mutation_failure_before_and_after_restores_pic_and_drains_pending ... ok
+test apic_irq::tests::every_failed_rollback_mutation_refuses_unverified_recovery ... ok
+test apic_irq::tests::injected_failure_after_one_real_apic_irq_restores_and_proves_three_pic_irqs ... ok
+test apic_irq::tests::pending_owner_is_retained_and_unproven_mask_never_enables_pic ... ok
+test apic_irq::tests::preparation_refuses_live_level_polarity_and_inconsistent_resource_routes ... ok
+test apic_irq::tests::success_requires_actual_apic_delivery_and_stalled_route_proves_pic_fallback ... ok
+test apic_timer::tests::independent_100mhz_reference_and_1ghz_divided_by16_calibrate ... ok
+test apic_timer::tests::plausible_frequency_and_five_percent_tolerance_are_bounded ... ok
+test apic_timer::tests::observed_masked_firmware_periodic_timer_is_adoptable_but_active_irqs_are_not ... ok
+test apic_timer::tests::mismatched_samples_short_long_stopped_and_wrapped_references_fail ... ok
+test audio::tests::completed_requires_halted_last_buffer_and_no_remaining_samples ... ok
+test application::tests::exact_guest_load_boundary_accepts_signed_payload_and_explicit_attenuation ... FAILED
+test application::tests::actual_archived_tampered_envelope_and_unsigned_payload_are_rejected ... FAILED
+test application::tests::network_declaration_cannot_bypass_attenuated_execution_or_capability_grants ... FAILED
+test audio::tests::descriptor_layout_and_ranges_are_exact ... ok
+test audio::tests::io_ports_do_not_truncate_memory_bars_or_overflow ... ok
+test clock::tests::elapsed_regression_seconds_overflow_and_max_tick_fail_or_normalize_exactly ... ok
+test clock::tests::repeated_reads_preserve_anchor_and_subsecond_progress ... ok
+test clock::tests::utc_epoch_and_leap_calendar_anchor_use_elapsed_not_uptime ... ok
+test console_log::tests::bounded_fifo_splits_utf8_and_reports_overflow_without_corruption ... ok
+test dns_lookup::tests::late_reply_retry_exhaustion_and_generation_reuse_are_explicit ... ok
+test dns_lookup::tests::negative_soa_cache_expires_and_failed_encoding_does_not_charge_retry ... ok
+test audio::tests::tone_has_exact_rate_frequency_duration_peak_and_zero_dc ... ok
+test dns_lookup::tests::truncated_udp_explicitly_needs_tcp_and_is_never_cached ... ok
+test dns_lookup::tests::zero_capacity_and_generation_exhaustion_fail_closed ... ok
+test dns_lookup::tests::malformed_packets_never_complete_or_replace_cached_records ... ok
+test dns_lookup::tests::typed_addresses_cache_expiry_and_peer_family_partitioning ... ok
+test file::gui_files::tests::concurrent_namespace_revision_and_policy_failures_change_nothing ... ok
+test file::gui_files::tests::copy_intent_routes_through_conditional_copy_without_empty_create_semantics ... ok
+test filesystem::tests::device_write_authority_refuses_outside_prefix_and_read_only_before_port_io ... ok
+test filesystem::tests::only_explicit_development_geometry_is_authorized ... ok
+test filesystem::tests::preference_records_are_listed_without_poisoning_other_previews ... ok
+test file::gui_files::tests::appearance_path_rejects_generic_mutation_and_coherent_record_replace_updates_open_inode ... ok
+test filesystem::tests::reply_bounds_preserve_complete_utf8_and_command_arguments ... ok
+test filesystem::tests::snapshots_keep_binary_metadata_and_refuse_inconsistent_lengths ... ok
+test filesystem::tests::snapshots_preserve_verified_lengths_and_utf8_boundaries ... ok
+test hpet::tests::invalid_frequency_counter_width_identity_and_reserved_bit_are_rejected ... ok
+test hpet::tests::development_apertures_authorize_only_complete_reserved_ranges_or_empty_holes ... ok
+test hpet::tests::mmio_requires_complete_map_coverage_and_rejects_ram_or_overflow ... ok
+test hpet::tests::real_qemu_capability_profile_has_three_64bit_timers_at_100mhz ... ok
+test input::tests::caps_changes_letters_only_and_does_not_toggle_on_repeat ... ok
+test input::tests::control_keys_and_serial_crlf_are_decoded ... ok
+test input::tests::extended_navigation_and_modifiers_do_not_leak_fake_shift ... ok
+test input::tests::extended_sequences_do_not_invent_shift_or_ascii_events ... ok
+test input::tests::mouse_overflow_and_error_reset_do_not_invent_buttons ... ok
+test input::tests::mouse_sync_signed_motion_buttons_and_viewport_bounds ... ok
+test input::tests::shifts_are_independent_and_release_events_are_ignored ... ok
+test input::tests::super_arrows_emit_snap_keys_and_independent_releases_restore_navigation ... ok
+test input::tests::super_release_toggles_home_once_and_chords_do_not_toggle_or_type ... ok
+test input::tests::tab_modifiers_emit_focus_and_window_navigation_without_text ... ok
+test input::tests::uart_reentrant_guard_never_waits_and_counts_rejected_chunk ... ok
+test kernelportal::tests::attenuation_existence_and_allocation_failures_preserve_pending_without_leaks ... ok
+test kernelportal::tests::cancel_expiry_death_and_denial_close_references_and_reclaim_request_budget ... ok
+test kernelportal::tests::four_held_slots_and_wrong_recipient_never_transfer_or_leak_approvals ... ok
+test kernelportal::tests::typed_access_and_absolute_deadline_limits_do_not_wrap ... ok
+test kernelportal::tests::consent_keeps_exact_selected_inode_through_rename_unlink_and_recreate ... ok
+test file::gui_files::tests::exclusive_create_and_guarded_replacement_preserve_held_inodes ... ok
+test file::gui_files::tests::full_store_and_failed_durable_io_never_publish_namespace_changes ... ok
+test native_surface::tests::actual_per_owner_quotas_duplicate_lifetime_and_teardown_are_enforced ... ok
+test network::dhcp::tests::ack_for_other_offer_is_ignored_and_nak_fails_selection ... ok
+test network::dhcp::tests::acquisition_transitions_validate_selection_and_timers ... ok
+test network::dhcp::tests::all_truncations_and_wrong_identity_checksums_are_rejected ... ok
+test network::dhcp::tests::expired_bound_lease_is_not_exposed_as_usable_configuration ... ok
+test network::dhcp::tests::hostile_options_mask_gateway_lease_and_duplicates_are_rejected ... ok
+test network::dhcp::tests::recomputed_checksums_do_not_bypass_bootp_identity_validation ... ok
+test network::dhcp::tests::retry_deadlines_are_monotonic_and_attempts_bounded ... ok
+test network::dhcp::tests::zero_masks_missing_options_and_inconsistent_renewal_timers_are_rejected ... ok
+test network::runtime::tests::dns_reserved_ports_and_exact_resolver_tuple_are_independent_from_native_udp ... ok
+test network::runtime::tests::exact_peer_udp_checksums_and_local_socket_range_are_enforced ... ok
+test native_surface::tests::duplicate_last_close_lifecycle_snapshot_and_backpressure_track_exact_objects ... ok
+test network::runtime::tests::retained_driver_failure_and_expired_lease_are_terminal ... ok
+test network::runtime::tests::transmit_completion_wins_at_deadline_and_timeout_preserves_dma_owner ... ok
+test network::tcp::tests::handshake_request_reply_fin_and_sequence_wrap_are_real ... ok
+test network::tcp::tests::independent_syn_checksum_fixture_matches_network_order_words ... ok
+test network::tcp::tests::out_of_order_duplicate_and_overlap_do_not_duplicate_response ... ok
+test network::tcp::tests::partial_ack_retransmits_only_unacknowledged_request_tail ... ok
+test network::tcp::tests::passive_close_preserves_data_then_completes_last_ack ... ok
+test network::tcp::tests::refused_bad_ack_and_wrong_sequence_reset_do_not_succeed ... ok
+test native_surface::tests::actual_try_guard_backpressure_preserves_ticket_for_retry_then_rejects_closed_generation ... ok
+test network::tcp::tests::retransmissions_preserve_sequence_and_timeout_is_bounded ... ok
+test network::tcp::tests::resource_bounds_checksum_ports_and_every_truncation_are_checked ... ok
+test network::tcp::tests::synack_mss_options_are_bounded_and_checked_after_valid_checksum ... ok
+test network::tests::arp_requires_matching_target_sender_and_unicast_source ... ok
+test network::tcp::tests::zero_window_and_missing_close_have_an_absolute_deadline ... ok
+test network::tests::icmp_rejects_forgery_checksum_fragments_and_length_overflow ... ok
+test network::tests::busy_transmit_rejects_before_touching_device_owned_dma ... ok
+test network::tests::icmp_validates_real_reply_and_rejects_all_truncations ... ok
+test network::tests::queue_geometry_and_odd_checksums_are_bounded ... ok
+test network::tests::used_ring_rejects_unsolicited_duplicate_and_wrong_descriptor_completions ... ok
+test network::udp::tests::address_port_protocol_and_checksum_corruption_are_rejected ... ok
+test network::udp::tests::every_truncation_and_oversized_payload_is_rejected ... ok
+test network::udp::tests::fragments_reserved_flags_options_and_inconsistent_udp_length_rejected ... ok
+test network::udp::tests::ipv4_optional_checksum_and_ethernet_padding_follow_wire_contract ... ok
+test network::udp::tests::rfc1071_checksum_vector_and_independent_pseudoheader_fixture ... ok
+test network::udp::tests::roundtrip_empty_odd_even_and_maximum_datagrams ... ok
+test network_socket::dns::tests::duplicate_and_exit_style_teardown_release_capacity_only_after_last_reference ... ok
+test network_socket::dns::tests::internal_ports_unique_transactions_and_packet_errors_preserve_requests ... ok
+test network_socket::dns::tests::policy_deadline_reference_and_stale_generation_are_bounded ... ok
+test network_socket::dns::tests::retry_budget_and_late_answers_complete_with_timeout_without_cache_commit ... ok
+test network_socket::dns::tests::transaction_exhaustion_never_reuses_a_delayed_wire_binding ... ok
+test native_surface::tests::close_between_peek_and_consume_cannot_consume_recreated_surface_publication ... ok
+test network_socket::tests::independent_policy_checks_precede_unavailable_hardware ... ok
+test network_socket::tests::terminal_health_is_distinct_from_temporary_backpressure ... ok
+test process_notification::tests::bounded_fifo_overwrites_oldest_and_reports_loss ... ok
+test network_socket::dns::tests::wire_answers_cache_expiry_and_stale_port_replies_are_isolated ... ok
+test process_notification::tests::owns_complete_signed_label_and_rejects_invalid_identity ... ok
+test rtc::tests::bcd_binary_and_twelve_hour_noon_midnight_pm ... ok
+test rtc::tests::malformed_bcd_dates_modes_and_missing_century_fail ... ok
+test service_config::tests::actual_signed_supervisor_member_binds_exact_worker_and_attenuation ... FAILED
+test service_config::tests::unsigned_and_tampered_configuration_never_establish_authority ... FAILED
+test service_config::tests::valid_signature_cannot_hide_malformed_config_and_alternate_is_explicit ... FAILED
+test rtc::tests::independent_epoch_vectors_and_gregorian_centuries ... ok
+test storage::tests::authorization_checks_capacity_and_never_invents_flush_support ... ok
+test storage::tests::claim_releases_buffers_for_subsequent_reads ... ok
+test storage::tests::completion_never_confuses_write_acknowledgement_with_read_data ... ok
+test storage::tests::fat32_geometry_must_fit_capacity_and_fat ... ok
+test storage::tests::queue_layout_fits_full_default_virtqueue ... ok
+test storage::tests::signature_alone_does_not_establish_a_filesystem ... ok
+test storage::tests::stale_wrong_head_and_unwritten_status_are_rejected ... ok
+test surface_buffer::tests::failed_import_and_duplicate_leave_quota_and_refs_unchanged_and_move_keeps_owner ... ok
+test surface_buffer::tests::attenuated_caps_wrong_owner_and_bad_wire_never_change_publication ... ok
+test surface_buffer::tests::owned_copy_padding_and_pending_publication_survive_source_close ... ok
+test surface_buffer::tests::partial_damage_preserves_other_pixels_and_stale_configuration_rejects ... ok
+test trace::tests::real_adapter_counts_contention_filters_and_formats_without_holding_lock ... ok
+test uefi::tests::descriptor_ram_accounting_ignores_mmio_and_honors_stride ... ok
+test uefi::tests::failed_handoffs_release_reserved_page_and_private_map ... ok
+test uefi::tests::handoff_reacquires_map_after_rejected_exit_key ... ok
+test uefi::tests::malformed_system_table_and_overflow_are_rejected ... ok
+test uefi::tests::trampoline_allocation_is_exact_owned_and_failure_is_optional ... ok
+test network::udp::tests::generated_zero_checksum_is_transmitted_as_ffff ... ok
+test network::runtime::tests::packet_stress_preserves_bounded_payloads_and_exact_routes ... ok
+
+failures:
+
+---- application::tests::exact_guest_load_boundary_accepts_signed_payload_and_explicit_attenuation stdout ----
+
+thread 'application::tests::exact_guest_load_boundary_accepts_signed_payload_and_explicit_attenuation' panicked at crates/next-checks/src/../../helix-kernel/src/application.rs:101:14:
+build signed application fixtures before host checks: Os { code: 2, kind: NotFound, message: "No such file or directory" }
+
+---- application::tests::actual_archived_tampered_envelope_and_unsigned_payload_are_rejected stdout ----
+
+thread 'application::tests::actual_archived_tampered_envelope_and_unsigned_payload_are_rejected' panicked at crates/next-checks/src/../../helix-kernel/src/application.rs:101:14:
+build signed application fixtures before host checks: Os { code: 2, kind: NotFound, message: "No such file or directory" }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- application::tests::network_declaration_cannot_bypass_attenuated_execution_or_capability_grants stdout ----
+
+thread 'application::tests::network_declaration_cannot_bypass_attenuated_execution_or_capability_grants' panicked at crates/next-checks/src/../../helix-kernel/src/application.rs:101:14:
+build signed application fixtures before host checks: Os { code: 2, kind: NotFound, message: "No such file or directory" }
+
+---- service_config::tests::actual_signed_supervisor_member_binds_exact_worker_and_attenuation stdout ----
+
+thread 'service_config::tests::actual_signed_supervisor_member_binds_exact_worker_and_attenuation' panicked at crates/next-checks/src/../../helix-kernel/src/service_config.rs:32:62:
+called `Result::unwrap()` on an `Err` value: Os { code: 2, kind: NotFound, message: "No such file or directory" }
+
+---- service_config::tests::unsigned_and_tampered_configuration_never_establish_authority stdout ----
+
+thread 'service_config::tests::unsigned_and_tampered_configuration_never_establish_authority' panicked at crates/next-checks/src/../../helix-kernel/src/service_config.rs:32:62:
+called `Result::unwrap()` on an `Err` value: Os { code: 2, kind: NotFound, message: "No such file or directory" }
+
+---- service_config::tests::valid_signature_cannot_hide_malformed_config_and_alternate_is_explicit stdout ----
+
+thread 'service_config::tests::valid_signature_cannot_hide_malformed_config_and_alternate_is_explicit' panicked at crates/next-checks/src/../../helix-kernel/src/service_config.rs:32:62:
+called `Result::unwrap()` on an `Err` value: Os { code: 2, kind: NotFound, message: "No such file or directory" }
+
+
+failures:
+    application::tests::actual_archived_tampered_envelope_and_unsigned_payload_are_rejected
+    application::tests::exact_guest_load_boundary_accepts_signed_payload_and_explicit_attenuation
+    application::tests::network_declaration_cannot_bypass_attenuated_execution_or_capability_grants
+    service_config::tests::actual_signed_supervisor_member_binds_exact_worker_and_attenuation
+    service_config::tests::unsigned_and_tampered_configuration_never_establish_authority
+    service_config::tests::valid_signature_cannot_hide_malformed_config_and_alternate_is_explicit
+
+test result: FAILED. 150 passed; 6 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
+
+error: test failed, to rerun pass `-p next-checks --lib`

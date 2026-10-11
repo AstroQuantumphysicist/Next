@@ -1,0 +1,5 @@
+Open Sans raster atlas derived from OpenSans-Regular.ttf, 14/16/20 px.
+Digitized data copyright (c) 2010-2011, Google Corporation.
+Licensed under Apache License 2.0; see OpenSans-LICENSE.txt.
+Source: https://www.opensans.com/ ; system Debian fonts-open-sans.
+Rasterized using Pillow/FreeType; glyph coverage and advances transformed into fixed byte arrays for Prism.

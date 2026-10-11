@@ -1,0 +1,21 @@
+{
+  "case": "readonly-attribute",
+  "source_image_sha256": "37da16e8388427af8182c4535f951f67e4879498e1b908d61499d6d29181cd79",
+  "prepared_sha256": "cf47685456b9a29b66964c9473a14fa3edfe370346f4441512c9f24ad10aeaed",
+  "disk_guid": "8efda472-c23c-4395-ae6c-864d14153ba4",
+  "data_guid": "b9c1a019-d9e5-4965-81c3-2818e3a5e1b5",
+  "esp_start": 2048,
+  "data_start": 137216,
+  "data_blocks": 4096,
+  "journal_sectors": 132,
+  "kernel_sha256": "e036794aa09b9c3339ff7e60235d8805bade70df1d75f12751ea54704c568299",
+  "gate": {
+    "passed": true,
+    "expected": "read_only=true formatted=false selftest=false",
+    "artifact": "build/gpt-mount/readonly-attribute/serial.log"
+  },
+  "whole_image_unchanged": true,
+  "protected_outside_prefix_unchanged": true,
+  "source_unchanged": true,
+  "passed": true
+}

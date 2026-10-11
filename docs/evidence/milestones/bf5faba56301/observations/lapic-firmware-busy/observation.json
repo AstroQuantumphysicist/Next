@@ -1,0 +1,5 @@
+{
+  "image_sha256": "112baaf5758b81d215f8232d5fb3ae29ea93bf90fecbe96c39e72ecbff59d61d",
+  "observation": "LAPIC calibration refused Busy firmware state. PIT remained scheduler clock. Positive validator manually terminated while waiting for required timer PASS; no calibrated timer claim.",
+  "calibration_source_sha256": "bab968953a9af6f8916e56adb8a76d056a7587b2916dfcfbe6f323ac5cd7faeb"
+}

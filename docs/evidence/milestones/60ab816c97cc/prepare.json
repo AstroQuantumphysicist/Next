@@ -1,0 +1,16 @@
+{
+  "artifact": "Next development ESP image; NOT Next 1.0 or an installer",
+  "uefi_secure_boot_certified": false,
+  "deployment_bundle": "SHA256/Ed25519 signed with workspace development key; not a production trust chain",
+  "sha256": {
+    "BOOTX64.EFI": "e09dd75a78f7c5d23d88be8ea217ee7a281beceeec69addb8cb408e50f1a1c31",
+    "HELIX.ELF": "3d9775cf44ce262d0b5f5c0d73d9896349376a9d798da37eb9495491b199a373",
+    "INITRD.NXI": "a3095c58c266de9713891ca653c2bd32a1b3c64d78735e5d2cf9afc0c47df4f1",
+    "SYSTEM.NXP": "2f7173601878d533b600c4c96322bbd81dc2984687ed646a99175c1fe3fb6682",
+    "next-dev.img": "60ab816c97cc2c510ac5eed76a3db2d039b924a72fe6904bc6eae63f36cbfc27"
+  },
+  "source_manifest_sha256": "515f63b8da57dd9e7c7180a763422d4aeb5c095a3b9f67ec7ec8db3994334674",
+  "source_files": 177,
+  "frozen_source_unchanged": true,
+  "scope": "Corrected frozen Source10 build, excludes live Source11"
+}

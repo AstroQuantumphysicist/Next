@@ -1,0 +1,12 @@
+{
+  "passed": true,
+  "scope": "QEMU q35/TCG, single CPU, legacy PS/2, software framebuffer, PIT/PIC timer interrupts, legacy virtio read/write/flush in dedicated trailing data region, FAT32 reads, native processes and IPC; no hardware certification",
+  "started_utc": "2026-10-11T16:56:46.551992+00:00",
+  "checks": [
+    "expected loader rejection: init image missing /system/nextd.elf",
+    "no kernel entry or reboot during bounded halt observation"
+  ],
+  "image_sha256": "a59c6be58b2a5a07db741bf1391e27fa2fa56a0d1e464c77f6c8935178d56799",
+  "qemu_profile": "q35,accel=tcg; cpu=qemu64; 256M; smp=1; vga=std",
+  "finished_utc": "2026-10-11T16:56:49.351527+00:00"
+}

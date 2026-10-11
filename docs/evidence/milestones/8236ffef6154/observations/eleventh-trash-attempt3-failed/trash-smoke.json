@@ -1,0 +1,48 @@
+{
+  "passed": false,
+  "image_sha256": "8236ffef6154ef708c37ebe1cf2ba0a750b2c1fc1c543f799fc01060d2a35bee",
+  "source_binding": {
+    "compiled_source_manifest_sha256": "c2b527efc198d5954b5c0d02d503ff68cb2d702c1f274d65128aad1f96b87379",
+    "frozen_source_root": "/workspace/Next/work/eleventh-wave/frozen-src",
+    "prism_sources": {
+      "crates/prism/Cargo.toml": "57973d236330697346e0d9630c65982af0eec5572613eb605357d755210caca4",
+      "crates/prism/assets/NOTICE.txt": "a49d56b73938f8f366ebd81bcdcbdb44c9fe85966848f6f07612194588c65e16",
+      "crates/prism/assets/OpenSans-LICENSE.txt": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "crates/prism/assets/open-sans-advance.bin": "7bfb26802a159e8c464aa8f17026bff36915d55240b5c0fbfd0ec8774ef3a0ee",
+      "crates/prism/assets/open-sans-atlas.bin": "d954599f44ba97e84f07b184a493087e781354176065776ad7d23a9d8a745a4b",
+      "crates/prism/assets/source/OpenSans-Regular.ttf": "e64e508b2aa2880f907e470c4550980ec4c0694d103a43f36150ac3f93189bee",
+      "crates/prism/assets/wallpaper.rgb": "85495a5a07d24342eb2797a7e416b142baf2fcbc6929f9632e2e1884a6a09d8c",
+      "crates/prism/src/appearance.rs": "cac1b530f6fa29e3718c53ba573aaae77f084363e913f995fb1e27ee3abd643d",
+      "crates/prism/src/appearance_ui.rs": "cb2ec7e0c244479dac04d913712d46671b8b80354b13874255c44c885b3037e7",
+      "crates/prism/src/calculator.rs": "3e8537719e105b24ad99b000027f587bbf470436a0de38be93263868013e2185",
+      "crates/prism/src/client_interaction.rs": "61793f0d50b8424eaf125e1734c74f579f92aaaa3993fe155f912c5aaa0d86a5",
+      "crates/prism/src/client_surface.rs": "9064fa6b1e956835249b362510f596f9363c3bfa903bfa8c5c08af1f034db449",
+      "crates/prism/src/desktop.rs": "8e3b3acd85149b9cb8015557c73e1a3a3d5b9104487010df49c544a4569bf22d",
+      "crates/prism/src/editor.rs": "d3facd625ed5875dd954373c0caf1849da10c2c90daa36a7f8f788c8d4ca6828",
+      "crates/prism/src/files_actions.rs": "10051beaf0e107324cdb149f193bda90c8fe0ebe63a7b91c671409ba1b2031f0",
+      "crates/prism/src/keyboard_focus.rs": "dcfadc01486f3e6e060b21a685c7255f28b67b6f120314eb77ff7fa03f6eb13a",
+      "crates/prism/src/lib.rs": "4ab072e58645865e6620c1da41323ff8fd959a636e1e85936c9861132e97f767",
+      "crates/prism/src/notifications.rs": "ec28aa2c1767bf8b6b4b3f7637d28f96180e0c1f7022a300f25092da7fca77db",
+      "crates/prism/src/palette.rs": "33a01ed09dd2f22759c13a2214ab41c01bc6965cda43f816cab8aa0439a1f62e",
+      "crates/prism/src/snap.rs": "6ac131265ed57fe098408dff66fd99e5b332649be869e2f94985122d62ccdb3e",
+      "crates/prism/src/surface_state.rs": "f852981f26a41df8afb8d898245b61f6990b9f1e9f7d39d00211063dea9a9035",
+      "crates/prism/src/theme.rs": "460e80e2b421b1bfd42bad61ebb474259d3823319abeb718f8e0363a1fe85976",
+      "crates/prism/src/trash_shell.rs": "63f54e66aea235ad216a17a8547204e835c9dc80ecb5e7ec3b803385b8f3ba61",
+      "crates/prism/src/trash_ui.rs": "7fc6e5709b13ef52d805a9689e8bcdeb9329f77fec9a02e9d2e7ac756b4c9bd5"
+    },
+    "helper_source_sha256": "4e0bbf6466ac625cb22fa4eb526c9911fc48bdb2485672ccf15217b99092d8b7",
+    "library_sha256": "c9f7e01722175c061e634e9882e265619af8b388a526cee1ba73cfcc30443f93",
+    "helper_sha256": "d1add110a7fb5a0b351217c3c43dda44933fbdf81db0051bfd8a945f8820a087"
+  },
+  "phases": [
+    {
+      "phase": "create",
+      "passed": false,
+      "report": "build/eleventh-trash/create/boot-smoke.json"
+    }
+  ],
+  "error": "create actual guest phase failed: QEMU closed serial channel",
+  "input_image_unchanged": true,
+  "source_manifest_unchanged": true,
+  "helper_source_unchanged": true
+}

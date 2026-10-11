@@ -1,0 +1,9 @@
+audio: Could not create a backend for voice `ac97.pi'
+audio: Could not create a backend for voice `ac97.mc'
+audio: Could not create a backend for voice `ac97.pi'
+audio: Could not create a backend for voice `ac97.mc'
+audio: Could not create a backend for voice `ac97.pi'
+audio: Could not create a backend for voice `ac97.mc'
+audio: Could not create a backend for voice `ac97.pi'
+audio: Could not create a backend for voice `ac97.mc'
+qemu-system-x86_64: terminating on signal 15 from pid 229219 (python3)

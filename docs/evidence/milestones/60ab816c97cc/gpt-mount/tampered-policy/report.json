@@ -1,0 +1,21 @@
+{
+  "case": "tampered-policy",
+  "source_image_sha256": "60ab816c97cc2c510ac5eed76a3db2d039b924a72fe6904bc6eae63f36cbfc27",
+  "prepared_sha256": "da305932ddbea4205a7a1429ef200db69f8336914f53d603298c2f3a2c8f2343",
+  "disk_guid": "cc99aea3-77e3-45da-9624-c6e654d7bd03",
+  "data_guid": "9a4d2de9-ad72-40f5-ac10-96c6c221b6be",
+  "esp_start": 2048,
+  "data_start": 137216,
+  "data_blocks": 4096,
+  "journal_sectors": 132,
+  "kernel_sha256": "3d9775cf44ce262d0b5f5c0d73d9896349376a9d798da37eb9495491b199a373",
+  "gate": {
+    "passed": true,
+    "expected": "HELIX GPT STORE REJECT Package(Digest)",
+    "artifact": "build/gpt-mount/tampered-policy/serial.log"
+  },
+  "whole_image_unchanged": true,
+  "protected_outside_prefix_unchanged": true,
+  "source_unchanged": true,
+  "passed": true
+}

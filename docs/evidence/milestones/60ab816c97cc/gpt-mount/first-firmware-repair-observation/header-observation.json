@@ -1,0 +1,8 @@
+{
+  "mutation_stage": "Before firmware boot; flip backup header CRC byte16 only.",
+  "pre_boot_header_reconstruction": "Exact inverse of known one-byte mutation on the firmware-repaired header; not an independently captured pre-boot snapshot.",
+  "pre_boot_header_sha256": "f91fbd05c9d7b5bd61b0742e7702a14c0714653bdc47a49375da14566af719af",
+  "post_firmware_header_sha256": "2f2139d8f506e2a3853b9d47e7d9fc4efd055417964c7ed7115d5e1c0b0b6883",
+  "post_firmware_crc_valid": true,
+  "serial_result": "Helix GPT discovery and signed mount accepted firmware-repaired header. Rejection test failed."
+}

@@ -1,0 +1,118 @@
+{
+  "passed": true,
+  "source_image_sha256": "03d54128375ad7f167c724ebdf98baca06b5add89f88edce457bf426df326c39",
+  "source_image_unchanged": true,
+  "scope": "QEMU/OVMF rejection of mutated Ed25519/SHA256 development deployments and bound kernel/init-image bytes. Uses no private signing key; EFI loader remains unsigned. No Secure Boot, TPM, production key lifecycle or anti-rollback certification.",
+  "cases": [
+    {
+      "case": "pkg-missing",
+      "passed": true,
+      "diagnostic": "open \\EFI\\NEXT\\SYSTEM.NXP:",
+      "checks": [
+        "expected loader rejection: open \\EFI\\NEXT\\SYSTEM.NXP:",
+        "no kernel entry or reboot during bounded halt observation"
+      ],
+      "artifact": "build/failures/pkg-missing/serial.log",
+      "error": null
+    },
+    {
+      "case": "pkg-truncated-header",
+      "passed": true,
+      "diagnostic": "signed deployment rejected: Header",
+      "checks": [
+        "expected loader rejection: signed deployment rejected: Header",
+        "no kernel entry or reboot during bounded halt observation"
+      ],
+      "artifact": "build/failures/pkg-truncated-header/serial.log",
+      "error": null
+    },
+    {
+      "case": "pkg-version",
+      "passed": true,
+      "diagnostic": "signed deployment rejected: Version",
+      "checks": [
+        "expected loader rejection: signed deployment rejected: Version",
+        "no kernel entry or reboot during bounded halt observation"
+      ],
+      "artifact": "build/failures/pkg-version/serial.log",
+      "error": null
+    },
+    {
+      "case": "pkg-unknown-signer",
+      "passed": true,
+      "diagnostic": "signed deployment rejected: UnknownSigner",
+      "checks": [
+        "expected loader rejection: signed deployment rejected: UnknownSigner",
+        "no kernel entry or reboot during bounded halt observation"
+      ],
+      "artifact": "build/failures/pkg-unknown-signer/serial.log",
+      "error": null
+    },
+    {
+      "case": "pkg-permissions",
+      "passed": true,
+      "diagnostic": "signed deployment rejected: Permissions",
+      "checks": [
+        "expected loader rejection: signed deployment rejected: Permissions",
+        "no kernel entry or reboot during bounded halt observation"
+      ],
+      "artifact": "build/failures/pkg-permissions/serial.log",
+      "error": null
+    },
+    {
+      "case": "pkg-signature",
+      "passed": true,
+      "diagnostic": "signed deployment rejected: Signature",
+      "checks": [
+        "expected loader rejection: signed deployment rejected: Signature",
+        "no kernel entry or reboot during bounded halt observation"
+      ],
+      "artifact": "build/failures/pkg-signature/serial.log",
+      "error": null
+    },
+    {
+      "case": "pkg-payload-digest",
+      "passed": true,
+      "diagnostic": "signed deployment rejected: Digest",
+      "checks": [
+        "expected loader rejection: signed deployment rejected: Digest",
+        "no kernel entry or reboot during bounded halt observation"
+      ],
+      "artifact": "build/failures/pkg-payload-digest/serial.log",
+      "error": null
+    },
+    {
+      "case": "pkg-kernel-binding",
+      "passed": true,
+      "diagnostic": "boot artifact SHA-256 differs from signed deployment",
+      "checks": [
+        "expected loader rejection: boot artifact SHA-256 differs from signed deployment",
+        "no kernel entry or reboot during bounded halt observation"
+      ],
+      "artifact": "build/failures/pkg-kernel-binding/serial.log",
+      "error": null
+    },
+    {
+      "case": "pkg-initrd-binding",
+      "passed": true,
+      "diagnostic": "boot artifact SHA-256 differs from signed deployment",
+      "checks": [
+        "expected loader rejection: boot artifact SHA-256 differs from signed deployment",
+        "no kernel entry or reboot during bounded halt observation"
+      ],
+      "artifact": "build/failures/pkg-initrd-binding/serial.log",
+      "error": null
+    },
+    {
+      "case": "pkg-oversized",
+      "passed": true,
+      "diagnostic": "signed deployment exceeds bounded 16 MiB profile",
+      "checks": [
+        "expected loader rejection: signed deployment exceeds bounded 16 MiB profile",
+        "no kernel entry or reboot during bounded halt observation"
+      ],
+      "artifact": "build/failures/pkg-oversized/serial.log",
+      "error": null
+    }
+  ]
+}

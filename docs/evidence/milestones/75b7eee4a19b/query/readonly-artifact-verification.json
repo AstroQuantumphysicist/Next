@@ -1,0 +1,16 @@
+{
+  "passed": true,
+  "checked_utc": "2026-10-11T19:51:38.359352+00:00",
+  "checks": {
+    "query_binary": true,
+    "query_source": true,
+    "ui_binary": true,
+    "ui_source": true,
+    "ui_library": true,
+    "query_library_next_fs": true,
+    "query_library_prism": true,
+    "retained_query_sources": true,
+    "retained_ui_sources": true
+  },
+  "scope": "Read-only post-run verification of originally recorded hashes; no guest report changed."
+}

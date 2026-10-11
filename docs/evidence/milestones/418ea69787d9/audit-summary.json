@@ -1,0 +1,15 @@
+{
+  "requirements": 195,
+  "status": {
+    "pending": 92,
+    "partial": 103,
+    "verified": 0
+  },
+  "evidence_levels": {
+    "host_tested": 90,
+    "boot_smoke": 98,
+    "integrated": 70,
+    "certified_hardware": 0
+  },
+  "product_ready": false
+}

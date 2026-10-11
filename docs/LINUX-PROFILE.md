@@ -1,0 +1,25 @@
+# Linux development profile
+
+The recorded development profiles support an explicitly selected static x86-64 Linux ELF profile. Only `/compat/linux/` paths select this dispatcher. Native syscall entry is rejected for Linux processes, and native processes cannot select Linux behavior through numeric collisions. No Linux kernel code runs in the guest.
+
+The loader accepts the bounded fixed ET_EXEC/PT_LOAD profile and constructs a minimal initial stack. PT_INTERP, dynamic linking and unsupported mandatory executable records reject. Implemented milestone calls are stdout/stderr write, getpid, yield, exit/exit_group, bounded brk/private-anonymous mmap/munmap, monotonic/realtime clock_gettime and nanosleep. Unknown calls return ENOSYS. Pointer, descriptor, mapping/protection and timespec errors have fixture coverage. Anonymous mappings have a 64-page arena and enforce W^X; brk stays within the bounded process image region. There is no general libc, signal restart, dynamic/language TLS or VDSO implementation. The f42210 guest adds bounded FS/GS arch_prctl with separate process ownership and overlapping original TLS fixtures; user FSGSBASE remains disabled.
+
+Original `hello.elf`, `clock.elf` and `memory.elf` run as identical binaries on host Linux and Helix; corresponding gate fixtures check personality isolation. Their exact exit statuses and success/error checks establish these scenarios. See [milestone evidence](evidence/README.md) for commands and image hashes. This does not establish unmodified general Linux software or a substantial application support catalog.
+
+## Descriptor adapter work
+
+A bounded Linux integer-descriptor namespace now adapts shared native stream objects. Original static `file.elf` and its native-gate rejection counterpart execute open/read/write/seek/stat/dup/close workflows in Helix; the same primary fixture also runs on host Linux. Fresh image reports identify these additions separately from the older 03d541 milestone. Descriptors 0–2 retain the explicitly documented stdio behavior; ordinary descriptor numbers start at 3 and may be reused after close. Their underlying objects retain generation-checked identity. Each process has eight ordinary descriptors, and opens require an explicit console-launch grant under `/native/`. The adapter accepts the documented read/write modes and bounded create/exclusive/truncate/append/close-on-exec flag subset, requires creation mode 0600, reserves capacity before filesystem mutation, and reports unsupported flags. Duplicates share offset and rights; append seeks to EOF and restores offset after a failed write. fstat returns a bounded regular-file record; its development UID/GID fields are not a real credential service. Native capabilities remain distinct from Linux descriptor numbers.
+
+The combined host model in `crates/helix-core/tests/descriptor_model.rs` tests 32 seeded sequences of 1000 operations against an independent namespace/content/offset model. It covers descriptor reservation/exhaustion, number reuse, duplicate object references, rights preservation, shared offsets, EOF/read tails, bounded seek/write holes, backend failure without cache/offset commit, and cleanup/reopen. A separate failure test checks capacity before mutation, reserved-slot rollback after failed truncation, immutable rights on rejected replacement and exclusive-open rejection. Run:
+
+```sh
+source tools/env.sh
+cargo test --offline -p helix-core --test descriptor_model
+cargo clippy --offline -p helix-core --test descriptor_model -- -D warnings
+```
+
+These tests exercise the exact core tables/streams, not the kernel's user-pointer validation or Linux errno mapping. Guest fixtures must separately verify invalid/unmapped buffers before offset consumption, open flags before create/truncate, access-mode errors, close/exit cleanup and namespace authority. [Compatibility validation](COMPATIBILITY-VALIDATION.md) gives the concrete adapter acceptance matrix.
+
+The development profile adds shared inode content with independent open offsets, duplicate-shared offsets, and detached inode lifetime across unlink/rename replacement. The f42210 positive guest scenario exercises this inode lifetime; recorded milestone 418ea used exclusive bounded opens. COW whole-file replacement and this bounded inode model still lack arbitrary mounted VFS namespaces, links, concurrent/SMP writers, credentials, asynchronous I/O and full POSIX/NT semantics. Such unsupported semantics must be declared and rejected consistently. Dynamic linking, libc, signals, PTYs/job control, sockets/DNS/TLS, proc/sys namespaces, GUI bridges and exact real application workflows remain separate compatibility work.
+
+The e96386bc05d5 development image adds CLOCK_REALTIME from the same immutable q35 RTC UTC anchor plus PIT elapsed time as the native clock. Unsupported/unavailable RTC is reported; there is no clock adjustment, timezone/NTP service or general RTC platform support. Monotonic timers retain their independent elapsed-time semantics.

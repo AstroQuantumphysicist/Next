@@ -1,0 +1,10 @@
+{
+  "base_image_sha256": "37da16e8388427af8182c4535f951f67e4879498e1b908d61499d6d29181cd79",
+  "source_files": 167,
+  "source_manifest_sha256": "0dcc95ad2b267e6a2400be28e20f65228927a32217d4ba813c9b7df4d8f7f38e",
+  "scope": "Corrected retained ninth source only;threeoriginalfiles changed forbinarylisting/metadata/focusregistry. Exact signed prepare copied. Source collectionallcrates+15buildinputs excludesdocs/testtooling; filecountnotcomparabletoeighth207orfeaturequantity.",
+  "alternate_pair_sha256": "13049ceae4b5c5d74129e8ed9d47ececc2ab0f6e9698e6a0bcac740412f92012",
+  "original_failed_image": "484084f63766308d2a355de11ca9862ad87ea6b92276f2852dc4679991e68173",
+  "first_corrected_failed_gui_image": "eaa09e63e14603ca582207e901fcb9daa7321d25185403cf5bf6c5facd1ec3e4",
+  "excluded": "Newertenthsurfacepreviewprotocol/broker andeleventhinput/Trashintegration;unwiredmodulesinsidefrozencrates are source-only."
+}

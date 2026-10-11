@@ -1,0 +1,4 @@
+{
+  "scope": "Validation-host scheduling observation; no guest feature-failure inference.",
+  "observation": "Latency runner had already started before parent scheduling correction. Its optional DNS queries reached the simultaneous persistence validator peer and invalidated request-count attribution. Failed persistence report/raw logs retained; isolated persistence rerun passed same image. Latency measurements include concurrent host work and are a development reference, not isolated-host/hardware performance certification."
+}

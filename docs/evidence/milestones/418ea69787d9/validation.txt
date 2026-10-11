@@ -1,0 +1,385 @@
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.01s
+     Running `target/debug/next-package keygen /workspace/Next/work/package-dev.seed /workspace/Next/work/package-dev.pub`
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.01s
+     Running unittests src/lib.rs (target/debug/deps/helix_core-5ab62fed4fc2ccf3)
+
+running 36 tests
+test channel::tests::attached_objects_survive_short_buffer_and_installation_rollback ... ok
+test channel::tests::attachment_count_and_byte_only_consumers_never_drop_objects ... ok
+test channel::tests::bounded_fifo_and_direction_isolation ... ok
+test channel::tests::capability_attenuation_and_process_teardown_preserve_peer ... ok
+test channel::tests::exhausted_generation_retires_slot ... ok
+test channel::tests::framing_deadlines_and_handle_transfer_fail_closed ... ok
+test channel::tests::expiry_and_endpoint_close_return_every_queued_reference ... ok
+test channel::tests::reference_overflow_does_not_wrap_or_close_live_endpoint ... ok
+test channel::tests::references_close_reuse_and_stale_tokens ... ok
+test event::tests::auto_reset_is_consumptive_and_repeated_signals_coalesce ... ok
+test descriptor::tests::arbitrary_descriptors_and_teardown_never_leak_reserved_or_live_objects ... ok
+test descriptor::tests::capacity_is_reserved_before_mutation_and_numbers_reuse_after_close ... ok
+test event::tests::duplicate_transfer_reference_close_and_generation_are_distinct ... ok
+test event::tests::manual_broadcast_and_cancelled_waiter_reference_cleanup ... ok
+test event::tests::manual_reset_remains_level_triggered_until_reset ... ok
+test event::tests::masked_registration_signal_order_and_auto_reset_wake_one ... ok
+test event::tests::queued_transfer_keeps_event_alive_and_receiver_close_reclaims_it ... ok
+test event::tests::reference_overflow_and_generation_exhaustion_never_wrap ... ok
+test file::tests::bounds_no_mutation_and_path_exclusion ... ok
+test file::tests::duplicate_shared_offset_final_close_stale_and_zero_holes ... ok
+test file::tests::failed_commit_preserves_cache_and_offset ... ok
+test file::tests::reference_overflow_and_generation_retirement_never_reuse_authority ... ok
+test handle::tests::arbitrary_user_values_are_denied ... ok
+test handle::tests::generation_never_wraps ... ok
+test handle::tests::stale_and_attenuated ... ok
+test handle::tests::transfer_is_attenuated_and_failure_atomic ... ok
+test ipc::tests::rejects_malformed_fields_and_trailing_bytes ... ok
+test ipc::tests::roundtrip_quotas_and_deadlines ... ok
+test memory::tests::nonusable_memory_never_allocates ... ok
+test memory::tests::rejects_hostile_maps ... ok
+test memory::tests::reserves_and_detects_double_free ... ok
+test scheduler::tests::empty_and_invalid_operations ... ok
+test scheduler::tests::fair_rotation_and_lifecycle ... ok
+test time::tests::converts_fractional_hardware_period_without_accumulated_rounding ... ok
+test time::tests::deadline_and_conversion_saturate_without_wrapping ... ok
+test ipc::tests::deterministic_parser_fuzz_smoke ... ok
+
+test result: ok. 36 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/descriptor_model.rs (target/debug/deps/descriptor_model-345f88f0af7b8265)
+
+running 2 tests
+test capacity_and_failed_creation_roll_back_reserved_descriptors_before_side_effects ... ok
+test seeded_descriptor_and_stream_sequences_match_independent_content_model ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running unittests src/lib.rs (target/debug/deps/next_abi-005e91415cd727b8)
+
+running 42 tests
+test boot::tests::boot_layout_and_checksum ... ok
+test boot::tests::boot_versions_and_lengths_fail_closed ... ok
+test boot::tests::descriptor_lengths_rejected_without_panicking ... ok
+test boot::tests::excessive_descriptor_counts_fail_before_overlap_scan ... ok
+test boot::tests::framebuffer_bounds_and_overflow ... ok
+test boot::tests::initrd_presence_alignment_size_and_overflow_are_required ... ok
+test boot::tests::memory_map_validation ... ok
+test boot::tests::kernel_and_loader_cannot_overlap_or_wrap ... ok
+test boot::tests::occupied_ranges_require_contiguous_loader_descriptors ... ok
+test elf::tests::accepts_valid_image ... ok
+test boot::tests::retained_page_spans_cannot_alias_even_in_unused_padding ... ok
+test elf::tests::rejects_segment_overflow_and_invalid_alignment ... ok
+test elf::tests::rejects_shared_page_and_noncanonical_addresses ... ok
+test elf::tests::rejects_wrong_machine_and_headers ... ok
+test elf::tests::rejects_wx_and_non_executable_or_bss_entry ... ok
+test initrd::tests::crc_matches_standard_polynomial_and_ignores_only_its_field ... ok
+test initrd::tests::canonical_paths_require_terminated_zero_padding ... ok
+test elf::tests::every_truncated_prefix_is_rejected ... ok
+test initrd::tests::header_version_size_reserved_and_count_fail_closed ... ok
+test initrd::tests::rejects_corruption_aliases_and_hostile_ranges ... ok
+test initrd::tests::rejects_empty_alias_overflow_and_out_of_image_payloads ... ok
+test initrd::tests::multi_entry_table_preserves_order_and_rejects_duplicates_and_gaps ... ok
+test initrd::tests::validated_lookup_and_every_truncated_prefix ... ok
+test kernel::tests::unsupported_load_profiles_are_rejected_before_copy ... ok
+test kernel::tests::copies_only_file_bytes_and_zeroes_bss_and_gaps ... ok
+test native::tests::metadata_must_be_file_backed_read_only_and_exactly_mapped ... ok
+test native::tests::program_header_order_does_not_change_mapping ... ok
+test native::tests::rejects_foreign_dynamic_unknown_and_unsafe_load_profiles ... ok
+test native::tests::rejects_page_overlap_misalignment_window_escape_and_overflow ... ok
+test native::tests::requires_unique_exact_abi_metadata ... ok
+test native::tests::startup_layout_and_version_are_explicit ... ok
+test native::tests::maps_permissions_and_zero_fills_bss_and_unmapped_gaps ... ok
+test elf::tests::bounded_mutations_never_panic ... ok
+test pe::tests::copies_headers_sections_zero_bss_gaps_and_reserved_shims ... ok
+test pe::tests::enforces_wx_disjoint_pages_file_ranges_entry_and_capacity ... ok
+test pe::tests::refuses_readonly_iat_prebound_ordinal_duplicate_and_hostile_rvas ... ok
+test pe::tests::rejects_dll_pe32_wrong_arch_foreign_dirs_and_dynamic_base ... ok
+test pe::tests::resolves_only_closed_builtin_imports ... ok
+test tests::rights_fail_closed ... ok
+test initrd::tests::resealed_mutations_and_truncated_inputs_never_panic ... ok
+test native::tests::truncated_images_and_bounded_header_mutations_never_panic ... ok
+test pe::tests::bounded_mutations_and_all_truncated_prefixes_never_panic ... ok
+
+test result: ok. 42 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.08s
+
+     Running unittests src/lib.rs (target/debug/deps/next_checks-b384e22bc5b79d9e)
+
+running 57 tests
+test audio::tests::completed_requires_halted_last_buffer_and_no_remaining_samples ... ok
+test audio::tests::descriptor_layout_and_ranges_are_exact ... ok
+test console_log::tests::bounded_fifo_splits_utf8_and_reports_overflow_without_corruption ... ok
+test audio::tests::tone_has_exact_rate_frequency_duration_peak_and_zero_dc ... ok
+test filesystem::tests::only_explicit_development_geometry_is_authorized ... ok
+test audio::tests::io_ports_do_not_truncate_memory_bars_or_overflow ... ok
+test filesystem::tests::reply_bounds_preserve_complete_utf8_and_command_arguments ... ok
+test filesystem::tests::snapshots_refuse_invalid_text_or_inconsistent_metadata ... ok
+test filesystem::tests::snapshots_preserve_verified_lengths_and_utf8_boundaries ... ok
+test input::tests::caps_changes_letters_only_and_does_not_toggle_on_repeat ... ok
+test input::tests::extended_navigation_and_modifiers_do_not_leak_fake_shift ... ok
+test input::tests::extended_sequences_do_not_invent_shift_or_ascii_events ... ok
+test input::tests::mouse_overflow_and_error_reset_do_not_invent_buttons ... ok
+test input::tests::control_keys_and_serial_crlf_are_decoded ... ok
+test input::tests::shifts_are_independent_and_release_events_are_ignored ... ok
+test input::tests::mouse_sync_signed_motion_buttons_and_viewport_bounds ... ok
+test network::dhcp::tests::acquisition_transitions_validate_selection_and_timers ... ok
+test network::dhcp::tests::ack_for_other_offer_is_ignored_and_nak_fails_selection ... ok
+test network::dhcp::tests::expired_bound_lease_is_not_exposed_as_usable_configuration ... ok
+test network::dhcp::tests::all_truncations_and_wrong_identity_checksums_are_rejected ... ok
+test network::dhcp::tests::retry_deadlines_are_monotonic_and_attempts_bounded ... ok
+test network::dhcp::tests::hostile_options_mask_gateway_lease_and_duplicates_are_rejected ... ok
+test network::dhcp::tests::recomputed_checksums_do_not_bypass_bootp_identity_validation ... ok
+test network::tcp::tests::independent_syn_checksum_fixture_matches_network_order_words ... ok
+test network::tcp::tests::handshake_request_reply_fin_and_sequence_wrap_are_real ... ok
+test network::tcp::tests::partial_ack_retransmits_only_unacknowledged_request_tail ... ok
+test network::dhcp::tests::zero_masks_missing_options_and_inconsistent_renewal_timers_are_rejected ... ok
+test network::tcp::tests::out_of_order_duplicate_and_overlap_do_not_duplicate_response ... ok
+test network::tcp::tests::passive_close_preserves_data_then_completes_last_ack ... ok
+test network::tcp::tests::refused_bad_ack_and_wrong_sequence_reset_do_not_succeed ... ok
+test network::tcp::tests::retransmissions_preserve_sequence_and_timeout_is_bounded ... ok
+test network::tcp::tests::synack_mss_options_are_bounded_and_checked_after_valid_checksum ... ok
+test network::tcp::tests::resource_bounds_checksum_ports_and_every_truncation_are_checked ... ok
+test network::tests::arp_requires_matching_target_sender_and_unicast_source ... ok
+test network::tcp::tests::zero_window_and_missing_close_have_an_absolute_deadline ... ok
+test network::tests::icmp_rejects_forgery_checksum_fragments_and_length_overflow ... ok
+test network::tests::icmp_validates_real_reply_and_rejects_all_truncations ... ok
+test network::tests::queue_geometry_and_odd_checksums_are_bounded ... ok
+test network::udp::tests::address_port_protocol_and_checksum_corruption_are_rejected ... ok
+test network::tests::used_ring_rejects_unsolicited_duplicate_and_wrong_descriptor_completions ... ok
+test network::udp::tests::every_truncation_and_oversized_payload_is_rejected ... ok
+test network::udp::tests::fragments_reserved_flags_options_and_inconsistent_udp_length_rejected ... ok
+test network::udp::tests::ipv4_optional_checksum_and_ethernet_padding_follow_wire_contract ... ok
+test network::udp::tests::rfc1071_checksum_vector_and_independent_pseudoheader_fixture ... ok
+test storage::tests::authorization_checks_capacity_and_never_invents_flush_support ... ok
+test storage::tests::claim_releases_buffers_for_subsequent_reads ... ok
+test storage::tests::completion_never_confuses_write_acknowledgement_with_read_data ... ok
+test storage::tests::fat32_geometry_must_fit_capacity_and_fat ... ok
+test storage::tests::queue_layout_fits_full_default_virtqueue ... ok
+test network::udp::tests::roundtrip_empty_odd_even_and_maximum_datagrams ... ok
+test storage::tests::signature_alone_does_not_establish_a_filesystem ... ok
+test storage::tests::stale_wrong_head_and_unwritten_status_are_rejected ... ok
+test uefi::tests::descriptor_ram_accounting_ignores_mmio_and_honors_stride ... ok
+test uefi::tests::handoff_reacquires_map_after_rejected_exit_key ... ok
+test uefi::tests::malformed_system_table_and_overflow_are_rejected ... ok
+test input::tests::uart_wait_accepts_delayed_fifo_and_bounds_absent_or_stalled_device ... ok
+test network::udp::tests::generated_zero_checksum_is_transmitted_as_ffff ... ok
+
+test result: ok. 57 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s
+
+     Running unittests src/lib.rs (target/debug/deps/next_fs-bbc81c59655349ae)
+
+running 20 tests
+test journal::tests::corrupt_both_roots_and_relocated_volume_fail_closed ... ok
+test journal::tests::commit_barriers_precede_root_and_superblock_publication ... ok
+test journal::tests::extent_capability_excludes_all_protected_ranges_and_checks_overflow ... ok
+test journal::tests::golden_superblock_layout_crc_and_empty_root_are_stable ... ok
+test journal::tests::generation_wrap_and_corrupt_read_never_mutate_output_or_issue_writes ... ok
+test journal::tests::corrupt_latest_data_or_metadata_falls_back_read_only_without_repair_writes ... ok
+test journal::tests::metadata_reserved_fields_duplicates_and_versions_reject_even_with_fresh_crc ... ok
+test journal::tests::latest_snapshot_media_errors_recover_previous_snapshot_read_only ... ok
+test journal::tests::rename_and_delete_crashes_have_complete_pre_or_post_namespace ... ok
+test journal::tests::validation_and_full_volume_do_not_issue_writes ... ok
+test journal::tests::write_update_rename_replace_delete_and_reopen_are_atomic ... ok
+test tests::deleted_lfn_and_volume_entries_are_skipped ... ok
+test tests::detects_cycles_before_output_and_short_chains ... ok
+test tests::rejects_malformed_and_out_of_bounds_geometry ... ok
+test tests::short_buffer_and_paths_are_explicit_errors ... ok
+test tests::sparse_realistic_volume_multicluster_and_nested_paths ... ok
+test tests::unterminated_directory_cycle_is_bounded ... ok
+test journal::tests::crash_at_every_write_and_flush_boundary_keeps_only_old_or_new_snapshot ... ok
+test journal::tests::torn_data_root_and_superblock_writes_cannot_publish_partial_data ... ok
+test journal::tests::metadata_byte_mutations_never_panic_with_or_without_recomputed_crc ... ok
+
+test result: ok. 20 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.36s
+
+     Running unittests src/lib.rs (target/debug/deps/next_package-488ebe8f69d840f8)
+
+running 12 tests
+test tests::published_sha256_and_rfc8032_vectors ... ok
+test tests::explicit_trust_revocation_and_permission_ceilings ... ok
+test tests::authenticates_all_content_and_metadata ... ok
+test tests::strict_verification_rejects_weak_keys_r_and_noncanonical_s ... ok
+test trust::tests::chain_commits_output_only_after_full_authentication ... ok
+test trust::tests::malformed_lengths_fail_before_parsing ... ok
+test trust::tests::authenticates_attenuated_transition_and_exact_generation ... ok
+test trust::tests::rejects_permission_escalation_revocations_and_untrusted_signers ... ok
+test trust::tests::rejects_weak_replacement_mismatched_ids_reserved_and_tampered_signature ... ok
+test trust::tests::retired_keys_cannot_reenter_and_generation_cannot_wrap ... ok
+test tests::resigned_hostile_paths_aliases_reserved_bits_and_ranges_fail_closed ... ok
+test tests::every_truncated_prefix_and_bounded_mutations_are_rejected ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 16.44s
+
+     Running unittests src/lib.rs (target/debug/deps/prism-52a4bbbac899edc5)
+
+running 27 tests
+test calculator::tests::invalid_input_overflow_and_division_do_not_execute ... ok
+test desktop::tests::all_windows_closed_leaves_no_hidden_focus ... ok
+test calculator::tests::precedence_parentheses_signed_values_and_remainders ... ok
+test calculator::tests::bounded_recursion_and_input ... ok
+test desktop::tests::editing_cancel_commit_and_resize_limits ... ok
+test desktop::tests::focus_order_minimize_restore_and_close ... ok
+test desktop::tests::maximized_restore_survives_display_resize ... ok
+test desktop::tests::pointer_controls_drag_resize_and_focus ... ok
+test tests::all_nine_file_bindings_can_be_selected_and_removed ... ok
+test tests::boot_file_content_requires_a_successful_binding ... ok
+test tests::calculator_terminal_command_runs_math_and_reports_errors ... ok
+test tests::clearing_terminal_preserves_focus_without_typing_commands ... ok
+test tests::clipping_preserves_padding_and_guards ... ok
+test tests::commands_and_keyboard_state_work ... ok
+test tests::external_multiline_responses_strip_crlf_without_box_glyphs ... ok
+test tests::geometry_rejects_overflow_short_buffers_and_bad_stride ... ok
+test tests::launcher_opens_panels_and_cycles_without_leaking_text ... ok
+test tests::pixel_formats_match_uefi_byte_order ... ok
+test tests::buffers_are_bounded_and_history_scrolls ... ok
+test tests::pointer_home_and_taskbar_restore_minimized_window ... ok
+test tests::presentation_preserves_front_guards_padding_and_rejects_before_write ... ok
+test tests::supplied_command_and_panel_data_are_bounded_and_actual ... ok
+test tests::terminal_wrap_preserves_long_words_and_separates_at_spaces ... ok
+test tests::all_panels_render_and_resize_with_pixel_guards ... ok
+test tests::tiny_displays_do_not_panic ... ok
+test tests::complete_frame_keeps_header_title_controls_and_body_in_bounds ... ok
+test tests::pointer_cursor_is_drawn_above_frontmost_window ... ok
+
+test result: ok. 27 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+   Doc-tests helix_core
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests next_abi
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests next_checks
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests next_fs
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests next_package
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests prism
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.01s
+     Running unittests src/lib.rs (target/debug/deps/next_package-b1d38a3abb49a1ab)
+
+running 8 tests
+test installer::tests::corruption_of_previous_deployment_blocks_rollback_without_registry_change ... ok
+test installer::tests::installation_update_rollback_and_uninstall_persist_registry ... ok
+test installer::tests::app_path_ownership_isolated_and_conflicts_cannot_replace_existing_data ... ok
+test installer::tests::interrupted_staging_or_commit_keeps_previous_active_package ... ok
+test installer::tests::invalid_signatures_cannot_create_locks_staging_or_registry ... ok
+test installer::tests::wrong_key_is_rejected_before_consulting_or_creating_destination ... ok
+test installer::tests::private_root_symlinks_and_corrupted_extracted_files_fail_closed ... ok
+test installer::tests::revoked_rollback_and_corrupt_registry_never_mutate_active_state ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 12 filtered out; finished in 0.44s
+
+     Running unittests src/bin/package.rs (target/debug/deps/next_package-5473cfb958703b17)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.05s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.01s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.03s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.03s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.03s
+
+running 7 tests
+test tests::completion_never_confuses_write_acknowledgement_with_read_data ... ok
+test tests::claim_releases_buffers_for_subsequent_reads ... ok
+test tests::authorization_checks_capacity_and_never_invents_flush_support ... ok
+test tests::fat32_geometry_must_fit_capacity_and_fat ... ok
+test tests::queue_layout_fits_full_default_virtqueue ... ok
+test tests::stale_wrong_head_and_unwritten_status_are_rejected ... ok
+test tests::signature_alone_does_not_establish_a_filesystem ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+Independent Linux static ELF host execution PASS (exit 37)
+Independent Linux clock ELF host execution PASS (exit 43)
+Independent Linux memory ELF host execution PASS (exit 44)
+Independent Linux file ELF host execution PASS (exit 46)
+Original fixed PE32+ fixture built: 3072 bytes, 3 kernel32 imports
+Original fixed PE32+ fixture built: 3584 bytes, 3 kernel32 imports
+
+running 28 tests
+test elf::tests::accepts_valid_image ... ok
+test elf::tests::rejects_segment_overflow_and_invalid_alignment ... ok
+test elf::tests::rejects_shared_page_and_noncanonical_addresses ... ok
+test elf::tests::rejects_wrong_machine_and_headers ... ok
+test elf::tests::rejects_wx_and_non_executable_or_bss_entry ... ok
+test elf::tests::every_truncated_prefix_is_rejected ... ok
+test linux::mapping_tests::bounds_overflow_and_write_execute_requests_fail_closed ... ok
+test linux::mapping_tests::occupied_and_fragmented_pages_are_never_reused ... ok
+test independent_linux_elf_requires_explicit_profile ... ok
+test native::tests::metadata_must_be_file_backed_read_only_and_exactly_mapped ... ok
+test native::tests::program_header_order_does_not_change_mapping ... ok
+test native::tests::maps_permissions_and_zero_fills_bss_and_unmapped_gaps ... ok
+test native::tests::rejects_foreign_dynamic_unknown_and_unsafe_load_profiles ... ok
+test native::tests::rejects_page_overlap_misalignment_window_escape_and_overflow ... ok
+test native::tests::startup_layout_and_version_are_explicit ... ok
+test native::tests::requires_unique_exact_abi_metadata ... ok
+test nt_original_shims_resolve_validated_iat_without_writable_code ... ok
+test original_pe32plus_binaries_use_only_the_explicit_nt_profile ... ok
+test elf::tests::bounded_mutations_never_panic ... ok
+test hostile_mapping_alignment_flags_and_size_reject ... ok
+test pe::tests::enforces_wx_disjoint_pages_file_ranges_entry_and_capacity ... ok
+test pe::tests::refuses_readonly_iat_prebound_ordinal_duplicate_and_hostile_rvas ... ok
+test pe::tests::copies_headers_sections_zero_bss_gaps_and_reserved_shims ... ok
+test pe::tests::rejects_dll_pe32_wrong_arch_foreign_dirs_and_dynamic_base ... ok
+test pe::tests::resolves_only_closed_builtin_imports ... ok
+test unsupported_interpreter_dynamic_and_wrong_machine_reject ... ok
+test native::tests::truncated_images_and_bounded_header_mutations_never_panic ... ok
+test pe::tests::bounded_mutations_and_all_truncated_prefixes_never_panic ... ok
+
+test result: ok. 28 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
+
+.....
+----------------------------------------------------------------------
+Ran 5 tests in 0.039s
+
+OK
+test_changed_artifact_and_outside_paths_rejected (__main__.AuditTests.test_changed_artifact_and_outside_paths_rejected) ... ok
+test_complete_pending_inventory (__main__.AuditTests.test_complete_pending_inventory) ... ok
+test_host_test_does_not_establish_product_completion (__main__.AuditTests.test_host_test_does_not_establish_product_completion) ... ok
+test_missing_and_invented_requirements_rejected (__main__.AuditTests.test_missing_and_invented_requirements_rejected) ... ok
+test_modified_contract_and_duplicate_rejected (__main__.AuditTests.test_modified_contract_and_duplicate_rejected) ... ok
+test_unsupported_completion_rejected (__main__.AuditTests.test_unsupported_completion_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.037s
+
+OK
+{
+  "requirements": 195,
+  "status": {
+    "pending": 98,
+    "partial": 97,
+    "verified": 0
+  },
+  "evidence_levels": {
+    "host_tested": 84,
+    "boot_smoke": 92,
+    "integrated": 64,
+    "certified_hardware": 0
+  },
+  "product_ready": false
+}

@@ -1,0 +1,6 @@
+{
+  "classification": "harness action/response ordering",
+  "image_sha256": "75b7eee4a19b9451d0c31214ce2a2d0404270ed3e0c02ad03997efc4428709d6",
+  "detail": "First portal Down wait started before F9 inspection. Pending initial Selected/probe was consumed as navigation response; extra Down approved probe instead of portal-demo, signed fixture exited88 for wrong bytes. Actual complete F9 portal dump succeeded. Runner interrupted after irrecoverable test fixture exit to avoid waiting450s.",
+  "correction": "After inspection capture actual navigation send-key mark; await complete Selected line and subsequent completed frame. No image or guest-code change."
+}

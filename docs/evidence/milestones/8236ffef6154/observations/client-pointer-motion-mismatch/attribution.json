@@ -1,0 +1,6 @@
+{
+  "cause": "Validator assumed cumulative PS/2 relative motion matched requested QMP deltas. Actual target intended996,182 but actualbutton event896,82, outsideclientcontent; locator correctlyfoundsolidcontent980,166and980,460.",
+  "fixture_result": "Both clients timedout60seconds with exit361 because no realfocusgesture reachedthem.",
+  "image_unchanged": "8236ffef6154ef708c37ebe1cf2ba0a750b2c1fc1c543f799fc01060d2a35bee",
+  "corrective_action": "Moveusing actualguestPRISMPOINTERfeedback perpacket; fullownedfocus/contentIDs remainmandatory. Addsolidverticalextent check andtests toexclude wallpaper."
+}

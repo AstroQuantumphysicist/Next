@@ -1,0 +1,12 @@
+[package]
+name = "next-checks"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+helix-core = { path = "../helix-core" }
+prism = { path = "../prism" }
+next-abi = { path = "../next-abi" }
+next-fs = { path = "../next-fs" }
+next-package = { path = "../next-package" }

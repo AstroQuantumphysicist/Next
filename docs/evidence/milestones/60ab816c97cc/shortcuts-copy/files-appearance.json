@@ -1,0 +1,243 @@
+{
+  "passed": true,
+  "image_sha256": "60ab816c97cc2c510ac5eed76a3db2d039b924a72fe6904bc6eae63f36cbfc27",
+  "source_binding": {
+    "compiled_source_manifest_sha256": "515f63b8da57dd9e7c7180a763422d4aeb5c095a3b9f67ec7ec8db3994334674",
+    "frozen_source_root": "/workspace/Next/work/tenth-wave/frozen-src",
+    "prism_sources": {
+      "crates/prism/Cargo.toml": "57973d236330697346e0d9630c65982af0eec5572613eb605357d755210caca4",
+      "crates/prism/assets/NOTICE.txt": "a49d56b73938f8f366ebd81bcdcbdb44c9fe85966848f6f07612194588c65e16",
+      "crates/prism/assets/OpenSans-LICENSE.txt": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "crates/prism/assets/open-sans-advance.bin": "7bfb26802a159e8c464aa8f17026bff36915d55240b5c0fbfd0ec8774ef3a0ee",
+      "crates/prism/assets/open-sans-atlas.bin": "d954599f44ba97e84f07b184a493087e781354176065776ad7d23a9d8a745a4b",
+      "crates/prism/assets/source/OpenSans-Regular.ttf": "e64e508b2aa2880f907e470c4550980ec4c0694d103a43f36150ac3f93189bee",
+      "crates/prism/assets/wallpaper.rgb": "85495a5a07d24342eb2797a7e416b142baf2fcbc6929f9632e2e1884a6a09d8c",
+      "crates/prism/src/appearance.rs": "cac1b530f6fa29e3718c53ba573aaae77f084363e913f995fb1e27ee3abd643d",
+      "crates/prism/src/appearance_ui.rs": "cb2ec7e0c244479dac04d913712d46671b8b80354b13874255c44c885b3037e7",
+      "crates/prism/src/calculator.rs": "3e8537719e105b24ad99b000027f587bbf470436a0de38be93263868013e2185",
+      "crates/prism/src/client_surface.rs": "e16f6c0bd0537ee6f67e9a8b13eab503b8f07b8c9f0dfa25da057245cb75f055",
+      "crates/prism/src/desktop.rs": "efed05d4f8b799e3410d9713652b8d196c012fba07deebf446aa23e7911f3e4b",
+      "crates/prism/src/editor.rs": "d3facd625ed5875dd954373c0caf1849da10c2c90daa36a7f8f788c8d4ca6828",
+      "crates/prism/src/files_actions.rs": "10051beaf0e107324cdb149f193bda90c8fe0ebe63a7b91c671409ba1b2031f0",
+      "crates/prism/src/keyboard_focus.rs": "dcfadc01486f3e6e060b21a685c7255f28b67b6f120314eb77ff7fa03f6eb13a",
+      "crates/prism/src/lib.rs": "a45da89b32c4407100368e0f577a23fd8fa9961ba2420b9171147063f7d65ea2",
+      "crates/prism/src/notifications.rs": "ec28aa2c1767bf8b6b4b3f7637d28f96180e0c1f7022a300f25092da7fca77db",
+      "crates/prism/src/palette.rs": "33a01ed09dd2f22759c13a2214ab41c01bc6965cda43f816cab8aa0439a1f62e",
+      "crates/prism/src/snap.rs": "6ac131265ed57fe098408dff66fd99e5b332649be869e2f94985122d62ccdb3e",
+      "crates/prism/src/surface_state.rs": "f852981f26a41df8afb8d898245b61f6990b9f1e9f7d39d00211063dea9a9035",
+      "crates/prism/src/theme.rs": "460e80e2b421b1bfd42bad61ebb474259d3823319abeb718f8e0363a1fe85976"
+    },
+    "helper_source_sha256": "dd69db9e0f7945990baab2b10f2186d2d598763a1b155fce1ea090c8ae9273d6",
+    "library_sha256": "a1fe05ae3a79aba6aa7faa5b36bc7bc01a608030b0bcd006bcf7256a19d06920",
+    "helper_sha256": "2aa910535067caeece66dd8e27c05b2b8e9e0f6f68f5ada83006f8d332b66c15"
+  },
+  "phases": [
+    {
+      "phase": "create",
+      "passed": true,
+      "report": "build/tenth-prism-shortcuts-copy-retry/create/boot-smoke.json",
+      "protected_bytes_unchanged": true,
+      "journal": {
+        "format": "NXTCOW01-development",
+        "start_lba": 131072,
+        "sectors": 132,
+        "selected_generation": 68,
+        "selected_bank": 1,
+        "mount_read_only": false,
+        "candidates": [
+          {
+            "slot": 0,
+            "valid": true,
+            "blank": false,
+            "generation": 67,
+            "bank": 0,
+            "root_crc": 3733451200,
+            "snapshot_valid": true,
+            "files": [
+              {
+                "slot": 0,
+                "path": "/native/probe",
+                "size": 23,
+                "crc32": 1361864760
+              },
+              {
+                "slot": 1,
+                "path": "/native/linux",
+                "size": 23,
+                "crc32": 4173277344
+              },
+              {
+                "slot": 2,
+                "path": "/prefs/appearance",
+                "size": 32,
+                "crc32": 558161692
+              },
+              {
+                "slot": 4,
+                "path": "/native/copy-dst",
+                "size": 4,
+                "crc32": 1149756166
+              }
+            ]
+          },
+          {
+            "slot": 1,
+            "valid": true,
+            "blank": false,
+            "generation": 68,
+            "bank": 1,
+            "root_crc": 3627434475,
+            "snapshot_valid": true,
+            "files": [
+              {
+                "slot": 0,
+                "path": "/native/probe",
+                "size": 23,
+                "crc32": 1361864760
+              },
+              {
+                "slot": 1,
+                "path": "/native/linux",
+                "size": 23,
+                "crc32": 4173277344
+              },
+              {
+                "slot": 2,
+                "path": "/prefs/appearance",
+                "size": 32,
+                "crc32": 558161692
+              }
+            ],
+            "mount_read_only": false
+          }
+        ],
+        "files": [
+          {
+            "slot": 0,
+            "path": "/native/probe",
+            "size": 23,
+            "crc32": 1361864760
+          },
+          {
+            "slot": 1,
+            "path": "/native/linux",
+            "size": 23,
+            "crc32": 4173277344
+          },
+          {
+            "slot": 2,
+            "path": "/prefs/appearance",
+            "size": 32,
+            "crc32": 558161692
+          }
+        ],
+        "source_sha256": "7443705180a19cd83d25200363115664af10c4ea62602b8185f22ac38257a4c5"
+      }
+    },
+    {
+      "phase": "verify",
+      "passed": true,
+      "report": "build/tenth-prism-shortcuts-copy-retry/verify/boot-smoke.json",
+      "protected_bytes_unchanged": true,
+      "journal": {
+        "format": "NXTCOW01-development",
+        "start_lba": 131072,
+        "sectors": 132,
+        "selected_generation": 116,
+        "selected_bank": 1,
+        "mount_read_only": false,
+        "candidates": [
+          {
+            "slot": 0,
+            "valid": true,
+            "blank": false,
+            "generation": 115,
+            "bank": 0,
+            "root_crc": 3598841897,
+            "snapshot_valid": true,
+            "files": [
+              {
+                "slot": 0,
+                "path": "/native/probe",
+                "size": 23,
+                "crc32": 1361864760
+              },
+              {
+                "slot": 1,
+                "path": "/native/linux",
+                "size": 23,
+                "crc32": 4173277344
+              },
+              {
+                "slot": 2,
+                "path": "/prefs/appearance",
+                "size": 32,
+                "crc32": 558161692
+              },
+              {
+                "slot": 3,
+                "path": "/native/portal-demo",
+                "size": 11,
+                "crc32": 2753005409
+              }
+            ]
+          },
+          {
+            "slot": 1,
+            "valid": true,
+            "blank": false,
+            "generation": 116,
+            "bank": 1,
+            "root_crc": 1012405439,
+            "snapshot_valid": true,
+            "files": [
+              {
+                "slot": 0,
+                "path": "/native/probe",
+                "size": 23,
+                "crc32": 1361864760
+              },
+              {
+                "slot": 1,
+                "path": "/native/linux",
+                "size": 23,
+                "crc32": 4173277344
+              },
+              {
+                "slot": 2,
+                "path": "/prefs/appearance",
+                "size": 32,
+                "crc32": 558161692
+              }
+            ],
+            "mount_read_only": false
+          }
+        ],
+        "files": [
+          {
+            "slot": 0,
+            "path": "/native/probe",
+            "size": 23,
+            "crc32": 1361864760
+          },
+          {
+            "slot": 1,
+            "path": "/native/linux",
+            "size": 23,
+            "crc32": 4173277344
+          },
+          {
+            "slot": 2,
+            "path": "/prefs/appearance",
+            "size": 32,
+            "crc32": 558161692
+          }
+        ],
+        "source_sha256": "20e67117333300acb1a11ea3fc0a2298f9d5c95004761bb25fcf20e08d91b4c2"
+      }
+    }
+  ],
+  "input_image_unchanged": true,
+  "source_manifest_unchanged": true,
+  "helper_source_unchanged": true
+}

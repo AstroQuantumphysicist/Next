@@ -1,0 +1,12 @@
+{
+  "passed": true,
+  "scope": "QEMU q35/TCG, single CPU, legacy PS/2, software framebuffer, PIT/PIC timer interrupts, legacy virtio read/write/flush in dedicated trailing data region, FAT32 reads, native processes and IPC; no hardware certification",
+  "started_utc": "2026-10-11T15:38:54.255735+00:00",
+  "checks": [
+    "expected loader rejection: boot artifact SHA-256 differs from signed deployment",
+    "no kernel entry or reboot during bounded halt observation"
+  ],
+  "image_sha256": "4b36d568fd2151b4ed5752f3d77980fe7d477b44d789f8ee0b6088fc09a2e07b",
+  "qemu_profile": "q35,accel=tcg; cpu=qemu64; 256M; smp=1; vga=std",
+  "finished_utc": "2026-10-11T15:38:56.757739+00:00"
+}

@@ -1,0 +1,54 @@
+{
+  "passed": true,
+  "samples": 120,
+  "statistics": {
+    "idle": {
+      "all": {
+        "samples": 60,
+        "median_ms": 39.308033,
+        "p95_ms": 104.34206,
+        "max_ms": 115.695531,
+        "p95_definition": "nearest-rank ceiling(0.95*N), sorted host-observed milliseconds"
+      },
+      "focus": {
+        "samples": 40,
+        "median_ms": 36.3868005,
+        "p95_ms": 45.081217,
+        "max_ms": 53.107677,
+        "p95_definition": "nearest-rank ceiling(0.95*N), sorted host-observed milliseconds"
+      },
+      "typed_command": {
+        "samples": 20,
+        "median_ms": 88.632554,
+        "p95_ms": 107.17679,
+        "max_ms": 115.695531,
+        "p95_definition": "nearest-rank ceiling(0.95*N), sorted host-observed milliseconds"
+      }
+    },
+    "loaded": {
+      "all": {
+        "samples": 60,
+        "median_ms": 47.4443005,
+        "p95_ms": 157.138694,
+        "max_ms": 158.564987,
+        "p95_definition": "nearest-rank ceiling(0.95*N), sorted host-observed milliseconds"
+      },
+      "focus": {
+        "samples": 40,
+        "median_ms": 45.5364495,
+        "p95_ms": 55.532245,
+        "max_ms": 72.245949,
+        "p95_definition": "nearest-rank ceiling(0.95*N), sorted host-observed milliseconds"
+      },
+      "typed_command": {
+        "samples": 20,
+        "median_ms": 144.6094445,
+        "p95_ms": 158.454388,
+        "max_ms": 158.564987,
+        "p95_definition": "nearest-rank ceiling(0.95*N), sorted host-observed milliseconds"
+      }
+    }
+  },
+  "error": null,
+  "report": "/workspace/Next/build/eighth-latency/latency-smoke.json"
+}

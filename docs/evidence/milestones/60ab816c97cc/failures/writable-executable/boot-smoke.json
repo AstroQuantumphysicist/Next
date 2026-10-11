@@ -1,0 +1,12 @@
+{
+  "passed": true,
+  "scope": "QEMU q35/TCG, single CPU, legacy PS/2, software framebuffer, PIT/PIC timer interrupts, legacy virtio read/write/flush in dedicated trailing data region, FAT32 reads, native processes and IPC; no hardware certification",
+  "started_utc": "2026-10-11T18:25:03.944192+00:00",
+  "checks": [
+    "expected loader rejection: Helix ELF rejected: WritableExecutable",
+    "no kernel entry or reboot during bounded halt observation"
+  ],
+  "image_sha256": "d8a9a1ad7b7fcf7f49ec50d301b92064423c89ff5c048339839d3d985ae0291c",
+  "qemu_profile": "q35,accel=tcg; cpu=qemu64; 256M; smp=1; vga=std",
+  "finished_utc": "2026-10-11T18:25:06.535247+00:00"
+}

@@ -1,0 +1,820 @@
+[2J[01;01H[=3h[2J[01;01H[2J[01;01H[=3h[2J[01;01H[2J[01;01H[=3h[2J[01;01HBdsDxe: loading Boot0001 "UEFI Non-Block Boot Device" from PciRoot(0x0)/Pci(0x2,0x0)
+BdsDxe: starting Boot0001 "UEFI Non-Block Boot Device" from PciRoot(0x0)/Pci(0x2,0x0)
+NEXT BOOT development 0.2 | unsigned EFI loader | owner-signed development payloads | Secure Boot/TPM not certified
+NEXT BOOT: SIGNATURE PASS Ed25519 + SHA-256 owner development key; EFI loader unsigned; Secure Boot/TPM not certified
+NEXT BOOT: ELF LOAD PASS entry=0x4000000 base=0x4000000 bytes=12886016
+NEXT BOOT: INITRD LOAD PASS base=0xcf32000 bytes=514536 CRC archive authenticated by signed deployment
+HELIX: ExitBootServices succeeded; independent ELF kernel control
+HELIX: validated 118 memory regions; RAM 249 MiB; ACPI 0xf77e014
+HELIX: BOOTINFO SELFTEST PASS checksum, version, kernel/loader/map reservations; init image retained
+HELIX: SELFTEST PASS physical page write/zero/free; handle attenuation/stale rejection
+HELIX: CPU CONTEXT PROFILE PASS FX512 only; OSXSAVE=0 FSGSBASE=0 PKE=0 CET=0 UINTR=0 FSBASE=0 GSBASE=0 KERNELGSBASE=0 PKRU reset; inherited TLS bases zero; explicit profile TLS restored
+HELIX: KERNEL MAPPINGS PASS RX text, RO NX data, RW NX memory, guarded stack
+HELIX: KERNEL PROTECTION PASS RX text write denied by CPU page fault
+HELIX: KERNEL PROTECTION PASS RO data write denied by CPU page fault
+HELIX: KERNEL PROTECTION PASS user code physical alias write denied by CPU page fault
+HELIX: KERNEL PROTECTION PASS NX data execution denied by CPU page fault
+HELIX: KERNEL PROTECTION PASS kernel stack guard write denied by CPU page fault
+HELIX: KERNEL PROTECTION PASS interrupt stack guard write denied by CPU page fault
+HELIX: entering ring3; supervisor-only low memory, user RX code, RW NX stack
+HELIX USER: ring3 isolated native code
+HELIX USER: invalid syscall pointer rejected
+HELIX: USER PROTECTION PASS supervisor read denied by CPU page fault
+HELIX: USER PROTECTION PASS RX code write denied by CPU page fault
+HELIX: USER PROTECTION PASS NX stack execution denied by CPU page fault
+HELIX: USER SELFTEST PASS CPL3 entry, bounded syscall, pointer denial, exit
+HELIX: TIMER SELFTEST PASS PIT IRQ0, monotonic ticks=6, integer/XMM0 sentinels preserved; no IRQ allocation or locks
+HELIX UTC PASS seconds=1791739887 source=q35-CMOS/PIT; second-precision initial anchor
+HELIX ACPI PASS cpus=1 io_apics=1 overrides=5 tables=7 bsp=0; discovery only
+HELIX LAPIC PASS id=0 version=20 address=0xfee00000; read-only discovery
+HELIX IOAPIC PASS controllers=1 pins=24 isa_routes=15; redirection untouched, PIC retained
+HELIX HPET PASS frequency=100000000 timers=3 advanced=913 elapsed_ns=9130; PIT remains scheduler clock
+HELIX LAPIC TIMER STATE lvt=0x30020 divide=0xb initial=10000000 current=6376968 svr=0x10f pending=false
+HELIX LAPIC TIMER PASS divider=16 divided_hz=62722445 samples=[Sample { reference_ticks: 1000027, countdown_ticks: 627205 }, Sample { reference_ticks: 1000013, countdown_ticks: 627269 }] count_1ms=62723 adopted=true; masked firmware timer left stopped, PIT retained
+HELIX IOAPIC IRQ RESULT Report { gsi: 2, apic_interrupts: 3, pic_interrupts: 0, owner_retained: true, result: Ok(Delivery { apic_interrupts: 3 }), injected: false, restored_controls: false, rollback_pic_interrupts: 0 }; PIT remains time source
+HELIX DISK SELFTEST PASS read-only virtio-blk 133120 sectors; boot-signature=true FAT32-BPB=true
+HELIX COW STORE PASS generation=4 read_only=false formatted=true selftest=true
+HELIX STORAGE WRITE PASS dedicated trailing sector write/read/flush/restore
+HELIX FS SELFTEST PASS /NEXT.TXT 46 bytes read from FAT32
+HELIX DHCP PASS address=[10, 0, 2, 15] mask=[255, 255, 255, 0] gateway=[10, 0, 2, 2] dns=[10, 0, 2, 3] server=[10, 0, 2, 2] lease_seconds=86400 renew=43200 rebind=75600
+HELIX NETWORK PASS MAC=[52, 54, 00, 12, 34, 56] gateway=[52, 55, 0a, 00, 02, 02] ARP=true ICMP=true UDP=true; QEMU development profile
+HELIX DNS PASS A/AAAA=true cache=true; local development peer, bounded retry and TTL expiry
+HELIX TCP PASS HTTP=true; optional local QEMU peer
+HELIX AUDIO PASS sample_rate=48000 frames=12000 frequency=1000 completed=true; AC97 development profile
+HELIX: APPLICATION IDENTITY pid=1 package=org.next.development.native.nextd signer=[5f, 87, 89, 6b] digest=[f2, 5e, 14, 67] devgrant=0x3f cap_ceiling=0x7f
+HELIX: PROCESS SPAWN pid=1 slot=0 path=/system/nextd.elf profile=Native
+NEXT APP pid=1: NEXTD: native supervisor started
+
+NEXT APP pid=1: NEXTD: manual/auto event lifecycle and rights checks passed
+
+HELIX: APPLICATION IDENTITY pid=2 package=org.next.development.native.event-wait signer=[5f, 87, 89, 6b] digest=[75, 33, 82, 4a] devgrant=0x3f cap_ceiling=0x7b
+HELIX: PROCESS SPAWN pid=2 slot=1 path=/system/event-wait.elf profile=Native
+NEXT APP pid=2: EVENT WAITER: parking with owned WAIT capability
+
+NEXT APP pid=2: EVENT WAITER: blocking timeout, wake and reset checks passed
+
+HELIX: PROCESS EXIT pid=2 status=0 preemptions=0
+HELIX: APPLICATION IDENTITY pid=3 package=org.next.development.native.event-wait signer=[5f, 87, 89, 6b] digest=[75, 33, 82, 4a] devgrant=0x3f cap_ceiling=0x7b
+HELIX: PROCESS SPAWN pid=3 slot=1 path=/system/event-wait.elf profile=Native
+HELIX: APPLICATION IDENTITY pid=4 package=org.next.development.native.event-wait signer=[5f, 87, 89, 6b] digest=[75, 33, 82, 4a] devgrant=0x3f cap_ceiling=0x7b
+HELIX: PROCESS SPAWN pid=4 slot=2 path=/system/event-wait.elf profile=Native
+NEXT APP pid=3: EVENT WAITER: parking with owned WAIT capability
+
+NEXT APP pid=4: EVENT WAITER: parking with owned WAIT capability
+
+NEXT APP pid=3: EVENT WAITER: blocking timeout, wake and reset checks passed
+
+HELIX: PROCESS EXIT pid=3 status=0 preemptions=0
+NEXT APP pid=4: EVENT WAITER: blocking timeout, wake and reset checks passed
+
+HELIX: PROCESS EXIT pid=4 status=0 preemptions=0
+HELIX: APPLICATION IDENTITY pid=5 package=org.next.development.native.event-wait signer=[5f, 87, 89, 6b] digest=[75, 33, 82, 4a] devgrant=0x3f cap_ceiling=0x7b
+HELIX: PROCESS SPAWN pid=5 slot=1 path=/system/event-wait.elf profile=Native
+NEXT APP pid=5: EVENT WAITER: parking with owned WAIT capability
+
+HELIX: PROCESS EXIT pid=5 status=77 preemptions=0
+NEXT APP pid=1: NEXTD: blocking event timeout, auto wake, manual broadcast, process wait and kill cancellation passed
+
+NEXT APP pid=1: NEXTD: native file read/write/seek/stat and copyout checks passed
+
+HELIX: APPLICATION IDENTITY pid=6 package=org.next.development.native.probe signer=[5f, 87, 89, 6b] digest=[b1, 36, 80, 76] devgrant=0x3f cap_ceiling=0x7b
+HELIX: PROCESS SPAWN pid=6 slot=1 path=/system/probe.elf profile=Native
+NEXT APP pid=6: PROBE: separate native executable running
+
+NEXT APP pid=6: PROBE: data/BSS and integer/SIMD yield checks passed
+
+NEXT APP pid=6: PROBE: restricted CPU state profile passed
+
+NEXT APP pid=6: PROBE: SDK native TLS FS/private/yield/sleep/timer checks passed
+
+NEXT APP pid=6: PROBE: anonymous memory zeroing/range/W^X checks passed
+
+NEXT APP pid=6: PROBE: bounded user-copy and capability checks passed
+
+NEXT APP pid=6: PROBE: transferred readonly file rights enforced
+
+NEXT APP pid=6: PROBE: framed IPC authority/copyout checks passed
+
+NEXT APP pid=1: NEXTD: transferred log authority written
+
+NEXT APP pid=1: NEXTD: move-only attenuated IPC handle transfer passed
+
+NEXT APP pid=1: NEXTD: read-only file capability transfer passed
+
+NEXT APP pid=1: NEXTD: isolated-process IPC request/reply passed
+
+HELIX: PROCESS EXIT pid=6 status=42 preemptions=2
+NEXT APP pid=1: NEXTD: native exit and stale-handle checks passed
+
+HELIX: APPLICATION IDENTITY pid=7 package=org.next.development.native.wait-negative signer=[5f, 87, 89, 6b] digest=[ca, fa, b6, b0] devgrant=0x3f cap_ceiling=0x7b
+HELIX: PROCESS SPAWN pid=7 slot=1 path=/system/wait-negative.elf profile=Native
+HELIX: PROCESS EXIT pid=7 status=-7 preemptions=0
+NEXT APP pid=1: NEXTD: retained waits, duplicate ownership, negative exit and copyout checks passed
+
+HELIX: APPLICATION IDENTITY pid=8 package=org.next.development.native.fault signer=[5f, 87, 89, 6b] digest=[f2, 8f, 69, fb] devgrant=0x3f cap_ceiling=0x7b
+HELIX: PROCESS SPAWN pid=8 slot=1 path=/system/fault.elf profile=Native
+NEXT APP pid=8: FAULT: deliberately accessing an unmapped page
+
+HELIX: PROCESS FAULT pid=8 vector=14 address=0x4000040000 rip=0x400000003e error=0x6 contained preemptions=0
+HELIX: PROCESS EXIT pid=8 status=-11 preemptions=0
+NEXT APP pid=1: NEXTD: child fault contained; supervisor survived
+
+HELIX: APPLICATION IDENTITY pid=9 package=org.next.development.native.fault-supervisor signer=[5f, 87, 89, 6b] digest=[2b, d7, 2a, 3d] devgrant=0x3f cap_ceiling=0x7b
+HELIX: PROCESS SPAWN pid=9 slot=1 path=/system/fault-supervisor.elf profile=Native
+HELIX: PROCESS FAULT pid=9 vector=14 address=0x100000 rip=0x4000000040 error=0x5 contained preemptions=0
+HELIX: PROCESS EXIT pid=9 status=-11 preemptions=0
+HELIX: APPLICATION IDENTITY pid=10 package=org.next.development.native.fault-rx signer=[5f, 87, 89, 6b] digest=[1b, f8, e8, 20] devgrant=0x3f cap_ceiling=0x7b
+HELIX: PROCESS SPAWN pid=10 slot=1 path=/system/fault-rx.elf profile=Native
+HELIX: PROCESS FAULT pid=10 vector=14 address=0x4000000000 rip=0x4000000045 error=0x7 contained preemptions=0
+HELIX: PROCESS EXIT pid=10 status=-11 preemptions=0
+HELIX: APPLICATION IDENTITY pid=11 package=org.next.development.native.fault-nx signer=[5f, 87, 89, 6b] digest=[96, fd, 7f, 26] devgrant=0x3f cap_ceiling=0x7b
+HELIX: PROCESS SPAWN pid=11 slot=1 path=/system/fault-nx.elf profile=Native
+HELIX: PROCESS FAULT pid=11 vector=14 address=0x4000100000 rip=0x4000100000 error=0x15 contained preemptions=0
+HELIX: PROCESS EXIT pid=11 status=-11 preemptions=0
+HELIX: APPLICATION IDENTITY pid=12 package=org.next.development.native.fault-guard signer=[5f, 87, 89, 6b] digest=[94, 03, 0c, fd] devgrant=0x3f cap_ceiling=0x7b
+HELIX: PROCESS SPAWN pid=12 slot=1 path=/system/fault-guard.elf profile=Native
+HELIX: PROCESS FAULT pid=12 vector=14 address=0x40000ff000 rip=0x4000000045 error=0x4 contained preemptions=0
+HELIX: PROCESS EXIT pid=12 status=-11 preemptions=0
+HELIX: APPLICATION IDENTITY pid=13 package=org.next.development.native.fault-ud signer=[5f, 87, 89, 6b] digest=[2b, 21, 35, b3] devgrant=0x3f cap_ceiling=0x7b
+HELIX: PROCESS SPAWN pid=13 slot=1 path=/system/fault-ud.elf profile=Native
+HELIX: PROCESS FAULT pid=13 vector=6 address=0x0 rip=0x400000003b error=0x0 contained preemptions=0
+HELIX: PROCESS EXIT pid=13 status=-11 preemptions=0
+HELIX: APPLICATION IDENTITY pid=14 package=org.next.development.native.fault-avx signer=[5f, 87, 89, 6b] digest=[99, b1, f6, 6a] devgrant=0x3f cap_ceiling=0x7b
+HELIX: PROCESS SPAWN pid=14 slot=1 path=/system/fault-avx.elf profile=Native
+NEXT APP pid=14: FAULT-AVX: AVX is outside the FXSAVE process profile
+
+HELIX: PROCESS FAULT pid=14 vector=6 address=0x0 rip=0x400000005e error=0x0 contained preemptions=0
+HELIX: PROCESS EXIT pid=14 status=-11 preemptions=0
+HELIX: APPLICATION IDENTITY pid=15 package=org.next.development.native.fault-fsgsbase signer=[5f, 87, 89, 6b] digest=[36, 81, 64, 03] devgrant=0x3f cap_ceiling=0x7b
+HELIX: PROCESS SPAWN pid=15 slot=1 path=/system/fault-fsgsbase.elf profile=Native
+NEXT APP pid=15: FAULT-FSGSBASE: untracked segment-base instructions disabled
+
+HELIX: PROCESS FAULT pid=15 vector=6 address=0x0 rip=0x4000000060 error=0x0 contained preemptions=0
+HELIX: PROCESS EXIT pid=15 status=-11 preemptions=0
+NEXT APP pid=1: NEXTD: supervisor/RX/NX/guard/UD faults contained
+
+HELIX: APPLICATION IDENTITY pid=16 package=org.next.development.native.context signer=[5f, 87, 89, 6b] digest=[91, 0c, 4f, 8a] devgrant=0x3f cap_ceiling=0x7b
+HELIX: PROCESS SPAWN pid=16 slot=1 path=/system/context.elf profile=Native
+NEXT APP pid=16: CONTEXT: noncooperative integer/XMM/x87 preservation probe
+
+HELIX: PROCESS EXIT pid=16 status=0 preemptions=15
+NEXT APP pid=1: NEXTD: IRQ integer/XMM/x87 preservation passed
+
+HELIX: APPLICATION IDENTITY pid=17 package=org.next.development.native.spin signer=[5f, 87, 89, 6b] digest=[9a, 23, 8e, 92] devgrant=0x3f cap_ceiling=0x7b
+HELIX: PROCESS SPAWN pid=17 slot=1 path=/system/spin.elf profile=Native
+NEXT APP pid=17: SPIN: running without voluntary yields
+
+HELIX: PROCESS EXIT pid=17 status=73 preemptions=5
+NEXT APP pid=1: NEXTD: non-yielding child preempted and killed
+
+HELIX: APPLICATION IDENTITY pid=18 package=org.next.development.native.probe signer=[5f, 87, 89, 6b] digest=[b1, 36, 80, 76] devgrant=0x3f cap_ceiling=0x7b
+HELIX: PROCESS SPAWN pid=18 slot=1 path=/system/probe.elf profile=Native
+NEXT APP pid=18: PROBE: separate native executable running
+
+NEXT APP pid=18: PROBE: data/BSS and integer/SIMD yield checks passed
+
+NEXT APP pid=18: PROBE: restricted CPU state profile passed
+
+NEXT APP pid=18: PROBE: SDK native TLS FS/private/yield/sleep/timer checks passed
+
+NEXT APP pid=18: PROBE: anonymous memory zeroing/range/W^X checks passed
+
+NEXT APP pid=18: PROBE: bounded user-copy and capability checks passed
+
+HELIX: PROCESS EXIT pid=18 status=42 preemptions=2
+NEXT APP pid=1: NEXTD: native lifecycle selftest passed
+
+HELIX: APPLICATION IDENTITY pid=19 package=org.next.development.native.vfs-probe signer=[5f, 87, 89, 6b] digest=[50, 40, 55, 7b] devgrant=0x3f cap_ceiling=0x7f
+HELIX: PROCESS SPAWN pid=19 slot=1 path=/system/vfs-probe.elf profile=Native
+NEXT APP pid=19: VFS-PROBE: shared inode regression starting
+
+NEXT APP pid=19: VFS-PROBE: independent/shared offsets, rename replacement, unlink lifetime and recreate isolation passed
+
+HELIX: PROCESS EXIT pid=19 status=0 preemptions=5
+NEXT APP pid=1: NEXTD: authenticated service configuration and copyout checks passed
+
+HELIX: APPLICATION IDENTITY pid=20 package=org.next.development.native.service-worker signer=[5f, 87, 89, 6b] digest=[d4, 0a, 1a, be] devgrant=0x0 cap_ceiling=0x1b
+HELIX: PROCESS SPAWN pid=20 slot=1 path=/system/service-worker.elf profile=Native
+NEXT APP pid=20: SERVICE WORKER: NETWORK declaration without execution grant denied UDP socket
+
+NEXT APP pid=20: SERVICE WORKER: isolated worker ready with scoped channel/log capabilities
+
+NEXT APP pid=1: NEXTD SERVICE: index=0 name=worker-primary phase=started instance=42949672964 dependencies=0 ceiling=0x1b
+
+NEXT APP pid=1: NEXTD: service start charged against bounded restart budget
+
+NEXT APP pid=1: NEXTD SERVICE: index=0 name=worker-primary phase=ready instance=42949672964 dependencies=0 ceiling=0x1b
+
+NEXT APP pid=1: NEXTD: moved NETWORK capability queued for unprivileged recipient
+
+NEXT APP pid=20: SERVICE WORKER: NETWORK socket capability import denied without execution grant
+
+NEXT APP pid=1: NEXTD: recipient NETWORK capability import denial acknowledged
+
+NEXT APP pid=1: NEXTD: intentionally killing ready service to exercise restart backoff
+
+HELIX: PROCESS EXIT pid=20 status=81 preemptions=0
+HELIX: APPLICATION IDENTITY pid=21 package=org.next.development.native.service-worker signer=[5f, 87, 89, 6b] digest=[d4, 0a, 1a, be] devgrant=0x0 cap_ceiling=0x1b
+HELIX: PROCESS SPAWN pid=21 slot=1 path=/system/service-worker.elf profile=Native
+NEXT APP pid=1: NEXTD SERVICE: index=0 name=worker-primary phase=started instance=47244640260 dependencies=0 ceiling=0x1b
+
+NEXT APP pid=1: NEXTD: service start charged against bounded restart budget
+
+NEXT APP pid=21: SERVICE WORKER: NETWORK declaration without execution grant denied UDP socket
+
+NEXT APP pid=21: SERVICE WORKER: isolated worker ready with scoped channel/log capabilities
+
+NEXT APP pid=1: NEXTD SERVICE: index=0 name=worker-primary phase=ready instance=47244640260 dependencies=0 ceiling=0x1b
+
+NEXT APP pid=21: SERVICE WORKER: intentional heartbeat stall
+
+NEXT APP pid=1: NEXTD: service heartbeat deadline expired; stopping isolated instance
+
+NEXT APP pid=1: NEXTD SERVICE: index=0 name=worker-primary phase=watchdog-or-dependency-stop instance=47244640260 dependencies=0 ceiling=0x1b
+
+HELIX: PROCESS EXIT pid=21 status=81 preemptions=0
+HELIX: APPLICATION IDENTITY pid=22 package=org.next.development.native.service-worker signer=[5f, 87, 89, 6b] digest=[d4, 0a, 1a, be] devgrant=0x0 cap_ceiling=0x1b
+HELIX: PROCESS SPAWN pid=22 slot=1 path=/system/service-worker.elf profile=Native
+NEXT APP pid=1: NEXTD SERVICE: index=0 name=worker-primary phase=started instance=51539607556 dependencies=0 ceiling=0x1b
+
+NEXT APP pid=1: NEXTD: service start charged against bounded restart budget
+
+NEXT APP pid=22: SERVICE WORKER: NETWORK declaration without execution grant denied UDP socket
+
+NEXT APP pid=22: SERVICE WORKER: isolated worker ready with scoped channel/log capabilities
+
+NEXT APP pid=1: NEXTD SERVICE: index=0 name=worker-primary phase=ready instance=51539607556 dependencies=0 ceiling=0x1b
+
+NEXT APP pid=1: NEXTD: service crash restart, heartbeat watchdog recovery and PID1 survival passed
+
+HELIX: NATIVE SYSTEM READY nextd supervisor alive
+HELIX: NATIVE SELFTEST PASS separate processes, IPC, capabilities, contained faults and timer preemption
+PRISM: PS2 MOUSE ready=true
+PRISM: READY 1280x800; commands help about status uptime clear; serial + PS/2 input
+PRISM: process notification pid=14 exit=-11 accepted=true
+PRISM: process notification pid=15 exit=-11 accepted=true
+PRISM: process notification pid=16 exit=0 accepted=true
+PRISM: process notification pid=17 exit=73 accepted=true
+PRISM: process notification pid=18 exit=42 accepted=true
+PRISM: process notification pid=19 exit=0 accepted=true
+PRISM: process notification pid=20 exit=81 accepted=true
+PRISM: process notification pid=21 exit=81 accepted=true
+PRISM: process notification queue overwritten=12
+PRISM OUTPUT FRAME: generation=2
+ps
+NEXT PROCESS: pid=1 state=sleeping preemptions=3 console=false
+NEXT IDENTITY: pid=1 package=org.next.development.native.nextd signer=[5f, 87, 89, 6b] digest=[f2, 5e, 14, 67] dev-grant=0x3f capability-ceiling=0x7f
+NEXT PROCESS: pid=22 state=sleeping preemptions=0 console=false
+NEXT IDENTITY: pid=22 package=org.next.development.native.service-worker signer=[5f, 87, 89, 6b] digest=[d4, 0a, 1a, be] dev-grant=0x0 capability-ceiling=0x1b
+PRISM FRAME: generation=5
+status
+NEXT: kernel-control=independent boot-info=validated framebuffer=active input=polling
+PRISM FRAME: generation=12
+about
+NEXT: Helix + Prism original Rust development kernel; not Next 1.0
+PRISM FRAME: generation=18
+help
+NEXT: help about status uptime clear ps run PATH kill PID; native processes and IPC active; bounded COW store and VM Ethernet; development build
+PRISM FRAME: generation=23
+cat /NEXT.TXT
+NEXT FILE: Read by Helix from the Next development disk.
+PRISM FRAME: generation=37
+write /smoke hello world
+NEXT DATA: Wrote 11 bytes to /smoke; generation=18
+PRISM FRAME: generation=62
+cat /smoke
+NEXT DATA: hello world
+PRISM FRAME: generation=73
+mv /smoke /renamed
+NEXT DATA: Renamed /smoke to /renamed; generation=19
+PRISM FRAME: generation=92
+ls
+NEXT DATA: /native/probe 23 bytes
+/renamed 11 bytes
+
+PRISM FRAME: generation=95
+rm /renamed
+NEXT DATA: Removed /renamed; generation=20
+PRISM FRAME: generation=107
+cat /renamed
+NEXT DATA: Data store error: NotFound
+PRISM FRAME: generation=120
+ps
+NEXT PROCESS: pid=1 state=runnable preemptions=3 console=false
+NEXT IDENTITY: pid=1 package=org.next.development.native.nextd signer=[5f, 87, 89, 6b] digest=[f2, 5e, 14, 67] dev-grant=0x3f capability-ceiling=0x7f
+NEXT PROCESS: pid=22 state=sleeping preemptions=0 console=false
+NEXT IDENTITY: pid=22 package=org.next.development.native.service-worker signer=[5f, 87, 89, 6b] digest=[d4, 0a, 1a, be] dev-grant=0x0 capability-ceiling=0x1b
+PRISM FRAME: generation=123
+kill 1
+NEXT KILL FAILED: AccessDenied
+PRISM FRAME: generation=130
+run /system/missing.elf
+NEXT RUN FAILED: NotFound
+PRISM FRAME: generation=154
+run /system/untrusted.elf
+HELIX: APPLICATION SIGNATURE REJECT path=/system/untrusted.elf reason=Package(Signature)
+NEXT RUN FAILED: AccessDenied
+PRISM FRAME: generation=180
+trace
+TRACE retained=57 accepted=57 overwritten=0 dropped=0 filtered=0 clock-regressions=0
+#42 ns=5189643323 Process/Info id=100 src=18 data=0,0,0,0
+#43 ns=5249639200 Process/Info id=101 src=18 data=0,2a,0,0
+#44 ns=5249639200 Process/Info id=100 src=19 data=0,0,0,0
+#45 ns=5309635076 Filesystem/Info id=201 src=0 data=0,0,0,0
+#46 ns=5329633702 Filesystem/Info id=202 src=0 data=0,0,0,0
+#47 ns=5359631640 Filesystem/Info id=202 src=0 data=0,0,0,0
+#48 ns=5369630953 Process/Info id=101 src=19 data=0,0,0,0
+#49 ns=5369630953 Process/Info id=100 src=20 data=0,0,0,0
+#50 ns=5429626829 Process/Info id=101 src=20 data=0,51,0,0
+#51 ns=5469624080 Process/Info id=100 src=21 data=0,0,0,0
+#52 ns=5809600714 Process/Info id=101 src=21 data=0,51,0,0
+#53 ns=5869596591 Process/Info id=100 src=22 data=0,0,0,0
+#54 ns=5909593842 Boot/Info id=1 src=0 data=24f,1,0,0
+#55 ns=7869459143 Filesystem/Info id=200 src=0 data=0,b,0,0
+#56 ns=8829393168 Filesystem/Info id=201 src=0 data=0,0,0,0
+#57 ns=9339358119 Filesystem/Info id=202 src=0 data=0,0,0,0
+PRISM FRAME: generation=186
+calc (2 + 3) * 4
+= 20
+PRISM FRAME: generation=203
+calc 1 / 0
+Cannot divide by zero.
+PRISM FRAME: generation=214
+nextunknown
+NEXT: unknown command
+PRISM FRAME: generation=226
+run /system/spin.elf
+HELIX: APPLICATION IDENTITY pid=23 package=org.next.development.native.spin signer=[5f, 87, 89, 6b] digest=[9a, 23, 8e, 92] devgrant=0x3f cap_ceiling=0x7b
+HELIX: PROCESS SPAWN pid=23 slot=2 path=/system/spin.elf profile=Native
+NEXT RUN: pid=23
+PRISM FRAME: generation=247
+NEXT APP pid=23: SPIN: running without voluntary yields
+
+PRISM OUTPUT FRAME: generation=248
+kill 23
+HELIX: PROCESS EXIT pid=23 status=-13 preemptions=3
+NEXT KILL: pid=23
+PRISM FRAME: generation=256
+PRISM: process notification pid=23 exit=-13 accepted=true
+PRISM OUTPUT FRAME: generation=257
+run /compat/linux/hello.elf
+HELIX: APPLICATION IDENTITY pid=24 package=org.next.development.linux.hello signer=[5f, 87, 89, 6b] digest=[6b, 87, 3b, 7b] devgrant=0x3f cap_ceiling=0x3
+HELIX: PROCESS SPAWN pid=24 slot=2 path=/compat/linux/hello.elf profile=Linux
+NEXT RUN: pid=24
+PRISM FRAME: generation=285
+LINUX STATIC ELF: original syscall compatibility PASS
+HELIX: PROCESS EXIT pid=24 status=37 preemptions=0
+PRISM: process notification pid=24 exit=37 accepted=true
+PRISM OUTPUT FRAME: generation=286
+run /compat/linux/hello-gate.elf
+HELIX: APPLICATION IDENTITY pid=25 package=org.next.development.linux.hello-gate signer=[5f, 87, 89, 6b] digest=[92, dc, d7, da] devgrant=0x3f cap_ceiling=0x3
+HELIX: PROCESS SPAWN pid=25 slot=2 path=/compat/linux/hello-gate.elf profile=Linux
+NEXT RUN: pid=25
+PRISM FRAME: generation=319
+HELIX: LINUX PROFILE native syscall gate rejected number=15
+LINUX STATIC ELF: original syscall compatibility PASS
+HELIX: PROCESS EXIT pid=25 status=37 preemptions=0
+PRISM: process notification pid=25 exit=37 accepted=true
+PRISM OUTPUT FRAME: generation=320
+run /compat/linux/clock.elf
+HELIX: APPLICATION IDENTITY pid=26 package=org.next.development.linux.clock signer=[5f, 87, 89, 6b] digest=[0a, 7f, c7, 8c] devgrant=0x3f cap_ceiling=0x3
+HELIX: PROCESS SPAWN pid=26 slot=2 path=/compat/linux/clock.elf profile=Linux
+NEXT RUN: pid=26
+PRISM FRAME: generation=348
+LINUX CLOCK ELF: monotonic/sleep/bounds compatibility PASS
+HELIX: PROCESS EXIT pid=26 status=43 preemptions=0
+PRISM: process notification pid=26 exit=43 accepted=true
+PRISM OUTPUT FRAME: generation=349
+run /compat/linux/clock-gate.elf
+HELIX: APPLICATION IDENTITY pid=27 package=org.next.development.linux.clock-gate signer=[5f, 87, 89, 6b] digest=[9b, 3f, 39, dd] devgrant=0x3f cap_ceiling=0x3
+HELIX: PROCESS SPAWN pid=27 slot=2 path=/compat/linux/clock-gate.elf profile=Linux
+NEXT RUN: pid=27
+PRISM FRAME: generation=382
+LINUX CLOCK ELF: monotonic/sleep/bounds compatibility PASS
+HELIX: PROCESS EXIT pid=27 status=43 preemptions=0
+PRISM: process notification pid=27 exit=43 accepted=true
+PRISM OUTPUT FRAME: generation=383
+run /system/clock.elf
+HELIX: APPLICATION IDENTITY pid=28 package=org.next.development.native.clock signer=[5f, 87, 89, 6b] digest=[fd, f8, 9a, 08] devgrant=0x3f cap_ceiling=0x7b
+HELIX: PROCESS SPAWN pid=28 slot=2 path=/system/clock.elf profile=Native
+NEXT RUN: pid=28
+PRISM FRAME: generation=405
+NEXT APP pid=28: CLOCK: native realtime copyout checks passed
+
+NEXT APP pid=28: Next Clock / native ABI 0.1 / PID 28
+Monotonic uptime: 18.828705930 seconds
+UTC realtime: 1791739905.768710054 Unix seconds
+
+HELIX: PROCESS EXIT pid=28 status=0 preemptions=0
+PRISM: process notification pid=28 exit=0 accepted=false
+PRISM OUTPUT FRAME: generation=406
+run /compat/linux/memory.elf
+HELIX: APPLICATION IDENTITY pid=29 package=org.next.development.linux.memory signer=[5f, 87, 89, 6b] digest=[f7, 92, 93, e6] devgrant=0x3f cap_ceiling=0x3
+HELIX: PROCESS SPAWN pid=29 slot=2 path=/compat/linux/memory.elf profile=Linux
+NEXT RUN: pid=29
+PRISM FRAME: generation=435
+LINUX MEMORY ELF: brk/mmap/munmap/zeroing compatibility PASS
+HELIX: PROCESS EXIT pid=29 status=44 preemptions=0
+PRISM: process notification pid=29 exit=44 accepted=true
+PRISM OUTPUT FRAME: generation=436
+run /compat/linux/memory-gate.elf
+HELIX: APPLICATION IDENTITY pid=30 package=org.next.development.linux.memory-gate signer=[5f, 87, 89, 6b] digest=[1c, f1, 82, b0] devgrant=0x3f cap_ceiling=0x3
+HELIX: PROCESS SPAWN pid=30 slot=2 path=/compat/linux/memory-gate.elf profile=Linux
+NEXT RUN: pid=30
+PRISM FRAME: generation=470
+LINUX MEMORY ELF: brk/mmap/munmap/zeroing compatibility PASS
+HELIX: PROCESS EXIT pid=30 status=44 preemptions=0
+PRISM: process notification pid=30 exit=44 accepted=true
+PRISM OUTPUT FRAME: generation=471
+run /compat/linux/namespace.elf
+HELIX: APPLICATION IDENTITY pid=31 package=org.next.development.linux.namespace signer=[5f, 87, 89, 6b] digest=[e6, b0, 56, 37] devgrant=0x3f cap_ceiling=0x3
+HELIX: PROCESS SPAWN pid=31 slot=2 path=/compat/linux/namespace.elf profile=Linux
+NEXT RUN: pid=31
+PRISM FRAME: generation=503
+LINUX NAMESPACE ELF: rename/unlink/open-description/inode compatibility PASS
+HELIX: PROCESS EXIT pid=31 status=48 preemptions=4
+PRISM: process notification pid=31 exit=48 accepted=true
+PRISM OUTPUT FRAME: generation=504
+run /compat/linux/namespace-gate.elf
+HELIX: APPLICATION IDENTITY pid=32 package=org.next.development.linux.namespace-gate signer=[5f, 87, 89, 6b] digest=[f5, d0, 8e, c1] devgrant=0x3f cap_ceiling=0x3
+HELIX: PROCESS SPAWN pid=32 slot=2 path=/compat/linux/namespace-gate.elf profile=Linux
+NEXT RUN: pid=32
+PRISM FRAME: generation=541
+LINUX NAMESPACE ELF: rename/unlink/open-description/inode compatibility PASS
+HELIX: PROCESS EXIT pid=32 status=48 preemptions=4
+PRISM: process notification pid=32 exit=48 accepted=true
+PRISM OUTPUT FRAME: generation=542
+run /compat/linux/tls.elf
+HELIX: APPLICATION IDENTITY pid=33 package=org.next.development.linux.tls signer=[5f, 87, 89, 6b] digest=[6c, 20, 4b, 1e] devgrant=0x3f cap_ceiling=0x3
+HELIX: PROCESS SPAWN pid=33 slot=2 path=/compat/linux/tls.elf profile=Linux
+NEXT RUN: pid=33
+PRISM FRAME: generation=568
+LINUX TLS ELF: FS/GS ownership/yield/bounds compatibility PASS
+HELIX: PROCESS EXIT pid=33 status=47 preemptions=3
+PRISM: process notification pid=33 exit=47 accepted=true
+PRISM OUTPUT FRAME: generation=569
+run /compat/linux/tls-gate.elf
+HELIX: APPLICATION IDENTITY pid=34 package=org.next.development.linux.tls-gate signer=[5f, 87, 89, 6b] digest=[93, 27, cc, 8a] devgrant=0x3f cap_ceiling=0x3
+HELIX: PROCESS SPAWN pid=34 slot=2 path=/compat/linux/tls-gate.elf profile=Linux
+NEXT RUN: pid=34
+PRISM FRAME: generation=600
+LINUX TLS ELF: FS/GS ownership/yield/bounds compatibility PASS
+HELIX: PROCESS EXIT pid=34 status=47 preemptions=29
+PRISM: process notification pid=34 exit=47 accepted=true
+PRISM OUTPUT FRAME: generation=601
+run /compat/linux/tls-gate.elf
+HELIX: APPLICATION IDENTITY pid=35 package=org.next.development.linux.tls-gate signer=[5f, 87, 89, 6b] digest=[93, 27, cc, 8a] devgrant=0x3f cap_ceiling=0x3
+HELIX: PROCESS SPAWN pid=35 slot=2 path=/compat/linux/tls-gate.elf profile=Linux
+NEXT RUN: pid=35
+PRISM FRAME: generation=632
+run /compat/linux/tls-gate.elf
+HELIX: APPLICATION IDENTITY pid=36 package=org.next.development.linux.tls-gate signer=[5f, 87, 89, 6b] digest=[93, 27, cc, 8a] devgrant=0x3f cap_ceiling=0x3
+HELIX: PROCESS SPAWN pid=36 slot=3 path=/compat/linux/tls-gate.elf profile=Linux
+NEXT RUN: pid=36
+PRISM FRAME: generation=663
+LINUX TLS ELF: FS/GS ownership/yield/bounds compatibility PASS
+HELIX: PROCESS EXIT pid=35 status=47 preemptions=14
+PRISM: process notification pid=35 exit=47 accepted=true
+PRISM OUTPUT FRAME: generation=664
+LINUX TLS ELF: FS/GS ownership/yield/bounds compatibility PASS
+HELIX: PROCESS EXIT pid=36 status=47 preemptions=23
+PRISM: process notification pid=36 exit=47 accepted=true
+PRISM OUTPUT FRAME: generation=665
+run /compat/linux/file.elf
+HELIX: APPLICATION IDENTITY pid=37 package=org.next.development.linux.file signer=[5f, 87, 89, 6b] digest=[62, c0, c1, 8a] devgrant=0x3f cap_ceiling=0x3
+HELIX: PROCESS SPAWN pid=37 slot=2 path=/compat/linux/file.elf profile=Linux
+NEXT RUN: pid=37
+PRISM FRAME: generation=692
+LINUX FILE ELF: open/read/write/seek/stat/dup/close compatibility PASS
+HELIX: PROCESS EXIT pid=37 status=46 preemptions=1
+PRISM: process notification pid=37 exit=46 accepted=true
+PRISM OUTPUT FRAME: generation=693
+run /compat/linux/file-gate.elf
+HELIX: APPLICATION IDENTITY pid=38 package=org.next.development.linux.file-gate signer=[5f, 87, 89, 6b] digest=[d1, d2, f0, ec] devgrant=0x3f cap_ceiling=0x3
+HELIX: PROCESS SPAWN pid=38 slot=2 path=/compat/linux/file-gate.elf profile=Linux
+NEXT RUN: pid=38
+PRISM FRAME: generation=725
+LINUX FILE ELF: open/read/write/seek/stat/dup/close compatibility PASS
+HELIX: PROCESS EXIT pid=38 status=46 preemptions=1
+PRISM: process notification pid=38 exit=46 accepted=true
+PRISM OUTPUT FRAME: generation=726
+run /compat/nt/hello.exe
+HELIX: APPLICATION IDENTITY pid=39 package=org.next.development.nt.hello signer=[5f, 87, 89, 6b] digest=[c1, ff, de, de] devgrant=0x3f cap_ceiling=0x3
+HELIX: PROCESS SPAWN pid=39 slot=2 path=/compat/nt/hello.exe profile=Nt
+NEXT RUN: pid=39
+PRISM FRAME: generation=751
+NT PE32+ ELF-FREE: original Win64 imports/GPR/XMM compatibility PASS
+HELIX: PROCESS EXIT pid=39 status=45 preemptions=0
+PRISM: process notification pid=39 exit=45 accepted=true
+PRISM OUTPUT FRAME: generation=752
+run /compat/nt/hello-gate.exe
+HELIX: APPLICATION IDENTITY pid=40 package=org.next.development.nt.hello-gate signer=[5f, 87, 89, 6b] digest=[3f, 91, dd, d8] devgrant=0x3f cap_ceiling=0x3
+HELIX: PROCESS SPAWN pid=40 slot=2 path=/compat/nt/hello-gate.exe profile=Nt
+NEXT RUN: pid=40
+PRISM FRAME: generation=782
+HELIX: NT PROFILE native syscall gate rejected number=15
+HELIX: NT PROFILE Linux syscall gate rejected number=39
+NT PE32+ ELF-FREE: original Win64 imports/GPR/XMM compatibility PASS
+HELIX: PROCESS EXIT pid=40 status=45 preemptions=0
+PRISM: process notification pid=40 exit=45 accepted=true
+PRISM OUTPUT FRAME: generation=783
+run /system/udp-probe.elf
+HELIX: APPLICATION IDENTITY pid=41 package=org.next.development.native.udp-probe signer=[5f, 87, 89, 6b] digest=[18, cf, 10, 25] devgrant=0x3f cap_ceiling=0x7b
+HELIX: PROCESS SPAWN pid=41 slot=2 path=/system/udp-probe.elf profile=Native
+NEXT RUN: pid=41
+PRISM FRAME: generation=809
+HELIX: DATAGRAM WAIT parked pid=41 direction=write
+HELIX: DATAGRAM WAIT parked pid=41 direction=read
+HELIX: DATAGRAM WAIT parked pid=41 direction=read
+NEXT APP pid=41: UDP WAIT: delayed readable park, writable pressure wake, omitted deadline and duplicate/nonconsume authority passed
+
+NEXT APP pid=41: UDP PROBE: actual nonce echo fixed trusted peer 10.0.2.2:39097, authority/copyout/nonconsume/stale/reuse passed
+
+HELIX: PROCESS EXIT pid=41 status=47 preemptions=0
+PRISM: process notification pid=41 exit=47 accepted=true
+PRISM OUTPUT FRAME: generation=810
+write /native/editor hello
+NEXT DATA: Wrote 5 bytes to /native/editor; generation=43
+PRISM FRAME: generation=837
+edit /native/editor
+PRISM EDITOR OPEN: path=/native/editor bytes=5 exists=true
+PRISM FRAME: generation=857
+PRISM EDITOR SAVE: path=/native/editor bytes=6 revision=2
+PRISM FRAME: generation=860
+cat /native/editor
+NEXT DATA: hellox
+PRISM FRAME: generation=879
+edit /native/editor
+PRISM EDITOR OPEN: path=/native/editor bytes=6 exists=true
+PRISM FRAME: generation=899
+write /native/editor external
+NEXT DATA: Wrote 8 bytes to /native/editor; generation=45
+PRISM FRAME: generation=931
+edit /native/editor
+PRISM FRAME: generation=951
+PRISM DESKTOP: focused=Some(Editor) home=false editing=None
+PRISM FRAME: generation=952
+PRISM EDITOR CONFLICT: path=/native/editor
+PRISM FRAME: generation=953
+cat /native/editor
+NEXT DATA: external
+PRISM FRAME: generation=972
+write /native/editor hellox
+NEXT DATA: Wrote 6 bytes to /native/editor; generation=46
+PRISM FRAME: generation=1000
+edit /native/editor
+PRISM FRAME: generation=1020
+PRISM DESKTOP: focused=Some(Editor) home=false editing=None
+PRISM FRAME: generation=1021
+PRISM EDITOR SAVE: path=/native/editor bytes=7 revision=4
+PRISM FRAME: generation=1022
+cat /native/editor
+NEXT DATA: helloxy
+PRISM FRAME: generation=1041
+rm /native/editor
+NEXT DATA: Removed /native/editor; generation=48
+PRISM FRAME: generation=1059
+date
+NEXT UTC: seconds=1791739932 nanoseconds=736856574 source=q35-CMOS/PIT
+PRISM FRAME: generation=1064
+write /native/search-demo search-content
+NEXT DATA: Wrote 14 bytes to /native/search-demo; generation=49
+PRISM FRAME: generation=1105
+PRISM DESKTOP: focused=Some(Terminal) home=true editing=None
+PRISM FRAME: generation=1106
+PRISM DESKTOP: focused=Some(Editor) home=false editing=None
+PRISM EDITOR OPEN: path=/native/search-demo bytes=14 exists=true
+PRISM FRAME: generation=1113
+cat /native/search-demo
+NEXT DATA: search-content
+PRISM FRAME: generation=1137
+rm /native/search-demo
+NEXT DATA: Removed /native/search-demo; generation=50
+PRISM FRAME: generation=1160
+run /system/udp-block.elf
+HELIX: APPLICATION IDENTITY pid=42 package=org.next.development.native.udp-block signer=[5f, 87, 89, 6b] digest=[de, 2a, c5, 7f] devgrant=0x3f cap_ceiling=0x7b
+HELIX: PROCESS SPAWN pid=42 slot=2 path=/system/udp-block.elf profile=Native
+NEXT RUN: pid=42
+PRISM FRAME: generation=1186
+NEXT APP pid=42: UDP BLOCK: connected port 49207 acquired; parking readable for kill/reopen proof
+
+HELIX: DATAGRAM WAIT parked pid=42 direction=read
+PRISM OUTPUT FRAME: generation=1187
+ps
+NEXT PROCESS: pid=1 state=runnable preemptions=3 console=false
+NEXT IDENTITY: pid=1 package=org.next.development.native.nextd signer=[5f, 87, 89, 6b] digest=[f2, 5e, 14, 67] dev-grant=0x3f capability-ceiling=0x7f
+NEXT PROCESS: pid=22 state=sleeping preemptions=0 console=false
+NEXT IDENTITY: pid=22 package=org.next.development.native.service-worker signer=[5f, 87, 89, 6b] digest=[d4, 0a, 1a, be] dev-grant=0x0 capability-ceiling=0x1b
+NEXT PROCESS: pid=42 state=waiting preemptions=0 console=true
+NEXT IDENTITY: pid=42 package=org.next.development.native.udp-block signer=[5f, 87, 89, 6b] digest=[de, 2a, c5, 7f] dev-grant=0x3f capability-ceiling=0x7b
+PRISM FRAME: generation=1190
+kill 42
+HELIX: PROCESS EXIT pid=42 status=-13 preemptions=0
+NEXT KILL: pid=42
+PRISM FRAME: generation=1198
+PRISM: process notification pid=42 exit=-13 accepted=true
+PRISM OUTPUT FRAME: generation=1199
+run /system/udp-block.elf
+HELIX: APPLICATION IDENTITY pid=43 package=org.next.development.native.udp-block signer=[5f, 87, 89, 6b] digest=[de, 2a, c5, 7f] devgrant=0x3f cap_ceiling=0x7b
+HELIX: PROCESS SPAWN pid=43 slot=2 path=/system/udp-block.elf profile=Native
+NEXT RUN: pid=43
+PRISM FRAME: generation=1225
+NEXT APP pid=43: UDP BLOCK: connected port 49207 acquired; parking readable for kill/reopen proof
+
+HELIX: DATAGRAM WAIT parked pid=43 direction=read
+PRISM OUTPUT FRAME: generation=1226
+ps
+NEXT PROCESS: pid=1 state=runnable preemptions=3 console=false
+NEXT IDENTITY: pid=1 package=org.next.development.native.nextd signer=[5f, 87, 89, 6b] digest=[f2, 5e, 14, 67] dev-grant=0x3f capability-ceiling=0x7f
+NEXT PROCESS: pid=22 state=sleeping preemptions=0 console=false
+NEXT IDENTITY: pid=22 package=org.next.development.native.service-worker signer=[5f, 87, 89, 6b] digest=[d4, 0a, 1a, be] dev-grant=0x0 capability-ceiling=0x1b
+NEXT PROCESS: pid=43 state=waiting preemptions=0 console=true
+NEXT IDENTITY: pid=43 package=org.next.development.native.udp-block signer=[5f, 87, 89, 6b] digest=[de, 2a, c5, 7f] dev-grant=0x3f capability-ceiling=0x7b
+PRISM FRAME: generation=1229
+kill 43
+HELIX: PROCESS EXIT pid=43 status=-13 preemptions=0
+NEXT KILL: pid=43
+PRISM FRAME: generation=1237
+PRISM: process notification pid=43 exit=-13 accepted=true
+PRISM OUTPUT FRAME: generation=1238
+ps
+NEXT PROCESS: pid=1 state=runnable preemptions=3 console=false
+NEXT IDENTITY: pid=1 package=org.next.development.native.nextd signer=[5f, 87, 89, 6b] digest=[f2, 5e, 14, 67] dev-grant=0x3f capability-ceiling=0x7f
+NEXT PROCESS: pid=22 state=sleeping preemptions=0 console=false
+NEXT IDENTITY: pid=22 package=org.next.development.native.service-worker signer=[5f, 87, 89, 6b] digest=[d4, 0a, 1a, be] dev-grant=0x0 capability-ceiling=0x1b
+PRISM FRAME: generation=1241
+PRISM POINTER: x=470 y=758 buttons=1 focused=Some(Terminal)
+PRISM FRAME: generation=1246
+PRISM POINTER: x=470 y=758 buttons=0 focused=Some(Terminal)
+PRISM FRAME: generation=1247
+PRISM POINTER: x=522 y=436 buttons=1 focused=Some(Files)
+PRISM FRAME: generation=1252
+PRISM POINTER: x=522 y=436 buttons=0 focused=Some(Files)
+PRISM FRAME: generation=1253
+PRISM POINTER: x=694 y=758 buttons=1 focused=Some(Settings)
+PRISM FRAME: generation=1258
+PRISM POINTER: x=694 y=758 buttons=0 focused=Some(Settings)
+PRISM FRAME: generation=1259
+PRISM POINTER: x=526 y=758 buttons=1 focused=Some(Terminal)
+PRISM FRAME: generation=1262
+PRISM POINTER: x=526 y=758 buttons=0 focused=Some(Terminal)
+PRISM FRAME: generation=1263
+PRISM DESKTOP: focused=Some(Terminal) home=false editing=None
+PRISM FRAME: generation=1265
+PRISM DESKTOP: focused=Some(Terminal) home=false editing=None
+PRISM FRAME: generation=1266
+PRISM DESKTOP: focused=Some(Terminal) home=false editing=None
+PRISM FRAME: generation=1267
+PRISM DESKTOP: focused=Some(Terminal) home=false editing=None
+PRISM FRAME: generation=1268
+PRISM DESKTOP: focused=Some(Terminal) home=false editing=None
+PRISM FRAME: generation=1269
+PRISM DESKTOP: focused=Some(Terminal) home=false editing=None
+PRISM FRAME: generation=1270
+PRISM DESKTOP: focused=Some(Terminal) home=false editing=None
+PRISM FRAME: generation=1271
+PRISM DESKTOP: focused=Some(Terminal) home=false editing=None
+PRISM FRAME: generation=1272
+
+PRISM DESKTOP: focused=Some(Terminal) home=false editing=None
+PRISM FRAME: generation=1273
+PRISM DESKTOP: focused=Some(Terminal) home=false editing=None
+PRISM FRAME: generation=1274
+
+PRISM DESKTOP: focused=Some(Terminal) home=false editing=None
+PRISM FRAME: generation=1275
+PRISM DESKTOP: focused=Some(Terminal) home=false editing=None
+PRISM FRAME: generation=1276
+PRISM DESKTOP: focused=Some(Terminal) home=false editing=None
+PRISM FRAME: generation=1277
+
+PRISM DESKTOP: focused=Some(Terminal) home=false editing=None
+PRISM FRAME: generation=1278
+PRISM DESKTOP: focused=Some(Terminal) home=false editing=None
+PRISM FRAME: generation=1280
+PRISM DESKTOP: focused=Some(Terminal) home=false editing=None
+PRISM FRAME: generation=1282
+PRISM DESKTOP: focused=Some(Terminal) home=false editing=None
+PRISM FRAME: generation=1283
+PRISM DESKTOP: focused=Some(Terminal) home=false editing=None
+PRISM FRAME: generation=1284
+PRISM DESKTOP: focused=Some(Terminal) home=false editing=None
+PRISM FRAME: generation=1285
+
+PRISM DESKTOP: focused=Some(Terminal) home=false editing=None
+PRISM FRAME: generation=1286
+PRISM DESKTOP: focused=Some(Terminal) home=false editing=None
+PRISM FRAME: generation=1288
+write /native/portal-demo portal-data
+NEXT DATA: Wrote 11 bytes to /native/portal-demo; generation=51
+PRISM FRAME: generation=1326
+run /system/portal-probe.elf
+HELIX: APPLICATION IDENTITY pid=44 package=org.next.development.native.portal-probe signer=[5f, 87, 89, 6b] digest=[17, 23, 58, ed] devgrant=0x3f cap_ceiling=0x7b
+HELIX: PROCESS SPAWN pid=44 slot=2 path=/system/portal-probe.elf profile=Native
+NEXT RUN: pid=44
+PRISM FRAME: generation=1355
+NEXT APP pid=44: PORTAL-PROBE: waiting for readonly file consent
+
+PRISM PORTAL: request=4294967296 pid=44 access=1
+PRISM PORTAL SELECTED: path=/native/probe
+PRISM OUTPUT FRAME: generation=1356
+PRISM DESKTOP: focused=Some(Terminal) home=false editing=None
+PRISM FRAME: generation=1357
+PRISM DESKTOP: focused=Some(Terminal) home=false editing=None
+PRISM FRAME: generation=1359
+PRISM DESKTOP: focused=Some(Terminal) home=false editing=None
+PRISM PORTAL SELECTED: path=/native/linux
+PRISM FRAME: generation=1360
+PRISM DESKTOP: focused=Some(Terminal) home=false editing=None
+PRISM PORTAL SELECTED: path=/native/portal-demo
+PRISM FRAME: generation=1361
+PRISM DESKTOP: focused=Some(Terminal) home=false editing=None
+PRISM PORTAL SELECTED: path=/native/probe
+PRISM FRAME: generation=1362
+PRISM DESKTOP: focused=Some(Terminal) home=false editing=None
+PRISM PORTAL SELECTED: path=/native/linux
+PRISM FRAME: generation=1363
+PRISM DESKTOP: focused=Some(Terminal) home=false editing=None
+PRISM PORTAL SELECTED: path=/native/portal-demo
+PRISM FRAME: generation=1364
+PRISM DESKTOP: focused=Some(Terminal) home=false editing=None
+PRISM FRAME: generation=1365
+PRISM DESKTOP: focused=Some(Terminal) home=false editing=None
+PRISM PORTAL APPROVE: request=4294967296 path=/native/portal-demo result=Ok(())
+PRISM FRAME: generation=1366
+NEXT APP pid=44: PORTAL-PROBE: waiting for cancelled readwrite request
+
+PRISM PORTAL: request=8589934592 pid=44 access=3
+PRISM PORTAL SELECTED: path=/native/probe
+PRISM OUTPUT FRAME: generation=1367
+PRISM DESKTOP: focused=Some(Terminal) home=false editing=None
+PRISM PORTAL DENY: request=8589934592 result=Ok(())
+PRISM FRAME: generation=1368
+PRISM PORTAL: request=12884901888 pid=44 access=1
+PRISM PORTAL SELECTED: path=/native/probe
+PRISM OUTPUT FRAME: generation=1369
+PRISM OUTPUT FRAME: generation=1370
+NEXT APP pid=44: PORTAL-PROBE: approved readonly file, denied write, cancel and expiry passed
+
+HELIX: PROCESS EXIT pid=44 status=0 preemptions=0
+PRISM: process notification pid=44 exit=0 accepted=true
+PRISM OUTPUT FRAME: generation=1371
+cat /native/portal-demo
+NEXT DATA: portal-data
+PRISM FRAME: generation=1395
+rm /native/portal-demo
+NEXT DATA: Removed /native/portal-demo; generation=52
+PRISM FRAME: generation=1418
+PRISM DESKTOP: focused=Some(Terminal) home=false editing=None
+PRISM SNAP: kind=Preview app=Terminal zone=Some(Left) x=8 y=68 width=632 height=644
+PRISM FRAME: generation=1419
+
+PRISM DESKTOP: focused=Some(Terminal) home=false editing=None
+PRISM SNAP: kind=Applied app=Terminal zone=Some(Left) x=8 y=68 width=632 height=644
+PRISM FRAME: generation=1420
+PRISM DESKTOP: focused=Some(Terminal) home=false editing=None
+PRISM SNAP: kind=Preview app=Terminal zone=Some(Right) x=640 y=68 width=632 height=644
+PRISM FRAME: generation=1421
+PRISM DESKTOP: focused=Some(Terminal) home=false editing=None
+PRISM SNAP: kind=Cancelled app=Terminal zone=Some(Right) x=8 y=68 width=632 height=644
+PRISM FRAME: generation=1422
+PRISM DESKTOP: focused=Some(Terminal) home=false editing=None
+PRISM SNAP: kind=Preview app=Terminal zone=Some(Maximize) x=8 y=68 width=1264 height=644
+PRISM FRAME: generation=1423
+
+PRISM DESKTOP: focused=Some(Terminal) home=false editing=None
+PRISM SNAP: kind=Applied app=Terminal zone=Some(Maximize) x=8 y=68 width=1264 height=644
+PRISM FRAME: generation=1424
+PRISM DESKTOP: focused=Some(Terminal) home=false editing=None
+PRISM SNAP: kind=Restored app=Terminal zone=None x=24 y=80 width=976 height=544
+PRISM FRAME: generation=1425
+uptime
+NEXT CLOCK: ticks=6450 nanoseconds=64495567314 source=PIT divisor=11931
+PRISM FRAME: generation=1432
+uptime
+NEXT CLOCK: ticks=6482 nanoseconds=64815545323 source=PIT divisor=11931
+PRISM FRAME: generation=1439
+status
+NEXT: kernel-control=independent boot-info=validated framebuffer=active input=polling
+PRISM DESKTOP: focused=Some(Terminal) home=false editing=None
+PRISM FRAME: generation=1446
+statuz s
+NEXT: kernel-control=independent boot-info=validated framebuffer=active input=polling
+PRISM DESKTOP: focused=Some(Terminal) home=false editing=None
+PRISM FRAME: generation=1455
+PRISM DESKTOP: focused=Some(Terminal) home=true editing=None
+PRISM FRAME: generation=1456
+PRISM DESKTOP: focused=Some(Terminal) home=true editing=None
+PRISM FRAME: generation=1457
+PRISM DESKTOP: focused=Some(Files) home=false editing=None
+PRISM FRAME: generation=1458
+PRISM POINTER: x=546 y=768 buttons=1 focused=Some(Terminal)
+PRISM FRAME: generation=1460
+PRISM POINTER: x=546 y=768 buttons=0 focused=Some(Terminal)
+PRISM FRAME: generation=1461
+status
+NEXT: kernel-control=independent boot-info=validated framebuffer=active input=polling
+PRISM FRAME: generation=1468
+uart
+NEXT UART: accepted=43630 transmitted=43630 dropped=0 stalled=28 absent=0 pending=0
+PRISM FRAME: generation=1473

@@ -1,0 +1,14 @@
+[
+  {
+    "gate": "boot_failures",
+    "returncode": 0
+  },
+  {
+    "gate": "initrd_failures",
+    "returncode": 0
+  },
+  {
+    "gate": "package_failures",
+    "returncode": 0
+  }
+]

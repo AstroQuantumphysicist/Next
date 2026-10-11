@@ -1,0 +1,9 @@
+{
+  "original_image_sha256": "484084f63766308d2a355de11ca9862ad87ea6b92276f2852dc4679991e68173",
+  "cause": "Verified binary preferences record caused Files snapshot NonUtf8 refusal and cleared all GUI bindings; actual theme commits and Create journal mutation succeeded.",
+  "termination": "Runner terminated by root after observed stable wait for nonexistent Editor open; this is a genuine integration defect, not a passing gate.",
+  "corrected_source_files": [
+    "crates/helix-kernel/src/filesystem.rs",
+    "crates/helix-kernel/src/main.rs"
+  ]
+}

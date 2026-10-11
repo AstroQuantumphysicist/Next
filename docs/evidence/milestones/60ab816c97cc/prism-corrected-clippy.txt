@@ -1,0 +1,2 @@
+    Checking prism v0.1.0 (/workspace/Next/work/tenth-wave/frozen-src/crates/prism)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.28s

@@ -1,0 +1,22 @@
+{
+  "image_sha256": "1dbcad2f1dd45d74383f5120deb9d1530d9dc594443f98e6617f4cd69b921c83",
+  "source_files": 193,
+  "source_manifest_sha256": "e577af843330b0532a6f62baa7104dfac05d90962f0ca39bdf60b8aa1f623408",
+  "completed": [
+    "516 isolated workspace tests",
+    "actual cooperative-close qemu64121",
+    "actual Undo2boots118create/119verify",
+    "30 loader refusals"
+  ],
+  "material_gates_not_run_on_this_image": [
+    "max CPU expanded cooperative-close/Undo",
+    "deadline/Unresponsive/ForceQuit close guest behavior",
+    "separate runtime resource family",
+    "separate persistence recovery/export family",
+    "alternate service-pair family",
+    "GPT mount family",
+    "latency benchmark"
+  ],
+  "scope": "Scoped Source12 only. Embedded baseline assertions do not replace unrun independent families; Source11 evidence is historical. Frozen fixture500ms save interval, no ignore mode.",
+  "excluded": "Source13 query/accessibility/three-button/fair polling and newer Source14 SDK/windows/emergency-stack changes."
+}

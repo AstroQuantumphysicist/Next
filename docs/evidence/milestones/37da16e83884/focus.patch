@@ -1,0 +1,64 @@
+--- work/ninth-corrected/source/crates/prism/src/lib.rs	2026-10-11 17:34:50.286394196 +0000
++++ work/ninth-focus-corrected/source/crates/prism/src/lib.rs	2026-10-11 17:58:19.237175454 +0000
+@@ -527,6 +527,8 @@
+         palette::Palette::new(self.active_appearance()).accent_foreground()
+     }
+     fn sync_settings_focus(&mut self) {
++        let _ = self.file_focus.replace_scope(2, &[]);
++        let _ = self.file_focus.replace_scope(3, &[]);
+         if self.file_focus.active_scope() != 5 {
+             let _ = self.file_focus.set_base_scope(5);
+         }
+@@ -818,6 +820,8 @@
+         if self.file_dialog_active() {
+             return;
+         }
++        let _ = self.file_focus.replace_scope(5, &[]);
++        let _ = self.file_focus.replace_scope(3, &[]);
+         let mutable = self.file_selection != 0 && self.files[self.file_selection].available;
+         let controls = [
+             Self::file_control(2, 1, "File list", keyboard_focus::Role::ListItem, true),
+@@ -5137,4 +5141,43 @@
+             p.background
+         );
+     }
++    #[test]
++    fn settings_files_modal_focus_switches_reclaim_inactive_controls() {
++        let mut shell = Shell::new();
++        shell
++            .load_appearance(appearance::Loaded {
++                preferences: appearance::Preferences::defaults(),
++                origin: appearance::Origin::MissingDefault,
++            })
++            .unwrap();
++        shell.set_file(1, "/native/test", "actual");
++        for _ in 0..3 {
++            shell.open_app(App::Settings);
++            shell.on_key(Key::Tab);
++            assert_eq!(shell.keyboard_focus_state().unwrap().control.id.scope, 5);
++            shell.open_app(App::Files);
++            shell.on_key(Key::Down);
++            shell.on_key(Key::Tab);
++            assert_eq!(
++                shell.keyboard_focus_state().unwrap().control.id,
++                keyboard_focus::ControlId { scope: 2, local: 2 }
++            );
++            shell.on_key(Key::Tab); // Rename
++            shell.on_key(Key::Enter);
++            assert_eq!(shell.keyboard_focus_state().unwrap().control.id.scope, 3);
++            shell.on_key(Key::Escape);
++            assert_eq!(
++                shell.keyboard_focus_state().unwrap().control.id,
++                keyboard_focus::ControlId { scope: 2, local: 3 }
++            );
++            shell.on_key(Key::BackTab);
++            let state = shell.keyboard_focus_state().unwrap();
++            assert_eq!(
++                state.control.id,
++                keyboard_focus::ControlId { scope: 2, local: 2 }
++            );
++            assert!(state.focus_visible);
++            assert_eq!(shell.file_dialog.phase(), files_actions::Phase::Idle);
++        }
++    }
+ }
