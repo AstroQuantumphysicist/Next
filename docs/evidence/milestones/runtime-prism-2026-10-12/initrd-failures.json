@@ -1,6 +1,6 @@
 {
   "passed": true,
-  "source_image_sha256": "708660fd20f13325b7da0cd1dbe52f1f2b71a8ffb959270d63225f636ac5269e",
+  "source_image_sha256": "b79790f446b5bde892fbde78d63e3a177d558d2d1319556680d9f48f24efb8ce",
   "source_image_unchanged": true,
   "scope": "QEMU/OVMF corrupted unsigned init archive rejection; CRC is not authentication",
   "cases": [
@@ -8,6 +8,7 @@
       "case": "missing-initrd",
       "passed": true,
       "checks": [
+        "QMP reports exactly 1 configured QEMU CPU object(s)",
         "stable loader failure record: NEXT BOOT FAILURE: code=0x4e580301 stage=initrd action=HALT",
         "expected loader rejection: open \\EFI\\NEXT\\INITRD.NXI:",
         "no kernel entry or reboot during bounded halt observation"
@@ -19,6 +20,7 @@
       "case": "truncated-initrd",
       "passed": true,
       "checks": [
+        "QMP reports exactly 1 configured QEMU CPU object(s)",
         "stable loader failure record: NEXT BOOT FAILURE: code=0x4e580301 stage=initrd action=HALT",
         "expected loader rejection: init image rejected: Header",
         "no kernel entry or reboot during bounded halt observation"
@@ -30,6 +32,7 @@
       "case": "initrd-version",
       "passed": true,
       "checks": [
+        "QMP reports exactly 1 configured QEMU CPU object(s)",
         "stable loader failure record: NEXT BOOT FAILURE: code=0x4e580301 stage=initrd action=HALT",
         "expected loader rejection: init image rejected: Version",
         "no kernel entry or reboot during bounded halt observation"
@@ -41,6 +44,7 @@
       "case": "initrd-size",
       "passed": true,
       "checks": [
+        "QMP reports exactly 1 configured QEMU CPU object(s)",
         "stable loader failure record: NEXT BOOT FAILURE: code=0x4e580301 stage=initrd action=HALT",
         "expected loader rejection: init image rejected: Size",
         "no kernel entry or reboot during bounded halt observation"
@@ -52,6 +56,7 @@
       "case": "initrd-count",
       "passed": true,
       "checks": [
+        "QMP reports exactly 1 configured QEMU CPU object(s)",
         "stable loader failure record: NEXT BOOT FAILURE: code=0x4e580301 stage=initrd action=HALT",
         "expected loader rejection: init image rejected: Size",
         "no kernel entry or reboot during bounded halt observation"
@@ -63,6 +68,7 @@
       "case": "initrd-reserved",
       "passed": true,
       "checks": [
+        "QMP reports exactly 1 configured QEMU CPU object(s)",
         "stable loader failure record: NEXT BOOT FAILURE: code=0x4e580301 stage=initrd action=HALT",
         "expected loader rejection: init image rejected: Reserved",
         "no kernel entry or reboot during bounded halt observation"
@@ -74,6 +80,7 @@
       "case": "initrd-range-overflow",
       "passed": true,
       "checks": [
+        "QMP reports exactly 1 configured QEMU CPU object(s)",
         "stable loader failure record: NEXT BOOT FAILURE: code=0x4e580301 stage=initrd action=HALT",
         "expected loader rejection: init image rejected: Range",
         "no kernel entry or reboot during bounded halt observation"
@@ -85,6 +92,7 @@
       "case": "initrd-checksum",
       "passed": true,
       "checks": [
+        "QMP reports exactly 1 configured QEMU CPU object(s)",
         "stable loader failure record: NEXT BOOT FAILURE: code=0x4e580301 stage=initrd action=HALT",
         "expected loader rejection: init image rejected: Checksum",
         "no kernel entry or reboot during bounded halt observation"
@@ -96,6 +104,7 @@
       "case": "initrd-traversal",
       "passed": true,
       "checks": [
+        "QMP reports exactly 1 configured QEMU CPU object(s)",
         "stable loader failure record: NEXT BOOT FAILURE: code=0x4e580301 stage=initrd action=HALT",
         "expected loader rejection: init image rejected: Path",
         "no kernel entry or reboot during bounded halt observation"
@@ -107,6 +116,7 @@
       "case": "initrd-missing-supervisor",
       "passed": true,
       "checks": [
+        "QMP reports exactly 1 configured QEMU CPU object(s)",
         "stable loader failure record: NEXT BOOT FAILURE: code=0x4e580301 stage=initrd action=HALT",
         "expected loader rejection: init image missing /system/nextd.elf",
         "no kernel entry or reboot during bounded halt observation"

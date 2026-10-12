@@ -1,6 +1,7 @@
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.01s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.02s
      Running `target/debug/next-package keygen /workspace/Next/work/package-dev.seed /workspace/Next/work/package-dev.pub`
-    Finished `release` profile [optimized] target(s) in 0.04s
+   Compiling helix-kernel v0.1.0 (/workspace/Next/crates/helix-kernel)
+    Finished `release` profile [optimized] target(s) in 9.49s
     Finished `release` profile [optimized] target(s) in 0.03s
 Independent Linux static ELF host execution PASS (exit 37)
 Independent Linux clock ELF host execution PASS (exit 43)
@@ -12,50 +13,50 @@ Original fixed PE32+ fixture built: 3072 bytes, 3 kernel32 imports
 Original fixed PE32+ fixture built: 3584 bytes, 3 kernel32 imports
     Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.01s
 Built authenticated-member service config: active_mask=1, 2 declarations, 544 bytes
-Signed 1 files into /workspace/Next/build/.apps.OABsL6il/system/client-close-probe.elf; permission declarations are not grants
-Signed 1 files into /workspace/Next/build/.apps.OABsL6il/system/client-input-delayed.elf; permission declarations are not grants
-Signed 1 files into /workspace/Next/build/.apps.OABsL6il/system/client-input-probe.elf; permission declarations are not grants
-Signed 1 files into /workspace/Next/build/.apps.OABsL6il/system/client-reconfigure-probe.elf; permission declarations are not grants
-Signed 1 files into /workspace/Next/build/.apps.OABsL6il/system/clock.elf; permission declarations are not grants
-Signed 1 files into /workspace/Next/build/.apps.OABsL6il/system/context.elf; permission declarations are not grants
-Signed 1 files into /workspace/Next/build/.apps.OABsL6il/system/dns-probe.elf; permission declarations are not grants
-Signed 1 files into /workspace/Next/build/.apps.OABsL6il/system/event-wait.elf; permission declarations are not grants
-Signed 1 files into /workspace/Next/build/.apps.OABsL6il/system/fault-avx.elf; permission declarations are not grants
-Signed 1 files into /workspace/Next/build/.apps.OABsL6il/system/fault-fsgsbase.elf; permission declarations are not grants
-Signed 1 files into /workspace/Next/build/.apps.OABsL6il/system/fault-guard.elf; permission declarations are not grants
-Signed 1 files into /workspace/Next/build/.apps.OABsL6il/system/fault-nx.elf; permission declarations are not grants
-Signed 1 files into /workspace/Next/build/.apps.OABsL6il/system/fault-rx.elf; permission declarations are not grants
-Signed 1 files into /workspace/Next/build/.apps.OABsL6il/system/fault-supervisor.elf; permission declarations are not grants
-Signed 1 files into /workspace/Next/build/.apps.OABsL6il/system/fault-ud.elf; permission declarations are not grants
-Signed 1 files into /workspace/Next/build/.apps.OABsL6il/system/fault.elf; permission declarations are not grants
-Signed 2 files into /workspace/Next/build/.apps.OABsL6il/system/nextd.elf; permission declarations are not grants
-Signed 1 files into /workspace/Next/build/.apps.OABsL6il/system/portal-probe.elf; permission declarations are not grants
-Signed 1 files into /workspace/Next/build/.apps.OABsL6il/system/probe.elf; permission declarations are not grants
-Signed 1 files into /workspace/Next/build/.apps.OABsL6il/system/service-worker.elf; permission declarations are not grants
-Signed 1 files into /workspace/Next/build/.apps.OABsL6il/system/spin.elf; permission declarations are not grants
-Signed 1 files into /workspace/Next/build/.apps.OABsL6il/system/surface-probe.elf; permission declarations are not grants
-Signed 1 files into /workspace/Next/build/.apps.OABsL6il/system/trash-probe.elf; permission declarations are not grants
-Signed 1 files into /workspace/Next/build/.apps.OABsL6il/system/udp-block.elf; permission declarations are not grants
-Signed 1 files into /workspace/Next/build/.apps.OABsL6il/system/udp-probe.elf; permission declarations are not grants
-Signed 1 files into /workspace/Next/build/.apps.OABsL6il/system/vfs-probe.elf; permission declarations are not grants
-Signed 1 files into /workspace/Next/build/.apps.OABsL6il/system/wait-negative.elf; permission declarations are not grants
-Signed 1 files into /workspace/Next/build/.apps.OABsL6il/compat/linux/clock-gate.elf; permission declarations are not grants
-Signed 1 files into /workspace/Next/build/.apps.OABsL6il/compat/linux/clock.elf; permission declarations are not grants
-Signed 1 files into /workspace/Next/build/.apps.OABsL6il/compat/linux/file-gate.elf; permission declarations are not grants
-Signed 1 files into /workspace/Next/build/.apps.OABsL6il/compat/linux/file.elf; permission declarations are not grants
-Signed 1 files into /workspace/Next/build/.apps.OABsL6il/compat/linux/hello-gate.elf; permission declarations are not grants
-Signed 1 files into /workspace/Next/build/.apps.OABsL6il/compat/linux/hello.elf; permission declarations are not grants
-Signed 1 files into /workspace/Next/build/.apps.OABsL6il/compat/linux/memory-gate.elf; permission declarations are not grants
-Signed 1 files into /workspace/Next/build/.apps.OABsL6il/compat/linux/memory.elf; permission declarations are not grants
-Signed 1 files into /workspace/Next/build/.apps.OABsL6il/compat/linux/namespace-gate.elf; permission declarations are not grants
-Signed 1 files into /workspace/Next/build/.apps.OABsL6il/compat/linux/namespace.elf; permission declarations are not grants
-Signed 1 files into /workspace/Next/build/.apps.OABsL6il/compat/linux/tls-gate.elf; permission declarations are not grants
-Signed 1 files into /workspace/Next/build/.apps.OABsL6il/compat/linux/tls.elf; permission declarations are not grants
-Signed 1 files into /workspace/Next/build/.apps.OABsL6il/compat/nt/hello-gate.exe; permission declarations are not grants
-Signed 1 files into /workspace/Next/build/.apps.OABsL6il/compat/nt/hello.exe; permission declarations are not grants
-Signed 1 files into /workspace/Next/build/.apps.OABsL6il/system/untrusted.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/build/.apps.6y4C4SrE/system/client-close-probe.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/build/.apps.6y4C4SrE/system/client-input-delayed.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/build/.apps.6y4C4SrE/system/client-input-probe.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/build/.apps.6y4C4SrE/system/client-reconfigure-probe.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/build/.apps.6y4C4SrE/system/clock.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/build/.apps.6y4C4SrE/system/context.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/build/.apps.6y4C4SrE/system/dns-probe.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/build/.apps.6y4C4SrE/system/event-wait.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/build/.apps.6y4C4SrE/system/fault-avx.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/build/.apps.6y4C4SrE/system/fault-fsgsbase.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/build/.apps.6y4C4SrE/system/fault-guard.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/build/.apps.6y4C4SrE/system/fault-nx.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/build/.apps.6y4C4SrE/system/fault-rx.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/build/.apps.6y4C4SrE/system/fault-supervisor.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/build/.apps.6y4C4SrE/system/fault-ud.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/build/.apps.6y4C4SrE/system/fault.elf; permission declarations are not grants
+Signed 2 files into /workspace/Next/build/.apps.6y4C4SrE/system/nextd.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/build/.apps.6y4C4SrE/system/portal-probe.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/build/.apps.6y4C4SrE/system/probe.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/build/.apps.6y4C4SrE/system/service-worker.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/build/.apps.6y4C4SrE/system/spin.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/build/.apps.6y4C4SrE/system/surface-probe.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/build/.apps.6y4C4SrE/system/trash-probe.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/build/.apps.6y4C4SrE/system/udp-block.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/build/.apps.6y4C4SrE/system/udp-probe.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/build/.apps.6y4C4SrE/system/vfs-probe.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/build/.apps.6y4C4SrE/system/wait-negative.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/build/.apps.6y4C4SrE/compat/linux/clock-gate.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/build/.apps.6y4C4SrE/compat/linux/clock.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/build/.apps.6y4C4SrE/compat/linux/file-gate.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/build/.apps.6y4C4SrE/compat/linux/file.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/build/.apps.6y4C4SrE/compat/linux/hello-gate.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/build/.apps.6y4C4SrE/compat/linux/hello.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/build/.apps.6y4C4SrE/compat/linux/memory-gate.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/build/.apps.6y4C4SrE/compat/linux/memory.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/build/.apps.6y4C4SrE/compat/linux/namespace-gate.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/build/.apps.6y4C4SrE/compat/linux/namespace.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/build/.apps.6y4C4SrE/compat/linux/tls-gate.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/build/.apps.6y4C4SrE/compat/linux/tls.elf; permission declarations are not grants
+Signed 1 files into /workspace/Next/build/.apps.6y4C4SrE/compat/nt/hello-gate.exe; permission declarations are not grants
+Signed 1 files into /workspace/Next/build/.apps.6y4C4SrE/compat/nt/hello.exe; permission declarations are not grants
+Signed 1 files into /workspace/Next/build/.apps.6y4C4SrE/system/untrusted.elf; permission declarations are not grants
 Built 42 application envelopes (one deliberately invalid negative fixture)
-Built /workspace/Next/build/esp/EFI/NEXT/INITRD.NXI (42 entries, 723656 bytes; signed application envelopes, deployment signs archive)
+Built /workspace/Next/build/esp/EFI/NEXT/INITRD.NXI (42 entries, 728672 bytes; signed application envelopes, deployment signs archive)
     Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.01s
      Running `target/debug/next-package keygen /workspace/Next/work/package-dev.seed /workspace/Next/work/package-dev.pub`
     Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.01s
@@ -64,14 +65,23 @@ Signed 2 files into build/esp/EFI/NEXT/SYSTEM.NXP; permission declarations are n
     Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.01s
      Running `target/debug/next-package verify /workspace/Next/work/package-dev.pub build/esp/EFI/NEXT/SYSTEM.NXP`
 Verified org.next.development Deployment 2 files; permissions requested=0x0
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.01s
+     Running `target/debug/next-package pack /workspace/Next/work/package-dev.seed org.next.development 0.1.1 0 deployment boot/helix.elf build/esp/EFI/NEXT/B/SYSTEM.NXP boot/helix.elf=build/esp/EFI/NEXT/B/HELIX.ELF boot/initrd.nxi=build/esp/EFI/NEXT/B/INITRD.NXI`
+Signed 2 files into build/esp/EFI/NEXT/B/SYSTEM.NXP; permission declarations are not grants
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.01s
+     Running `target/debug/next-package verify /workspace/Next/work/package-dev.pub build/esp/EFI/NEXT/A/SYSTEM.NXP`
+Verified org.next.development Deployment 2 files; permissions requested=0x0
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.01s
+     Running `target/debug/next-package verify /workspace/Next/work/package-dev.pub build/esp/EFI/NEXT/B/SYSTEM.NXP`
+Verified org.next.development Deployment 2 files; permissions requested=0x0
     Finished `release` profile [optimized] target(s) in 0.03s
 mkfs.fat 4.2 (2021-01-31)
 Built /workspace/Next/build/next-dev.img (68157440 bytes)
 {
   "requirements": 195,
   "status": {
-    "pending": 81,
-    "partial": 114,
+    "pending": 78,
+    "partial": 117,
     "verified": 0
   },
   "product_ready": false,

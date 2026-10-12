@@ -43,8 +43,26 @@ pub unsafe extern "efiapi" fn efi_main(image: usize, table: *mut uefi::SystemTab
         Ok(deployment) => deployment,
         Err(error) => fail(uefi::FailureCode::Deployment, format_args!("{}", error)),
     };
+    let slot_name = match deployment.slot {
+        next_package::ab::Slot::A => "A",
+        next_package::ab::Slot::B => "B",
+    };
+    let state_origin = if deployment.initialized {
+        "initialized"
+    } else {
+        "persistent"
+    };
+    log!(
+        "NEXT BOOT A/B READY slot={} mode={:?} sequence={} attempts_left={} generation={} state={}",
+        slot_name,
+        deployment.mode,
+        deployment.sequence,
+        deployment.attempts_left,
+        deployment.image.generation,
+        state_origin
+    );
     log!("NEXT BOOT: SIGNATURE PASS Ed25519 + SHA-256 owner development key; EFI loader unsigned; Secure Boot/TPM not certified");
-    let kernel = match uefi::load_kernel(image, table, &deployment.kernel) {
+    let kernel = match uefi::load_kernel(image, table, deployment.slot, &deployment.kernel) {
         Ok(kernel) => kernel,
         Err(error) => fail(uefi::FailureCode::Kernel, format_args!("{}", error)),
     };
@@ -54,7 +72,8 @@ pub unsafe extern "efiapi" fn efi_main(image: usize, table: *mut uefi::SystemTab
         kernel.range.base,
         kernel.range.byte_len
     );
-    let initrd = match uefi::load_initrd(image, table, &kernel, &deployment.initrd) {
+    let initrd = match uefi::load_initrd(image, table, deployment.slot, &kernel, &deployment.initrd)
+    {
         Ok(range) => range,
         Err(error) => fail(uefi::FailureCode::Initrd, format_args!("{}", error)),
     };

@@ -1,0 +1,16 @@
+{
+  "passed": true,
+  "mode": "host tests compile the production AC97 module; no port I/O or DMA device is invoked",
+  "production_code_exercised": [
+    "DmaOwnership::publish before BDL address and RUN register publication",
+    "DmaOwnership::observe retaining ownership on no completion, FIFO error, and malformed completion",
+    "DmaOwnership::observe returning ownership after DCH + LVBCI + zero remaining samples",
+    "DmaOwnership::reset_confirmed as the safe recovery after an engine reset"
+  ],
+  "hardware_verification": "not performed by this host harness",
+  "source_sha256": {
+    "crates/helix-kernel/src/audio.rs": "ed8d56cb3f84c2a802c9d2657ca58b83d895076fa48410d4ee7a9c602f26ff3f",
+    "tools/test-audio-dma.py": "489eb3e181e148cff6d40bb6794562cbdbf74bca047cdaf9a42acd176f5da64b"
+  },
+  "test_output": "\nrunning 6 tests\ntest tests::completed_requires_halted_last_buffer_and_no_remaining_samples ... ok\ntest tests::descriptor_layout_and_ranges_are_exact ... ok\ntest tests::io_ports_do_not_truncate_memory_bars_or_overflow ... ok\ntest tests::static_dma_lifetime_retains_timeout_and_malformed_completion ... ok\ntest tests::tone_has_exact_rate_frequency_duration_peak_and_zero_dc ... ok\ntest tests::valid_completion_returns_static_dma_storage_to_cpu ... ok\n\ntest result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s\n\n"
+}

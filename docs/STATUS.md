@@ -13,7 +13,7 @@ Evidence distinguishes host-tested primitives, boot smoke tests, integrated syst
 | NEXT-BOOT-001 | Next 1.0 is a **real-hardware x86-64 UEFI operating system**, capable of running on supported desktop PCs, laptops and professional workstations without another OS kernel or hypervisor underneath. | partial | boot_smoke, host_tested, integrated |
 | NEXT-BOOT-003 | loader MUST validate ELF segments, sizes, overlaps, alignment, entrypoint mapping and W^X permissions. Unknown mandatory boot records MUST fail closed. | partial | boot_smoke, host_tested |
 | NEXT-BOOT-004 | early panic displays serial diagnosis and halts; no blind reboot loops. Preserve a reboot-reason code in next available writable log facility. | partial | boot_smoke |
-| NEXT-BOOT-005 | A/B system deployment with monotonic rollback metadata, image hashes, boot-attempt counter and recovery entry. User data partition is never part of an automatic OS rollback. | pending | none |
+| NEXT-BOOT-005 | A/B system deployment with monotonic rollback metadata, image hashes, boot-attempt counter and recovery entry. User data partition is never part of an automatic OS rollback. | partial | boot_smoke |
 | NEXT-BOOT-006 | Secure Boot signature verification and TPM-measured boot are implemented on certified hardware supporting those capabilities. Owner-authorized developer builds may use separate test keys, with visible security-state warnings and a documented recovery method. | pending | none |
 | NEXT-BOOT-007 | boot-critical input and display fallback must not depend on Prism or GPU acceleration. | partial | boot_smoke, integrated |
 | NEXT-KRN-001 | no allocator allocations in interrupt handlers unless using a bounded IRQ-safe pool. | partial | boot_smoke, host_tested, integrated |
@@ -31,7 +31,7 @@ Evidence distinguishes host-tested primitives, boot smoke tests, integrated syst
 | NEXT-MEM-006 | test COW across `fork()`, exec image replacement, exception delivery, shared pages, page faults under SMP contention, and user/kernel boundary addresses. | pending | none |
 | NEXT-SCH-001 | a focused UI task under CPU load must be measurable and remain responsive within the published reference benchmark. | partial | boot_smoke |
 | NEXT-SCH-002 | 1/2/4/8-core QEMU schedule, exit, wake, signal and preemption stress tests must pass without deadlock/livelock. | partial | boot_smoke, host_tested, integrated |
-| NEXT-SCH-003 | CPU hotplug may be omitted in 1.0 but topology discovery must not assume fixed CPU count. | partial | host_tested |
+| NEXT-SCH-003 | CPU hotplug may be omitted in 1.0 but topology discovery must not assume fixed CPU count. | partial | boot_smoke, host_tested |
 | NEXT-OBJ-001 | stale handle generations cannot alias newly allocated privileged objects; handle exhaustion returns a bounded failure. | partial | boot_smoke, host_tested, integrated |
 | NEXT-OBJ-002 | duplicate, inherit and transfer tests must prove no escalation even under cross-process races. | partial | boot_smoke, host_tested, integrated |
 | NEXT-OBJ-003 | object wait logic guarantees no missed wake-ups in signal/reset/close/cancel races. | partial | boot_smoke, host_tested, integrated |

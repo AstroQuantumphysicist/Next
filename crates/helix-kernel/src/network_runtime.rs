@@ -593,6 +593,7 @@ mod tests {
                 tx,
                 lease_at: 2,
                 dhcp_client: Some(client),
+                ipv6_router_advertisement: super::super::ipv6::RouterAdvertisementState::new(),
             }),
             lease: Some(lease),
             gateway_mac: [0; 6],
@@ -713,6 +714,7 @@ mod tests {
                 tx: queue(),
                 lease_at: 2,
                 dhcp_client: Some(client),
+                ipv6_router_advertisement: super::super::ipv6::RouterAdvertisementState::new(),
             }),
             lease: Some(lease),
             gateway_mac: SERVER_MAC,
@@ -844,6 +846,7 @@ mod tests {
             tx: queue(),
             lease_at: 2,
             dhcp_client: Some(client),
+            ipv6_router_advertisement: super::super::ipv6::RouterAdvertisementState::new(),
         };
         let mut runtime = Runtime {
             device: Some(device),

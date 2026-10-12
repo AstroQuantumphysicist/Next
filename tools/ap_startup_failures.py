@@ -42,10 +42,19 @@ def main():
     gdt = info["symbols"]["next_ap_gdt"] - start
     real_bridge = blob.index(bytes.fromhex("0f 01 1e 58 0d"))
     protected_bridge = blob.index(bytes.fromhex("0f 01 1d 58 2d 08 00"))
+    real_full_ivt = blob.index(bytes.fromhex("0f 01 1e 40 0d"))
+    protected_full_idt = blob.index(bytes.fromhex("0f 01 1d 46 2d 08 00"))
+    long_full_idt = blob.index(bytes.fromhex("41 0f 01 5c 24 30"))
     ready_cas = blob.index(b"\xf0\x41\x0f\xb1\x14\x24")
     cases = [
         ("real-bridge-wrong-metadata-offset", offset + real_bridge + 3, 0x59),
         ("protected-bridge-wrong-metadata-offset", offset + protected_bridge + 3, 0x59),
+        ("missing-full-real-ivt-load", offset + real_full_ivt, 0x90),
+        ("missing-full-protected-idt-load", offset + protected_full_idt, 0x90),
+        ("missing-full-long-idt-load", offset + long_full_idt, 0x90),
+        ("real-full-ivt-wrong-descriptor", offset + real_full_ivt + 3, 0x41),
+        ("protected-full-idt-wrong-descriptor", offset + protected_full_idt + 3, 0x47),
+        ("long-full-idt-wrong-mailbox-offset", offset + long_full_idt + 5, 0x31),
         ("missing-16bit-far-offset-prefix", offset + far, 0x90),
         ("altered-private-gdt", offset + gdt + 24 + 6, 0),
         ("gdt-code-accessed-clear", offset + gdt + 8 + 5, 0x9a),

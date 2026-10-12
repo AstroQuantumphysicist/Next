@@ -1,9 +1,9 @@
 //! Honest, bounded top-level settings catalog for Prism.
 //!
-//! A section can be browsed before its backend exists. Only Appearance is
-//! currently actionable; System exposes read-only diagnostics through Prism's
-//! existing trusted path. Every other section describes the missing provider
-//! and has no enabled setting actions.
+//! A section can be browsed before its backend exists. Appearance and one
+//! Settings-scoped accessibility preference are actionable; System exposes
+//! read-only diagnostics. Other rows describe their missing providers and do
+//! not claim enabled actions.
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(u8)]
@@ -144,14 +144,13 @@ pub const SECTIONS: [Section; 12] = [
     Section {
         category: Category::Accessibility,
         label: "Accessibility",
-        summary:
-            "Prism exposes focus and accessible snapshots; preference controls are unavailable.",
+        summary: "Choose the keyboard focus outline. Other accessibility controls are unavailable.",
         rows: [
-            "Screen reader and captions",
-            "Keyboard and pointer support",
-            "Motion and magnification",
+            "Screen reader, captions and speech",
+            "Keyboard repeat and pointer support",
+            "Reduced motion and magnification",
         ],
-        state: State::Unavailable,
+        state: State::Available,
     },
     Section {
         category: Category::Developer,
@@ -190,14 +189,15 @@ mod tests {
                 .iter()
                 .filter(|section| section.state == State::Available)
                 .count(),
-            1
+            2
         );
         assert_eq!(SECTIONS[2].state, State::Available);
         assert_eq!(SECTIONS[0].state, State::ReadOnly);
         assert!(SECTIONS[3..]
             .iter()
-            .filter(|section| section.category != Category::Appearance)
+            .filter(|section| section.category != Category::Accessibility)
             .all(|section| section.state == State::Unavailable));
+        assert_eq!(SECTIONS[10].state, State::Available);
         assert!(section(SECTIONS.len()).is_none());
     }
 }

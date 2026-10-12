@@ -8,7 +8,7 @@ hardware display behavior, text shaping, or Next 1.0 completion. The exact
 qemu64 run report and matching image hash are retained in the [runtime and Prism
 evidence](evidence/milestones/runtime-prism-2026-10-12/).
 
-![Overview contact sheet of all nine guest captures](images/prism-overview.png)
+![Overview contact sheet of all ten guest captures](images/prism-overview.png)
 
 Regenerate the source captures with:
 
@@ -18,13 +18,16 @@ bash tools/build.sh
 python3 tools/boot_smoke.py --timeout 240 --capture-prism-gallery
 ```
 
-The gallery includes the current six kernel-hosted first-party panels. Settings
-shows 12 navigable categories: Appearance has active theme/accent controls and
-Save/Revert, System offers read-only diagnostics, and the other ten pages are
-informational with disabled settings rows. The capture shows the rendered
-Appearance page; it does not establish controls that remain unavailable. The
-Calculator is an expression utility rather than a complete scientific
-calculator.
+The gallery includes the current six kernel-hosted first-party panels, plus a
+second Settings capture taken after saving the Accessibility focus-outline
+choice. Settings has 12 navigable categories: Appearance has active
+theme/accent controls and Save/Revert, Accessibility has the saved
+Standard/Strong focus-outline choice, System offers read-only diagnostics, and
+the other nine categories remain informational with unavailable settings rows.
+The Accessibility frame shows the keyboard path, saved state, and rendered
+outline; it does not establish the screen reader, speech, magnification, or
+other controls that remain unavailable. The Calculator is an expression
+utility rather than a complete scientific calculator.
 
 ## Home
 
@@ -44,7 +47,11 @@ calculator.
 
 ## Settings
 
-![Prism Settings with 12 categories, active Appearance controls, and read-only or informational sections](images/prism-settings.png)
+![Prism Settings Appearance page with 12 categories and active theme/accent controls](images/prism-settings.png)
+
+## Settings Accessibility
+
+![Prism Settings with the saved Strong keyboard focus outline preference](images/prism-settings-accessibility.png)
 
 ## Editor
 

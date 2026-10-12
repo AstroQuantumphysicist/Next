@@ -4,7 +4,7 @@
 mod appearance;
 #[path = "../crates/next-fs/src/journal.rs"]
 mod journal;
-use appearance::{Accent, Persistence, Preferences, TextScale, Theme};
+use appearance::{Accent, FocusIndicator, Persistence, Preferences, TextScale, Theme};
 use journal::{Partition, Store, WritableBlockDevice};
 use std::collections::BTreeMap;
 pub trait BlockDevice {
@@ -107,6 +107,7 @@ fn proposed() -> Preferences {
         theme: Theme::HighContrast,
         text_scale: TextScale::Percent150,
         accent: Accent::Teal,
+        focus_indicator: FocusIndicator::Standard,
     }
 }
 fn baseline() -> Disk {

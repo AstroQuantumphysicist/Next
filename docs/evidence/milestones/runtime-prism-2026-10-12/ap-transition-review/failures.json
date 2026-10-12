@@ -1,0 +1,118 @@
+{
+  "scope": "host compiled-byte mutation rejection; no guest AP execution",
+  "input_sha256": "5c4a531df6856f1d7f9111b9d54a98ba1e520ae6384429dc49d425a24b4c1f13",
+  "cases": [
+    {
+      "case": "real-bridge-wrong-metadata-offset",
+      "offset": 782413,
+      "changed_sha256": "955962d54cff4befca329ce45a6a24f76f1998858e1ed371a6c0de502d4ea36d",
+      "rejected": true,
+      "reason": "ValueError: missing bounded real/protected NMI bridge installation before mode switch"
+    },
+    {
+      "case": "protected-bridge-wrong-metadata-offset",
+      "offset": 782720,
+      "changed_sha256": "ed9a8096cb3985e36cfd9e0e8ecb56acca05611c99748d8599f9eb82c5eb5894",
+      "rejected": true,
+      "reason": "ValueError: missing bounded real/protected NMI bridge installation before mode switch"
+    },
+    {
+      "case": "missing-full-real-ivt-load",
+      "offset": 782388,
+      "changed_sha256": "5e7a6be3776f060d331966b0f9a4b7792a5f67da62680af67adfed7018f8c1ee",
+      "rejected": true,
+      "reason": "ValueError: real-mode entry must install one full IVT then one NMI bridge"
+    },
+    {
+      "case": "missing-full-protected-idt-load",
+      "offset": 782476,
+      "changed_sha256": "5cc5328599f63d29b266d243c09c4045db661e5cfa28809b80f1e7217376496c",
+      "rejected": true,
+      "reason": "ValueError: protected mode must load its IDT then restore the NMI bridge"
+    },
+    {
+      "case": "missing-full-long-idt-load",
+      "offset": 782790,
+      "changed_sha256": "e00b43cc60bd26558f63fefb9acadf20ee47b8832ca4829543843c1df23995ac",
+      "rejected": true,
+      "reason": "ValueError: long-mode IDT must load the current AP mailbox's private descriptor"
+    },
+    {
+      "case": "real-full-ivt-wrong-descriptor",
+      "offset": 782391,
+      "changed_sha256": "e5d38472bac17600fc073712180c2854efd08da5587a80c66bbcc5e3fe193717",
+      "rejected": true,
+      "reason": "ValueError: real-mode IVT/bridge loads must use their serialized private descriptors"
+    },
+    {
+      "case": "protected-full-idt-wrong-descriptor",
+      "offset": 782479,
+      "changed_sha256": "3ace294a4da42fc0adaf347cd0adf2b1869490b04b3f06609a9ee2e0e0eadd4e",
+      "rejected": true,
+      "reason": "ValueError: protected IDT/bridge loads must use their serialized private descriptors"
+    },
+    {
+      "case": "long-full-idt-wrong-mailbox-offset",
+      "offset": 782795,
+      "changed_sha256": "9149e65f9ed9aa4b3350407c51a1cc6f9ffa4047b87a88883a85150bb2451157",
+      "rejected": true,
+      "reason": "ValueError: long-mode IDT must load the current AP mailbox's private descriptor"
+    },
+    {
+      "case": "missing-16bit-far-offset-prefix",
+      "offset": 782429,
+      "changed_sha256": "8c3ce0dbd321fd65de2335105255c2f59ba204147a94a1eaa58954e9668dc608",
+      "rejected": true,
+      "reason": "ValueError: far transitions must target copied SIPI image and private GDT selectors"
+    },
+    {
+      "case": "altered-private-gdt",
+      "offset": 782966,
+      "changed_sha256": "204bf313008fdee8996e456fbc131d46edb0f1ba9553deb4cf07b5c51374a438",
+      "rejected": true,
+      "reason": "ValueError: private GDT bytes/pointer differ from architectural descriptors"
+    },
+    {
+      "case": "gdt-code-accessed-clear",
+      "offset": 782949,
+      "changed_sha256": "a49e3eb6c3842e9aed80e90fb405d690ab291ca57aa565e05f7816099975deb8",
+      "rejected": true,
+      "reason": "ValueError: private GDT bytes/pointer differ from architectural descriptors"
+    },
+    {
+      "case": "gdt-data-accessed-clear",
+      "offset": 782957,
+      "changed_sha256": "4f3cfbce7a7f49b353ac9c106b7b8c5f95f9b5c0d65e6c06312e334ee9b47a38",
+      "rejected": true,
+      "reason": "ValueError: private GDT bytes/pointer differ from architectural descriptors"
+    },
+    {
+      "case": "gdt-long-accessed-clear",
+      "offset": 782965,
+      "changed_sha256": "ae44ddf07b880fa39ed2329ee9eebf79e5460cf0394145a7c58f34e355a9dd9e",
+      "rejected": true,
+      "reason": "ValueError: private GDT bytes/pointer differ from architectural descriptors"
+    },
+    {
+      "case": "writable-source-load",
+      "offset": 124,
+      "changed_sha256": "d4f3825e21c4297a0874b76bcf6eec0a1c5171fbf3be325315ff072617bfe971",
+      "rejected": true,
+      "reason": "ValueError: AP source must be entirely in immutable RO/NX ELF load"
+    },
+    {
+      "case": "entry-enables-interrupts",
+      "offset": 782336,
+      "changed_sha256": "73284fbca2a7671d8b87c42e72f837ee564d44759af32acd38c3c96c16af2aff",
+      "rejected": true,
+      "reason": "ValueError: entry must CLI/CLD before state access"
+    },
+    {
+      "case": "ready-cas-not-locked",
+      "offset": 782883,
+      "changed_sha256": "5be29c347e53b9252d21b538c2d2af7907de57cf3bcb736e4d657d0e28584239",
+      "rejected": true,
+      "reason": "ValueError: missing private table installation or bounded ownership CAS"
+    }
+  ]
+}

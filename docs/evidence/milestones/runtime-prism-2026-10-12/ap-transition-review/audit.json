@@ -1,0 +1,229 @@
+{
+  "scope": "host byte/disassembly audit; no AP activation or guest execution",
+  "elf_sha256": "5c4a531df6856f1d7f9111b9d54a98ba1e520ae6384429dc49d425a24b4c1f13",
+  "blob_sha256": "e66be1e4fd10829fb1e2fc24d1b16e828ac68ebe2f673f0f1a82b0c05aff23cf",
+  "blob_bytes": 644,
+  "source_load_flags": 4,
+  "symbols": {
+    "next_ap_blob_start": 67887104,
+    "next_ap_pm32": 67887210,
+    "next_ap_lm64": 67887527,
+    "next_ap_gdt": 67887704,
+    "next_ap_gdt_ptr": 67887736,
+    "next_ap_null_idt": 67887742,
+    "next_ap_blob_end": 67887748,
+    "next_ap_private_fault": 67108904,
+    "next_ap_emergency16": 67887205,
+    "next_ap_emergency32": 67887520,
+    "next_ap_emergency64": 67887692
+  },
+  "early_nmi_blocker": "Activation requires reviewed NMI-source quiescence/transition handling before private long-mode IDT installation.",
+  "stack_reload_shadow_audited": true,
+  "audit_source_context_sha256": {
+    "crates/helix-kernel/src/ap_startup.S": "ed68dfc7e78530b2908c76f1a33fc2a4c07f29d205aa58457c1590106505d53e",
+    "crates/helix-kernel/src/ap_startup.rs": "d39d0ab63c5ac5e71347b2df4067c7077a9f531e8b756666e7948c7400595108",
+    "crates/helix-kernel/src/ap_startup_hardware.rs": "844b364627384e1812082dd759a8c78448802693fb598aee7ad9bf4ab6ed9760",
+    "crates/helix-kernel/src/ap_bootstrap.rs": "d490a3516bade3c2adf3fb558ebe2598b523a349cf102efca628f26de61ff9c3",
+    "crates/helix-kernel/src/ap_transition.rs": "840310e758b49da55094f6b2d592a664b24588049865717ddfe90a22b9f5165f",
+    "crates/helix-kernel/src/ap_nmi_sources.rs": "66a8373fcf1d61bc6360a62acd009d958c400ffc27e27e478a6d2c10c36586e5",
+    "crates/helix-kernel/src/arch.rs": "035a99167f7aae17aae2b29a8a92a67978a4a29f8d4c957d78660e202b5ea71f"
+  },
+  "transition_stage_analysis": {
+    "activation_supported": false,
+    "address_convention": "instruction addresses are physical addresses in the copied SIPI image; stage changes take effect after the named instruction retires",
+    "compiled_landmarks": {
+      "real_full_ivt_load": {
+        "address": 524340,
+        "instruction": "80034:\t0f 01 1e 40 0d       \tlidtw  ds:0xd40"
+      },
+      "real_nmi_bridge_load": {
+        "address": 524362,
+        "instruction": "8004a:\t0f 01 1e 58 0d       \tlidtw  ds:0xd58"
+      },
+      "real_enable_protected_mode": {
+        "address": 524378,
+        "instruction": "8005a:\t0f 22 c0             \tmov    cr0,eax"
+      },
+      "real_to_protected_far_jump": {
+        "address": 524381,
+        "instruction": "8005d:\t66 ea 6a 00 08 00 08 \tjmp    0x8:0x8006a"
+      },
+      "protected_private_stack_load": {
+        "address": 524426,
+        "instruction": "8008a:\t89 d4                \tmov    esp,edx"
+      },
+      "protected_private_idt_load": {
+        "address": 524428,
+        "instruction": "8008c:\t0f 01 1d 46 2d 08 00 \tlidtd  ds:0x82d46"
+      },
+      "protected_nmi_bridge_load": {
+        "address": 524669,
+        "instruction": "8017d:\t0f 01 1d 58 2d 08 00 \tlidtd  ds:0x82d58"
+      },
+      "protected_enable_paging": {
+        "address": 524676,
+        "instruction": "80184:\t0f 22 c0             \tmov    cr0,eax"
+      },
+      "protected_to_long_far_jump": {
+        "address": 524679,
+        "instruction": "80187:\tea a7 01 08 00 18 00 \tjmp    0x18:0x801a7"
+      },
+      "long_private_stack_load": {
+        "address": 524735,
+        "instruction": "801bf:\t49 8b 64 24 20       \tmov    rsp,QWORD PTR [r12+0x20]"
+      },
+      "long_private_idt_load": {
+        "address": 524742,
+        "instruction": "801c6:\t41 0f 01 5c 24 30    \tlidt   [r12+0x30]"
+      }
+    },
+    "protected_private_idt_source": {
+      "entries": 256,
+      "code_selector": 8,
+      "handler": "next_ap_emergency32 in the copied startup image",
+      "idtr_limit": 2047,
+      "basis": "source-verified serializer and metadata IDTR construction; AP RAM contents were not read during execution"
+    },
+    "stages": [
+      {
+        "stage": "before_first_instruction",
+        "start": null,
+        "end": "SIPI entry at 0x80000",
+        "vector_coverage": "unproven",
+        "private_stack": "unproven",
+        "blocker": "NMI can arrive before AP executes CLI; BSP observation cannot constrain reset-time AP LINT or VMM injection"
+      },
+      {
+        "stage": "real_bootstrap_before_private_idt",
+        "start": "0x80000",
+        "end_at": {
+          "address": 524340,
+          "instruction": "80034:\t0f 01 1e 40 0d       \tlidtw  ds:0xd40"
+        },
+        "vector_coverage": "unproven",
+        "private_stack": false,
+        "blocker": "firmware/reset IVT active while AP identity and private SS:SP are established"
+      },
+      {
+        "stage": "real_private_idt",
+        "start_after": {
+          "address": 524340,
+          "instruction": "80034:\t0f 01 1e 40 0d       \tlidtw  ds:0xd40"
+        },
+        "end_at": {
+          "address": 524362,
+          "instruction": "8004a:\t0f 01 1e 58 0d       \tlidtw  ds:0xd58"
+        },
+        "vector_coverage": "all 256 IVT vectors route to private emergency park",
+        "private_stack": true
+      },
+      {
+        "stage": "real_nmi_bridge",
+        "start_after": {
+          "address": 524362,
+          "instruction": "8004a:\t0f 01 1e 58 0d       \tlidtw  ds:0xd58"
+        },
+        "end_at": {
+          "address": 524378,
+          "instruction": "8005a:\t0f 22 c0             \tmov    cr0,eax"
+        },
+        "vector_coverage": "vector 2 only",
+        "private_stack": true,
+        "blocker": "synchronous exceptions are not bridged"
+      },
+      {
+        "stage": "protected_entry_before_private_stack",
+        "start": "target of real-to-protected far jump",
+        "end_at": {
+          "address": 524426,
+          "instruction": "8008a:\t89 d4                \tmov    esp,edx"
+        },
+        "vector_coverage": "vector 2 only",
+        "private_stack": false,
+        "blocker": "shared NMI bridge is active while protected SS:ESP is installed"
+      },
+      {
+        "stage": "protected_bootstrap_with_nmi_bridge",
+        "start_after": {
+          "address": 524426,
+          "instruction": "8008a:\t89 d4                \tmov    esp,edx"
+        },
+        "end_at": {
+          "address": 524428,
+          "instruction": "8008c:\t0f 01 1d 46 2d 08 00 \tlidtd  ds:0x82d46"
+        },
+        "vector_coverage": "vector 2 only",
+        "private_stack": true,
+        "blocker": "pre-private-IDT protected exceptions are uncovered"
+      },
+      {
+        "stage": "protected_private_idt",
+        "start_after": {
+          "address": 524428,
+          "instruction": "8008c:\t0f 01 1d 46 2d 08 00 \tlidtd  ds:0x82d46"
+        },
+        "end_at": {
+          "address": 524669,
+          "instruction": "8017d:\t0f 01 1d 58 2d 08 00 \tlidtd  ds:0x82d58"
+        },
+        "vector_coverage": "all 256 protected-mode IDT entries target the private 32-bit emergency park handler",
+        "private_stack": true
+      },
+      {
+        "stage": "paging_nmi_bridge",
+        "start_after": {
+          "address": 524669,
+          "instruction": "8017d:\t0f 01 1d 58 2d 08 00 \tlidtd  ds:0x82d58"
+        },
+        "end_at": {
+          "address": 524676,
+          "instruction": "80184:\t0f 22 c0             \tmov    cr0,eax"
+        },
+        "vector_coverage": "vector 2 only",
+        "private_stack": true,
+        "blocker": "synchronous exceptions are not bridged across PG/LMA switch"
+      },
+      {
+        "stage": "long_entry_before_private_stack",
+        "start": "target of protected-to-long far jump",
+        "end_at": {
+          "address": 524735,
+          "instruction": "801bf:\t49 8b 64 24 20       \tmov    rsp,QWORD PTR [r12+0x20]"
+        },
+        "vector_coverage": "vector 2 only",
+        "private_stack": false,
+        "blocker": "shared NMI bridge remains active while RSP is installed"
+      },
+      {
+        "stage": "long_nmi_bridge",
+        "start_after": {
+          "address": 524735,
+          "instruction": "801bf:\t49 8b 64 24 20       \tmov    rsp,QWORD PTR [r12+0x20]"
+        },
+        "end_at": {
+          "address": 524742,
+          "instruction": "801c6:\t41 0f 01 5c 24 30    \tlidt   [r12+0x30]"
+        },
+        "vector_coverage": "vector 2 only",
+        "private_stack": true,
+        "blocker": "synchronous exceptions are not bridged before the private long-mode IDT"
+      },
+      {
+        "stage": "long_private_idt",
+        "start_after": {
+          "address": 524742,
+          "instruction": "801c6:\t41 0f 01 5c 24 30    \tlidt   [r12+0x30]"
+        },
+        "end": "rest of long-mode entry",
+        "vector_coverage": "all 256 IDT entries target the private park/failure handler",
+        "private_stack": true
+      }
+    ],
+    "non_idt_events": {
+      "smi": "not contained by an IDT",
+      "init": "not contained by an IDT",
+      "vmm_injection": "cannot be excluded by BSP IOAPIC/LINT observation"
+    },
+    "interpretation": "Compiled order and byte decoding only; no AP startup, platform guarantee, or safety authority is established."
+  }
+}

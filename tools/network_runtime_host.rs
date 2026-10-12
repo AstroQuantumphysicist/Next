@@ -14,6 +14,8 @@ use std::{
 
 #[path = "../crates/helix-kernel/src/network_dhcp.rs"]
 pub mod dhcp;
+#[path = "../crates/helix-kernel/src/network_ipv6.rs"]
+mod ipv6;
 #[path = "../crates/helix-kernel/src/network_udp.rs"]
 pub mod udp;
 
@@ -118,6 +120,7 @@ pub struct Device {
     pub tx: Queue,
     pub lease_at: u64,
     pub dhcp_client: Option<dhcp::Client>,
+    ipv6_router_advertisement: ipv6::RouterAdvertisementState,
 }
 impl Device {
     pub unsafe fn receive(

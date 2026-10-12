@@ -1,6 +1,6 @@
 {
   "passed": true,
-  "source_image_sha256": "708660fd20f13325b7da0cd1dbe52f1f2b71a8ffb959270d63225f636ac5269e",
+  "source_image_sha256": "b79790f446b5bde892fbde78d63e3a177d558d2d1319556680d9f48f24efb8ce",
   "source_image_unchanged": true,
   "scope": "QEMU/OVMF rejection of mutated Ed25519/SHA256 development deployments and bound kernel/init-image bytes. Uses no private signing key; EFI loader remains unsigned. No Secure Boot, TPM, production key lifecycle or anti-rollback certification.",
   "cases": [
@@ -9,6 +9,7 @@
       "passed": true,
       "diagnostic": "open \\EFI\\NEXT\\SYSTEM.NXP:",
       "checks": [
+        "QMP reports exactly 1 configured QEMU CPU object(s)",
         "stable loader failure record: NEXT BOOT FAILURE: code=0x4e580101 stage=deployment action=HALT",
         "expected loader rejection: open \\EFI\\NEXT\\SYSTEM.NXP:",
         "no kernel entry or reboot during bounded halt observation"
@@ -22,6 +23,7 @@
       "passed": true,
       "diagnostic": "signed deployment rejected: Header",
       "checks": [
+        "QMP reports exactly 1 configured QEMU CPU object(s)",
         "stable loader failure record: NEXT BOOT FAILURE: code=0x4e580101 stage=deployment action=HALT",
         "expected loader rejection: signed deployment rejected: Header",
         "no kernel entry or reboot during bounded halt observation"
@@ -35,6 +37,7 @@
       "passed": true,
       "diagnostic": "signed deployment rejected: Version",
       "checks": [
+        "QMP reports exactly 1 configured QEMU CPU object(s)",
         "stable loader failure record: NEXT BOOT FAILURE: code=0x4e580101 stage=deployment action=HALT",
         "expected loader rejection: signed deployment rejected: Version",
         "no kernel entry or reboot during bounded halt observation"
@@ -48,6 +51,7 @@
       "passed": true,
       "diagnostic": "signed deployment rejected: UnknownSigner",
       "checks": [
+        "QMP reports exactly 1 configured QEMU CPU object(s)",
         "stable loader failure record: NEXT BOOT FAILURE: code=0x4e580101 stage=deployment action=HALT",
         "expected loader rejection: signed deployment rejected: UnknownSigner",
         "no kernel entry or reboot during bounded halt observation"
@@ -61,6 +65,7 @@
       "passed": true,
       "diagnostic": "signed deployment rejected: Permissions",
       "checks": [
+        "QMP reports exactly 1 configured QEMU CPU object(s)",
         "stable loader failure record: NEXT BOOT FAILURE: code=0x4e580101 stage=deployment action=HALT",
         "expected loader rejection: signed deployment rejected: Permissions",
         "no kernel entry or reboot during bounded halt observation"
@@ -74,6 +79,7 @@
       "passed": true,
       "diagnostic": "signed deployment rejected: Signature",
       "checks": [
+        "QMP reports exactly 1 configured QEMU CPU object(s)",
         "stable loader failure record: NEXT BOOT FAILURE: code=0x4e580101 stage=deployment action=HALT",
         "expected loader rejection: signed deployment rejected: Signature",
         "no kernel entry or reboot during bounded halt observation"
@@ -87,6 +93,7 @@
       "passed": true,
       "diagnostic": "signed deployment rejected: Digest",
       "checks": [
+        "QMP reports exactly 1 configured QEMU CPU object(s)",
         "stable loader failure record: NEXT BOOT FAILURE: code=0x4e580101 stage=deployment action=HALT",
         "expected loader rejection: signed deployment rejected: Digest",
         "no kernel entry or reboot during bounded halt observation"
@@ -100,6 +107,7 @@
       "passed": true,
       "diagnostic": "boot artifact SHA-256 differs from signed deployment",
       "checks": [
+        "QMP reports exactly 1 configured QEMU CPU object(s)",
         "stable loader failure record: NEXT BOOT FAILURE: code=0x4e580201 stage=kernel action=HALT",
         "expected loader rejection: boot artifact SHA-256 differs from signed deployment",
         "no kernel entry or reboot during bounded halt observation"
@@ -113,6 +121,7 @@
       "passed": true,
       "diagnostic": "boot artifact SHA-256 differs from signed deployment",
       "checks": [
+        "QMP reports exactly 1 configured QEMU CPU object(s)",
         "stable loader failure record: NEXT BOOT FAILURE: code=0x4e580301 stage=initrd action=HALT",
         "expected loader rejection: boot artifact SHA-256 differs from signed deployment",
         "no kernel entry or reboot during bounded halt observation"
@@ -126,6 +135,7 @@
       "passed": true,
       "diagnostic": "signed deployment exceeds bounded 16 MiB profile",
       "checks": [
+        "QMP reports exactly 1 configured QEMU CPU object(s)",
         "stable loader failure record: NEXT BOOT FAILURE: code=0x4e580101 stage=deployment action=HALT",
         "expected loader rejection: signed deployment exceeds bounded 16 MiB profile",
         "no kernel entry or reboot during bounded halt observation"

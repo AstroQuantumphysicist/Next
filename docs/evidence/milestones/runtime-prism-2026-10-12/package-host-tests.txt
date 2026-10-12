@@ -1,0 +1,60 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.01s
+     Running unittests src/lib.rs (target/debug/deps/next_package-b1d38a3abb49a1ab)
+
+running 42 tests
+test ab::tests::counters_fail_closed_at_integer_limits ... ok
+test ab::tests::failed_attempt_commit_never_returns_trial_boot_target ... ok
+test ab::tests::dual_copy_selection_accepts_only_equal_or_adjacent_sequences ... ok
+test ab::tests::each_trial_attempt_is_durably_decremented_before_selection ... ok
+test ab::tests::initialization_is_idempotent_and_recovers_a_partial_first_write ... ok
+test ab::tests::partial_initialization_uses_record_slot_not_metadata_copy_index ... ok
+test ab::tests::record_round_trip_and_all_integrity_fields_are_strict ... ok
+test ab::tests::stage_rejects_wrong_slot_generation_and_overlapping_trial ... ok
+test ab::tests::missing_or_wrong_candidate_rolls_back_but_bad_confirmed_image_halts ... ok
+test ab::tests::trial_confirmation_requires_exact_slot_and_digest_and_advances_generation ... ok
+test identity::tests::revoked_removed_rotated_and_rolled_back_trust_fail_closed ... ok
+test identity::tests::manifest_requests_and_mutable_summary_fields_cannot_grant_authority ... ok
+test identity::tests::immutable_binding_checks_real_signed_entry_bytes_and_rename_is_irrelevant ... ok
+test identity::tests::changed_signed_package_identity_does_not_alias_same_executable ... ok
+test identity::tests::selected_file_must_belong_to_authenticated_manifest ... ok
+test installer::tests::directory_sync_failure_after_registry_rename_is_indeterminate_but_consistent ... ok
+test installer::tests::corruption_of_previous_deployment_blocks_rollback_without_registry_change ... ok
+test installer::tests::app_path_ownership_isolated_and_conflicts_cannot_replace_existing_data ... ok
+test installer::tests::failed_synced_registry_temporary_preserves_active_version_and_cleans_up ... ok
+test installer::tests::invalid_signatures_cannot_create_locks_staging_or_registry ... ok
+test installer::tests::installation_update_rollback_and_uninstall_persist_registry ... ok
+test installer::tests::private_root_symlinks_and_corrupted_extracted_files_fail_closed ... ok
+test installer::tests::interrupted_staging_or_commit_keeps_previous_active_package ... ok
+test installer::tests::path_prefix_conflicts_are_rejected_before_staging_and_outputs_are_unlinked_regular_files ... ok
+test installer::tests::wrong_key_is_rejected_before_consulting_or_creating_destination ... ok
+test tests::excessive_entry_count_is_rejected_before_table_access ... ok
+test installer::tests::revoked_rollback_and_corrupt_registry_never_mutate_active_state ... ok
+test tests::authenticates_all_content_and_metadata ... ok
+test tests::file_directory_alias_is_rejected_before_extraction ... ok
+test tests::explicit_trust_revocation_and_permission_ceilings ... ok
+test tests::oversized_file_metadata_is_rejected ... ok
+test tests::published_sha256_and_rfc8032_vectors ... ok
+test tests::strict_verification_rejects_weak_keys_r_and_noncanonical_s ... ok
+test tests::signed_application_pe_entry_allowed_but_deployment_pe_and_other_suffixes_rejected ... ok
+test trust::tests::authenticates_attenuated_transition_and_exact_generation ... ok
+test trust::tests::chain_commits_output_only_after_full_authentication ... ok
+test trust::tests::malformed_lengths_fail_before_parsing ... ok
+test trust::tests::rejects_permission_escalation_revocations_and_untrusted_signers ... ok
+test trust::tests::rejects_weak_replacement_mismatched_ids_reserved_and_tampered_signature ... ok
+test trust::tests::retired_keys_cannot_reenter_and_generation_cannot_wrap ... ok
+test tests::resigned_hostile_paths_aliases_reserved_bits_and_ranges_fail_closed ... ok
+test tests::every_truncated_prefix_and_bounded_mutations_are_rejected ... ok
+
+test result: ok. 42 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 17.14s
+
+     Running unittests src/bin/package.rs (target/debug/deps/next_package-5473cfb958703b17)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests next_package
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s

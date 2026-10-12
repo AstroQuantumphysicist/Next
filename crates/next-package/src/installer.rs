@@ -446,7 +446,7 @@ impl Drop for StageCleanup {
 mod tests {
     use super::*;
     use std::{
-        os::unix::fs::symlink,
+        os::unix::fs::{symlink, MetadataExt},
         sync::atomic::{AtomicU64, Ordering},
     };
     static SEQUENCE: AtomicU64 = AtomicU64::new(0);
@@ -688,6 +688,40 @@ mod tests {
             installer.update(&second, &anchors),
             Err(Error::NotInstalled)
         ));
+    }
+    #[test]
+    fn path_prefix_conflicts_are_rejected_before_staging_and_outputs_are_unlinked_regular_files() {
+        let root = Temporary::new();
+        let installer = root.installer();
+        let anchors = [crate::tests::anchor()];
+
+        let mut conflicting = crate::tests::fixture();
+        let first = crate::HEADER_BYTES;
+        let second = crate::HEADER_BYTES + crate::ENTRY_BYTES;
+        conflicting[first..first + 64].fill(0);
+        conflicting[first..first + b"bin/test.elf".len()].copy_from_slice(b"bin/test.elf");
+        conflicting[second..second + 64].fill(0);
+        conflicting[second..second + b"bin/test.elf/child".len()]
+            .copy_from_slice(b"bin/test.elf/child");
+        conflicting[36..40].copy_from_slice(&0_u32.to_le_bytes());
+        crate::tests::seal(&mut conflicting);
+
+        assert!(matches!(
+            installer.install(&conflicting, &anchors),
+            Err(Error::Verify(VerifyError::Duplicate))
+        ));
+        assert_eq!(fs::read_dir(&root.0).unwrap().count(), 0);
+
+        let valid = bundle("org.next.test", b"safe", 0);
+        installer.install(&valid, &anchors).unwrap();
+        let files = installer.deployment(&crate::sha256(&valid)).join("files");
+        let help = fs::symlink_metadata(files.join("assets/help.txt")).unwrap();
+        let executable = fs::symlink_metadata(files.join("bin/test.elf")).unwrap();
+        assert!(help.file_type().is_file());
+        assert!(executable.file_type().is_file());
+        assert_eq!(help.nlink(), 1);
+        assert_eq!(executable.nlink(), 1);
+        assert_ne!(help.ino(), executable.ino());
     }
     #[test]
     fn private_root_symlinks_and_corrupted_extracted_files_fail_closed() {

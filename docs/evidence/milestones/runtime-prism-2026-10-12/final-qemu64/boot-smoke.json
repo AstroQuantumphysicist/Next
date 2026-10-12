@@ -1,8 +1,12 @@
 {
   "passed": true,
   "scope": "QEMU q35/TCG, single CPU, legacy PS/2, software framebuffer, PIT/PIC timer interrupts, legacy virtio read/write/flush in dedicated trailing data region, FAT32 reads, native processes and IPC; no hardware certification",
-  "started_utc": "2026-10-12T06:46:46.643619+00:00",
+  "configured_vcpus": 1,
+  "ap_startup_enabled": false,
+  "scheduler_cpu_scope": "bootstrap CPU only",
+  "started_utc": "2026-10-12T07:29:47.787384+00:00",
   "checks": [
+    "QMP reports exactly 1 configured QEMU CPU object(s)",
     "Ed25519 deployment signature and kernel/init-image SHA256 verified against workspace development anchor",
     "separate validated ELF loaded from EFI boot-device filesystem",
     "firmware boot services exited",
@@ -119,12 +123,26 @@
     "bounded UART transmit FIFO preserves queued output across stalls and reports zero rejected/absent bytes",
     "screenshot taken after completed software back-buffer presentation",
     "nonblank framebuffer screenshot",
-    "actual QMP keyboard launched and captured completed guest frames for Home, six first-party panels, shortcut guide and notifications",
+    "actual QMP keyboard launched and captured completed guest frames for Home, six first-party panels, saved Accessibility settings, shortcut guide and notifications",
     "captured AC97 PCM contains matching stereo channels and a 1 kHz waveform"
   ],
-  "image_sha256": "4cc895e716afda58cf932d0dbebabec9f755e39fb566bbd000741c82301b32bb",
+  "image_sha256": "b79790f446b5bde892fbde78d63e3a177d558d2d1319556680d9f48f24efb8ce",
   "qemu_profile": "q35,accel=tcg; cpu=qemu64; 256M; smp=1; vga=std",
+  "qmp_cpus": [
+    {
+      "cpu_index": 0,
+      "thread_id": 451050,
+      "apic_id": null
+    }
+  ],
   "guarded_emergency_stack_verified": false,
+  "acpi_topology": {
+    "enabled_cpus": 1,
+    "io_apics": 1,
+    "overrides": 5,
+    "validated_tables": 7,
+    "bootstrap_apic_id": 0
+  },
   "ioapic_delivery": {
     "gsi": 2,
     "apic_interrupts": 3,
@@ -134,7 +152,7 @@
     "calibration_verified": true,
     "reason": null,
     "divider": 16,
-    "divided_hz": 62683134,
+    "divided_hz": 62697575,
     "pit_retained": true,
     "continuation": {
       "pit_timer_verified": true,
@@ -154,19 +172,19 @@
   "portal_probe_pid": 43,
   "clock_samples": [
     [
-      5561,
-      55606178269
+      5577,
+      55766167273
     ],
     [
-      5586,
-      55856161088
+      5602,
+      56016150092
     ]
   ],
   "uart_metrics": {
-    "accepted": 195293,
-    "transmitted": 195293,
+    "accepted": 195686,
+    "transmitted": 195686,
     "dropped": 0,
-    "stalled": 2569,
+    "stalled": 2566,
     "absent": 0,
     "pending": 0
   },
@@ -200,6 +218,11 @@
     },
     "settings": {
       "path": "build/final-qemu64/prism-gallery/settings.ppm",
+      "width": 1280,
+      "height": 800
+    },
+    "settings-accessibility": {
+      "path": "build/final-qemu64/prism-gallery/settings-accessibility.ppm",
       "width": 1280,
       "height": 800
     },
@@ -238,7 +261,7 @@
     "path": "build/final-qemu64/audio.wav",
     "sample_rate": 48000,
     "channels": 2,
-    "active_frames": 11132
+    "active_frames": 11142
   },
-  "finished_utc": "2026-10-12T06:47:52.625132+00:00"
+  "finished_utc": "2026-10-12T07:30:55.297932+00:00"
 }

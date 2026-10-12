@@ -1,4 +1,4 @@
-//! Bounded Appearance preferences; not exported or integrated yet.
+//! Bounded persisted Appearance and Settings accessibility preferences.
 //!
 //! The trusted kernel session adapter must own PATH and authorize changes before
 //! calling save. Caller-supplied identities are deliberately absent here. Codec
@@ -24,6 +24,14 @@ pub enum TextScale {
     Percent150 = 150,
     Percent200 = 200,
 }
+/// Keyboard focus outline strength. `Strong` adds a high-contrast, three-pixel
+/// outline to the focused control in Prism Settings.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u8)]
+pub enum FocusIndicator {
+    Standard = 0,
+    Strong = 1,
+}
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[repr(u8)]
 pub enum Accent {
@@ -37,6 +45,7 @@ pub struct Preferences {
     pub theme: Theme,
     pub text_scale: TextScale,
     pub accent: Accent,
+    pub focus_indicator: FocusIndicator,
 }
 impl Preferences {
     pub const fn defaults() -> Self {
@@ -44,6 +53,7 @@ impl Preferences {
             theme: Theme::Light,
             text_scale: TextScale::Percent100,
             accent: Accent::Blue,
+            focus_indicator: FocusIndicator::Standard,
         }
     }
 }
@@ -62,6 +72,7 @@ pub enum DecodeError {
     Theme,
     TextScale,
     Accent,
+    FocusIndicator,
 }
 fn crc32(bytes: &[u8]) -> u32 {
     let mut crc = !0u32;
@@ -82,6 +93,7 @@ impl Preferences {
         bytes[12] = self.theme as u8;
         bytes[13] = self.accent as u8;
         bytes[14..16].copy_from_slice(&(self.text_scale as u16).to_le_bytes());
+        bytes[16] = self.focus_indicator as u8;
         let crc = crc32(&bytes[..28]);
         bytes[28..].copy_from_slice(&crc.to_le_bytes());
         bytes
@@ -99,7 +111,7 @@ impl Preferences {
         if bytes[10..12] != (RECORD_BYTES as u16).to_le_bytes() {
             return Err(DecodeError::Length);
         }
-        if bytes[16..28].iter().any(|&byte| byte != 0) {
+        if bytes[17..28].iter().any(|&byte| byte != 0) {
             return Err(DecodeError::Reserved);
         }
         if crc32(&bytes[..28]) != u32::from_le_bytes(bytes[28..32].try_into().unwrap()) {
@@ -125,10 +137,16 @@ impl Preferences {
             200 => TextScale::Percent200,
             _ => return Err(DecodeError::TextScale),
         };
+        let focus_indicator = match bytes[16] {
+            0 => FocusIndicator::Standard,
+            1 => FocusIndicator::Strong,
+            _ => return Err(DecodeError::FocusIndicator),
+        };
         Ok(Self {
             theme,
             text_scale,
             accent,
+            focus_indicator,
         })
     }
 }
@@ -242,14 +260,18 @@ mod tests {
                 TextScale::Percent200,
             ] {
                 for accent in [Accent::Blue, Accent::Violet, Accent::Teal, Accent::Orange] {
-                    let prefs = Preferences {
-                        theme,
-                        text_scale,
-                        accent,
-                    };
-                    let encoded = prefs.encode();
-                    assert_eq!(Preferences::decode(&encoded), Ok(prefs));
-                    assert_eq!(encoded[16..28], [0; 12]);
+                    for focus_indicator in [FocusIndicator::Standard, FocusIndicator::Strong] {
+                        let prefs = Preferences {
+                            theme,
+                            text_scale,
+                            accent,
+                            focus_indicator,
+                        };
+                        let encoded = prefs.encode();
+                        assert_eq!(Preferences::decode(&encoded), Ok(prefs));
+                        assert_eq!(encoded[16], focus_indicator as u8);
+                        assert_eq!(encoded[17..28], [0; 11]);
+                    }
                 }
             }
         }
@@ -274,13 +296,34 @@ mod tests {
         assert_eq!(Preferences::decode(&longer), Err(DecodeError::Length));
     }
     #[test]
+    fn strong_focus_indicator_survives_an_atomic_save_and_reload() {
+        let mut disk = Disk {
+            bytes: None,
+            fail: false,
+            writes: 0,
+        };
+        let mut active = Preferences::default();
+        let proposed = Preferences {
+            focus_indicator: FocusIndicator::Strong,
+            ..Preferences::default()
+        };
+        save(&mut disk, &mut active, proposed).unwrap();
+        assert_eq!(active.focus_indicator, FocusIndicator::Strong);
+        assert_eq!(disk.writes, 1);
+        assert_eq!(
+            load(&mut disk).unwrap().preferences.focus_indicator,
+            FocusIndicator::Strong
+        );
+    }
+    #[test]
     fn valid_checksum_cannot_authorize_unknown_values_or_reserved_extensions() {
         for (offset, value, expected) in [
             (8, 2, DecodeError::Version),
             (12, 3, DecodeError::Theme),
             (13, 4, DecodeError::Accent),
             (14, 99, DecodeError::TextScale),
-            (16, 1, DecodeError::Reserved),
+            (16, 2, DecodeError::FocusIndicator),
+            (17, 1, DecodeError::Reserved),
         ] {
             let mut bytes = Preferences::default().encode();
             bytes[offset] = value;
@@ -307,6 +350,7 @@ mod tests {
             theme: Theme::Dark,
             text_scale: TextScale::Percent150,
             accent: Accent::Teal,
+            focus_indicator: FocusIndicator::Standard,
         };
         disk.bytes = Some(active.encode().to_vec());
         disk.fail = true;

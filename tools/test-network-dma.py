@@ -62,6 +62,7 @@ def main():
 
     production = [
         ROOT / "crates/helix-kernel/src/network.rs",
+        ROOT / "crates/helix-kernel/src/network_ipv6.rs",
         ROOT / "crates/helix-kernel/src/network_runtime.rs",
         ROOT / "crates/helix-kernel/src/network_dhcp.rs",
         ROOT / "crates/helix-kernel/src/network_tcp.rs",
@@ -77,6 +78,7 @@ def main():
             "Queue::poll exact descriptor validation and used-ring ownership return",
             "Device::submit_transmit rejection before modifying device-owned static TX storage",
             "network runtime timeout retaining outstanding TX ownership",
+            "network_ipv6::validate_ethernet_frame IPv6 and Neighbor Discovery ingress validation",
         ],
         "qemu_guest_verification": "not performed by this host harness",
         "source_sha256": {

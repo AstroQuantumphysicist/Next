@@ -120,6 +120,7 @@ mod dhcp_runtime_acceptance {
             tx: queue(&tx_dma),
             lease_at: bound_at,
             dhcp_client: Some(client),
+            ipv6_router_advertisement: crate::ipv6::RouterAdvertisementState::new(),
         };
         let runtime = Runtime {
             device: Some(device),

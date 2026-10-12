@@ -21,3 +21,20 @@ A BEGIN record contains actual frame, semantic generation, context, token, node 
 An actual guest gate must bind the prepared image and retained compiled source manifest; exercise real keyboard/pointer actions; retrieve complete post-present records; compare names/roles/focus and selected rows with the visible active context; and check exposed geometry against screenshot dimensions and known trusted controls. It must verify trusted modal precedence and that underlying windows disappear from the active semantic context, with cancellation returning to the actual previous context. Redraws without semantic changes must preserve generation. Focus/context changes must advance it and match completed frames. Any unavailable snapshot or missing required control fails the applicable gate.
 
 This foundation leaves substantial spec sections 12.3 and 23.2 unfinished: screen reader, speech, braille, magnifier, alternative input, accessible login/installer/recovery, external accessibility API, native/foreign application trees, large text/layout adaptation, caret tracking, reduced motion/transparency, sticky/filter/toggle keys, configurable repeat and pointer settings. Current ASCII raster typography does not establish shaping, bidi, localization or Unicode composition. High-contrast rendering and keyboard-focused development tests are scoped evidence rather than certification of accessibility or Next 1.0 readiness.
+
+## Settings focus outline
+
+Settings exposes one actionable accessibility preference: **Standard** or
+**Strong** keyboard focus outline. The strong option draws a three-pixel
+high-contrast outline around the keyboard-focused control in Settings. It uses
+the existing atomic appearance-preference save request; the active outline
+changes only after the save reports success, and Revert restores the saved
+choice. The preference shares the existing bounded appearance record and is
+covered by its checksum. This control does not change focus rendering in other
+applications or surfaces.
+
+Screen-reader transport, speech, captions, magnification, reduced motion,
+keyboard-repeat options, pointer enhancements, scalable typography and the
+other controls listed in Settings remain unavailable. The section reports
+those limits explicitly; its single focus-outline preference is not a broader
+accessibility claim.

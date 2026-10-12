@@ -8,7 +8,7 @@ use std::{
     boxed::Box,
     sync::{
         atomic::{AtomicUsize, Ordering},
-        mpsc, Arc, Barrier, Mutex,
+        mpsc, Arc, Condvar, Mutex,
     },
     thread,
     time::{Duration, Instant},
@@ -69,6 +69,76 @@ struct Active<'a>(&'a AtomicUsize);
 impl Drop for Active<'_> {
     fn drop(&mut self) {
         self.0.fetch_sub(1, Ordering::SeqCst);
+    }
+}
+
+struct TimedRendezvous {
+    state: Mutex<RendezvousState>,
+    changed: Condvar,
+    timeout: Duration,
+}
+
+struct RendezvousState {
+    generation: usize,
+    waiting: usize,
+    broken: bool,
+}
+
+impl TimedRendezvous {
+    fn new() -> Self {
+        Self::with_timeout(LOCK_DEADLINE)
+    }
+
+    fn with_timeout(timeout: Duration) -> Self {
+        Self {
+            state: Mutex::new(RendezvousState {
+                generation: 0,
+                waiting: 0,
+                broken: false,
+            }),
+            changed: Condvar::new(),
+            timeout,
+        }
+    }
+
+    /// A two-worker phase gate with a deadline. Unlike std::sync::Barrier, a
+    /// failed worker cannot strand its peer forever in a later race phase.
+    fn wait(&self) -> bool {
+        let deadline = Instant::now() + self.timeout;
+        let mut state = self.state.lock().unwrap();
+        if state.broken {
+            return false;
+        }
+        let generation = state.generation;
+        state.waiting += 1;
+        if state.waiting == 2 {
+            state.waiting = 0;
+            state.generation = state.generation.wrapping_add(1);
+            self.changed.notify_all();
+            return true;
+        }
+
+        loop {
+            if state.broken {
+                return false;
+            }
+            if state.generation != generation {
+                return true;
+            }
+            let now = Instant::now();
+            if now >= deadline {
+                state.broken = true;
+                self.changed.notify_all();
+                return false;
+            }
+            let (next, timeout) = self.changed.wait_timeout(state, deadline - now).unwrap();
+            state = next;
+            if timeout.timed_out() && state.generation == generation {
+                state.broken = true;
+                self.changed.notify_all();
+                return false;
+            }
+        }
     }
 }
 
@@ -138,11 +208,28 @@ fn try_gate_reports_reentrancy_immediately_and_releases_after_scope() {
 }
 
 #[test]
+fn race_rendezvous_fails_boundedly_when_a_worker_misses_a_phase() {
+    let rendezvous = Arc::new(TimedRendezvous::with_timeout(Duration::from_millis(20)));
+    let peer = Arc::clone(&rendezvous);
+    let (started, start) = mpsc::channel();
+    let (finished, finish) = mpsc::channel();
+    let worker = thread::spawn(move || {
+        started.send(()).unwrap();
+        finished.send(peer.wait()).unwrap();
+    });
+
+    start.recv_timeout(Duration::from_secs(1)).unwrap();
+    assert!(!finish.recv_timeout(Duration::from_secs(1)).unwrap());
+    worker.join().unwrap();
+    assert!(!rendezvous.wait(), "a timed-out phase must stay broken");
+}
+
+#[test]
 fn concurrent_directory_open_rename_and_unlink_are_serial_and_make_progress() {
     let shared = shared_store();
     let initial =
         shared.with(|store| directories::snapshot(store, OWNER, "/native/source").unwrap());
-    let rendezvous = Arc::new(Barrier::new(2));
+    let rendezvous = Arc::new(TimedRendezvous::new());
     let (send, receive) = mpsc::channel();
     let succeeded = Arc::new(AtomicUsize::new(0));
     let conflicted = Arc::new(AtomicUsize::new(0));
@@ -161,7 +248,7 @@ fn concurrent_directory_open_rename_and_unlink_are_serial_and_make_progress() {
                 // identity/generation pair before either mutation is allowed.
                 let opened = shared
                     .with(|store| directories::snapshot(store, OWNER, "/native/source").unwrap());
-                rendezvous.wait();
+                assert!(rendezvous.wait(), "directory race phase timed out");
 
                 let destination = if worker_id == 0 {
                     "/native/left"
@@ -179,7 +266,7 @@ fn concurrent_directory_open_rename_and_unlink_are_serial_and_make_progress() {
                     }
                     Err(error) => panic!("unexpected concurrent rename result: {error:?}"),
                 }
-                rendezvous.wait();
+                assert!(rendezvous.wait(), "directory race phase timed out");
 
                 if worker_id == 0 {
                     shared.with(|store| {
@@ -195,7 +282,7 @@ fn concurrent_directory_open_rename_and_unlink_are_serial_and_make_progress() {
                         directories::mkdir(store, OWNER, generation, "/native/source").unwrap();
                     });
                 }
-                rendezvous.wait();
+                assert!(rendezvous.wait(), "directory race phase timed out");
 
                 // This is the unlink half of each race. Its opened identity is
                 // stale after rename, removal, and same-path recreation, so it
@@ -205,7 +292,7 @@ fn concurrent_directory_open_rename_and_unlink_are_serial_and_make_progress() {
                     Err(DirectoryError::Conflict)
                 );
                 completed += 1;
-                rendezvous.wait();
+                assert!(rendezvous.wait(), "directory race phase timed out");
             }
             send.send((worker_id, completed)).unwrap();
         }));

@@ -5,6 +5,12 @@
 #![forbid(unsafe_code)]
 #[cfg(feature = "host-tools")]
 extern crate std;
+/// Bounded A/B deployment metadata and boot-selection policy.
+///
+/// The module is storage-agnostic. Firmware must provide durable storage whose
+/// rollback properties match its threat model; the EFI loader currently has no
+/// such backend.
+pub mod ab;
 pub mod identity;
 #[cfg(feature = "host-tools")]
 pub mod installer;
@@ -233,6 +239,18 @@ impl<'a> VerifiedPackage<'a> {
             // Canonical lexical ordering also rejects duplicate/case aliases.
             if i != 0 && path <= previous {
                 return Err(Error::Duplicate);
+            }
+            // A package file cannot also be the directory containing another
+            // package file. Reject this while authenticating metadata rather
+            // than allowing extraction to fail after it has begun staging.
+            for prior_index in 0..i {
+                let prior_at = HEADER_BYTES + prior_index * ENTRY_BYTES;
+                let prior_path = string(&bytes[prior_at..prior_at + 64])?;
+                if path.as_bytes().starts_with(prior_path.as_bytes())
+                    && path.as_bytes().get(prior_path.len()) == Some(&b'/')
+                {
+                    return Err(Error::Duplicate);
+                }
             }
             previous = path;
             let offset = usize::try_from(u64_at(bytes, at + 64)).map_err(|_| Error::Size)?;
@@ -524,6 +542,7 @@ mod tests {
             "bin/../escape",
             "bin//escape",
             "bin/./x",
+            "bin/Test.elf",
             "bin/CON",
             "bin/con.txt",
             "bin/lpt1",
@@ -566,6 +585,45 @@ mod tests {
         assert_eq!(
             VerifiedPackage::verify(&bad, &[anchor()]).unwrap_err(),
             Error::Permissions
+        );
+    }
+    #[test]
+    fn file_directory_alias_is_rejected_before_extraction() {
+        let mut bad = fixture();
+        let first = HEADER_BYTES;
+        let second = HEADER_BYTES + ENTRY_BYTES;
+        bad[first..first + 64].fill(0);
+        bad[first..first + b"bin/test.elf".len()].copy_from_slice(b"bin/test.elf");
+        bad[second..second + 64].fill(0);
+        bad[second..second + b"bin/test.elf/child".len()].copy_from_slice(b"bin/test.elf/child");
+        bad[36..40].copy_from_slice(&0_u32.to_le_bytes());
+        seal(&mut bad);
+
+        assert_eq!(
+            VerifiedPackage::verify(&bad, &[anchor()]).unwrap_err(),
+            Error::Duplicate
+        );
+    }
+    #[test]
+    fn excessive_entry_count_is_rejected_before_table_access() {
+        let mut bad = fixture();
+        bad[32..36].copy_from_slice(&((MAX_FILES as u32) + 1).to_le_bytes());
+
+        assert_eq!(
+            VerifiedPackage::verify(&bad, &[anchor()]).unwrap_err(),
+            Error::Size
+        );
+    }
+    #[test]
+    fn oversized_file_metadata_is_rejected() {
+        let mut bad = fixture();
+        let at = HEADER_BYTES;
+        bad[at + 72..at + 80].copy_from_slice(&((MAX_FILE_BYTES as u64) + 1).to_le_bytes());
+        seal(&mut bad);
+
+        assert_eq!(
+            VerifiedPackage::verify(&bad, &[anchor()]).unwrap_err(),
+            Error::Size
         );
     }
     #[test]

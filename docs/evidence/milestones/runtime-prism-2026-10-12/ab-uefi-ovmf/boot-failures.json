@@ -1,0 +1,138 @@
+{
+  "passed": true,
+  "source_image_sha256": "b79790f446b5bde892fbde78d63e3a177d558d2d1319556680d9f48f24efb8ce",
+  "source_image_unchanged": true,
+  "scope": "QEMU/OVMF rejection of mutated unsigned development ELF media; no signature validation or real hardware certification",
+  "cases": [
+    {
+      "case": "missing-kernel",
+      "passed": true,
+      "checks": [
+        "QMP reports exactly 1 configured QEMU CPU object(s)",
+        "stable loader failure record: NEXT BOOT FAILURE: code=0x4e580201 stage=kernel action=HALT",
+        "expected loader rejection: open \\EFI\\NEXT\\HELIX.ELF:",
+        "no kernel entry or reboot during bounded halt observation"
+      ],
+      "artifact": "build/failures/missing-kernel/serial.log",
+      "stable_failure_record_present": true,
+      "error": null
+    },
+    {
+      "case": "truncated-header",
+      "passed": true,
+      "checks": [
+        "QMP reports exactly 1 configured QEMU CPU object(s)",
+        "stable loader failure record: NEXT BOOT FAILURE: code=0x4e580201 stage=kernel action=HALT",
+        "expected loader rejection: Helix ELF rejected: Truncated",
+        "no kernel entry or reboot during bounded halt observation"
+      ],
+      "artifact": "build/failures/truncated-header/serial.log",
+      "stable_failure_record_present": true,
+      "error": null
+    },
+    {
+      "case": "wrong-architecture",
+      "passed": true,
+      "checks": [
+        "QMP reports exactly 1 configured QEMU CPU object(s)",
+        "stable loader failure record: NEXT BOOT FAILURE: code=0x4e580201 stage=kernel action=HALT",
+        "expected loader rejection: Helix ELF rejected: Architecture",
+        "no kernel entry or reboot during bounded halt observation"
+      ],
+      "artifact": "build/failures/wrong-architecture/serial.log",
+      "stable_failure_record_present": true,
+      "error": null
+    },
+    {
+      "case": "writable-executable",
+      "passed": true,
+      "checks": [
+        "QMP reports exactly 1 configured QEMU CPU object(s)",
+        "stable loader failure record: NEXT BOOT FAILURE: code=0x4e580201 stage=kernel action=HALT",
+        "expected loader rejection: Helix ELF rejected: WritableExecutable",
+        "no kernel entry or reboot during bounded halt observation"
+      ],
+      "artifact": "build/failures/writable-executable/serial.log",
+      "stable_failure_record_present": true,
+      "error": null
+    },
+    {
+      "case": "overlapping-segments",
+      "passed": true,
+      "checks": [
+        "QMP reports exactly 1 configured QEMU CPU object(s)",
+        "stable loader failure record: NEXT BOOT FAILURE: code=0x4e580201 stage=kernel action=HALT",
+        "expected loader rejection: Helix ELF rejected: Overlap",
+        "no kernel entry or reboot during bounded halt observation"
+      ],
+      "artifact": "build/failures/overlapping-segments/serial.log",
+      "stable_failure_record_present": true,
+      "error": null
+    },
+    {
+      "case": "file-offset-overflow",
+      "passed": true,
+      "checks": [
+        "QMP reports exactly 1 configured QEMU CPU object(s)",
+        "stable loader failure record: NEXT BOOT FAILURE: code=0x4e580201 stage=kernel action=HALT",
+        "expected loader rejection: Helix ELF rejected: Overflow",
+        "no kernel entry or reboot during bounded halt observation"
+      ],
+      "artifact": "build/failures/file-offset-overflow/serial.log",
+      "stable_failure_record_present": true,
+      "error": null
+    },
+    {
+      "case": "unsupported-dynamic-kernel",
+      "passed": true,
+      "checks": [
+        "QMP reports exactly 1 configured QEMU CPU object(s)",
+        "stable loader failure record: NEXT BOOT FAILURE: code=0x4e580201 stage=kernel action=HALT",
+        "expected loader rejection: Helix ELF rejected: Type",
+        "no kernel entry or reboot during bounded halt observation"
+      ],
+      "artifact": "build/failures/unsupported-dynamic-kernel/serial.log",
+      "stable_failure_record_present": true,
+      "error": null
+    },
+    {
+      "case": "invalid-entry",
+      "passed": true,
+      "checks": [
+        "QMP reports exactly 1 configured QEMU CPU object(s)",
+        "stable loader failure record: NEXT BOOT FAILURE: code=0x4e580201 stage=kernel action=HALT",
+        "expected loader rejection: Helix ELF rejected: Entry",
+        "no kernel entry or reboot during bounded halt observation"
+      ],
+      "artifact": "build/failures/invalid-entry/serial.log",
+      "stable_failure_record_present": true,
+      "error": null
+    },
+    {
+      "case": "wrong-physical-address",
+      "passed": true,
+      "checks": [
+        "QMP reports exactly 1 configured QEMU CPU object(s)",
+        "stable loader failure record: NEXT BOOT FAILURE: code=0x4e580201 stage=kernel action=HALT",
+        "expected loader rejection: Helix ELF rejected: Address",
+        "no kernel entry or reboot during bounded halt observation"
+      ],
+      "artifact": "build/failures/wrong-physical-address/serial.log",
+      "stable_failure_record_present": true,
+      "error": null
+    },
+    {
+      "case": "oversized-kernel",
+      "passed": true,
+      "checks": [
+        "QMP reports exactly 1 configured QEMU CPU object(s)",
+        "stable loader failure record: NEXT BOOT FAILURE: code=0x4e580201 stage=kernel action=HALT",
+        "expected loader rejection: Helix ELF exceeds bounded 8 MiB",
+        "no kernel entry or reboot during bounded halt observation"
+      ],
+      "artifact": "build/failures/oversized-kernel/serial.log",
+      "stable_failure_record_present": true,
+      "error": null
+    }
+  ]
+}

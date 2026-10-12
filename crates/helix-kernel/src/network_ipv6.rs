@@ -1,0 +1,959 @@
+//! Bounded IPv6 ingress validation for the legacy virtio Ethernet path.
+//!
+//! This module validates the IPv6 base header and ICMPv6 checksums. Neighbor
+//! Discovery and Router Advertisement receive bounded RFC field/option checks;
+//! one-router state tracks at most four SLAAC /64 prefix lifetimes. It does not
+//! assign addresses, run DAD, learn neighbors, or install routes.
+
+const ETHERNET_HEADER: usize = 14;
+const IPV6_HEADER: usize = 40;
+const ICMPV6_HEADER: usize = 4;
+const ETHERTYPE_IPV6: u16 = 0x86dd;
+const NEXT_HEADER_ICMPV6: u8 = 58;
+const ICMPV6_NEIGHBOR_SOLICITATION: u8 = 135;
+const ICMPV6_NEIGHBOR_ADVERTISEMENT: u8 = 136;
+const ICMPV6_ROUTER_ADVERTISEMENT: u8 = 134;
+const MAX_SLAAC_PREFIXES: usize = 4;
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ValidationError {
+    Truncated,
+    InvalidSourceMac,
+    InvalidVersion,
+    InvalidPayloadLength,
+    UnsupportedNextHeader,
+    InvalidIcmpv6,
+    InvalidNeighborDiscovery,
+    UnsupportedRouterAdvertisement,
+    UnsupportedPrefix,
+    RouterStateFull,
+    InvalidRouterState,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(super) struct SlaacPrefix {
+    pub(super) prefix: [u8; 16],
+    pub(super) valid_lifetime_seconds: u32,
+    pub(super) preferred_lifetime_seconds: u32,
+}
+
+/// One bounded and validated Router Advertisement. Prefix entries are SLAAC
+/// candidates only; accepting one does not assign an address or enable a route.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(super) struct RouterAdvertisement {
+    pub(super) router: [u8; 16],
+    pub(super) router_lifetime_seconds: u16,
+    pub(super) prefixes: [Option<SlaacPrefix>; MAX_SLAAC_PREFIXES],
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct PrefixLifetime {
+    prefix: [u8; 16],
+    valid_until_seconds: u64,
+    preferred_until_seconds: u64,
+}
+
+/// Bounded observation state for one most-recent router and at most four /64
+/// SLAAC prefixes. It tracks candidate lifetimes, but creates no interface ID,
+/// performs no DAD, and does not install a default route.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(super) struct RouterAdvertisementState {
+    router: Option<[u8; 16]>,
+    router_valid_until_seconds: u64,
+    prefixes: [Option<PrefixLifetime>; MAX_SLAAC_PREFIXES],
+}
+
+impl RouterAdvertisementState {
+    pub(super) const fn new() -> Self {
+        Self {
+            router: None,
+            router_valid_until_seconds: 0,
+            prefixes: [None; MAX_SLAAC_PREFIXES],
+        }
+    }
+
+    /// Atomically apply one validated advertisement at a monotonic time in
+    /// seconds. A new router replaces the previous bounded observation. The
+    /// valid-lifetime update follows SLAAC's RFC 4862 two-hour rule for an
+    /// existing candidate prefix; no address is configured from that prefix.
+    pub(super) fn apply(
+        &mut self,
+        advertisement: RouterAdvertisement,
+        now_seconds: u64,
+    ) -> Result<(), ValidationError> {
+        let mut next = *self;
+        if next.router != Some(advertisement.router) {
+            next.router = Some(advertisement.router);
+            next.router_valid_until_seconds = 0;
+            next.prefixes = [None; MAX_SLAAC_PREFIXES];
+        }
+        next.prefixes = next
+            .prefixes
+            .map(|entry| entry.filter(|prefix| prefix.valid_until_seconds > now_seconds));
+        next.router_valid_until_seconds =
+            now_seconds.saturating_add(advertisement.router_lifetime_seconds as u64);
+        for candidate in advertisement.prefixes.into_iter().flatten() {
+            let existing = next
+                .prefixes
+                .iter()
+                .position(|entry| entry.is_some_and(|prefix| prefix.prefix == candidate.prefix));
+            if existing.is_none() && candidate.valid_lifetime_seconds == 0 {
+                continue;
+            }
+            let slot = existing.or_else(|| next.prefixes.iter().position(Option::is_none));
+            let Some(slot) = slot else {
+                return Err(ValidationError::RouterStateFull);
+            };
+            let advertised_valid = candidate.valid_lifetime_seconds as u64;
+            let valid_until_seconds = if let Some(current) = next.prefixes[slot] {
+                let remaining = current.valid_until_seconds.saturating_sub(now_seconds);
+                if advertised_valid > 7200 || advertised_valid > remaining {
+                    lifetime_deadline(now_seconds, candidate.valid_lifetime_seconds)
+                } else if remaining > 7200 {
+                    now_seconds.saturating_add(7200)
+                } else {
+                    current.valid_until_seconds
+                }
+            } else {
+                lifetime_deadline(now_seconds, candidate.valid_lifetime_seconds)
+            };
+            next.prefixes[slot] = Some(PrefixLifetime {
+                prefix: candidate.prefix,
+                valid_until_seconds,
+                preferred_until_seconds: lifetime_deadline(
+                    now_seconds,
+                    candidate.preferred_lifetime_seconds,
+                ),
+            });
+        }
+        if !next.invariants_hold() {
+            return Err(ValidationError::InvalidRouterState);
+        }
+        *self = next;
+        Ok(())
+    }
+
+    fn invariants_hold(&self) -> bool {
+        if self.router.is_none() && self.router_valid_until_seconds != 0 {
+            return false;
+        }
+        for (index, entry) in self.prefixes.iter().enumerate() {
+            let Some(prefix) = entry else {
+                continue;
+            };
+            if prefix.preferred_until_seconds > prefix.valid_until_seconds
+                || self.prefixes[index + 1..]
+                    .iter()
+                    .flatten()
+                    .any(|other| other.prefix == prefix.prefix)
+            {
+                return false;
+            }
+        }
+        true
+    }
+
+    #[cfg(test)]
+    pub(super) fn default_router(&self, now_seconds: u64) -> Option<[u8; 16]> {
+        self.router
+            .filter(|_| self.router_valid_until_seconds > now_seconds)
+    }
+
+    #[cfg(test)]
+    pub(super) fn prefix_lifetimes(
+        &self,
+        prefix: [u8; 16],
+        now_seconds: u64,
+    ) -> Option<(bool, bool)> {
+        self.prefixes
+            .iter()
+            .flatten()
+            .find(|entry| entry.prefix == prefix)
+            .map(|entry| {
+                (
+                    entry.valid_until_seconds > now_seconds,
+                    entry.preferred_until_seconds > now_seconds,
+                )
+            })
+    }
+}
+
+fn lifetime_deadline(now_seconds: u64, lifetime_seconds: u32) -> u64 {
+    if lifetime_seconds == u32::MAX {
+        u64::MAX
+    } else {
+        now_seconds.saturating_add(lifetime_seconds as u64)
+    }
+}
+
+/// Validate a received Ethernet frame if it carries IPv6.
+///
+/// `Ok(false)` is a non-IPv6 Ethernet frame. `Ok(true)` is a structurally
+/// validated IPv6 frame. Errors are fail-closed and should cause the caller to
+/// drop the frame. Extension-header traversal, transport protocols, and jumbo
+/// payloads are outside this bounded slice and are dropped.
+#[cfg(test)]
+pub fn validate_ethernet_frame(frame: &[u8]) -> Result<bool, ValidationError> {
+    let is_ipv6 = frame.len() >= ETHERNET_HEADER && u16_at(frame, 12) == ETHERTYPE_IPV6;
+    validate_received_frame(frame)?;
+    Ok(is_ipv6)
+}
+
+/// Validate one production receive frame and return a bounded RA model, if
+/// present. `None` covers non-IPv6 frames and supported non-RA ICMPv6 traffic.
+pub(super) fn validate_received_frame(
+    frame: &[u8],
+) -> Result<Option<RouterAdvertisement>, ValidationError> {
+    if frame.len() < ETHERNET_HEADER {
+        return Err(ValidationError::Truncated);
+    }
+    if u16_at(frame, 12) != ETHERTYPE_IPV6 {
+        return Ok(None);
+    }
+    let ethernet_source: [u8; 6] = frame[6..12].try_into().unwrap();
+    if !unicast_mac(ethernet_source) {
+        return Err(ValidationError::InvalidSourceMac);
+    }
+    if frame.len() < ETHERNET_HEADER + IPV6_HEADER {
+        return Err(ValidationError::Truncated);
+    }
+    let packet = &frame[ETHERNET_HEADER..];
+    if packet[0] >> 4 != 6 {
+        return Err(ValidationError::InvalidVersion);
+    }
+    let payload_len = u16_at(packet, 4) as usize;
+    let available = packet.len() - IPV6_HEADER;
+    if payload_len > available {
+        return Err(ValidationError::InvalidPayloadLength);
+    }
+    let source: [u8; 16] = packet[8..24].try_into().unwrap();
+    let destination: [u8; 16] = packet[24..40].try_into().unwrap();
+    let next_header = packet[6];
+    let hop_limit = packet[7];
+    let payload = &packet[IPV6_HEADER..IPV6_HEADER + payload_len];
+
+    // This implementation deliberately does not walk extension headers or
+    // expose opaque TCP/UDP payloads. Unsupported chains cannot be mistaken
+    // for a validated Neighbor Discovery message.
+    if next_header != NEXT_HEADER_ICMPV6 {
+        return Err(ValidationError::UnsupportedNextHeader);
+    }
+    let ethernet_destination: [u8; 6] = frame[..6].try_into().unwrap();
+    if destination[0] == 0xff && ethernet_destination != multicast_mac(destination) {
+        return Err(ValidationError::InvalidNeighborDiscovery);
+    }
+    validate_icmpv6(source, destination, hop_limit, ethernet_source, payload)
+}
+
+fn validate_icmpv6(
+    source: [u8; 16],
+    destination: [u8; 16],
+    hop_limit: u8,
+    ethernet_source: [u8; 6],
+    payload: &[u8],
+) -> Result<Option<RouterAdvertisement>, ValidationError> {
+    if payload.len() < ICMPV6_HEADER || !icmpv6_checksum_valid(source, destination, payload) {
+        return Err(ValidationError::InvalidIcmpv6);
+    }
+    match payload[0] {
+        ICMPV6_ROUTER_ADVERTISEMENT => {
+            parse_router_advertisement(source, destination, hop_limit, ethernet_source, payload)
+                .map(Some)
+        }
+        ICMPV6_NEIGHBOR_SOLICITATION | ICMPV6_NEIGHBOR_ADVERTISEMENT => {
+            validate_neighbor_discovery(source, destination, hop_limit, ethernet_source, payload)?;
+            Ok(None)
+        }
+        _ => Ok(None),
+    }
+}
+
+fn parse_router_advertisement(
+    source: [u8; 16],
+    destination: [u8; 16],
+    hop_limit: u8,
+    ethernet_source: [u8; 6],
+    payload: &[u8],
+) -> Result<RouterAdvertisement, ValidationError> {
+    if hop_limit != 255
+        || payload.len() < 16
+        || payload[1] != 0
+        || !link_local(source)
+        || unspecified(destination)
+        || (destination[0] == 0xff && destination != all_nodes_multicast())
+    {
+        return Err(ValidationError::UnsupportedRouterAdvertisement);
+    }
+    // M and O are tolerated but ignored; no DHCPv6 client acts on them.
+    // Home-agent, preference, proxy, and reserved flag semantics are outside
+    // this parser and are rejected rather than silently acted upon.
+    if payload[5] & !0xc0 != 0 {
+        return Err(ValidationError::UnsupportedRouterAdvertisement);
+    }
+
+    let mut advertisement = RouterAdvertisement {
+        router: source,
+        router_lifetime_seconds: u16::from_be_bytes([payload[6], payload[7]]),
+        prefixes: [None; MAX_SLAAC_PREFIXES],
+    };
+    let mut prefix_count = 0;
+    let mut saw_source_link_layer = false;
+    let mut offset = 16;
+    while offset < payload.len() {
+        let header = payload
+            .get(offset..offset + 2)
+            .ok_or(ValidationError::UnsupportedRouterAdvertisement)?;
+        let option_type = header[0];
+        let option_units = header[1] as usize;
+        let option_len = option_units
+            .checked_mul(8)
+            .ok_or(ValidationError::UnsupportedRouterAdvertisement)?;
+        if option_len == 0
+            || offset
+                .checked_add(option_len)
+                .is_none_or(|end| end > payload.len())
+        {
+            return Err(ValidationError::UnsupportedRouterAdvertisement);
+        }
+        let option = &payload[offset..offset + option_len];
+        match option_type {
+            1 => {
+                if option_units != 1 || saw_source_link_layer {
+                    return Err(ValidationError::UnsupportedRouterAdvertisement);
+                }
+                let address: [u8; 6] = option[2..8].try_into().unwrap();
+                if !unicast_mac(address) || address != ethernet_source {
+                    return Err(ValidationError::UnsupportedRouterAdvertisement);
+                }
+                saw_source_link_layer = true;
+            }
+            3 => {
+                if option_units != 4 {
+                    return Err(ValidationError::UnsupportedPrefix);
+                }
+                let prefix_len = option[2];
+                let flags = option[3];
+                if prefix_len != 64 || flags & 0x40 == 0 {
+                    return Err(ValidationError::UnsupportedPrefix);
+                }
+                if flags & !0xc0 != 0 || option[12..16] != [0; 4] {
+                    return Err(ValidationError::UnsupportedPrefix);
+                }
+                let valid_lifetime_seconds = u32::from_be_bytes(option[4..8].try_into().unwrap());
+                let preferred_lifetime_seconds =
+                    u32::from_be_bytes(option[8..12].try_into().unwrap());
+                let prefix: [u8; 16] = option[16..32].try_into().unwrap();
+                if preferred_lifetime_seconds > valid_lifetime_seconds
+                    || !supported_slaac_prefix(prefix)
+                {
+                    return Err(ValidationError::UnsupportedPrefix);
+                }
+                if advertisement.prefixes[..prefix_count]
+                    .iter()
+                    .flatten()
+                    .any(|entry| entry.prefix == prefix)
+                {
+                    return Err(ValidationError::UnsupportedPrefix);
+                }
+                if prefix_count == MAX_SLAAC_PREFIXES {
+                    return Err(ValidationError::UnsupportedPrefix);
+                }
+                advertisement.prefixes[prefix_count] = Some(SlaacPrefix {
+                    prefix,
+                    valid_lifetime_seconds,
+                    preferred_lifetime_seconds,
+                });
+                prefix_count += 1;
+            }
+            // Unknown, nonzero-length options are safely skipped according to
+            // the ND option framing rule; known SLAAC inputs remain strict.
+            _ => {}
+        }
+        offset += option_len;
+    }
+    Ok(advertisement)
+}
+
+fn link_local(address: [u8; 16]) -> bool {
+    address[0] == 0xfe && address[1] & 0xc0 == 0x80
+}
+
+fn supported_slaac_prefix(prefix: [u8; 16]) -> bool {
+    prefix[0] != 0xff && !unspecified(prefix) && !link_local(prefix) && prefix[8..] == [0; 8]
+}
+
+fn validate_neighbor_discovery(
+    source: [u8; 16],
+    destination: [u8; 16],
+    hop_limit: u8,
+    ethernet_source: [u8; 6],
+    payload: &[u8],
+) -> Result<(), ValidationError> {
+    if hop_limit != 255 || payload.len() < 24 || payload[1] != 0 || unspecified(destination) {
+        return Err(ValidationError::InvalidNeighborDiscovery);
+    }
+    let kind = payload[0];
+    let target: [u8; 16] = payload[8..24].try_into().unwrap();
+    if target[0] == 0xff || target == [0; 16] {
+        return Err(ValidationError::InvalidNeighborDiscovery);
+    }
+    if kind == ICMPV6_NEIGHBOR_SOLICITATION && payload[4..8] != [0; 4] {
+        return Err(ValidationError::InvalidNeighborDiscovery);
+    }
+    if kind == ICMPV6_NEIGHBOR_ADVERTISEMENT {
+        let flags = u32::from_be_bytes(payload[4..8].try_into().unwrap());
+        let solicited = flags & 0x4000_0000 != 0;
+        if flags & 0x1fff_ffff != 0
+            || unspecified(source)
+            || multicast(source)
+            || (solicited && destination[0] == 0xff)
+        {
+            return Err(ValidationError::InvalidNeighborDiscovery);
+        }
+        if destination[0] == 0xff && destination != all_nodes_multicast() {
+            return Err(ValidationError::InvalidNeighborDiscovery);
+        }
+    } else if multicast(source) {
+        return Err(ValidationError::InvalidNeighborDiscovery);
+    }
+
+    let mut saw_link_layer_address = false;
+    let mut offset = 24;
+    while offset < payload.len() {
+        let option_header = payload
+            .get(offset..offset + 2)
+            .ok_or(ValidationError::InvalidNeighborDiscovery)?;
+        let option_type = option_header[0];
+        let option_len = option_header[1] as usize * 8;
+        if option_len < 8
+            || offset
+                .checked_add(option_len)
+                .is_none_or(|end| end > payload.len())
+        {
+            return Err(ValidationError::InvalidNeighborDiscovery);
+        }
+        let expected_link_layer_option = if kind == ICMPV6_NEIGHBOR_SOLICITATION {
+            1
+        } else {
+            2
+        };
+        if option_type == 1 || option_type == 2 {
+            if option_type != expected_link_layer_option
+                || option_len != 8
+                || saw_link_layer_address
+            {
+                return Err(ValidationError::InvalidNeighborDiscovery);
+            }
+            let option_mac: [u8; 6] = payload[offset + 2..offset + 8].try_into().unwrap();
+            if !unicast_mac(option_mac) || option_mac != ethernet_source {
+                return Err(ValidationError::InvalidNeighborDiscovery);
+            }
+            saw_link_layer_address = true;
+        }
+        offset += option_len;
+    }
+
+    if kind == ICMPV6_NEIGHBOR_SOLICITATION {
+        if unspecified(source) {
+            if saw_link_layer_address || destination != solicited_node_multicast(target) {
+                return Err(ValidationError::InvalidNeighborDiscovery);
+            }
+        } else if multicast(source)
+            || (destination[0] == 0xff && destination != solicited_node_multicast(target))
+            || (destination[0] != 0xff && destination != target)
+        {
+            return Err(ValidationError::InvalidNeighborDiscovery);
+        }
+    }
+    Ok(())
+}
+
+fn icmpv6_checksum_valid(source: [u8; 16], destination: [u8; 16], message: &[u8]) -> bool {
+    let mut sum = 0u64;
+    sum = add_words(sum, &source);
+    sum = add_words(sum, &destination);
+    let length = (message.len() as u32).to_be_bytes();
+    sum = add_words(sum, &length);
+    sum += NEXT_HEADER_ICMPV6 as u64;
+    sum = add_words(sum, message);
+    while sum >> 16 != 0 {
+        sum = (sum & 0xffff) + (sum >> 16);
+    }
+    sum as u16 == 0xffff
+}
+
+fn add_words(mut sum: u64, bytes: &[u8]) -> u64 {
+    for pair in bytes.chunks(2) {
+        sum += u16::from_be_bytes([pair[0], pair.get(1).copied().unwrap_or(0)]) as u64;
+    }
+    sum
+}
+
+fn u16_at(bytes: &[u8], index: usize) -> u16 {
+    u16::from_be_bytes([bytes[index], bytes[index + 1]])
+}
+
+fn unicast_mac(mac: [u8; 6]) -> bool {
+    mac != [0; 6] && mac[0] & 1 == 0
+}
+
+fn unspecified(address: [u8; 16]) -> bool {
+    address == [0; 16]
+}
+
+fn multicast(address: [u8; 16]) -> bool {
+    address[0] == 0xff
+}
+
+fn all_nodes_multicast() -> [u8; 16] {
+    [0xff, 0x02, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]
+}
+
+fn solicited_node_multicast(target: [u8; 16]) -> [u8; 16] {
+    let mut address = [0; 16];
+    address[..13].copy_from_slice(&[0xff, 0x02, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0xff]);
+    address[13..].copy_from_slice(&target[13..]);
+    address
+}
+
+fn multicast_mac(address: [u8; 16]) -> [u8; 6] {
+    [
+        0x33,
+        0x33,
+        address[12],
+        address[13],
+        address[14],
+        address[15],
+    ]
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const SOURCE_MAC: [u8; 6] = [0x52, 0x54, 0, 0x12, 0x34, 0x56];
+    const DEST_MAC: [u8; 6] = [0x52, 0x55, 10, 0, 2, 2];
+    const SOURCE_IP: [u8; 16] = [0xfe, 0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2];
+    const TARGET_IP: [u8; 16] = [0xfe, 0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9];
+    const ROUTER_IP: [u8; 16] = [0xfe, 0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1];
+    const SLAAC_PREFIX: [u8; 16] = [0x20, 0x01, 0x0d, 0xb8, 0, 1, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0];
+
+    fn frame(next_header: u8, source: [u8; 16], destination: [u8; 16], payload: &[u8]) -> Vec<u8> {
+        let mut bytes = vec![0; ETHERNET_HEADER + IPV6_HEADER + payload.len()];
+        let ethernet_destination = if destination[0] == 0xff {
+            multicast_mac(destination)
+        } else {
+            DEST_MAC
+        };
+        bytes[..6].copy_from_slice(&ethernet_destination);
+        bytes[6..12].copy_from_slice(&SOURCE_MAC);
+        bytes[12..14].copy_from_slice(&ETHERTYPE_IPV6.to_be_bytes());
+        bytes[14] = 0x60;
+        bytes[18..20].copy_from_slice(&(payload.len() as u16).to_be_bytes());
+        bytes[20] = next_header;
+        bytes[21] = 64;
+        bytes[22..38].copy_from_slice(&source);
+        bytes[38..54].copy_from_slice(&destination);
+        bytes[54..].copy_from_slice(payload);
+        bytes
+    }
+
+    fn set_icmpv6_checksum(frame: &mut [u8]) {
+        let source: [u8; 16] = frame[22..38].try_into().unwrap();
+        let destination: [u8; 16] = frame[38..54].try_into().unwrap();
+        let payload = &mut frame[54..];
+        payload[2..4].fill(0);
+        let mut sum = 0u64;
+        sum = add_words(sum, &source);
+        sum = add_words(sum, &destination);
+        sum = add_words(sum, &(payload.len() as u32).to_be_bytes());
+        sum += NEXT_HEADER_ICMPV6 as u64;
+        sum = add_words(sum, payload);
+        while sum >> 16 != 0 {
+            sum = (sum & 0xffff) + (sum >> 16);
+        }
+        let checksum = !(sum as u16);
+        payload[2..4].copy_from_slice(&checksum.to_be_bytes());
+    }
+
+    fn neighbor_solicitation() -> Vec<u8> {
+        let mut payload = vec![0; 24 + 8];
+        payload[0] = ICMPV6_NEIGHBOR_SOLICITATION;
+        payload[8..24].copy_from_slice(&TARGET_IP);
+        payload[24] = 1;
+        payload[25] = 1;
+        payload[26..32].copy_from_slice(&SOURCE_MAC);
+        let mut packet = frame(
+            NEXT_HEADER_ICMPV6,
+            SOURCE_IP,
+            solicited_node_multicast(TARGET_IP),
+            &payload,
+        );
+        packet[21] = 255;
+        set_icmpv6_checksum(&mut packet);
+        packet
+    }
+
+    /// Fixed packet fixture with an independently calculated ICMPv6 checksum
+    /// (pseudo-header source fe80::1, destination ff02::1, payload length 48).
+    fn router_advertisement_fixture() -> Vec<u8> {
+        const PAYLOAD: [u8; 48] = [
+            134, 0, 0xae, 0x6e, 64, 0, 0x07, 0x08, 0, 0, 0, 0, 0, 0, 0, 0, 3, 4, 64, 0xc0, 0, 0,
+            0x0e, 0x10, 0, 0, 0x07, 0x08, 0, 0, 0, 0, 0x20, 0x01, 0x0d, 0xb8, 0, 1, 0, 2, 0, 0, 0,
+            0, 0, 0, 0, 0,
+        ];
+        let mut packet = frame(
+            NEXT_HEADER_ICMPV6,
+            ROUTER_IP,
+            all_nodes_multicast(),
+            &PAYLOAD,
+        );
+        packet[21] = 255;
+        packet
+    }
+
+    #[test]
+    fn non_ipv6_frame_is_classified_without_parsing_its_payload() {
+        let mut bytes = [0; ETHERNET_HEADER];
+        bytes[12..14].copy_from_slice(&0x0800u16.to_be_bytes());
+        assert_eq!(validate_ethernet_frame(&bytes), Ok(false));
+    }
+
+    #[test]
+    fn validates_bounded_ipv6_base_header_and_nd_solicitation() {
+        let packet = neighbor_solicitation();
+        assert_eq!(validate_ethernet_frame(&packet), Ok(true));
+        for length in 0..packet.len() {
+            assert!(validate_ethernet_frame(&packet[..length]).is_err());
+        }
+    }
+
+    #[test]
+    fn validates_dad_solicitation_without_source_link_layer_option() {
+        let destination = solicited_node_multicast(TARGET_IP);
+        let mut packet = frame(NEXT_HEADER_ICMPV6, [0; 16], destination, &{
+            let mut payload = vec![0; 24];
+            payload[0] = ICMPV6_NEIGHBOR_SOLICITATION;
+            payload[8..24].copy_from_slice(&TARGET_IP);
+            payload
+        });
+        packet[21] = 255;
+        set_icmpv6_checksum(&mut packet);
+        assert_eq!(validate_ethernet_frame(&packet), Ok(true));
+        let mut invalid = packet;
+        invalid[21] = 64;
+        assert!(validate_ethernet_frame(&invalid).is_err());
+    }
+
+    #[test]
+    fn validates_neighbor_advertisement_and_rejects_reserved_flags() {
+        let mut payload = vec![0; 24 + 8];
+        payload[0] = ICMPV6_NEIGHBOR_ADVERTISEMENT;
+        payload[4..8].copy_from_slice(&0x2000_0000u32.to_be_bytes());
+        payload[8..24].copy_from_slice(&TARGET_IP);
+        payload[24] = 2;
+        payload[25] = 1;
+        payload[26..32].copy_from_slice(&SOURCE_MAC);
+        let mut packet = frame(NEXT_HEADER_ICMPV6, SOURCE_IP, [0; 16], &payload);
+        // Ethernet destination and IPv6 destination are independent; use a
+        // unicast IPv6 destination for this unsolicited Advertisement.
+        packet[38..54].copy_from_slice(&SOURCE_IP);
+        packet[21] = 255;
+        set_icmpv6_checksum(&mut packet);
+        assert_eq!(validate_ethernet_frame(&packet), Ok(true));
+        let mut invalid = packet.clone();
+        invalid[58..62].copy_from_slice(&1u32.to_be_bytes());
+        set_icmpv6_checksum(&mut invalid);
+        assert_eq!(
+            validate_ethernet_frame(&invalid),
+            Err(ValidationError::InvalidNeighborDiscovery)
+        );
+    }
+
+    #[test]
+    fn rejects_bad_checksum_options_mac_and_payload_length() {
+        let packet = neighbor_solicitation();
+        for offset in [14, 18, 20, 21, 22, 38, 54, 56, 62, 77] {
+            let mut damaged = packet.clone();
+            damaged[offset] ^= if offset == 14 { 0x10 } else { 1 };
+            assert!(validate_ethernet_frame(&damaged).is_err(), "byte {offset}");
+        }
+        let mut wrong_mac = packet.clone();
+        wrong_mac[6] ^= 1;
+        assert_eq!(
+            validate_ethernet_frame(&wrong_mac),
+            Err(ValidationError::InvalidSourceMac)
+        );
+        let mut too_long = packet;
+        too_long[18..20].copy_from_slice(&u16::MAX.to_be_bytes());
+        assert_eq!(
+            validate_ethernet_frame(&too_long),
+            Err(ValidationError::InvalidPayloadLength)
+        );
+    }
+
+    #[test]
+    fn rejects_zero_length_options_wrong_nd_hop_limit_and_extension_header_nd() {
+        let mut packet = neighbor_solicitation();
+        packet[54 + 25] = 0;
+        set_icmpv6_checksum(&mut packet);
+        assert_eq!(
+            validate_ethernet_frame(&packet),
+            Err(ValidationError::InvalidNeighborDiscovery)
+        );
+        let mut packet = neighbor_solicitation();
+        packet[21] = 64;
+        set_icmpv6_checksum(&mut packet);
+        assert_eq!(
+            validate_ethernet_frame(&packet),
+            Err(ValidationError::InvalidNeighborDiscovery)
+        );
+        let mut packet = neighbor_solicitation();
+        packet[20] = 0; // Unsupported extension-header chain is rejected.
+        assert_eq!(
+            validate_ethernet_frame(&packet),
+            Err(ValidationError::UnsupportedNextHeader)
+        );
+    }
+
+    #[test]
+    fn nd_requires_matching_link_layer_option_and_target_destination() {
+        let mut packet = neighbor_solicitation();
+        packet[54 + 26] ^= 1;
+        set_icmpv6_checksum(&mut packet);
+        assert_eq!(
+            validate_ethernet_frame(&packet),
+            Err(ValidationError::InvalidNeighborDiscovery)
+        );
+
+        let mut packet = neighbor_solicitation();
+        packet[53] ^= 1;
+        assert_eq!(
+            validate_ethernet_frame(&packet),
+            Err(ValidationError::InvalidNeighborDiscovery)
+        );
+    }
+
+    #[test]
+    fn parses_independent_ra_fixture_and_tracks_router_and_prefix_lifetimes() {
+        let packet = router_advertisement_fixture();
+        assert_eq!(validate_ethernet_frame(&packet), Ok(true));
+        let advertisement = validate_received_frame(&packet).unwrap().unwrap();
+        assert_eq!(advertisement.router, ROUTER_IP);
+        assert_eq!(advertisement.router_lifetime_seconds, 1800);
+        assert_eq!(
+            advertisement.prefixes[0],
+            Some(SlaacPrefix {
+                prefix: SLAAC_PREFIX,
+                valid_lifetime_seconds: 3600,
+                preferred_lifetime_seconds: 1800,
+            })
+        );
+        assert!(advertisement.prefixes[1..].iter().all(Option::is_none));
+
+        let mut state = RouterAdvertisementState::new();
+        state.apply(advertisement, 100).unwrap();
+        assert_eq!(state.default_router(1899), Some(ROUTER_IP));
+        assert_eq!(state.default_router(1900), None);
+        assert_eq!(
+            state.prefix_lifetimes(SLAAC_PREFIX, 1899),
+            Some((true, true))
+        );
+        assert_eq!(
+            state.prefix_lifetimes(SLAAC_PREFIX, 1900),
+            Some((true, false))
+        );
+        assert_eq!(
+            state.prefix_lifetimes(SLAAC_PREFIX, 3700),
+            Some((false, false))
+        );
+    }
+
+    #[test]
+    fn rejects_malformed_and_unsupported_router_prefix_options() {
+        let valid = router_advertisement_fixture();
+        for length in 0..valid.len() {
+            assert!(validate_received_frame(&valid[..length]).is_err());
+        }
+
+        let malformed_prefix_cases = [
+            (72, 63),   // non-/64
+            (73, 0x80), // no autonomous address configuration flag
+            (73, 0x41), // reserved flag set
+            (82, 1),    // reserved PIO field
+            (94, 1),    // noncanonical host bits in prefix
+        ];
+        for (offset, value) in malformed_prefix_cases {
+            let mut packet = router_advertisement_fixture();
+            packet[offset] = value;
+            set_icmpv6_checksum(&mut packet);
+            assert_eq!(
+                validate_received_frame(&packet),
+                Err(ValidationError::UnsupportedPrefix),
+                "byte {offset}"
+            );
+        }
+
+        let mut wrong_lifetimes = router_advertisement_fixture();
+        wrong_lifetimes[78..82].copy_from_slice(&3601u32.to_be_bytes());
+        set_icmpv6_checksum(&mut wrong_lifetimes);
+        assert_eq!(
+            validate_received_frame(&wrong_lifetimes),
+            Err(ValidationError::UnsupportedPrefix)
+        );
+
+        let mut malformed_length = router_advertisement_fixture();
+        malformed_length[71] = 3;
+        set_icmpv6_checksum(&mut malformed_length);
+        assert_eq!(
+            validate_received_frame(&malformed_length),
+            Err(ValidationError::UnsupportedPrefix)
+        );
+
+        let mut no_autonomous_prefix = router_advertisement_fixture();
+        no_autonomous_prefix[73] = 0x80;
+        set_icmpv6_checksum(&mut no_autonomous_prefix);
+        assert_eq!(
+            validate_received_frame(&no_autonomous_prefix),
+            Err(ValidationError::UnsupportedPrefix)
+        );
+
+        assert_eq!(
+            validate_received_frame(&router_advertisement_with_prefixes(5)),
+            Err(ValidationError::UnsupportedPrefix)
+        );
+
+        let mut duplicate = router_advertisement_with_prefixes(2);
+        let first_prefix = duplicate[86..102].to_vec();
+        duplicate[118..134].copy_from_slice(&first_prefix);
+        set_icmpv6_checksum(&mut duplicate);
+        assert_eq!(
+            validate_received_frame(&duplicate),
+            Err(ValidationError::UnsupportedPrefix)
+        );
+    }
+
+    #[test]
+    fn rejects_ra_with_bad_source_hop_limit_code_and_unsupported_flags() {
+        let mut managed = router_advertisement_fixture();
+        managed[59] = 0xc0; // M/O are tolerated, but this slice has no DHCPv6.
+        set_icmpv6_checksum(&mut managed);
+        assert!(validate_received_frame(&managed).unwrap().is_some());
+
+        let mut packet = router_advertisement_fixture();
+        packet[55] = 1;
+        set_icmpv6_checksum(&mut packet);
+        assert_eq!(
+            validate_received_frame(&packet),
+            Err(ValidationError::UnsupportedRouterAdvertisement)
+        );
+
+        let mut packet = router_advertisement_fixture();
+        packet[21] = 64;
+        assert_eq!(
+            validate_received_frame(&packet),
+            Err(ValidationError::UnsupportedRouterAdvertisement)
+        );
+
+        let mut packet = router_advertisement_fixture();
+        packet[22] = 0x20; // Router source is no longer fe80::/10.
+        set_icmpv6_checksum(&mut packet);
+        assert_eq!(
+            validate_received_frame(&packet),
+            Err(ValidationError::UnsupportedRouterAdvertisement)
+        );
+
+        let mut packet = router_advertisement_fixture();
+        packet[59] = 0x20; // Home-agent and other unsupported RA flags.
+        set_icmpv6_checksum(&mut packet);
+        assert_eq!(
+            validate_received_frame(&packet),
+            Err(ValidationError::UnsupportedRouterAdvertisement)
+        );
+    }
+
+    #[test]
+    fn prefix_withdrawal_capacity_and_saturating_deadlines_are_bounded() {
+        let mut state = RouterAdvertisementState::new();
+        let mut initial = validate_received_frame(&router_advertisement_fixture())
+            .unwrap()
+            .unwrap();
+        initial.prefixes[0].as_mut().unwrap().valid_lifetime_seconds = 10_000;
+        state.apply(initial, 100).unwrap();
+
+        let mut withdrawal = router_advertisement_fixture();
+        withdrawal[74..78].copy_from_slice(&0u32.to_be_bytes());
+        withdrawal[78..82].copy_from_slice(&0u32.to_be_bytes());
+        set_icmpv6_checksum(&mut withdrawal);
+        let withdrawal = validate_received_frame(&withdrawal).unwrap().unwrap();
+        state.apply(withdrawal, 200).unwrap();
+        assert_eq!(
+            state.prefix_lifetimes(SLAAC_PREFIX, 7399),
+            Some((true, false))
+        );
+        assert_eq!(
+            state.prefix_lifetimes(SLAAC_PREFIX, 7400),
+            Some((false, false))
+        );
+
+        let mut near_overflow = RouterAdvertisementState::new();
+        let mut max_lifetime = initial;
+        max_lifetime.router_lifetime_seconds = u16::MAX;
+        max_lifetime.prefixes[0]
+            .as_mut()
+            .unwrap()
+            .valid_lifetime_seconds = u32::MAX;
+        max_lifetime.prefixes[0]
+            .as_mut()
+            .unwrap()
+            .preferred_lifetime_seconds = u32::MAX;
+        near_overflow.apply(max_lifetime, u64::MAX - 2).unwrap();
+        assert_eq!(near_overflow.default_router(u64::MAX - 1), Some(ROUTER_IP));
+        assert_eq!(
+            near_overflow.prefix_lifetimes(SLAAC_PREFIX, u64::MAX - 1),
+            Some((true, true))
+        );
+
+        let mut full = RouterAdvertisementState::new();
+        let four = router_advertisement_with_prefixes(4);
+        full.apply(validate_received_frame(&four).unwrap().unwrap(), 10)
+            .unwrap();
+        let mut additional = validate_received_frame(&router_advertisement_with_prefixes(1))
+            .unwrap()
+            .unwrap();
+        additional.prefixes[0].as_mut().unwrap().prefix[7] ^= 0x10;
+        assert_eq!(
+            full.apply(additional, 11),
+            Err(ValidationError::RouterStateFull)
+        );
+        assert_eq!(full.prefix_lifetimes(SLAAC_PREFIX, 11), Some((true, true)));
+    }
+
+    fn router_advertisement_with_prefixes(count: usize) -> Vec<u8> {
+        let mut payload = vec![0; 16 + count * 32];
+        payload[0] = ICMPV6_ROUTER_ADVERTISEMENT;
+        payload[4] = 64;
+        payload[6..8].copy_from_slice(&1800u16.to_be_bytes());
+        for index in 0..count {
+            let offset = 16 + index * 32;
+            payload[offset] = 3;
+            payload[offset + 1] = 4;
+            payload[offset + 2] = 64;
+            payload[offset + 3] = 0xc0;
+            payload[offset + 4..offset + 8].copy_from_slice(&3600u32.to_be_bytes());
+            payload[offset + 8..offset + 12].copy_from_slice(&1800u32.to_be_bytes());
+            let mut prefix = SLAAC_PREFIX;
+            prefix[7] = prefix[7].wrapping_add(index as u8);
+            payload[offset + 16..offset + 32].copy_from_slice(&prefix);
+        }
+        let mut packet = frame(
+            NEXT_HEADER_ICMPV6,
+            ROUTER_IP,
+            all_nodes_multicast(),
+            &payload,
+        );
+        packet[21] = 255;
+        set_icmpv6_checksum(&mut packet);
+        packet
+    }
+}

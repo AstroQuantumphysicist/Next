@@ -33,7 +33,7 @@ def cases(original):
 
 def main():
     image = ROOT / "build/next-dev.img"
-    original = (ROOT / "build/esp/EFI/NEXT/HELIX.ELF").read_bytes()
+    original = (ROOT / "build/esp/EFI/NEXT/A/HELIX.ELF").read_bytes()
     digest = hashlib.sha256(image.read_bytes()).hexdigest()
     work = ROOT / "work"
     work.mkdir(exist_ok=True)
@@ -44,11 +44,11 @@ def main():
             copy = temp / "mutated.img"
             shutil.copyfile(image, copy)
             if kernel is None:
-                subprocess.run(["mdel", "-i", str(copy), "::/EFI/NEXT/HELIX.ELF"], check=True)
+                subprocess.run(["mdel", "-i", str(copy), "::/EFI/NEXT/A/HELIX.ELF"], check=True)
             else:
                 payload = temp / "HELIX.ELF"
                 payload.write_bytes(kernel)
-                subprocess.run(["mcopy", "-o", "-i", str(copy), str(payload), "::/EFI/NEXT/HELIX.ELF"], check=True)
+                subprocess.run(["mcopy", "-o", "-i", str(copy), str(payload), "::/EFI/NEXT/A/HELIX.ELF"], check=True)
             output = ROOT / "build/failures" / name
             command = [sys.executable, str(ROOT / "tools/boot_smoke.py"), "--image", str(copy),
                        "--output-dir", str(output), "--expect-boot-failure", diagnostic,

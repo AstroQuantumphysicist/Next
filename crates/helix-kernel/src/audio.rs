@@ -140,6 +140,53 @@ fn completed(status: u16, remaining: u16) -> Result<bool, AudioError> {
     }
     Ok(true)
 }
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum DmaOwner {
+    Cpu,
+    Device,
+}
+/// Tracks the static BDL/PCM lifetime for one claimed playback attempt.
+/// These buffers are never allocated from PageAllocator; the global CLAIMED
+/// guard keeps them quarantined if the controller cannot be reset afterward.
+struct DmaOwnership {
+    owner: DmaOwner,
+}
+impl DmaOwnership {
+    fn new() -> Self {
+        Self {
+            owner: DmaOwner::Cpu,
+        }
+    }
+    /// Transfer the prepared BDL and PCM storage to the bus master before its
+    /// BDL address/RUN registers are published.
+    fn publish(&mut self) -> Result<(), AudioError> {
+        if self.owner != DmaOwner::Cpu {
+            return Err(AudioError::Busy);
+        }
+        self.owner = DmaOwner::Device;
+        Ok(())
+    }
+    /// Return ownership only for a fully validated last-buffer completion.
+    /// Timeout and malformed status leave the device as owner until reset.
+    fn observe(&mut self, status: u16, remaining: u16) -> Result<bool, AudioError> {
+        if self.owner != DmaOwner::Device {
+            return Err(AudioError::InvalidCompletion);
+        }
+        let done = completed(status, remaining)?;
+        if done {
+            self.owner = DmaOwner::Cpu;
+        }
+        Ok(done)
+    }
+    /// A successful engine reset is the fallback proof that device access has
+    /// stopped, including after timeout or a malformed completion.
+    fn reset_confirmed(&mut self) {
+        self.owner = DmaOwner::Cpu;
+    }
+    fn cpu_owns(&self) -> bool {
+        self.owner == DmaOwner::Cpu
+    }
+}
 unsafe fn reset(busmaster: u16) -> Result<(), AudioError> {
     out8(busmaster + 0x1b, 0); // PCM-out RUN=0, all interrupt enables clear.
     fence(Ordering::SeqCst);
@@ -159,7 +206,11 @@ unsafe fn reset(busmaster: u16) -> Result<(), AudioError> {
     }
     Err(AudioError::ResetFailed)
 }
-unsafe fn play(mixer: u16, busmaster: u16) -> Result<AudioInfo, AudioError> {
+unsafe fn play(
+    mixer: u16,
+    busmaster: u16,
+    ownership: &mut DmaOwnership,
+) -> Result<AudioInfo, AudioError> {
     // Cold-reset release and two-channel mode, preserving unrelated controls.
     out32(
         busmaster + 0x2c,
@@ -214,11 +265,12 @@ unsafe fn play(mixer: u16, busmaster: u16) -> Result<AudioInfo, AudioError> {
     ptr::write_volatile(bdl, first);
     fence(Ordering::SeqCst);
     out16(busmaster + 0x16, 0x1c); // Clear old LVBCI/BCIS/FIFOE status (W1C).
+    ownership.publish()?;
     out32(busmaster + 0x10, bdl as u32);
     out8(busmaster + 0x15, 0); // Last valid descriptor is exactly index zero.
     out8(busmaster + 0x1b, 1); // RUN only; completion/fifo IRQs remain disabled.
     for _ in 0..POLLS {
-        if completed(in16(busmaster + 0x16), in16(busmaster + 0x18))? {
+        if ownership.observe(in16(busmaster + 0x16), in16(busmaster + 0x18))? {
             return Ok(AudioInfo {
                 sample_rate: SAMPLE_RATE,
                 frames: FRAMES as u32,
@@ -272,9 +324,14 @@ pub unsafe fn init() -> Result<AudioInfo, AudioError> {
         CLAIMED.store(false, Ordering::Release);
         return Err(AudioError::NotFound);
     };
-    let result = play(mixer, bm);
+    let mut ownership = DmaOwnership::new();
+    let result = play(mixer, bm, &mut ownership);
     // Stop/reset acknowledges that the bus master no longer owns the buffers.
+    // Preserve CLAIMED permanently on reset failure. The local ownership
+    // token may go out of scope, but no future init can rewrite the statics.
     reset(bm)?;
+    ownership.reset_confirmed();
+    debug_assert!(ownership.cpu_owns());
     CLAIMED.store(false, Ordering::Release);
     result
 }
@@ -321,6 +378,48 @@ mod tests {
             completed(DCH | LVBCI | FIFOE, 0),
             Err(AudioError::FifoError)
         );
+    }
+    #[test]
+    fn static_dma_lifetime_retains_timeout_and_malformed_completion() {
+        let mut timeout = DmaOwnership::new();
+        timeout.publish().unwrap();
+        assert_eq!(timeout.observe(0, SAMPLES as u16), Ok(false));
+        assert!(!timeout.cpu_owns());
+        assert_eq!(timeout.publish(), Err(AudioError::Busy));
+
+        let mut fifo_error = DmaOwnership::new();
+        fifo_error.publish().unwrap();
+        assert_eq!(
+            fifo_error.observe(DCH | LVBCI | FIFOE, 0),
+            Err(AudioError::FifoError)
+        );
+        assert!(!fifo_error.cpu_owns());
+        assert_eq!(fifo_error.publish(), Err(AudioError::Busy));
+
+        let mut malformed = DmaOwnership::new();
+        malformed.publish().unwrap();
+        assert_eq!(
+            malformed.observe(LVBCI, 0),
+            Err(AudioError::InvalidCompletion)
+        );
+        assert_eq!(
+            malformed.observe(DCH | LVBCI, 1),
+            Err(AudioError::InvalidCompletion)
+        );
+        assert!(!malformed.cpu_owns());
+        assert_eq!(malformed.publish(), Err(AudioError::Busy));
+        malformed.reset_confirmed();
+        assert!(malformed.cpu_owns());
+        malformed.publish().unwrap();
+    }
+    #[test]
+    fn valid_completion_returns_static_dma_storage_to_cpu() {
+        let mut ownership = DmaOwnership::new();
+        ownership.publish().unwrap();
+        assert_eq!(ownership.observe(DCH | LVBCI, 0), Ok(true));
+        assert!(ownership.cpu_owns());
+        ownership.publish().unwrap();
+        assert_eq!(ownership.observe(DCH | LVBCI, 0), Ok(true));
     }
     #[test]
     fn io_ports_do_not_truncate_memory_bars_or_overflow() {

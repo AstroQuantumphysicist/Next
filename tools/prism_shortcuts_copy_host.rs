@@ -1,6 +1,6 @@
 //! Image-ten source-bound shared geometry, semantic colors and font masks.
 use prism::{
-    appearance::{Accent, Preferences, TextScale, Theme},
+    appearance::{Accent, FocusIndicator, Preferences, TextScale, Theme},
     palette::Palette,
     theme, App, Bounds, Canvas, PixelFormat, Shell,
 };
@@ -21,6 +21,7 @@ fn prefs(theme: &str, accent: &str) -> Preferences {
             _ => panic!("unknown accent"),
         },
         text_scale: TextScale::Percent100,
+        focus_indicator: FocusIndicator::Standard,
     }
 }
 fn bounds(name: &str, b: Bounds) {

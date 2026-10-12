@@ -1,0 +1,60 @@
+
+/workspace/Next/work/ap-transition-audit-final-2/long64.bin:     file format binary
+
+
+Disassembly of section .data:
+
+00000000000801a7 <.data>:
+   801a7:	66 b8 10 00          	mov    ax,0x10
+   801ab:	66 8e d8             	mov    ds,ax
+   801ae:	66 8e c0             	mov    es,ax
+   801b1:	66 8e d0             	mov    ss,ax
+   801b4:	31 c0                	xor    eax,eax
+   801b6:	66 8e e0             	mov    fs,ax
+   801b9:	66 8e e8             	mov    gs,ax
+   801bc:	41 89 f4             	mov    r12d,esi
+   801bf:	49 8b 64 24 20       	mov    rsp,QWORD PTR [r12+0x20]
+   801c4:	31 ed                	xor    ebp,ebp
+   801c6:	41 0f 01 5c 24 30    	lidt   [r12+0x30]
+   801cc:	b9 00 01 00 c0       	mov    ecx,0xc0000100
+   801d1:	31 c0                	xor    eax,eax
+   801d3:	31 d2                	xor    edx,edx
+   801d5:	0f 30                	wrmsr
+   801d7:	b9 01 01 00 c0       	mov    ecx,0xc0000101
+   801dc:	0f 30                	wrmsr
+   801de:	b9 02 01 00 c0       	mov    ecx,0xc0000102
+   801e3:	0f 30                	wrmsr
+   801e5:	b8 01 00 00 00       	mov    eax,0x1
+   801ea:	0f a2                	cpuid
+   801ec:	c1 eb 18             	shr    ebx,0x18
+   801ef:	41 3b 5c 24 04       	cmp    ebx,DWORD PTR [r12+0x4]
+   801f4:	75 40                	jne    0x80236
+   801f6:	41 89 5c 24 18       	mov    DWORD PTR [r12+0x18],ebx
+   801fb:	49 8b 44 24 08       	mov    rax,QWORD PTR [r12+0x8]
+   80200:	48 85 c0             	test   rax,rax
+   80203:	74 31                	je     0x80236
+   80205:	49 89 44 24 10       	mov    QWORD PTR [r12+0x10],rax
+   8020a:	49 8b 54 24 40       	mov    rdx,QWORD PTR [r12+0x40]
+   8020f:	48 8b 12             	mov    rdx,QWORD PTR [rdx]
+   80212:	49 3b 54 24 48       	cmp    rdx,QWORD PTR [r12+0x48]
+   80217:	73 12                	jae    0x8022b
+   80219:	b8 02 00 00 00       	mov    eax,0x2
+   8021e:	ba 03 00 00 00       	mov    edx,0x3
+   80223:	f0 41 0f b1 14 24    	lock cmpxchg DWORD PTR [r12],edx
+   80229:	eb 1d                	jmp    0x80248
+   8022b:	41 c7 44 24 1c 04 00 	mov    DWORD PTR [r12+0x1c],0x4
+   80232:	00 00
+   80234:	eb 09                	jmp    0x8023f
+   80236:	41 c7 44 24 1c 02 00 	mov    DWORD PTR [r12+0x1c],0x2
+   8023d:	00 00
+   8023f:	b8 04 00 00 00       	mov    eax,0x4
+   80244:	41 87 04 24          	xchg   DWORD PTR [r12],eax
+   80248:	fa                   	cli
+   80249:	f4                   	hlt
+   8024a:	eb fc                	jmp    0x80248
+   8024c:	fa                   	cli
+   8024d:	f4                   	hlt
+   8024e:	e9 f9 ff ff ff       	jmp    0x8024c
+   80253:	00 00                	add    BYTE PTR [rax],al
+   80255:	00 00                	add    BYTE PTR [rax],al
+	...

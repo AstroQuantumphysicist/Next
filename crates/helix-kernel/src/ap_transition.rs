@@ -23,6 +23,67 @@ pub enum Coverage {
     Unsupported(Blocker),
     PrivateStackAndIdt,
 }
+/// Fine-grained points in the assembled trampoline. These classifications
+/// describe the current source sequence; they are not startup authority.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Stage {
+    BeforeFirstInstruction,
+    RealBootstrapBeforePrivateIdt,
+    RealPrivateIdt,
+    RealNmiBridge,
+    ProtectedEntryBeforePrivateStack,
+    ProtectedBootstrapWithNmiBridge,
+    ProtectedNmiBridge,
+    ProtectedPrivateIdt,
+    PagingNmiBridge,
+    LongEntryBeforePrivateStack,
+    LongNmiBridge,
+    LongPrivateIdt,
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum NonIdtEvent {
+    Smi,
+    Init,
+}
+/// Conservative vector coverage at the current transition stage. The
+/// dual-format bridge contains only vector 2; it cannot contain synchronous
+/// exceptions such as #GP (13), #PF (14), or #MC (18). The protected private
+/// IDT has 32-bit gates to the copied-mode emergency park handler; the bridge
+/// stages deliberately cover only vector 2.
+pub const fn vector_covered(stage: Stage, vector: u8) -> bool {
+    match stage {
+        Stage::RealPrivateIdt | Stage::ProtectedPrivateIdt | Stage::LongPrivateIdt => true,
+        Stage::RealNmiBridge
+        | Stage::ProtectedEntryBeforePrivateStack
+        | Stage::ProtectedBootstrapWithNmiBridge
+        | Stage::ProtectedNmiBridge
+        | Stage::PagingNmiBridge
+        | Stage::LongEntryBeforePrivateStack
+        | Stage::LongNmiBridge => vector == 2,
+        Stage::BeforeFirstInstruction | Stage::RealBootstrapBeforePrivateIdt => false,
+    }
+}
+/// Private-stack ownership is not established until each mode has installed
+/// its private SS:SP/RSP pair. Reset-time NMI may arrive before the first
+/// instruction, and mode switches briefly retain an unverified stack state.
+pub const fn private_stack_available(stage: Stage) -> bool {
+    !matches!(
+        stage,
+        Stage::BeforeFirstInstruction
+            | Stage::RealBootstrapBeforePrivateIdt
+            | Stage::ProtectedEntryBeforePrivateStack
+            | Stage::LongEntryBeforePrivateStack
+    )
+}
+/// SMI and INIT are not IDT vectors. No transition-table layout can contain
+/// either event, and a BSP route snapshot does not disable external injection.
+pub const fn non_idt_event_covered(_stage: Stage, _event: NonIdtEvent) -> bool {
+    false
+}
+/// Stage analysis is diagnostic only; it can never turn into startup permit.
+pub const fn stage_authorizes_activation(_stage: Stage) -> bool {
+    false
+}
 /// Honest status of the current unactivated image, not a proposed future table.
 pub const fn current_coverage(phase: Phase) -> Coverage {
     match phase {
@@ -117,6 +178,76 @@ pub const fn candidate_remaining_blocker() -> Blocker {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn current_assembly_transition_windows_expose_only_the_proven_coverage() {
+        assert!(!stage_authorizes_activation(Stage::BeforeFirstInstruction));
+        assert!(!private_stack_available(Stage::BeforeFirstInstruction));
+        assert!(!vector_covered(Stage::BeforeFirstInstruction, 2));
+        assert!(!private_stack_available(
+            Stage::RealBootstrapBeforePrivateIdt
+        ));
+        assert!(!vector_covered(Stage::RealBootstrapBeforePrivateIdt, 2));
+
+        assert!(private_stack_available(Stage::RealPrivateIdt));
+        assert!(vector_covered(Stage::RealPrivateIdt, 0));
+        assert!(vector_covered(Stage::RealPrivateIdt, 255));
+
+        for stage in [
+            Stage::RealNmiBridge,
+            Stage::ProtectedEntryBeforePrivateStack,
+            Stage::ProtectedBootstrapWithNmiBridge,
+            Stage::ProtectedNmiBridge,
+            Stage::PagingNmiBridge,
+            Stage::LongEntryBeforePrivateStack,
+            Stage::LongNmiBridge,
+        ] {
+            assert_eq!(
+                private_stack_available(stage),
+                !matches!(
+                    stage,
+                    Stage::ProtectedEntryBeforePrivateStack | Stage::LongEntryBeforePrivateStack
+                ),
+                "private stack state at {stage:?}"
+            );
+            assert!(vector_covered(stage, 2), "NMI bridge at {stage:?}");
+            for vector in [
+                0, 1, 3, 6, 8, 10, 11, 12, 13, 14, 17, 18, 20, 21, 28, 29, 30,
+            ] {
+                assert!(
+                    !vector_covered(stage, vector),
+                    "vector {vector} is not bridged at {stage:?}"
+                );
+            }
+        }
+
+        for stage in [Stage::ProtectedPrivateIdt, Stage::LongPrivateIdt] {
+            for vector in [
+                0, 1, 2, 3, 6, 8, 10, 11, 12, 13, 14, 17, 18, 20, 21, 28, 29, 30, 255,
+            ] {
+                assert!(vector_covered(stage, vector));
+            }
+        }
+
+        for stage in [
+            Stage::BeforeFirstInstruction,
+            Stage::RealBootstrapBeforePrivateIdt,
+            Stage::RealPrivateIdt,
+            Stage::RealNmiBridge,
+            Stage::ProtectedEntryBeforePrivateStack,
+            Stage::ProtectedBootstrapWithNmiBridge,
+            Stage::ProtectedNmiBridge,
+            Stage::ProtectedPrivateIdt,
+            Stage::PagingNmiBridge,
+            Stage::LongEntryBeforePrivateStack,
+            Stage::LongNmiBridge,
+            Stage::LongPrivateIdt,
+        ] {
+            assert!(!non_idt_event_covered(stage, NonIdtEvent::Smi));
+            assert!(!non_idt_event_covered(stage, NonIdtEvent::Init));
+            assert!(!stage_authorizes_activation(stage));
+        }
+    }
+
     #[test]
     fn every_early_phase_stays_explicitly_unsupported() {
         assert!(!activation_supported());

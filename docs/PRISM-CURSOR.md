@@ -7,5 +7,4 @@ offset edge help it remain distinct on both light and dark content. Canvas
 clipping keeps motion at display boundaries bounded.
 
 The artwork follows the familiar Windows arrow silhouette without embedding
-Windows cursor files or implying use of Microsoft's licensed assets. Prism's
-current text face remains the separately licensed Open Sans raster atlas.
+Windows cursor files or implying use of Microsoft's licensed assets. Prism's body text uses the bundled Selawik Regular raster atlas, Microsoft's open-source metric-compatible Segoe UI alternative; it is not proprietary Segoe UI Variable.

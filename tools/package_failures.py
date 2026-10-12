@@ -15,7 +15,7 @@ import tempfile
 import zlib
 
 ROOT = Path(__file__).resolve().parents[1]
-PACKAGE_PATH = "::/EFI/NEXT/SYSTEM.NXP"
+PACKAGE_PATH = "::/EFI/NEXT/A/SYSTEM.NXP"
 ARTIFACT_DIGEST = "boot artifact SHA-256 differs from signed deployment"
 
 
@@ -67,7 +67,7 @@ def cases(bundle, kernel, initrd):
         if kind == 1 and flags == 4 and size and offset >= ph_offset + ph_size * ph_count:
             altered = bytearray(kernel)
             altered[offset] ^= 1
-            yield "pkg-kernel-binding", "::/EFI/NEXT/HELIX.ELF", altered, ARTIFACT_DIGEST
+            yield "pkg-kernel-binding", "::/EFI/NEXT/A/HELIX.ELF", altered, ARTIFACT_DIGEST
             break
     else:
         raise ValueError("source kernel has no suitable file-backed read-only segment")
@@ -75,7 +75,7 @@ def cases(bundle, kernel, initrd):
     altered[-1] ^= 1
     altered[24:28] = bytes(4)
     struct.pack_into("<I", altered, 24, zlib.crc32(altered))
-    yield "pkg-initrd-binding", "::/EFI/NEXT/INITRD.NXI", altered, ARTIFACT_DIGEST
+    yield "pkg-initrd-binding", "::/EFI/NEXT/A/INITRD.NXI", altered, ARTIFACT_DIGEST
     yield "pkg-oversized", PACKAGE_PATH, bytes(16 * 1024 * 1024 + 1), "signed deployment exceeds bounded 16 MiB profile"
 
 
@@ -88,9 +88,9 @@ def main():
     image = ROOT / "build/next-dev.img"
     digest = hashlib.sha256(image.read_bytes()).hexdigest()
     directory = ROOT / "build/esp/EFI/NEXT"
-    source_cases = list(cases((directory / "SYSTEM.NXP").read_bytes(),
-                              (directory / "HELIX.ELF").read_bytes(),
-                              (directory / "INITRD.NXI").read_bytes()))
+    source_cases = list(cases((directory / "A/SYSTEM.NXP").read_bytes(),
+                              (directory / "A/HELIX.ELF").read_bytes(),
+                              (directory / "A/INITRD.NXI").read_bytes()))
     work = ROOT / "work"
     work.mkdir(exist_ok=True)
     results = []
@@ -101,12 +101,20 @@ def main():
             for name, destination, payload, diagnostic in source_cases:
                 copy = temp / "mutated.img"
                 shutil.copyfile(image, copy)
-                if payload is None:
-                    subprocess.run(["mdel", "-i", str(copy), destination], check=True, timeout=15)
-                else:
-                    changed = temp / "payload.bin"
-                    changed.write_bytes(payload)
-                    subprocess.run(["mcopy", "-o", "-i", str(copy), str(changed), destination], check=True, timeout=15)
+                package_mutation = name.startswith("pkg-") and name not in {
+                    "pkg-kernel-binding", "pkg-initrd-binding"
+                }
+                destinations = (
+                    ["::/EFI/NEXT/A/SYSTEM.NXP", "::/EFI/NEXT/B/SYSTEM.NXP"]
+                    if package_mutation else [destination]
+                )
+                for target in destinations:
+                    if payload is None:
+                        subprocess.run(["mdel", "-i", str(copy), target], check=True, timeout=15)
+                    else:
+                        changed = temp / "payload.bin"
+                        changed.write_bytes(payload)
+                        subprocess.run(["mcopy", "-o", "-i", str(copy), str(changed), target], check=True, timeout=15)
                 output = ROOT / "build/failures" / name
                 expected_stage = {
                     "pkg-kernel-binding": "kernel",

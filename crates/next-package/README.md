@@ -180,3 +180,41 @@ payloads. Runtime verification still authenticates each envelope independently
 before extracting its verified executable bytes. `tools/test_apps.py` verifies
 all positive envelopes, their exact raw payloads and metadata, and rejection of
 the negative using the owner's public key, without reading key seed contents.
+
+## A/B boot-state policy prototype
+
+The allocation-free `ab` module defines a host-testable boot decision contract
+for two system slots. Its fixed 144-byte `NXAB0001` record binds a monotonically
+increasing sequence, confirmed and pending slot generations, image SHA-256
+digests, a bounded three-attempt counter, reserved-zero fields, and a SHA-256
+integrity checksum. `select_boot` accepts only inventory entries whose exact
+generation and digest match the record. It persists each trial-attempt
+decrement to both copies and reads each back before returning the candidate
+slot. A missing or mismatched candidate, or an exhausted attempt count, clears
+the candidate and selects the verified confirmed slot. A bad confirmed image,
+unreadable/corrupt metadata, conflicting equal-sequence copies, excessive
+sequence divergence, counter overflow, or write/readback failure halts the
+decision with an error. `confirm_running` promotes only the exact staged slot
+and digest after a caller-supplied health check.
+
+The UEFI loader implements `MetadataStore` with two EFI nonvolatile runtime
+variables, checks the attributes and exact record sizes, and reads each write
+back before continuing. On boot it authenticates the signed deployment and
+contents in both slots, binds each slot to its package digest and numeric
+version, reconciles metadata, then loads only the selected slot's kernel and
+init image. If metadata is blank, the first verified slot initializes the
+confirmed state. A partially completed initial write is repaired only when the
+remaining record is a valid initial record whose confirmed slot matches the
+verified inventory. The OVMF integration smoke test persists the same variable
+store file across independent QEMU process boots and observes three candidate
+attempts, fallback to the confirmed slot, and a subsequent confirmed boot.
+
+Normal builds do not stage updates or promote a candidate after a health check;
+those transitions are exposed by the policy module for a future updater and
+health monitor. A test-only `ab-smoke` loader feature stages the prepared B
+fixture to exercise persistence and rollback. Standard EFI variables are not a
+protected anti-rollback anchor: an attacker with firmware-variable write access
+can replace or replay both records. This implementation does not provide an
+updater, interactive recovery, Secure Boot/TPM protection, hardware
+certification, or a user-data migration/preservation guarantee. The selector
+only addresses OS slots and does not write a user-data partition.

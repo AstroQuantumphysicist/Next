@@ -116,6 +116,8 @@ def exercise_file_portal(serial, serial_data, wait_text, wait_regex, wait_exit,
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--cpu", choices=["qemu64","max"],default="qemu64")
+    parser.add_argument("--smp", type=int, choices=[1, 2], default=1,
+                        help="configured QEMU vCPUs; --smp 2 is a BSP-only topology/scheduler regression profile, not SMP scheduling")
     parser.add_argument("--require-lapic-calibration", action="store_true", help="require successful optional LAPIC calibration rather than a verified PIT fallback")
     parser.add_argument("--require-guarded-emergency-stack", action="store_true", help="require both actual CPU page-fault probes for the guarded emergency IST stack")
     parser.add_argument("--trace-exceptions", action="store_true", help="save QEMU CPU exception diagnostics below the output directory")
@@ -146,7 +148,10 @@ def main():
         parser.error("persistence phase requires --persistent-data")
     screenshot = build / "screenshot.ppm"
     screenshot.unlink(missing_ok=True)
-    report = {"passed": False, "scope": "QEMU q35/TCG, single CPU, legacy PS/2, software framebuffer, PIT/PIC timer interrupts, legacy virtio read/write/flush in dedicated trailing data region, FAT32 reads, native processes and IPC; no hardware certification",
+    report = {"passed": False, "scope": ("QEMU q35/TCG with two configured vCPUs, validated ACPI topology, APs intentionally stopped, and scheduler workload exercised only on the BSP; legacy PS/2, software framebuffer, PIT/PIC timer interrupts, legacy virtio read/write/flush in dedicated trailing data region, FAT32 reads, native processes and IPC; no SMP scheduling or hardware certification" if args.smp == 2 else "QEMU q35/TCG, single CPU, legacy PS/2, software framebuffer, PIT/PIC timer interrupts, legacy virtio read/write/flush in dedicated trailing data region, FAT32 reads, native processes and IPC; no hardware certification"),
+              "configured_vcpus": args.smp,
+              "ap_startup_enabled": False,
+              "scheduler_cpu_scope": "bootstrap CPU only",
               "started_utc": datetime.datetime.now(datetime.timezone.utc).isoformat(), "checks": []}
     serial_data = bytearray()
     (build / "serial.log").write_bytes(b"")
@@ -275,7 +280,7 @@ def main():
             protected_digest = hashlib.sha256(image.read_bytes()[:64 * 1024 * 1024]).hexdigest()
             variables = temp / "vars.fd"
             shutil.copyfile(firmware / "OVMF_VARS_4M.fd", variables)
-            command = [qemu, "-machine", "q35,accel=tcg", "-cpu",args.cpu, "-m", "256M", "-smp", "1", "-vga", "std",
+            command = [qemu, "-machine", "q35,accel=tcg", "-cpu",args.cpu, "-m", "256M", "-smp", str(args.smp), "-vga", "std",
                        "-drive", f"if=pflash,format=raw,readonly=on,file={firmware / 'OVMF_CODE_4M.fd'}",
                        "-drive", f"if=pflash,format=raw,file={variables}",
                        "-drive", f"if=none,id=nextdisk,format=raw,{'' if args.persistent_data else 'snapshot=on,'}file={image}",
@@ -290,7 +295,7 @@ def main():
             for data in ["usr/share/qemu", "usr/share/seabios", "usr/lib/ipxe/qemu"]:
                 if (sysroot / data).exists():
                     command.extend(["-L", str(sysroot / data)])
-            report["qemu_profile"] = f"q35,accel=tcg; cpu={args.cpu}; 256M; smp=1; vga=std"
+            report["qemu_profile"] = f"q35,accel=tcg; cpu={args.cpu}; 256M; smp={args.smp}; vga=std"
             process = subprocess.Popen(command, stdout=qemu_log, stderr=subprocess.STDOUT, env=env)
             serial = connect(temp / "serial.sock")
             qmp = connect(temp / "qmp.sock")
@@ -298,6 +303,13 @@ def main():
             if "QMP" not in qmp_read():
                 raise RuntimeError("invalid QMP greeting")
             qmp_command("qmp_capabilities")
+            configured_cpus = qmp_command("query-cpus-fast")
+            if not isinstance(configured_cpus, list) or len(configured_cpus) != args.smp:
+                raise RuntimeError(f"QMP reports {len(configured_cpus) if isinstance(configured_cpus, list) else 'invalid'} CPUs, expected {args.smp}")
+            report["qmp_cpus"] = [{"cpu_index": cpu.get("cpu-index"), "thread_id": cpu.get("thread-id"),
+                                    "apic_id": cpu.get("props", {}).get("apic-id")}
+                                   for cpu in configured_cpus]
+            report["checks"].append(f"QMP reports exactly {args.smp} configured QEMU CPU object(s)")
             if args.expect_boot_failure:
                 wait_text("NEXT BOOT FAILED: " + args.expect_boot_failure)
                 failure_record = validate_boot_failure_record(
@@ -400,12 +412,31 @@ def main():
                         wait_regex(rb"HELIX GPT STORE PASS generation=(\d+) read_only=false formatted=false selftest=false")
                         report["checks"].append("owner-signed exact GPT binding mounts existing132-sector journal without formatting or repair")
                         continue
-                    wait_text(marker)
-                    report["checks"].append(check)
+                    if marker == "HELIX ACPI PASS cpus=1":
+                        topology = wait_regex(rb"HELIX ACPI PASS cpus=(\d+) io_apics=(\d+) overrides=(\d+) tables=(\d+) bsp=(\d+); discovery only")
+                        discovered = int(topology[1])
+                        if discovered != args.smp:
+                            raise RuntimeError(f"ACPI discovered {discovered} enabled CPUs, expected {args.smp}")
+                        report["acpi_topology"] = {"enabled_cpus": discovered, "io_apics": int(topology[2]),
+                                                    "overrides": int(topology[3]), "validated_tables": int(topology[4]),
+                                                    "bootstrap_apic_id": int(topology[5])}
+                        if args.smp == 2:
+                            report["checks"].append("MADT discovery finds both configured CPU records; this does not start either AP")
+                        else:
+                            report["checks"].append(check)
+                    else:
+                        wait_text(marker)
+                        report["checks"].append(check)
                 routing = wait_regex(rb"HELIX IOAPIC IRQ RESULT Report \{ gsi: (\d+), apic_interrupts: (\d+), pic_interrupts: (\d+), owner_retained: (true|false), result: Ok", 0)
                 if int(routing[2]) < 3 or routing[4] != b"true":
                     raise RuntimeError("IOAPIC routing did not prove actual ISR-observed delivery")
                 report["ioapic_delivery"] = {"gsi": int(routing[1]), "apic_interrupts": int(routing[2]), "pic_interrupts": int(routing[3])}
+                if args.smp == 2:
+                    if bytes(serial_data).count(b"APs remain stopped") < 2:
+                        raise RuntimeError("kernel did not explicitly retain BSP-only AP reservation/scratch posture")
+                    if re.search(rb"(?m)^HELIX AP (?:ONLINE|STARTED|SCHEDULER)\b", serial_data):
+                        raise RuntimeError("unexpected AP activation marker in a BSP-only profile")
+                    report["checks"].append("AP trampoline and scratch remain reserved with APs stopped; no AP execution or scheduler claim")
                 wait_regex(rb"HELIX LAPIC TIMER (?:PASS|UNAVAILABLE)[^\r\n]*\r?\n")
                 lapic_outcome = parse_lapic_outcome(bytes(serial_data), args.require_lapic_calibration)
                 report["lapic_calibration"] = lapic_outcome.report()
@@ -816,6 +847,20 @@ def main():
                         gallery_key("ret", expected=(rb"PRISM DESKTOP: focused=Some\(" + app_title.encode()
                                                        + rb"\) home=false"))
                         capture_gallery(name)
+                        if name == "settings":
+                            # Appearance is the initial category (index 2);
+                            # Accessibility is index 10 in the catalog. Open
+                            # its active focus-outline controls, choose Strong,
+                            # and save through the same keyboard path a user
+                            # takes. This records a real guest frame after the
+                            # atomic preference commit completed.
+                            for _ in range(8):
+                                gallery_key("down")
+                            gallery_key("ret")
+                            gallery_key("right")
+                            gallery_key("tab")
+                            gallery_key("ret", expected=rb"PRISM APPEARANCE SAVE: request=\d+ .* result=Ok\(\(\)\) accepted=true")
+                            capture_gallery("settings-accessibility")
                         for _ in range(8):
                             closed = gallery_key("alt", "f4", expected=focus_pattern)
                             if closed[1] == b"None":
@@ -831,7 +876,7 @@ def main():
                     capture_gallery("notifications")
                     gallery_key("f8", expected=rb"PRISM DESKTOP: focused=None home=false")
                     report["visual_gallery"] = gallery
-                    report["checks"].append("actual QMP keyboard launched and captured completed guest frames for Home, six first-party panels, shortcut guide and notifications")
+                    report["checks"].append("actual QMP keyboard launched and captured completed guest frames for Home, six first-party panels, saved Accessibility settings, shortcut guide and notifications")
             if dns_peer is not None and not args.expect_boot_failure:
                 boot_dropped = dns_peer.stats.get("boot_dropped", dns_peer.stats["dropped"])
                 boot_answers = dns_peer.stats.get("boot_answers", dns_peer.stats["answers"])

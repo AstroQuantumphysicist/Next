@@ -80,21 +80,21 @@
           "command": "source tools/env.sh && python3 tools/boot_failures.py",
           "scope": "Ten malformed/missing kernel ELF media cases reject with bounded diagnostics; the original signed source image remains unchanged.",
           "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/boot-failures.json",
-          "sha256": "7862bd1932a6fa8679a76c4f50d08f7ef942e380ad0afab401d2783ba2b30e9e"
+          "sha256": "cad09f5dada759b6a3b080f3d6e3ec1473d53d12f3e02ca11204637b6b3c6a5d"
         },
         {
           "level": "boot_smoke",
           "command": "source tools/env.sh && python3 tools/initrd_failures.py",
           "scope": "Ten malformed/missing init archive cases reject before kernel entry in bounded QEMU observations; the original image remains unchanged.",
           "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/initrd-failures.json",
-          "sha256": "270510a55422c2eafa98e626b5f179f93fe8cd84a1a813ecbe303e8f18d97250"
+          "sha256": "cc7b68e4cc36eecf14cad78fcde4ff416937ec7d2c67ecc7d681fc8fa27a0895"
         },
         {
           "level": "boot_smoke",
           "command": "source tools/env.sh && python3 tools/package_failures.py",
           "scope": "Ten missing, malformed, forged, permission, signature, and digest-binding cases reject on QEMU; source media remains unchanged. The EFI loader is not Secure Boot.",
           "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/package-failures.json",
-          "sha256": "8a4844f3f835873fa2f3e065ccd06714db67b61bcd1291ceb1a7a32ddae9ceb2"
+          "sha256": "2a519b5c39665e34d23217beb4e6ed00edd82c26ac9d6bcc0ad19e2292128413"
         }
       ],
       "remaining": "Fixed-address ELF/init-image validation and development signed artifact binding are implemented. Extensible mandatory records, randomized relocation, production trust/anti-rollback, recovery and final hardware profiles remain absent."
@@ -131,7 +131,7 @@
           "command": "source tools/env.sh && python3 tools/boot_failures.py",
           "scope": "The bounded malformed-kernel cases retain stage-coded serial diagnostics and halt without entering the kernel. The report does not establish a persistent reboot-reason store.",
           "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/boot-failures.json",
-          "sha256": "7862bd1932a6fa8679a76c4f50d08f7ef942e380ad0afab401d2783ba2b30e9e"
+          "sha256": "cad09f5dada759b6a3b080f3d6e3ec1473d53d12f3e02ca11204637b6b3c6a5d"
         }
       ],
       "remaining": "Malformed kernel/archive/deployment media halt with serial diagnostics in bounded VM tests. Persistent reboot-reason records, comprehensive failure coverage and an interactive recovery environment remain absent."
@@ -140,9 +140,17 @@
       "id": "NEXT-BOOT-005",
       "kind": "explicit",
       "text": "A/B system deployment with monotonic rollback metadata, image hashes, boot-attempt counter and recovery entry. User data partition is never part of an automatic OS rollback.",
-      "status": "pending",
-      "evidence": [],
-      "remaining": "Implement and validate the complete specification contract."
+      "status": "partial",
+      "evidence": [
+        {
+          "level": "boot_smoke",
+          "command": "source tools/env.sh && python3 tools/ab_nvram_smoke.py",
+          "scope": "Five independent QEMU/OVMF processes share one variable store and read back EFI variables. The smoke-only loader stages signed slot B; B trial starts persist attempt counts 2, 1, 0, then the next start rolls back to confirmed A and a fifth remains on A. Each selected kernel/initrd loads. This does not exercise a standard-build updater.",
+          "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/ab-uefi-ovmf/ab-nvram-smoke.json",
+          "sha256": "b5a4d55f1f33c72220041d4e3cce0be0215b5cbc27afeb9a9bdf3fe03595cdb2"
+        }
+      ],
+      "remaining": "A smoke-only signed-slot boot policy persists trial attempts and rolls back to a confirmed slot in OVMF. Standard builds have no updater or health-confirmation service; EFI variables are replayable and are not protected anti-rollback storage. Secure Boot, TPM, interactive recovery, physical hardware, and guaranteed user-data preservation remain absent or unverified."
     },
     {
       "id": "NEXT-BOOT-006",
@@ -315,7 +323,7 @@
           "command": "source tools/env.sh && cargo test -p next-fs",
           "scope": "41 host tests include immediate Busy on same-context and concurrent MutationLock contention, guard release, and concurrent directory-operation stress. docs/KERNEL-LOCKS.md records observed nesting order and audits the current non-waiting timer/try-only guard paths. This is bounded host/source evidence, not guest IRQ or SMP validation.",
           "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/nextfs-tests.txt",
-          "sha256": "5091b69d93ad9ea5da1efca8863917154b5e081900ed693a2f0013e3182b2333"
+          "sha256": "b3e3acab27e1e78c3eb3e3830b33612389574b760a301a7c7af000c8dff64a5f"
         }
       ],
       "remaining": "Per-core state and an interrupt-priority policy are not explicit; the current kernel services are serialized by a one-CPU entry model. The lock note covers only observed nesting and present IRQ paths, with no global rank checker, complete IRQ call-graph audit, AP/SMP lock discipline, or guest/hardware validation."
@@ -474,7 +482,14 @@
           "command": "source tools/env.sh && python3 tools/test-network-dma.py",
           "scope": "45 host tests compile and exercise the production virtio-net queue, retaining static TX-buffer ownership through publication, timeout and malformed completion, and returning it only after a validated used-ring completion. Host-modeled queue behavior only; this does not integrate PageAllocator pins or test guest/hardware DMA.",
           "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/network-dma-host.json",
-          "sha256": "924bf60fbb9e7bba51e0b9721baa8dda8bed2242c5c8455704f9d649d0e7ec81"
+          "sha256": "19da717cd6acb5a63ae96a0fde9fe7d343b7077808c9ead045b364931535ba62"
+        },
+        {
+          "level": "host_tested",
+          "command": "source tools/env.sh && python3 tools/test-audio-dma.py",
+          "scope": "Six tests compile the production AC97 DMA ownership lifecycle and verify ownership is reserved before BDL/RUN publication, retained through timeout/FIFO/malformed completion, and released only after validated completion or a confirmed reset. No allocator pin integration, port I/O, DMA hardware, or guest verification.",
+          "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/ac97-dma-host.json",
+          "sha256": "54829fc71e061dc892767740be5bdba3c0d879f6d4521e13623757d0f34a3bf8"
         }
       ],
       "remaining": "PageAllocator pinning and static virtio-net queue ownership each have scoped host tests, but the pin API is not integrated with kernel allocator ownership/serialization, dynamic mapping references, or actual device I/O. AC97/device DMA and guest/hardware validation remain absent; end-to-end DMA and mapping use-after-free prevention is unvalidated."
@@ -529,9 +544,16 @@
           "scope": "Actual tenth60ab surface publication/presentation/teardown and DNS/foundation trace; Source11 interactive input/Trash/namespace grants and Source12 close requests are absent from this image.",
           "artifact": "docs/evidence/milestones/60ab816c97cc/serial.log",
           "sha256": "796424a4d0582983229e2555f7f3ec43c0c4248286b202e8dd3ff15850e4a0bb"
+        },
+        {
+          "level": "boot_smoke",
+          "command": "source tools/env.sh && python3 tools/boot_smoke.py --image build/next-dev.img --cpu qemu64 --smp 2 --timeout 240 --output-dir build/smp-two-vcpu-final",
+          "scope": "On the same signed image as the qemu64 gallery, QMP reports two configured virtual CPUs and ACPI/MADT discovery validates two enabled processor entries. AP startup remains disabled, the trampoline stays reserved, and scheduler scope remains BSP only; this is not multicore scheduling/stress.",
+          "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/smp-two-vcpu/boot-smoke.json",
+          "sha256": "96873a0e21670fbf8484951454246a4f3ee7938e097fc1c28fe5302e02021ab2"
         }
       ],
-      "remaining": "Single-CPU timer context/lifecycle tests run with bounded native tasks. 2/4/8-core scheduling, exit/wake/signal stress, AP startup and SMP deadlock/livelock coverage remain absent."
+      "remaining": "Single-CPU timer context/lifecycle tests run with bounded native tasks, and a two-vCPU QEMU run validates topology while leaving APs stopped. AP execution, cross-core scheduling/synchronization, and 1/2/4/8-core schedule/exit/wake/signal/preemption stress remain unimplemented or unvalidated."
     },
     {
       "id": "NEXT-SCH-003",
@@ -545,9 +567,16 @@
           "scope": "Nine direct ACPI parser tests cover mixed enabled/disabled LAPIC and x2APIC records, duplicate APIC IDs and processor UIDs across formats, the 16-record roster limit, and fail-closed overflow on the next record. Parser coverage only; it does not start APs or validate guest SMP.",
           "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/acpi-topology-tests.txt",
           "sha256": "34a0c16510739cc07d957b5dee4d63c371c3415cba212e61a63ca451b8570ddf"
+        },
+        {
+          "level": "boot_smoke",
+          "command": "source tools/env.sh && python3 tools/boot_smoke.py --image build/next-dev.img --cpu qemu64 --smp 2 --timeout 240 --output-dir build/smp-two-vcpu-final",
+          "scope": "On the same signed image as the qemu64 gallery, QMP reports two configured virtual CPUs and ACPI/MADT discovery validates two enabled processor entries. AP startup remains disabled, the trampoline stays reserved, and scheduler scope remains BSP only; this is not multicore scheduling/stress.",
+          "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/smp-two-vcpu/boot-smoke.json",
+          "sha256": "96873a0e21670fbf8484951454246a4f3ee7938e097fc1c28fe5302e02021ab2"
         }
       ],
-      "remaining": "The roster remains statically bounded at 16 records, and larger tables fail with Capacity. AP startup, multicore scheduling/synchronization, hotplug, and guest multicore stress remain unimplemented or unvalidated; topology behavior beyond the parser tests is not established."
+      "remaining": "The parser and a two-vCPU QEMU run discover two configured processors without starting APs. The roster is statically bounded at 16 records; larger tables fail closed. CPU hotplug, AP startup, and topology behavior on physical hardware remain unvalidated."
     },
     {
       "id": "NEXT-OBJ-001",
@@ -836,12 +865,12 @@
         {
           "level": "host_tested",
           "command": "source tools/env.sh && cargo test -p next-fs --lib",
-          "scope": "41 host tests pass, including two-thread directory open/rename/unlink progress, stale identity rejection, and mutation-lock reentrancy. No guest SMP claim.",
+          "scope": "42 host tests pass, including deadline-bound rendezvous failure when a worker misses a phase, concurrent directory open/rename/unlink progress, stale identity rejection, and mutation-lock reentrancy. No guest SMP or physical-disk stress.",
           "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/nextfs-tests.txt",
-          "sha256": "5091b69d93ad9ea5da1efca8863917154b5e081900ed693a2f0013e3182b2333"
+          "sha256": "b3e3acab27e1e78c3eb3e3830b33612389574b760a301a7c7af000c8dff64a5f"
         }
       ],
-      "remaining": "A nonblocking mutation lock and host directory race tests now cover the bounded journal operations. Guest SMP and power-loss behavior under concurrent mutation remain unvalidated."
+      "remaining": "A nonblocking mutation lock and host directory-race tests cover bounded journal operations, including a harness that fails within a deadline if one worker misses a rendezvous phase. Guest SMP, asynchronous filesystem callers, and power-loss behavior under concurrent mutation remain unvalidated."
     },
     {
       "id": "NEXT-PKG-001",
@@ -855,9 +884,16 @@
           "scope": "455 workspace Rust tests on exact corrected tenth source177/515f63. Two narrow retained-source backports fix editor confirmation layering and bounded pressure scope. Initial454 suite belongs to the earlier source stage; missing-fixture setup failure is retained separately. Later Source11/12 work is excluded.",
           "artifact": "docs/evidence/milestones/60ab816c97cc/validation.txt",
           "sha256": "d9a7fd2a77ba0083931635bcfe90a863512379726c246a556cf05d1db18f3e2c"
+        },
+        {
+          "level": "host_tested",
+          "command": "source tools/env.sh && cargo test --locked --offline -p next-package --features host-tools",
+          "scope": "42 package tests include rejection of file/directory prefix collisions before staging, case-alias and metadata-limit checks, and proof that rejected archives do not mutate existing outputs. Host installer only; hostile-ancestor races and guest installation are not covered.",
+          "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/package-host-tests.txt",
+          "sha256": "8532d15ca24dd8b8de862c9cbb170a12f3a7786cbf807858c46819cd3b7acc5e"
         }
       ],
-      "remaining": "Canonical bounded package metadata rejects traversal/aliases/links by format before exposure. A host-only installer rejects unsafe payload/root paths and isolates deployments under an existing private trusted root. Guest extraction/install authority, hostile-ancestor/race defense and complete root-confinement coverage remain absent."
+      "remaining": "Canonical bounded metadata and host extraction reject traversal, aliases, links, file/directory prefix conflicts and oversized metadata before exposure. Guest extraction authority, hostile-ancestor/race defense, hardlink/special-file semantics for general archives, and complete root-confinement coverage remain absent."
     },
     {
       "id": "NEXT-PKG-002",
@@ -900,7 +936,7 @@
           "command": "source tools/env.sh && bash tools/test.sh",
           "scope": "Host installer failure-injection tests pass, including pre-rename and post-rename directory-sync failures; this does not implement guest dependency resolution or migration.",
           "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/workspace-validation.txt",
-          "sha256": "47f9cf2e3601099fb277d58ae7008431ac67d9cf9aa0ea07bc03643b60da5952"
+          "sha256": "2499b07820533afa76433ac74b52985a8e3b878eb4384f13cd6db9c0c69b4485"
         }
       ],
       "remaining": "Host registry transactions and injected precommit failures preserve existing active installations. Dependency resolution/version migration hooks, guest package state and complete interrupted migration/recovery coverage remain absent."
@@ -2097,7 +2133,7 @@
           "command": "source tools/env.sh && python3 tools/test-network-runtime.py",
           "scope": "Thirty deterministic host tests exercise the production DHCP runtime through acquisition, renewal/rebind, expiry, and restart with modeled device queues; see the separate guest QEMU evidence for actual guest timer/recovery behavior.",
           "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/network-runtime-host.json",
-          "sha256": "a0d178cd148b8929271d6579304cad95c5235b4a6cb4db5b1d8e94e91267ad23"
+          "sha256": "83657488e33266a32f5dac9ba3dcc278e0bde3edaf450b3344e74c4a53378638"
         },
         {
           "level": "boot_smoke",
@@ -2112,9 +2148,16 @@
           "scope": "Actual q35/TCG qemu64 guest kernel over virtio-net and a deterministic Ethernet peer: 40-second DHCPv4 lease; T1 unicast ACK refresh; T2 broadcast rebind accepted from an alternate server; NAK-triggered discovery restart; and expiry-triggered discovery restart. Single-vCPU QEMU evidence, not broad server interoperability or hardware certification.",
           "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/dhcp-guest-smoke.json",
           "sha256": "ae608d67744727e09890cbe9de386af5341af31125f0f74ce7b79f3bfaff32cc"
+        },
+        {
+          "level": "host_tested",
+          "command": "source tools/env.sh && python3 tools/test-network-dma.py",
+          "scope": "56 production-source host tests cover virtio queue ownership and bounded IPv6/ICMPv6/NDP/Router Advertisement parsing with one router/four prefix candidates and lifetime validation. Host-modeled only; no IPv6 guest, address assignment, DAD, neighbor cache, routes or DHCPv6.",
+          "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/network-dma-host.json",
+          "sha256": "19da717cd6acb5a63ae96a0fde9fe7d343b7077808c9ead045b364931535ba62"
         }
       ],
-      "remaining": "DHCPv4 acquisition, T1 refresh, T2 rebind, NAK recovery, and expiry recovery are exercised with a controlled QEMU peer; this does not establish broad DHCP interoperability. Actual ARP/ICMP/UDP/TCP and local synthetic-zone DNS A/AAAA/retry/cache/TTL expiry also run on QEMU. General DNS/upstream handling, IPv6 transport, userspace netd/socket APIs, TLS/firewall/settings, and physical certification remain absent."
+      "remaining": "IPv4 DHCP acquisition/renewal and bounded TCP/UDP/DNS probes have scoped guest and host evidence. IPv6 receive validation and RA prefix/router lifetime parsing are host-tested only; address assignment, DAD, neighbor cache, routes, DHCPv6, TLS integration, firewall policy and broad interoperability remain absent or unvalidated."
     },
     {
       "id": "SECTION-12",
@@ -2189,9 +2232,23 @@
           "scope": "119 actual assertions; eight F9 readbacks bind last complete frame, names/roles/geometry/selection/focus, Tab/no-mutation, trusted portal and query modal restoration. Manual local metadata only; no external speech/transport/application trees or accessibility certification.",
           "artifact": "docs/evidence/milestones/75b7eee4a19b/accessibility/boot-smoke.json",
           "sha256": "128b8a13096fb08e69203c23b61f953bc693e89a7697fe416066acea1ddcbab7"
+        },
+        {
+          "level": "host_tested",
+          "command": "source tools/env.sh && bash tools/test-appearance-journal.sh",
+          "scope": "43 host crash-boundary tests compile the production Appearance preference codec/save path and COW journal. The Standard/Strong focus-outline choice shares the checksummed record and changes active state only after commit; no external assistive technology transport is tested.",
+          "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/appearance-journal-tests.txt",
+          "sha256": "0beda3bbbe68dba3df3e5643636d53e8d0989b048848b58ccd20e22341b7af2d"
+        },
+        {
+          "level": "boot_smoke",
+          "command": "source tools/env.sh && python3 tools/boot_smoke.py --image build/next-dev.img --cpu qemu64 --capture-prism-gallery",
+          "scope": "Actual QMP keyboard navigation opens Accessibility Settings, selects Strong outline, triggers Save and waits for an accepted kernel commit record before capturing a completed guest frame. This proves the bounded Settings interaction in this QEMU run, not screen-reader support, general focus contrast, physical display behavior, or accessibility certification.",
+          "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/final-qemu64/prism-settings-accessibility.png",
+          "sha256": "0621c24e3511ecef21ababe6cd9ce3405f8b14ce7bae055b0fdd1effed752cd8"
         }
       ],
-      "remaining": "Source13 guest-tested manual F9 metadata exposes trusted kernel-hosted panel names/roles/bounds/selected/focused state tied to complete frames; modal focus and query restoration work. Screen-reader speech, external accessibility transport, native application trees, full keyboard alternatives/physical key state, Unicode/IME/localization and accessibility acceptance remain incomplete."
+      "remaining": "One persisted Settings-only focus-outline choice and its keyboard/save path are covered by host crash tests and a QEMU screenshot. Screen-reader/speech/braille, magnifier, external accessibility API, accessible login/installer/recovery, native/foreign application trees, scalable typography, reduced motion/transparency, and certification remain unfinished."
     },
     {
       "id": "SECTION-12.4",
@@ -2838,7 +2895,7 @@
           "command": "source tools/env.sh && bash tools/test.sh",
           "scope": "Original static Linux file fixture passes on host Linux with exit status 46; this covers only the documented bounded fixture.",
           "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/workspace-validation.txt",
-          "sha256": "47f9cf2e3601099fb277d58ae7008431ac67d9cf9aa0ea07bc03643b60da5952"
+          "sha256": "2499b07820533afa76433ac74b52985a8e3b878eb4384f13cd6db9c0c69b4485"
         },
         {
           "level": "boot_smoke",
@@ -3567,7 +3624,7 @@
           "command": "source tools/env.sh && python3 tools/boot_smoke.py --cpu qemu64 --timeout 240 --capture-prism-gallery",
           "scope": "Final qemu64 gallery run passed 118 checks on image 4cc895e716afda58cf932d0dbebabec9f755e39fb566bbd000741c82301b32bb and captured the 1280x800 Settings view after completed framebuffer presentation. Settings exposes 12 categories; Appearance theme/accent selection and Save/Revert are active, System diagnostics are read-only, and ten pages remain informational with disabled rows. Rendering evidence does not establish complete settings functionality, assistive support, or hardware behavior.",
           "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/final-qemu64/boot-smoke.json",
-          "sha256": "f09e087a4424fa2a9537ffe7796130d98518cae33bf030da4cded0aa6ed13467"
+          "sha256": "dfd111a01cdcea804a09313a7f325103c2846356482a10d2be567a7cdd1481b8"
         }
       ],
       "remaining": "Settings provides 12 navigable categories. Appearance supports bounded theme and accent selection with Save/Revert through the existing persistence adapter; System exposes read-only diagnostics. Display, Sound, Network & Internet, Bluetooth & Devices, Apps, Accounts, Privacy & Security, Storage & Backup, Accessibility and Developer are informational pages with disabled settings rows. Wallpaper, fonts, density, scale, desktop layout, other hardware/system controls, and full settings persistence and assistive-technology coverage remain unavailable or unvalidated."

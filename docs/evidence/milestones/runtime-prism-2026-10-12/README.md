@@ -1,73 +1,23 @@
 # Runtime and Prism evidence — 2026-10-12
 
-The original gallery and max-profile QEMU reports use the same signed
-development image SHA-256:
-`708660fd20f13325b7da0cd1dbe52f1f2b71a8ffb959270d63225f636ac5269e`.
-The image was built from this feature wave. It is a q35/TCG guest with one
-virtual CPU; neither profile certifies physical hardware.
+The current signed development image SHA-256 is `b79790f446b5bde892fbde78d63e3a177d558d2d1319556680d9f48f24efb8ce`. It passed 119 qemu64 guest checks and a separate 119-check two-vCPU profile. The qemu64 report captures ten current Prism screens, including the saved Accessibility focus-outline setting. The two-vCPU report confirms two QMP CPU objects and two enabled ACPI/MADT records while AP startup remains disabled and the scheduler stays on the BSP. Neither QEMU profile certifies physical hardware.
 
 ## Guest runs
 
-- `final-qemu64/boot-smoke.json` records 118 passed checks on the freshly built signed image `4cc895e716afda58cf932d0dbebabec9f755e39fb566bbd000741c82301b32bb`. It includes event-only wait-many and captures all nine Prism screens. The report, serial log, audio, screenshot, and PNG frames are retained together.
-
-- `qemu64-gallery/boot-smoke.json` records 117 passed checks using QEMU's
-  `qemu64` CPU profile. The completed run captured all nine current Prism
-  screens. `qemu64-gallery/prism-*.png` are the same guest frames used by the
-  [visual gallery](../../../PRISM-VISUAL-GALLERY.md); the screenshot suite
-  checks frame dimensions and nonblank output, not full visual quality or
-  accessibility.
-- `settings-refresh/boot-smoke.json` records a later 118-check qemu64 run on
-  image `e69aa9ca8de049c2a12d048e28e56525a0c352992b2385b200daba70de4ab484`.
-  Its Settings frame shows 12 categories: Appearance has active theme/accent
-  controls, System is read-only, and the other ten categories are informational
-  with disabled rows. It is rendering evidence, not a claim that those disabled
-  pages configure hardware or system services.
-- `qemu-max/boot-smoke.json` records 116 passed checks using QEMU's `max` CPU
-  profile. It exercises scheduler-backed event waits and the Linux positional
-  file fixture, which exits 46. Both runs retain compressed serial output, audio capture,
-  and the presented framebuffer image beside their reports.
-- `dhcp-guest-smoke.json` records a separate QEMU guest run on image
-  `e69aa9ca8de049c2a12d048e28e56525a0c352992b2385b200daba70de4ab484`.
-  A controlled Ethernet peer drove the actual guest's T1 ACK refresh, T2
-  broadcast rebind with an alternate server, NAK/discovery restart, and
-  expiry/discovery restart. The report includes event times, timer windows,
-  source hashes, and QEMU limits.
-- `boot-failures.json`, `initrd-failures.json`, and `package-failures.json`
-  record ten bounded malformed-input cases each against the same final image.
-  All reject the altered boot media and preserve the original image. Their text
-  logs are included for a quick readable check.
+- `final-qemu64/boot-smoke.json` binds the current image hash to the 119-check qemu64 run, serial log, audio capture, framebuffer and ten PNG frames used in the [Prism visual gallery](../../../PRISM-VISUAL-GALLERY.md). The Accessibility capture follows keyboard navigation, saves the Strong outline preference, waits for the kernel's accepted-save record, then captures a completed frame.
+- `smp-two-vcpu/boot-smoke.json` uses the same image and observes two configured virtual CPUs plus two enabled MADT processor entries. APs remain stopped; this is not SMP execution or scheduling evidence.
+- `ab-uefi-ovmf/ab-nvram-smoke.json` records five separate boots that share OVMF variables: three B trial attempts followed by rollback to A and a confirmed A boot. The test-only loader feature stages the trial image; standard builds still have no updater or health-confirmation service.
+- The three malformed-media reports each contain ten rejection cases and confirm the source image stayed unchanged. Detailed current serial logs are retained under `ab-uefi-ovmf/{boot,initrd,package}-failures/`.
+- Earlier `qemu-max`, `qemu64-gallery`, `settings-refresh`, DHCP renewal/rebind, and ObjectWaitMany runs remain as separate source-bound records; their image hashes identify their exact snapshots.
 
 ## Host checks
 
-- `workspace-validation.txt` is the successful `bash tools/test.sh` run. The
-  workspace suite includes 218 `next-checks` host contract tests and 191 Prism
-  tests; focused host checks are also recorded in the same output.
-- `nextfs-tests.txt` records 41 passing NextFS tests, including concurrent
-  directory open/rename/unlink and stale-identity checks. This is a host race
-  test; it does not prove guest SMP safety or disk durability under concurrent
-  mutation.
-- `network-runtime-host.json` records 30 passing DHCP acquisition, renewal,
-  rebinding, expiry, and restart tests against the production runtime with a
-  deterministic clock and modeled device queues. The guest DHCP timer and
-  recovery path is also exercised in `dhcp-guest-smoke.json` using QEMU TCG and
-  a deterministic Ethernet peer; this is not hardware certification.
-- `network-dma-host.json` records 45 host tests compiled against the production
-  virtio-network queue, including static-buffer ownership through descriptor
-  publication, timeout, malformed completion, and valid completion. Its source
-  hashes identify the exact files tested. This validates the permanent static
-  staging-buffer lifetime only; it is not allocator pinning, user-page DMA, or
-  guest hardware verification.
-- `channel-host-benchmark.json` benchmarks the production Helix core framing
-  and bounded queue APIs on the host. It excludes kernel syscalls, handle
-  authorization/lifetime, devices, and guest latency. The 4 KiB and 64 KiB
-  logical payloads are fragmented into 256-byte frames.
-- `panic-header-tests.txt` tests the bounded panic metadata formatter. The
-  kernel reports a BSP/thread placeholder and no backtrace; this run does not
-  inject a guest panic or provide a durable reboot record.
+- `workspace-validation.txt` is the passing `bash tools/test.sh` run for this source snapshot.
+- `nextfs-tests.txt` records 42 NextFS tests, including bounded rendezvous failure when a participant misses a phase and concurrent directory open/rename/unlink progress. These are host tests, not guest SMP or physical-storage stress.
+- `package-host-tests.txt` records 42 package tests; verification rejects file/directory path-prefix conflicts before extraction and checks case aliases, oversized metadata and no-mutation behavior. Hostile-ancestor races and guest package installation remain absent.
+- `network-runtime-host.json` records 41 production-source runtime/parser tests, including DHCP state transitions and the bounded IPv6/ICMPv6 Router Advertisement model. `network-dma-host.json` records 56 virtio-network queue and IPv6 parsing tests. Neither establishes IPv6 address assignment, DAD, neighbor cache, routes, DHCPv6, or guest IPv6 operation.
+- `ac97-dma-host.json` records six production-source DMA ownership tests. It retains DMA ownership through timeout/malformed/FIFO-error states and releases only after valid completion or a confirmed reset; it does not integrate allocator pinning or certify audio hardware.
+- `appearance-journal-tests.txt` records 43 crash-boundary and persistence tests for the shared appearance preference record, including the focus-outline preference. The guest frame proves only that the Settings save was accepted and rendered in this QEMU run.
+- `acpi-topology-tests.txt`, `ap-transition-review/`, and `channel-host-benchmark.json` retain their focused topology, compiled transition-stage, and host benchmark evidence.
 
-The final qemu64 gallery run uses image
-`4cc895e716afda58cf932d0dbebabec9f755e39fb566bbd000741c82301b32bb`. The workspace suite and `tools/build.sh` both pass
-against the current source tree. Each retained guest run identifies its exact
-image digest; FAT image timestamps can differ between builds. Run
-`sha256sum -c SHA256SUMS` from this directory to check the retained files. The
-requirement ledger links selected artifacts by their exact content hash.
+These results extend partial requirement evidence; no requirement is promoted to verified. `sha256sum -c SHA256SUMS` checks every retained file in this directory; the focused A/B, qemu64, two-vCPU and Settings bundles also carry their own manifests.

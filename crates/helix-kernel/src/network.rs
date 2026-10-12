@@ -9,6 +9,8 @@ use core::{
 };
 #[path = "network_dhcp.rs"]
 pub mod dhcp;
+#[path = "network_ipv6.rs"]
+mod ipv6;
 #[path = "network_runtime.rs"]
 mod runtime;
 #[path = "network_tcp.rs"]
@@ -255,6 +257,7 @@ struct Device {
     tx: Queue,
     lease_at: u64,
     dhcp_client: Option<dhcp::Client>,
+    ipv6_router_advertisement: ipv6::RouterAdvertisementState,
 }
 impl Device {
     unsafe fn setup(base: u16) -> Result<Self, NetworkError> {
@@ -284,6 +287,7 @@ impl Device {
             tx,
             lease_at: 0,
             dhcp_client: None,
+            ipv6_router_advertisement: ipv6::RouterAdvertisementState::new(),
         };
         device
             .rx
@@ -346,7 +350,25 @@ impl Device {
         }
         self.rx.submit(self.base, 0, buffer, BUFFER_BYTES, true)?;
         let _ = in8(self.base + 19);
-        Ok(Some(len - HEADER))
+        let frame_len = len - HEADER;
+        // The bounded IPv6/NDP validator is part of the real receive path.
+        // Malformed IPv6 is dropped after the RX descriptor has been safely
+        // returned to the device; unsupported features are never interpreted
+        // as a validated neighbor or packet.
+        match ipv6::validate_received_frame(&out[..frame_len]) {
+            Err(_) => return Ok(None),
+            Ok(Some(advertisement)) => {
+                if self
+                    .ipv6_router_advertisement
+                    .apply(advertisement, clock_now() / 1_000_000_000)
+                    .is_err()
+                {
+                    return Ok(None);
+                }
+            }
+            Ok(None) => {}
+        }
+        Ok(Some(frame_len))
     }
     unsafe fn acquire_lease(&mut self) -> Result<dhcp::Lease, NetworkError> {
         let seed = core::arch::x86_64::_rdtsc() as u32
@@ -926,6 +948,7 @@ mod tests {
             tx: pending_queue(),
             lease_at: 0,
             dhcp_client: None,
+            ipv6_router_advertisement: ipv6::RouterAdvertisementState::new(),
         };
         let buffer = TX_BUFFER.0.get().cast::<u8>();
         let mut before = [0; BUFFER_BYTES];

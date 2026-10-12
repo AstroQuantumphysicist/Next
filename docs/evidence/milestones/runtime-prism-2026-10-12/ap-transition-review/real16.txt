@@ -1,0 +1,44 @@
+
+/workspace/Next/work/ap-transition-audit-final-2/real16.bin:     file format binary
+
+
+Disassembly of section .data:
+
+00080000 <.data>:
+   80000:	fa                   	cli
+   80001:	fc                   	cld
+   80002:	b8 00 82             	mov    ax,0x8200
+   80005:	8e d8                	mov    ds,ax
+   80007:	66 b8 01 00 00 00    	mov    eax,0x1
+   8000d:	0f a2                	cpuid
+   8000f:	66 c1 eb 18          	shr    ebx,0x18
+   80013:	66 31 f6             	xor    esi,esi
+   80016:	b9 10 00             	mov    cx,0x10
+   80019:	66 39 1c             	cmp    DWORD PTR [si],ebx
+   8001c:	75 06                	jne    0x80024
+   8001e:	83 7c 0c 01          	cmp    WORD PTR [si+0xc],0x1
+   80022:	74 08                	je     0x8002c
+   80024:	83 c6 10             	add    si,0x10
+   80027:	e2 f0                	loop   0x80019
+   80029:	e9 39 00             	jmp    0x80065
+   8002c:	8b 44 08             	mov    ax,WORD PTR [si+0x8]
+   8002f:	8e d0                	mov    ss,ax
+   80031:	8b 64 0a             	mov    sp,WORD PTR [si+0xa]
+   80034:	0f 01 1e 40 0d       	lidtw  ds:0xd40
+   80039:	31 c0                	xor    ax,ax
+   8003b:	8e d8                	mov    ds,ax
+   8003d:	8e c0                	mov    es,ax
+   8003f:	2e 0f 01 16 78 02    	lgdtw  cs:0x278
+   80045:	b8 00 82             	mov    ax,0x8200
+   80048:	8e d8                	mov    ds,ax
+   8004a:	0f 01 1e 58 0d       	lidtw  ds:0xd58
+   8004f:	31 c0                	xor    ax,ax
+   80051:	8e d8                	mov    ds,ax
+   80053:	0f 20 c0             	mov    eax,cr0
+   80056:	66 83 c8 01          	or     eax,0x1
+   8005a:	0f 22 c0             	mov    cr0,eax
+   8005d:	66 ea 6a 00 08 00 08 	jmp    0x8:0x8006a
+   80064:	00
+   80065:	fa                   	cli
+   80066:	f4                   	hlt
+   80067:	e9 fb ff             	jmp    0x80065

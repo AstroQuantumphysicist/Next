@@ -13,6 +13,11 @@ class ImageBuildTests(unittest.TestCase):
             file = root / 'build/esp' / name
             file.parent.mkdir(parents=True, exist_ok=True)
             file.write_bytes(b'test input')
+        for slot in ('A', 'B'):
+            for name in ('HELIX.ELF', 'INITRD.NXI', 'SYSTEM.NXP'):
+                file = root / 'build/esp/EFI/NEXT' / slot / name
+                file.parent.mkdir(parents=True, exist_ok=True)
+                file.write_bytes(b'test slot input')
         destination = root / 'build/next-dev.img'
         destination.write_bytes(b'previous boot image')
         return destination
@@ -28,8 +33,8 @@ class ImageBuildTests(unittest.TestCase):
             self.assertFalse((root / 'build/next-dev.img.tmp').exists())
 
     def test_each_format_or_copy_failure_preserves_previous_image(self):
-        # Formatting, directory creation, and all five copies may fail.
-        for failed_call in range(7):
+        # Formatting, directory creation, and all eleven copies may fail.
+        for failed_call in range(13):
             with self.subTest(failed_call=failed_call), tempfile.TemporaryDirectory() as directory:
                 root = Path(directory)
                 destination = self.fixture(root)

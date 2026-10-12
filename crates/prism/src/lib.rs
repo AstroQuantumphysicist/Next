@@ -630,9 +630,11 @@ impl Shell {
         }
         let editing_appearance =
             self.settings_category == settings_catalog::Category::Appearance as usize;
+        let editing_accessibility =
+            self.settings_category == settings_catalog::Category::Accessibility as usize;
         let show_diagnostics =
             self.settings_category == settings_catalog::Category::System as usize;
-        let enabled = editing_appearance
+        let can_edit_preferences = (editing_appearance || editing_accessibility)
             && self.appearance.loaded()
             && !matches!(
                 self.appearance.status(),
@@ -707,27 +709,33 @@ impl Shell {
                 keyboard_focus::Role::Button,
                 true,
             ),
-            Self::file_control(5, 1, "Theme", keyboard_focus::Role::ListItem, enabled),
+            Self::file_control(
+                5,
+                1,
+                "Theme",
+                keyboard_focus::Role::ListItem,
+                editing_appearance && can_edit_preferences,
+            ),
             Self::file_control(
                 5,
                 2,
                 "Accent color",
                 keyboard_focus::Role::ListItem,
-                enabled,
+                editing_appearance && can_edit_preferences,
             ),
             Self::file_control(
                 5,
                 3,
                 "Save appearance",
                 keyboard_focus::Role::Button,
-                enabled,
+                editing_appearance && can_edit_preferences,
             ),
             Self::file_control(
                 5,
                 4,
                 "Revert unsaved appearance",
                 keyboard_focus::Role::Button,
-                enabled,
+                editing_appearance && can_edit_preferences,
             ),
             Self::file_control(
                 5,
@@ -735,6 +743,34 @@ impl Shell {
                 "System diagnostics",
                 keyboard_focus::Role::Button,
                 show_diagnostics,
+            ),
+            Self::file_control(
+                5,
+                22,
+                "Standard focus indicator",
+                keyboard_focus::Role::ListItem,
+                editing_accessibility && can_edit_preferences,
+            ),
+            Self::file_control(
+                5,
+                23,
+                "Strong focus indicator",
+                keyboard_focus::Role::ListItem,
+                editing_accessibility && can_edit_preferences,
+            ),
+            Self::file_control(
+                5,
+                24,
+                "Save accessibility setting",
+                keyboard_focus::Role::Button,
+                editing_accessibility && can_edit_preferences,
+            ),
+            Self::file_control(
+                5,
+                25,
+                "Revert accessibility setting",
+                keyboard_focus::Role::Button,
+                editing_accessibility && can_edit_preferences,
             ),
         ];
         controls[16].visible = show_diagnostics;
@@ -796,6 +832,19 @@ impl Shell {
                             keyboard_focus::Input::Keyboard,
                         );
                     }
+                    settings_catalog::Category::Accessibility => {
+                        let local = if self.appearance.draft().focus_indicator
+                            == appearance::FocusIndicator::Strong
+                        {
+                            23
+                        } else {
+                            22
+                        };
+                        let _ = self.file_focus.select(
+                            keyboard_focus::ControlId { scope: 5, local },
+                            keyboard_focus::Input::Keyboard,
+                        );
+                    }
                     settings_catalog::Category::System => {
                         let _ = self.file_focus.select(
                             keyboard_focus::ControlId { scope: 5, local: 5 },
@@ -847,6 +896,35 @@ impl Shell {
                     let _ = self.appearance.cancel();
                 }
                 5 if key == Key::Enter => self.settings_diagnostics = true,
+                22 | 23 => {
+                    let strong = match key {
+                        Key::Left => false,
+                        Key::Right => true,
+                        _ => local == 23,
+                    };
+                    let focus_indicator = if strong {
+                        appearance::FocusIndicator::Strong
+                    } else {
+                        appearance::FocusIndicator::Standard
+                    };
+                    let _ = self.appearance.choose_focus_indicator(focus_indicator);
+                    let target = if strong { 23 } else { 22 };
+                    if target != local && matches!(key, Key::Left | Key::Right) {
+                        let _ = self.file_focus.select(
+                            keyboard_focus::ControlId {
+                                scope: 5,
+                                local: target,
+                            },
+                            keyboard_focus::Input::Keyboard,
+                        );
+                    }
+                }
+                24 if key == Key::Enter => {
+                    let _ = self.appearance.apply();
+                }
+                25 if key == Key::Enter => {
+                    let _ = self.appearance.cancel();
+                }
                 _ => {}
             }
         }
@@ -870,7 +948,7 @@ impl Shell {
         (self.desktop.window(App::Settings).bounds.width - 200).max(0)
     }
     fn settings_disabled_control_bounds(&self, index: usize) -> Option<Bounds> {
-        if index >= 3 {
+        if index >= 3 || self.settings_category() == settings_catalog::Category::Accessibility {
             return None;
         }
         let b = self.desktop.window(App::Settings).bounds;
@@ -879,6 +957,24 @@ impl Shell {
             y: b.y + 140 + index as i32 * 46,
             width: (self.settings_content_width() - 16).max(0),
             height: 36,
+        })
+    }
+    fn accessibility_control_bounds(&self, index: usize) -> Option<Bounds> {
+        if index >= 4 {
+            return None;
+        }
+        let b = self.desktop.window(App::Settings).bounds;
+        let (row, column) = if index < 2 {
+            (0, index)
+        } else {
+            (1, index - 2)
+        };
+        let width = ((self.settings_content_width() - 24) / 2).clamp(0, 156);
+        Some(Bounds {
+            x: self.settings_content_x() + 8 + column as i32 * (width + 6),
+            y: b.y + if row == 0 { 134 } else { 210 },
+            width,
+            height: 34,
         })
     }
     fn settings_diagnostics_bounds(&self) -> Bounds {
@@ -939,6 +1035,45 @@ impl Shell {
             );
             self.settings_diagnostics = true;
             return true;
+        }
+        if self.settings_category() == settings_catalog::Category::Accessibility {
+            for index in 0..4 {
+                if self
+                    .accessibility_control_bounds(index)
+                    .is_some_and(|bounds| Self::hit(bounds, x, y))
+                {
+                    let local = 22 + index as u32;
+                    if self
+                        .file_focus
+                        .select(
+                            keyboard_focus::ControlId { scope: 5, local },
+                            keyboard_focus::Input::Pointer,
+                        )
+                        .is_ok()
+                    {
+                        match index {
+                            0 => {
+                                let _ = self
+                                    .appearance
+                                    .choose_focus_indicator(appearance::FocusIndicator::Standard);
+                            }
+                            1 => {
+                                let _ = self
+                                    .appearance
+                                    .choose_focus_indicator(appearance::FocusIndicator::Strong);
+                            }
+                            2 => {
+                                let _ = self.appearance.apply();
+                            }
+                            _ => {
+                                let _ = self.appearance.cancel();
+                            }
+                        }
+                    }
+                    return true;
+                }
+            }
+            return false;
         }
         if self.settings_category() != settings_catalog::Category::Appearance {
             return false;
@@ -4573,6 +4708,42 @@ impl Shell {
         canvas.rect(b.x, b.y + 5, 1, (b.height - 10).max(0), color);
         canvas.rect(b.x + b.width - 1, b.y + 5, 1, (b.height - 10).max(0), color);
     }
+
+    fn focus_ring_color(&self) -> u32 {
+        if self.active_appearance().theme == appearance::Theme::Light {
+            0x101820
+        } else {
+            0xffffff
+        }
+    }
+
+    fn draw_focus_outline(&self, canvas: &mut Canvas<'_>, b: Bounds) {
+        if self.active_appearance().focus_indicator != appearance::FocusIndicator::Strong
+            || b.width < 6
+            || b.height < 6
+        {
+            return;
+        }
+        let color = self.focus_ring_color();
+        for inset in 0..3 {
+            canvas.rect(b.x + inset, b.y + inset, b.width - inset * 2, 1, color);
+            canvas.rect(
+                b.x + inset,
+                b.y + b.height - 1 - inset,
+                b.width - inset * 2,
+                1,
+                color,
+            );
+            canvas.rect(b.x + inset, b.y + inset, 1, b.height - inset * 2, color);
+            canvas.rect(
+                b.x + b.width - 1 - inset,
+                b.y + inset,
+                1,
+                b.height - inset * 2,
+                color,
+            );
+        }
+    }
     fn render_settings(
         &self,
         canvas: &mut Canvas<'_>,
@@ -4643,6 +4814,7 @@ impl Shell {
             }
             if focused {
                 canvas.rect(item.x + 2, item.y + 5, 2, item.height - 10, theme::ACCENT);
+                self.draw_focus_outline(canvas, item);
             }
             draw_limited(
                 canvas,
@@ -4650,11 +4822,7 @@ impl Shell {
                 item.y + 8,
                 section.label,
                 ((item.width - 18).max(0) / 6) as usize,
-                if selected {
-                    self.accent_foreground()
-                } else {
-                    theme::TEXT
-                },
+                theme::TEXT,
             );
         }
 
@@ -4669,6 +4837,9 @@ impl Shell {
                     ((width - 224).max(0) / 6) as usize,
                 );
             }
+            settings_catalog::Category::Accessibility => {
+                self.render_accessibility_settings(canvas, x + 188, y, width - 200, height);
+            }
             _ => self.render_settings_information(
                 canvas,
                 x,
@@ -4677,6 +4848,208 @@ impl Shell {
                 self.settings_category,
                 height,
             ),
+        }
+    }
+
+    fn render_accessibility_settings(
+        &self,
+        canvas: &mut Canvas<'_>,
+        x: i32,
+        y: i32,
+        width: i32,
+        height: i32,
+    ) {
+        let inner_width = (width - 16).max(0);
+        theme::text(
+            canvas,
+            x + 10,
+            y + 53,
+            "Accessibility",
+            theme::TEXT,
+            theme::Font::Title,
+        );
+        draw_limited(
+            canvas,
+            x + 10,
+            y + 78,
+            "A clear outline tracks keyboard focus in Settings.",
+            ((inner_width - 20).max(0) / 6) as usize,
+            theme::MUTED,
+        );
+        draw_limited(
+            canvas,
+            x + 10,
+            y + 112,
+            "Keyboard focus outline",
+            ((inner_width - 20).max(0) / 6) as usize,
+            theme::TEXT,
+        );
+
+        let enabled = self.appearance.loaded()
+            && !matches!(
+                self.appearance.status(),
+                appearance_ui::Status::Saving
+                    | appearance_ui::Status::Corrupt
+                    | appearance_ui::Status::UnsupportedScale
+            );
+        for index in 0..2 {
+            let Some(button) = self.accessibility_control_bounds(index) else {
+                continue;
+            };
+            let strong = index == 1;
+            let selected = self.appearance.draft().focus_indicator
+                == if strong {
+                    appearance::FocusIndicator::Strong
+                } else {
+                    appearance::FocusIndicator::Standard
+                };
+            let focused = self.file_focus.focus_visible()
+                && self
+                    .file_focus
+                    .focused()
+                    .is_some_and(|id| id.scope == 5 && id.local == 22 + index as u32);
+            theme::rounded_rect(
+                canvas,
+                button,
+                7,
+                if selected && enabled {
+                    theme::ACCENT_SOFT
+                } else {
+                    theme::BACKGROUND
+                },
+            );
+            if (selected && enabled) || focused {
+                Self::control_border(
+                    canvas,
+                    button,
+                    if focused {
+                        self.focus_ring_color()
+                    } else {
+                        theme::ACCENT
+                    },
+                );
+            }
+            if focused {
+                self.draw_focus_outline(canvas, button);
+            }
+            draw_limited(
+                canvas,
+                button.x + 10,
+                button.y + 10,
+                if strong { "Strong outline" } else { "Standard" },
+                ((button.width - 20).max(0) / 6) as usize,
+                if enabled { theme::TEXT } else { theme::MUTED },
+            );
+        }
+
+        draw_limited(
+            canvas,
+            x + 10,
+            y + 184,
+            "Changes",
+            ((inner_width - 20).max(0) / 6) as usize,
+            theme::TEXT,
+        );
+        for index in 2..4 {
+            let Some(button) = self.accessibility_control_bounds(index) else {
+                continue;
+            };
+            let focused = self.file_focus.focus_visible()
+                && self
+                    .file_focus
+                    .focused()
+                    .is_some_and(|id| id.scope == 5 && id.local == 22 + index as u32);
+            let save = index == 2;
+            let save_primary = save
+                && matches!(
+                    self.appearance.status(),
+                    appearance_ui::Status::Unsaved | appearance_ui::Status::SaveFailed
+                );
+            theme::rounded_rect(
+                canvas,
+                button,
+                7,
+                if save_primary && enabled {
+                    theme::ACCENT_SOFT
+                } else {
+                    theme::BACKGROUND
+                },
+            );
+            Self::control_border(
+                canvas,
+                button,
+                if focused {
+                    self.focus_ring_color()
+                } else {
+                    theme::BORDER
+                },
+            );
+            if focused {
+                self.draw_focus_outline(canvas, button);
+            }
+            draw_limited(
+                canvas,
+                button.x + 10,
+                button.y + 10,
+                if save { "Save" } else { "Revert" },
+                ((button.width - 20).max(0) / 6) as usize,
+                if enabled { theme::TEXT } else { theme::MUTED },
+            );
+        }
+
+        let (status, color) = match self.appearance.status() {
+            appearance_ui::Status::Ready if self.appearance.loaded() => {
+                ("Saved focus outline is active.", theme::TEXT)
+            }
+            appearance_ui::Status::Ready => (
+                "Settings are not loaded; editing is disabled.",
+                theme::MUTED,
+            ),
+            appearance_ui::Status::Unsaved => (
+                "Unsaved focus outline. Save to apply.",
+                palette::Palette::new(self.active_appearance()).warning,
+            ),
+            appearance_ui::Status::Saving => ("Saving preference...", theme::MUTED),
+            appearance_ui::Status::Saved => ("Saved focus outline is active.", theme::ACCENT),
+            appearance_ui::Status::SaveFailed => (
+                "Save failed; active focus outline is unchanged.",
+                palette::Palette::new(self.active_appearance()).warning,
+            ),
+            appearance_ui::Status::Corrupt => (
+                "Settings are corrupt; nothing was overwritten.",
+                palette::Palette::new(self.active_appearance()).warning,
+            ),
+            appearance_ui::Status::UnsupportedScale => (
+                "Stored text size is unsupported; nothing was overwritten.",
+                palette::Palette::new(self.active_appearance()).warning,
+            ),
+        };
+        draw_limited(
+            canvas,
+            x + 10,
+            y + 256,
+            status,
+            ((inner_width - 20).max(0) / 6) as usize,
+            color,
+        );
+        if height > 350 {
+            let columns = ((inner_width - 20).max(0) / 6) as usize;
+            draw_limited(
+                canvas,
+                x + 10,
+                y + 290,
+                "Unavailable: screen reader, captions, speech and magnifier.",
+                columns,
+                theme::MUTED,
+            );
+            draw_limited(
+                canvas,
+                x + 10,
+                y + 304,
+                "Reduced motion, text scaling, key repeat and pointer support.",
+                columns,
+                theme::MUTED,
+            );
         }
     }
 
@@ -4777,6 +5150,9 @@ impl Shell {
                     theme::BORDER
                 },
             );
+            if focused {
+                self.draw_focus_outline(canvas, button);
+            }
             draw_limited(
                 canvas,
                 button.x + 10,
@@ -4945,6 +5321,7 @@ impl Shell {
                         2,
                         theme::ACCENT,
                     );
+                    self.draw_focus_outline(canvas, button);
                 }
                 if group == 1 {
                     if let Some(color) = accent_colors.get(index) {
@@ -7929,6 +8306,88 @@ mod tests {
         assert_eq!(
             resolution.value(),
             "Unavailable in this build; no action is enabled."
+        );
+    }
+    #[test]
+    fn accessibility_focus_outline_is_accessible_revertible_and_persisted_before_activation() {
+        use accessibility::{Role, Snapshot};
+        extern crate std;
+        let mut shell = Shell::new();
+        shell.set_viewport(1280, 800);
+        shell
+            .load_appearance(appearance::Loaded {
+                preferences: appearance::Preferences::defaults(),
+                origin: appearance::Origin::Persisted,
+            })
+            .unwrap();
+        shell.open_app(App::Settings);
+        let category = shell.settings_category_bounds(10).unwrap();
+        shell.on_pointer(Pointer::Down(category.x + 12, category.y + 10));
+        assert_eq!(
+            shell.settings_category(),
+            settings_catalog::Category::Accessibility
+        );
+
+        let strong = shell.accessibility_control_bounds(1).unwrap();
+        shell.on_pointer(Pointer::Down(strong.x + 12, strong.y + 12));
+        assert_eq!(
+            shell.appearance_state().draft().focus_indicator,
+            appearance::FocusIndicator::Strong
+        );
+        assert_eq!(
+            shell.active_appearance().focus_indicator,
+            appearance::FocusIndicator::Standard
+        );
+        let mut snapshot = Snapshot::empty();
+        shell.write_accessibility_snapshot(&mut snapshot).unwrap();
+        let strong_option = snapshot
+            .nodes()
+            .iter()
+            .find(|node| node.name() == "Strong focus indicator")
+            .unwrap();
+        assert_eq!(strong_option.role, Role::List);
+        assert!(strong_option.state.enabled && strong_option.state.selected);
+        let unsupported = snapshot
+            .nodes()
+            .iter()
+            .find(|node| node.name() == "Screen reader, captions and speech")
+            .unwrap();
+        assert!(!unsupported.state.enabled);
+        assert!(unsupported
+            .value()
+            .contains("only the Settings focus outline preference is active"));
+
+        let revert = shell.accessibility_control_bounds(3).unwrap();
+        shell.on_pointer(Pointer::Down(revert.x + 12, revert.y + 12));
+        assert_eq!(
+            shell.appearance_state().draft().focus_indicator,
+            appearance::FocusIndicator::Standard
+        );
+        shell.on_pointer(Pointer::Down(strong.x + 12, strong.y + 12));
+        let save = shell.accessibility_control_bounds(2).unwrap();
+        shell.on_pointer(Pointer::Down(save.x + 12, save.y + 12));
+        let request = shell.take_appearance_request().unwrap();
+        assert_eq!(
+            request.preferences.focus_indicator,
+            appearance::FocusIndicator::Strong
+        );
+        assert_eq!(
+            shell.active_appearance().focus_indicator,
+            appearance::FocusIndicator::Standard
+        );
+        assert!(shell.appearance_save_result(request.id, true));
+        assert_eq!(
+            shell.active_appearance().focus_indicator,
+            appearance::FocusIndicator::Strong
+        );
+        shell.on_key(Key::Tab);
+        let focused = shell.accessibility_control_bounds(3).unwrap();
+        let mut pixels = std::vec![0; 1280 * 800];
+        let mut canvas = Canvas::new(&mut pixels, 1280, 800, 1280, PixelFormat::Bgr).unwrap();
+        shell.render(&mut canvas);
+        assert_eq!(
+            pixels[focused.y as usize * 1280 + focused.x as usize],
+            shell.focus_ring_color()
         );
     }
     #[test]

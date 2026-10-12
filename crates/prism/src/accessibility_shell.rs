@@ -583,6 +583,10 @@ impl Shell {
                             name,
                             if section.category == settings_catalog::Category::Appearance {
                                 "Wallpaper, fonts, density, taskbar and layout are unavailable."
+                            } else if section.category
+                                == settings_catalog::Category::Accessibility
+                            {
+                                "Unavailable in this build; only the Settings focus outline preference is active."
                             } else {
                                 "Unavailable in this build; no action is enabled."
                             },
@@ -598,10 +602,12 @@ impl Shell {
                         None,
                         Role::Status,
                         "Settings section availability",
-                        match section.state {
-                            settings_catalog::State::Available => "Theme and accent preferences are available.",
-                            settings_catalog::State::ReadOnly => "Read-only system diagnostics are available; configuration is unavailable.",
-                            settings_catalog::State::Unavailable => "This settings provider is not connected.",
+                        match (section.category, section.state) {
+                            (settings_catalog::Category::Appearance, settings_catalog::State::Available) => "Theme and accent preferences are available.",
+                            (settings_catalog::Category::Accessibility, settings_catalog::State::Available) => "The keyboard focus outline preference is available.",
+                            (_, settings_catalog::State::Available) => "Settings are available.",
+                            (_, settings_catalog::State::ReadOnly) => "Read-only system diagnostics are available; configuration is unavailable.",
+                            (_, settings_catalog::State::Unavailable) => "This settings provider is not connected.",
                         },
                         None,
                         state,
@@ -681,6 +687,7 @@ impl Shell {
             (5, 3..=4) => self.appearance_control_bounds(2, (local - 3) as usize),
             (5, 5) => Some(self.settings_diagnostics_bounds()),
             (5, 10..=21) => self.settings_category_bounds((local - 10) as usize),
+            (5, 22..=25) => self.accessibility_control_bounds((local - 22) as usize),
             (3 | 7, 1) => {
                 let b = self.file_dialog_bounds();
                 Some(Bounds {
@@ -712,7 +719,7 @@ impl Shell {
         }
     }
     fn accessible_focus_controls(&self, out: &mut Snapshot, scope: u32) -> Result<(), Error> {
-        for local in 1..=21 {
+        for local in 1..=25 {
             if let Some(focus) = self
                 .file_focus
                 .state(keyboard_focus::ControlId { scope, local })
@@ -745,6 +752,8 @@ impl Shell {
                             appearance::Accent::Teal => "Teal",
                             appearance::Accent::Orange => "Orange",
                         },
+                        (5, 22) => "Standard",
+                        (5, 23) => "Strong",
                         (3, 1) => self.file_dialog.input(),
                         (7, 1) => self.trash.input(),
                         _ => "",
@@ -754,7 +763,13 @@ impl Shell {
                         enabled: c.enabled,
                         visible: c.visible,
                         focused: focus.focused,
-                        selected: (scope, local) == (5, 10 + self.settings_category as u32),
+                        selected: (scope, local) == (5, 10 + self.settings_category as u32)
+                            || ((scope, local) == (5, 22)
+                                && self.appearance.draft().focus_indicator
+                                    == appearance::FocusIndicator::Standard)
+                            || ((scope, local) == (5, 23)
+                                && self.appearance.draft().focus_indicator
+                                    == appearance::FocusIndicator::Strong),
                         checked: c.checked,
                         busy: false,
                     },

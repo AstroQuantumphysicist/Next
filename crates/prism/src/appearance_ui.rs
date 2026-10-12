@@ -1,5 +1,5 @@
 //! Pure trusted Settings interaction model. No disk or identity grant is encoded.
-use crate::appearance::{Accent, Loaded, Preferences, TextScale, Theme};
+use crate::appearance::{Accent, FocusIndicator, Loaded, Preferences, TextScale, Theme};
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Status {
     Ready,
@@ -104,6 +104,12 @@ impl AppearanceUi {
     pub fn choose_accent(&mut self, accent: Accent) -> Result<(), Error> {
         self.editable()?;
         self.draft.accent = accent;
+        self.status = Status::Unsaved;
+        Ok(())
+    }
+    pub fn choose_focus_indicator(&mut self, focus_indicator: FocusIndicator) -> Result<(), Error> {
+        self.editable()?;
+        self.draft.focus_indicator = focus_indicator;
         self.status = Status::Unsaved;
         Ok(())
     }
@@ -213,5 +219,27 @@ mod tests {
         assert_eq!(ui.set_loaded(loaded), Err(Error::UnsupportedScale));
         assert_eq!(ui.active(), Preferences::default());
         assert_eq!(ui.apply(), Err(Error::UnsupportedScale));
+    }
+
+    #[test]
+    fn focus_indicator_is_draft_until_atomic_save_completes_and_revert_restores_active() {
+        let mut ui = AppearanceUi::new();
+        ui.set_loaded(Loaded {
+            preferences: Preferences::default(),
+            origin: crate::appearance::Origin::MissingDefault,
+        })
+        .unwrap();
+        ui.choose_focus_indicator(FocusIndicator::Strong).unwrap();
+        assert_eq!(ui.active().focus_indicator, FocusIndicator::Standard);
+        assert_eq!(ui.draft().focus_indicator, FocusIndicator::Strong);
+        ui.cancel().unwrap();
+        assert_eq!(ui.draft().focus_indicator, FocusIndicator::Standard);
+        ui.choose_focus_indicator(FocusIndicator::Strong).unwrap();
+        ui.apply().unwrap();
+        let request = ui.take_request().unwrap();
+        assert_eq!(request.preferences.focus_indicator, FocusIndicator::Strong);
+        assert_eq!(ui.active().focus_indicator, FocusIndicator::Standard);
+        assert!(ui.saved(request.id, true));
+        assert_eq!(ui.active().focus_indicator, FocusIndicator::Strong);
     }
 }

@@ -1,0 +1,43 @@
+{
+  "passed": true,
+  "scope": "Five independent QEMU process boots shared one OVMF variable-store file. Readback-checked EFI NV+BS+RT variables selected signed slot B for three trial starts, then rolled back to confirmed slot A; each selected kernel and initrd loaded. Smoke-only build feature staged B. No protected anti-rollback anchor.",
+  "image_sha256": "dccf8c33f479edfa729e20d9cbaeee56c77a68c090170d16b6f74b8d4bd9c68d",
+  "variables_sha256": "2e6622caaba4facf3bc4b75089734480d4bd257712109da4d72c8608da0b307a",
+  "boots": [
+    {
+      "boot": 1,
+      "serial_log": "build/ab-boot-0-w6r9xw2a/serial.log",
+      "ready_line": "NEXT BOOT A/B READY slot=B mode=Trial sequence=3 attempts_left=2 generation=4294967297 state=initialized",
+      "selected_slot_artifacts_loaded": true,
+      "qemu_exit": 0
+    },
+    {
+      "boot": 2,
+      "serial_log": "build/ab-boot-1-1y6mvy3f/serial.log",
+      "ready_line": "NEXT BOOT A/B READY slot=B mode=Trial sequence=4 attempts_left=1 generation=4294967297 state=persistent",
+      "selected_slot_artifacts_loaded": true,
+      "qemu_exit": 0
+    },
+    {
+      "boot": 3,
+      "serial_log": "build/ab-boot-2-iyno7cj6/serial.log",
+      "ready_line": "NEXT BOOT A/B READY slot=B mode=Trial sequence=5 attempts_left=0 generation=4294967297 state=persistent",
+      "selected_slot_artifacts_loaded": true,
+      "qemu_exit": 0
+    },
+    {
+      "boot": 4,
+      "serial_log": "build/ab-boot-3-9pqki91w/serial.log",
+      "ready_line": "NEXT BOOT A/B READY slot=A mode=Rollback sequence=6 attempts_left=0 generation=4294967296 state=persistent",
+      "selected_slot_artifacts_loaded": true,
+      "qemu_exit": 0
+    },
+    {
+      "boot": 5,
+      "serial_log": "build/ab-boot-4-9czvr4jv/serial.log",
+      "ready_line": "NEXT BOOT A/B READY slot=A mode=Confirmed sequence=6 attempts_left=0 generation=4294967296 state=persistent",
+      "selected_slot_artifacts_loaded": true,
+      "qemu_exit": 0
+    }
+  ]
+}

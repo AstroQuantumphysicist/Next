@@ -1,0 +1,5 @@
+# A/B UEFI boot selection and OVMF persistence evidence
+
+The smoke-only loader was built from the current source snapshot. Its copied test image SHA-256 is `dccf8c33f479edfa729e20d9cbaeee56c77a68c090170d16b6f74b8d4bd9c68d`. Five independent QEMU processes shared one OVMF variable store and read back firmware variables after writes: slot B trial sequence 3/4/5 persisted attempts 2/1/0; the following boot rolled back to confirmed slot A, then a fifth boot remained confirmed on A. The selected signed kernel and init image loaded on every run. Per-boot serial logs and the machine-readable report are retained here.
+
+The standard signed image in `../final-qemu64/` is separate and does not include the `ab-smoke` loader feature. This development slice does not provide a normal updater or health-confirmation service; ordinary EFI NVRAM is not a protected anti-rollback anchor. Secure Boot, TPM protection, physical hardware, user-data migration/preservation, and an interactive recovery environment remain unverified or unimplemented.

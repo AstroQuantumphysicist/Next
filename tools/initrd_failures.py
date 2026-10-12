@@ -53,7 +53,7 @@ def cases(original):
 
 def main():
     image = ROOT / 'build/next-dev.img'
-    original = (ROOT / 'build/esp/EFI/NEXT/INITRD.NXI').read_bytes()
+    original = (ROOT / 'build/esp/EFI/NEXT/A/INITRD.NXI').read_bytes()
     digest = hashlib.sha256(image.read_bytes()).hexdigest()
     work = ROOT / 'work'
     work.mkdir(exist_ok=True)
@@ -64,11 +64,11 @@ def main():
             copy = temp / 'mutated.img'
             shutil.copyfile(image, copy)
             if payload is None:
-                subprocess.run(['mdel', '-i', str(copy), '::/EFI/NEXT/INITRD.NXI'], check=True)
+                subprocess.run(['mdel', '-i', str(copy), '::/EFI/NEXT/A/INITRD.NXI'], check=True)
             else:
                 archive = temp / 'INITRD.NXI'
                 archive.write_bytes(payload)
-                subprocess.run(['mcopy', '-o', '-i', str(copy), str(archive), '::/EFI/NEXT/INITRD.NXI'], check=True)
+                subprocess.run(['mcopy', '-o', '-i', str(copy), str(archive), '::/EFI/NEXT/A/INITRD.NXI'], check=True)
             output = ROOT / 'build/failures' / name
             command = [sys.executable, str(ROOT / 'tools/boot_smoke.py'), '--image', str(copy),
                        '--output-dir', str(output), '--expect-boot-failure', diagnostic,

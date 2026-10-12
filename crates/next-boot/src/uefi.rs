@@ -7,6 +7,12 @@ const SUCCESS: Status = 0;
 const ERROR_BIT: Status = 1 << (usize::BITS - 1);
 const BUFFER_TOO_SMALL: Status = ERROR_BIT | 5;
 const INVALID_PARAMETER: Status = ERROR_BIT | 2;
+const NOT_FOUND: Status = ERROR_BIT | 14;
+const EFI_VARIABLE_NON_VOLATILE: u32 = 1;
+const EFI_VARIABLE_BOOTSERVICE_ACCESS: u32 = 2;
+const EFI_VARIABLE_RUNTIME_ACCESS: u32 = 4;
+const AB_VARIABLE_ATTRIBUTES: u32 =
+    EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS;
 const PAGE_SIZE: usize = 4096;
 const SYSTEM_TABLE_SIGNATURE: u64 = 0x5453_5953_2049_4249;
 
@@ -34,6 +40,26 @@ pub struct SystemTable {
     boot_services: *mut BootServices,
     number_of_table_entries: usize,
     configuration_table: *const ConfigurationTable,
+}
+
+type GetVariable =
+    unsafe extern "efiapi" fn(*const u16, *const Guid, *mut u32, *mut usize, *mut u8) -> Status;
+type SetVariable =
+    unsafe extern "efiapi" fn(*const u16, *const Guid, u32, usize, *const u8) -> Status;
+
+/// EFI Runtime Services prefix through SetVariable (UEFI 2.x ABI).
+#[repr(C)]
+struct RuntimeServices {
+    header: TableHeader,
+    get_time: usize,
+    set_time: usize,
+    get_wakeup_time: usize,
+    set_wakeup_time: usize,
+    set_virtual_address_map: usize,
+    convert_pointer: usize,
+    get_variable: GetVariable,
+    get_next_variable_name: usize,
+    set_variable: SetVariable,
 }
 
 #[repr(C)]
@@ -113,6 +139,52 @@ const ACPI_10_GUID: Guid = Guid {
     data3: 0x11d3,
     data4: [0x9a, 0x16, 0x00, 0x90, 0x27, 0x3f, 0xc1, 0x4d],
 };
+const NEXT_BOOT_GUID: Guid = Guid {
+    data1: 0x5d3a_4e82,
+    data2: 0x9c17,
+    data3: 0x4f61,
+    data4: [0xa1, 0x78, 0x4e, 0x58, 0x41, 0x42, 0x30, 0x31],
+};
+const AB_STATE_NAMES: [[u16; 17]; 2] = [
+    [
+        b'N' as u16,
+        b'e' as u16,
+        b'x' as u16,
+        b't' as u16,
+        b'B' as u16,
+        b'o' as u16,
+        b'o' as u16,
+        b't' as u16,
+        b'S' as u16,
+        b't' as u16,
+        b'a' as u16,
+        b't' as u16,
+        b'e' as u16,
+        b'0' as u16,
+        0,
+        0,
+        0,
+    ],
+    [
+        b'N' as u16,
+        b'e' as u16,
+        b'x' as u16,
+        b't' as u16,
+        b'B' as u16,
+        b'o' as u16,
+        b'o' as u16,
+        b't' as u16,
+        b'S' as u16,
+        b't' as u16,
+        b'a' as u16,
+        b't' as u16,
+        b'e' as u16,
+        b'1' as u16,
+        0,
+        0,
+        0,
+    ],
+];
 
 #[repr(C)]
 struct ConfigurationTable {
@@ -151,6 +223,10 @@ const _: () = {
     assert!(mem::size_of::<TableHeader>() == 24);
     assert!(mem::size_of::<SystemTable>() == 120);
     assert!(mem::offset_of!(SystemTable, boot_services) == 96);
+    assert!(mem::offset_of!(SystemTable, runtime_services) == 88);
+    assert!(mem::size_of::<RuntimeServices>() == 96);
+    assert!(mem::offset_of!(RuntimeServices, get_variable) == 72);
+    assert!(mem::offset_of!(RuntimeServices, set_variable) == 88);
     assert!(mem::size_of::<BootServices>() == 376);
     assert!(mem::offset_of!(BootServices, get_memory_map) == 56);
     assert!(mem::offset_of!(BootServices, exit_boot_services) == 232);
@@ -160,6 +236,70 @@ const _: () = {
     assert!(mem::size_of::<GraphicsInfo>() == 36);
     assert!(mem::size_of::<GraphicsMode>() == 40);
 };
+
+struct UefiVariableStore<'a> {
+    services: &'a RuntimeServices,
+}
+
+impl next_package::ab::MetadataStore for UefiVariableStore<'_> {
+    fn read_copy(
+        &self,
+        index: usize,
+        out: &mut [u8; next_package::ab::RECORD_BYTES],
+    ) -> Result<(), next_package::ab::Error> {
+        let name = AB_STATE_NAMES
+            .get(index)
+            .ok_or(next_package::ab::Error::Storage)?;
+        out.fill(0);
+        let mut attributes = 0u32;
+        let mut size = out.len();
+        let status = unsafe {
+            (self.services.get_variable)(
+                name.as_ptr(),
+                &NEXT_BOOT_GUID,
+                &mut attributes,
+                &mut size,
+                out.as_mut_ptr(),
+            )
+        };
+        if status == NOT_FOUND {
+            return Ok(());
+        }
+        if status != SUCCESS || size != out.len() || attributes != AB_VARIABLE_ATTRIBUTES {
+            out.fill(0);
+            return Err(next_package::ab::Error::Storage);
+        }
+        Ok(())
+    }
+
+    fn write_copy(
+        &mut self,
+        index: usize,
+        bytes: &[u8; next_package::ab::RECORD_BYTES],
+    ) -> Result<(), next_package::ab::Error> {
+        let name = AB_STATE_NAMES
+            .get(index)
+            .ok_or(next_package::ab::Error::Storage)?;
+        let status = unsafe {
+            (self.services.set_variable)(
+                name.as_ptr(),
+                &NEXT_BOOT_GUID,
+                AB_VARIABLE_ATTRIBUTES,
+                bytes.len(),
+                bytes.as_ptr(),
+            )
+        };
+        if status != SUCCESS {
+            return Err(next_package::ab::Error::Storage);
+        }
+        let mut readback = [0; next_package::ab::RECORD_BYTES];
+        self.read_copy(index, &mut readback)?;
+        if &readback != bytes {
+            return Err(next_package::ab::Error::Storage);
+        }
+        Ok(())
+    }
+}
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug)]
@@ -219,6 +359,7 @@ impl Handoff {
 #[derive(Clone, Copy, Debug)]
 pub enum Error {
     InvalidSystemTable,
+    RuntimeServices,
     Watchdog(Status),
     GraphicsProtocol(Status),
     InvalidFramebuffer,
@@ -245,7 +386,9 @@ pub enum Error {
     DeploymentRead(Status),
     DeploymentTooLarge,
     Deployment(next_package::Error),
+    AbState(next_package::ab::Error),
     DeploymentArtifacts,
+    DeploymentVersion,
     ArtifactDigest,
 }
 
@@ -299,6 +442,7 @@ impl core::fmt::Display for Error {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             Self::InvalidSystemTable => f.write_str("invalid UEFI system table"),
+            Self::RuntimeServices => f.write_str("invalid UEFI runtime services or variable support"),
             Self::Watchdog(status) => write!(f, "disable watchdog: {status:#x}"),
             Self::GraphicsProtocol(status) => write!(f, "locate GOP: {status:#x}"),
             Self::InvalidFramebuffer => f.write_str("invalid GOP framebuffer"),
@@ -339,7 +483,9 @@ impl core::fmt::Display for Error {
             Self::DeploymentRead(s) => write!(f, "read signed deployment: {s:#x}"),
             Self::DeploymentTooLarge => f.write_str("signed deployment exceeds bounded 16 MiB profile"),
             Self::Deployment(e) => write!(f, "signed deployment rejected: {e:?}; rebuild or restore boot media"),
+            Self::AbState(e) => write!(f, "A/B boot metadata rejected: {e:?}; restore trusted recovery media"),
             Self::DeploymentArtifacts => f.write_str("signed deployment has wrong kind or boot artifact set"),
+            Self::DeploymentVersion => f.write_str("deployment version cannot be ordered as a bounded generation"),
             Self::ArtifactDigest => f.write_str("boot artifact SHA-256 differs from signed deployment; rebuild or restore boot media"),
         }
     }
@@ -463,58 +609,61 @@ static DEVELOPMENT_KEY: &[u8; 32] = include_bytes!(env!("NEXT_DEV_PUBLIC_KEY"));
 pub struct DeploymentDigests {
     pub kernel: [u8; 32],
     pub initrd: [u8; 32],
+    pub slot: next_package::ab::Slot,
+    pub image: next_package::ab::Image,
+    pub sequence: u64,
+    pub attempts_left: u8,
+    pub mode: next_package::ab::BootMode,
+    pub initialized: bool,
 }
-/// Verify the signed package and complete content tree before boot allocations.
+
+#[derive(Clone, Copy)]
+struct VerifiedSlot {
+    image: next_package::ab::Image,
+    kernel: [u8; 32],
+    initrd: [u8; 32],
+}
+
+fn version_generation(version: [u32; 3]) -> Result<u64, Error> {
+    if version[0] > u16::MAX as u32 || version[1] > u16::MAX as u32 {
+        return Err(Error::DeploymentVersion);
+    }
+    let generation =
+        (u64::from(version[0]) << 48) | (u64::from(version[1]) << 32) | u64::from(version[2]);
+    if generation == 0 {
+        return Err(Error::DeploymentVersion);
+    }
+    Ok(generation)
+}
+
+fn slot_path(slot: next_package::ab::Slot, leaf: &[u8]) -> [u16; 64] {
+    let prefix: &[u8] = match slot {
+        next_package::ab::Slot::A => b"\\EFI\\NEXT\\A\\",
+        next_package::ab::Slot::B => b"\\EFI\\NEXT\\B\\",
+    };
+    let mut path = [0u16; 64];
+    for (index, byte) in prefix.iter().chain(leaf).enumerate() {
+        path[index] = u16::from(*byte);
+    }
+    path
+}
+
+/// Authenticate one slot bundle and bind its exact package version and digest.
 /// # Safety
-/// Firmware handles and tables must remain valid and boot services live.
-pub unsafe fn load_deployment(
-    image: usize,
-    table: *mut SystemTable,
-) -> Result<DeploymentDigests, Error> {
+/// `root` and `services` must be live firmware objects during boot services.
+unsafe fn load_slot_deployment(
+    root: *mut File,
+    services: &BootServices,
+    slot: next_package::ab::Slot,
+) -> Result<VerifiedSlot, Error> {
     use next_package::{PackageKind, TrustAnchor, VerifiedPackage, MAX_BUNDLE_BYTES};
-    let table = table.as_ref().ok_or(Error::InvalidSystemTable)?;
-    if table.header.signature != SYSTEM_TABLE_SIGNATURE || table.boot_services.is_null() {
-        return Err(Error::InvalidSystemTable);
-    }
-    let services = &*table.boot_services;
-    let status = (services.set_watchdog_timer)(0, 0, 0, ptr::null());
-    if status != SUCCESS {
-        return Err(Error::Watchdog(status));
-    }
-    let mut protocol = ptr::null_mut();
-    let status = (services.handle_protocol)(image, &LOADED_IMAGE_GUID, &mut protocol);
-    if status != SUCCESS {
-        return Err(Error::ImageProtocol(status));
-    }
-    let loaded = protocol
-        .cast::<LoadedImage>()
-        .as_ref()
-        .ok_or(Error::InvalidLoadedImage)?;
-    protocol = ptr::null_mut();
-    let status = (services.handle_protocol)(loaded.device, &SIMPLE_FS_GUID, &mut protocol);
-    if status != SUCCESS {
-        return Err(Error::FileSystem(status));
-    }
-    let fs = protocol.cast::<SimpleFs>();
-    if fs.is_null() {
-        return Err(Error::FileSystem(INVALID_PARAMETER));
-    }
-    let mut root = ptr::null_mut();
-    let status = ((*fs).open_volume)(fs, &mut root);
-    if status != SUCCESS || root.is_null() {
-        return Err(Error::FileSystem(status));
-    }
-    let root = OpenFile(root);
-    let mut name = [0u16; 32];
-    for (i, byte) in b"\\EFI\\NEXT\\SYSTEM.NXP".iter().enumerate() {
-        name[i] = u16::from(*byte);
-    }
-    let mut file = ptr::null_mut();
-    let status = ((*root.0).open)(root.0, &mut file, name.as_ptr(), 1, 0);
-    if status != SUCCESS || file.is_null() {
+    let name = slot_path(slot, b"SYSTEM.NXP");
+    let mut handle = ptr::null_mut();
+    let status = ((*root).open)(root, &mut handle, name.as_ptr(), 1, 0);
+    if status != SUCCESS || handle.is_null() {
         return Err(Error::DeploymentOpen(status));
     }
-    let file = OpenFile(file);
+    let file = OpenFile(handle);
     let count = MAX_BUNDLE_BYTES / PAGE_SIZE + 1;
     let mut address = 0xffff_ffff;
     let status = (services.allocate_pages)(1, 2, count, &mut address);
@@ -578,8 +727,122 @@ pub unsafe fn load_deployment(
         .find("boot/initrd.nxi")
         .ok_or(Error::DeploymentArtifacts)?
         .digest;
-    // Temporary package memory and file handles drop before the final map.
-    Ok(DeploymentDigests { kernel, initrd })
+    let generation = version_generation(package.version)?;
+    Ok(VerifiedSlot {
+        image: next_package::ab::Image {
+            generation,
+            sha256: next_package::sha256(&bytes[..total]),
+        },
+        kernel,
+        initrd,
+    })
+}
+/// Verify the signed package and complete content tree before boot allocations.
+/// # Safety
+/// Firmware handles and tables must remain valid and boot services live.
+pub unsafe fn load_deployment(
+    image: usize,
+    table: *mut SystemTable,
+) -> Result<DeploymentDigests, Error> {
+    use next_package::ab::{self, Slot};
+    let table = table.as_ref().ok_or(Error::InvalidSystemTable)?;
+    if table.header.signature != SYSTEM_TABLE_SIGNATURE || table.boot_services.is_null() {
+        return Err(Error::InvalidSystemTable);
+    }
+    let runtime = (table.runtime_services as *const RuntimeServices)
+        .as_ref()
+        .ok_or(Error::RuntimeServices)?;
+    if runtime.header.signature != 0x5652_4553_544e_5552
+        || runtime.header.header_size < mem::size_of::<RuntimeServices>() as u32
+    {
+        return Err(Error::RuntimeServices);
+    }
+    let services = &*table.boot_services;
+    let status = (services.set_watchdog_timer)(0, 0, 0, ptr::null());
+    if status != SUCCESS {
+        return Err(Error::Watchdog(status));
+    }
+    let mut protocol = ptr::null_mut();
+    let status = (services.handle_protocol)(image, &LOADED_IMAGE_GUID, &mut protocol);
+    if status != SUCCESS {
+        return Err(Error::ImageProtocol(status));
+    }
+    let loaded = protocol
+        .cast::<LoadedImage>()
+        .as_ref()
+        .ok_or(Error::InvalidLoadedImage)?;
+    protocol = ptr::null_mut();
+    let status = (services.handle_protocol)(loaded.device, &SIMPLE_FS_GUID, &mut protocol);
+    if status != SUCCESS {
+        return Err(Error::FileSystem(status));
+    }
+    let fs = protocol.cast::<SimpleFs>();
+    if fs.is_null() {
+        return Err(Error::FileSystem(INVALID_PARAMETER));
+    }
+    let mut root = ptr::null_mut();
+    let status = ((*fs).open_volume)(fs, &mut root);
+    if status != SUCCESS || root.is_null() {
+        return Err(Error::FileSystem(status));
+    }
+    let root = OpenFile(root);
+    let slot_a = load_slot_deployment(root.0, services, Slot::A);
+    let slot_b = load_slot_deployment(root.0, services, Slot::B);
+    let first_error = slot_a
+        .as_ref()
+        .err()
+        .copied()
+        .unwrap_or(Error::DeploymentArtifacts);
+    let slots = [slot_a.ok(), slot_b.ok()];
+    let inventory = [
+        slots[0].map(|slot| slot.image),
+        slots[1].map(|slot| slot.image),
+    ];
+    if inventory.iter().all(Option::is_none) {
+        return Err(first_error);
+    }
+
+    let mut state = UefiVariableStore { services: runtime };
+    let (_initial_state, initialized) =
+        ab::initialize_from_inventory(&mut state, inventory).map_err(Error::AbState)?;
+
+    #[cfg(feature = "ab-smoke")]
+    if initialized {
+        let current = ab::read_latest(&state).map_err(Error::AbState)?;
+        if current.sequence == 1
+            && current.pending.is_none()
+            && current.confirmed_slot == Slot::A
+            && inventory[1]
+                .is_some_and(|candidate| candidate.generation > current.confirmed.generation)
+        {
+            ab::stage_update(
+                &mut state,
+                Slot::B,
+                inventory[1].ok_or(Error::DeploymentArtifacts)?,
+            )
+            .map_err(Error::AbState)?;
+        }
+    }
+
+    let decision = ab::select_boot(&mut state, inventory).map_err(Error::AbState)?;
+    let selected = match decision.slot {
+        Slot::A => slots[0],
+        Slot::B => slots[1],
+    }
+    .ok_or(Error::DeploymentArtifacts)?;
+    if selected.image != decision.image {
+        return Err(Error::DeploymentArtifacts);
+    }
+    Ok(DeploymentDigests {
+        kernel: selected.kernel,
+        initrd: selected.initrd,
+        slot: decision.slot,
+        image: decision.image,
+        sequence: decision.next_metadata.sequence,
+        attempts_left: decision.next_metadata.attempts_left,
+        mode: decision.mode,
+        initialized,
+    })
 }
 
 /// Read a bounded init image from the loader's own boot device. The successful
@@ -590,6 +853,7 @@ pub unsafe fn load_deployment(
 pub unsafe fn load_initrd(
     image: usize,
     table: *mut SystemTable,
+    slot: next_package::ab::Slot,
     kernel: &LoadedKernel,
     expected_digest: &[u8; 32],
 ) -> Result<next_abi::boot::PhysicalRange, Error> {
@@ -626,10 +890,7 @@ pub unsafe fn load_initrd(
         return Err(Error::FileSystem(status));
     }
     let root = OpenFile(root);
-    let mut name = [0u16; 32];
-    for (i, byte) in b"\\EFI\\NEXT\\INITRD.NXI".iter().enumerate() {
-        name[i] = u16::from(*byte);
-    }
+    let name = slot_path(slot, b"INITRD.NXI");
     let mut file = ptr::null_mut();
     let status = ((*root.0).open)(root.0, &mut file, name.as_ptr(), 1, 0);
     if status != SUCCESS || file.is_null() {
@@ -714,6 +975,7 @@ pub unsafe fn load_initrd(
 pub unsafe fn load_kernel(
     image: usize,
     table: *mut SystemTable,
+    slot: next_package::ab::Slot,
     expected_digest: &[u8; 32],
 ) -> Result<LoadedKernel, Error> {
     use next_abi::{boot::PhysicalRange, kernel::MAX_KERNEL_FILE};
@@ -764,10 +1026,7 @@ pub unsafe fn load_kernel(
         return Err(Error::FileSystem(status));
     }
     let root = OpenFile(root);
-    let mut name = [0u16; 32];
-    for (i, byte) in b"\\EFI\\NEXT\\HELIX.ELF".iter().enumerate() {
-        name[i] = *byte as u16;
-    }
+    let name = slot_path(slot, b"HELIX.ELF");
     let mut file = ptr::null_mut();
     let status = ((*root.0).open)(root.0, &mut file, name.as_ptr(), 1, 0);
     if status != SUCCESS || file.is_null() {
