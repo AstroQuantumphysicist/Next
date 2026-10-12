@@ -26,6 +26,7 @@ mod native;
 mod native_surface;
 mod network;
 mod network_socket;
+mod panic_report;
 mod rtc;
 mod storage;
 mod storage_policy;
@@ -2252,16 +2253,28 @@ fn halt() -> ! {
 }
 #[panic_handler]
 fn panic(info: &PanicInfo<'_>) -> ! {
-    let (line, column) = info
-        .location()
-        .map_or((0, 0), |location| (location.line(), location.column()));
+    // The current scheduler is BSP-only and kernel execution has no independent
+    // kernel threads yet. Make those limits explicit in the crash record so a
+    // future SMP/threaded kernel cannot mistake absent context for CPU 0 data.
+    let (file, line, column) = info.location().map_or(("unknown", 0, 0), |location| {
+        (location.file(), location.line(), location.column())
+    });
     trace::record(
         trace::Category::Fault,
         trace::Severity::Fatal,
         trace::id::KERNEL_PANIC,
         0,
-        [line as u64, column as u64, 0, 0],
+        [0, line as u64, column as u64, 0],
     );
-    log!("HELIX PANIC: id={} {}", trace::id::KERNEL_PANIC, info);
+    let _ = panic_report::write_header(
+        &mut Serial,
+        trace::id::KERNEL_PANIC,
+        0,
+        "kernel-bsp",
+        file,
+        line,
+        column,
+    );
+    log!("HELIX PANIC DETAIL: {}", info);
     halt()
 }

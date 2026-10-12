@@ -4,10 +4,13 @@ use crate::storage;
 use core::{
     cell::UnsafeCell,
     fmt::{self, Write},
-    sync::atomic::{AtomicBool, Ordering},
 };
 use next_fs::{
-    journal::{self, FileInfo, Partition, Store, WritableBlockDevice},
+    journal::{
+        self,
+        locking::{MutationGuard, MutationLock},
+        FileInfo, Partition, Store, WritableBlockDevice,
+    },
     BlockDevice,
 };
 
@@ -63,23 +66,15 @@ static DEVICE: Global<Device> = Global(UnsafeCell::new(Device {
     writable: false,
 }));
 static STORE: Global<Option<Store<'static, Device>>> = Global(UnsafeCell::new(None));
-static LOCK: AtomicBool = AtomicBool::new(false);
-struct Guard;
+static LOCK: MutationLock = MutationLock::new();
+struct Guard {
+    _held: MutationGuard<'static>,
+}
 impl Guard {
     fn acquire() -> Result<Self, FsError> {
-        if LOCK
-            .compare_exchange(false, true, Ordering::Acquire, Ordering::Relaxed)
-            .is_err()
-        {
-            Err(FsError::Busy)
-        } else {
-            Ok(Self)
-        }
-    }
-}
-impl Drop for Guard {
-    fn drop(&mut self) {
-        LOCK.store(false, Ordering::Release);
+        LOCK.try_acquire()
+            .map(|held| Self { _held: held })
+            .map_err(|_| FsError::Busy)
     }
 }
 

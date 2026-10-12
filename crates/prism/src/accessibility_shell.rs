@@ -9,7 +9,46 @@ impl Shell {
     /// complete=false; never consume a partial snapshot as an accessibility tree.
     pub fn write_accessibility_snapshot(&mut self, out: &mut Snapshot) -> Result<(), Error> {
         let mut state = State::ENABLED;
-        if let Some(portal) = self.file_portal {
+        if self.shortcuts.open() {
+            out.begin(28, 0);
+            out.add(
+                1,
+                None,
+                Role::Dialog,
+                "Keyboard shortcuts",
+                "Use Tab or the arrow keys to browse. Escape closes this guide.",
+                Some(self.shortcuts_bounds()),
+                state,
+            )?;
+            for (index, entry) in shortcuts::ENTRIES.iter().enumerate() {
+                out.add(
+                    10 + index as u32,
+                    None,
+                    Role::ListItem,
+                    entry.name,
+                    entry.keys,
+                    self.shortcut_row_bounds(index),
+                    State {
+                        focused: index == self.shortcuts.selected(),
+                        selected: index == self.shortcuts.selected(),
+                        ..state
+                    },
+                )?;
+            }
+            out.add(
+                2,
+                None,
+                Role::Button,
+                "Close keyboard shortcuts",
+                "Escape",
+                Some(self.shortcut_close_bounds()),
+                State {
+                    focused: self.shortcuts.selected() == shortcuts::ENTRIES.len(),
+                    selected: self.shortcuts.selected() == shortcuts::ENTRIES.len(),
+                    ..state
+                },
+            )?;
+        } else if let Some(portal) = self.file_portal {
             out.begin(20, portal.request);
             out.add(
                 1,
@@ -282,6 +321,7 @@ impl Shell {
                         let name = match result {
                             SearchResult::App(app) => app.title(),
                             SearchResult::File(index) => self.files[index].path.as_str(),
+                            SearchResult::Shortcuts => "Keyboard shortcuts",
                         };
                         out.add(
                             10 + i as u32,
@@ -299,14 +339,22 @@ impl Shell {
                     }
                 }
             } else {
-                for (i, action) in desktop::ACTIONS.iter().enumerate() {
-                    let name = action.label();
+                for i in 0..HOME_ACTION_COUNT {
+                    let name = if i == desktop::ACTIONS.len() {
+                        "Keyboard shortcuts"
+                    } else {
+                        desktop::ACTIONS[i].label()
+                    };
                     out.add(
                         10 + i as u32,
                         None,
                         Role::Button,
                         name,
-                        "",
+                        if i == desktop::ACTIONS.len() {
+                            "Browse keyboard navigation and window shortcuts"
+                        } else {
+                            ""
+                        },
                         self.home_action_bounds(i),
                         State {
                             focused: i == self.selection,
@@ -553,6 +601,11 @@ impl Shell {
                         None,
                         state,
                     )?;
+                }
+                Some(App::Calculator) => {
+                    let bounds = self.calculator_bounds();
+                    self.calculator
+                        .write_accessibility_snapshot_embedded(out, bounds)?;
                 }
                 _ => {}
             }

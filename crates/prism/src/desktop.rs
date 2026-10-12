@@ -8,14 +8,16 @@ pub enum App {
     Monitor,
     Settings,
     Editor,
+    Calculator,
 }
 impl App {
-    pub const ALL: [Self; 5] = [
+    pub const ALL: [Self; 6] = [
         Self::Terminal,
         Self::Files,
         Self::Monitor,
         Self::Settings,
         Self::Editor,
+        Self::Calculator,
     ];
     pub const fn title(self) -> &'static str {
         match self {
@@ -24,6 +26,7 @@ impl App {
             Self::Monitor => "Next Monitor",
             Self::Settings => "Next Settings",
             Self::Editor => "Next Editor",
+            Self::Calculator => "Next Calculator",
         }
     }
 }
@@ -57,12 +60,13 @@ pub enum Action {
     Restore,
     Close,
 }
-pub const ACTIONS: [Action; 11] = [
+pub const ACTIONS: [Action; 12] = [
     Action::Open(App::Terminal),
     Action::Open(App::Files),
     Action::Open(App::Monitor),
     Action::Open(App::Settings),
     Action::Open(App::Editor),
+    Action::Open(App::Calculator),
     Action::Move,
     Action::Resize,
     Action::Minimize,
@@ -111,8 +115,8 @@ struct Drag {
 /// At most one window for each development panel. Last entry in `order` is
 /// frontmost; closed and minimized windows never receive focus or hit testing.
 pub struct Desktop {
-    windows: [Window; 5],
-    order: [App; 5],
+    windows: [Window; App::ALL.len()],
+    order: [App; App::ALL.len()],
     focus: Option<App>,
     previous: App,
     width: i32,
@@ -120,8 +124,8 @@ pub struct Desktop {
     edit: Option<Edit>,
     drag: Option<Drag>,
     snap: Option<(App, Preview)>,
-    snapped: [Option<Zone>; 5],
-    switch_order: Option<[App; 5]>,
+    snapped: [Option<Zone>; App::ALL.len()],
+    switch_order: Option<[App; App::ALL.len()]>,
     switch_index: usize,
 }
 impl Default for Desktop {
@@ -141,7 +145,7 @@ impl Desktop {
             bounds,
             restore: bounds,
             state: WindowState::Closed,
-        }; 5];
+        }; App::ALL.len()];
         let mut i = 0;
         while i < windows.len() {
             windows[i].bounds = Bounds {
@@ -168,7 +172,7 @@ impl Desktop {
             edit: None,
             drag: None,
             snap: None,
-            snapped: [None; 5],
+            snapped: [None; App::ALL.len()],
             switch_order: None,
             switch_index: 0,
         }
@@ -228,7 +232,7 @@ impl Desktop {
     pub fn focused(&self) -> Option<App> {
         self.focus
     }
-    pub fn order(&self) -> [App; 5] {
+    pub fn order(&self) -> [App; App::ALL.len()] {
         self.order
     }
     pub fn editing(&self) -> Option<EditMode> {
@@ -281,11 +285,12 @@ impl Desktop {
             self.switch_index = self
                 .focus
                 .and_then(|app| order.iter().position(|a| *a == app))
-                .unwrap_or(if reverse { 0 } else { 4 });
+                .unwrap_or(if reverse { 0 } else { App::ALL.len() - 1 });
             order
         });
-        for _ in 0..5 {
-            self.switch_index = (self.switch_index + if reverse { 4 } else { 1 }) % 5;
+        for _ in 0..App::ALL.len() {
+            self.switch_index =
+                (self.switch_index + if reverse { App::ALL.len() - 1 } else { 1 }) % App::ALL.len();
             let app = order[self.switch_index];
             if self.windows[app as usize].state != WindowState::Closed {
                 if self.windows[app as usize].state == WindowState::Minimized {
@@ -301,9 +306,9 @@ impl Desktop {
         let current = self.focus;
         let start = current
             .and_then(|a| App::ALL.iter().position(|x| *x == a))
-            .unwrap_or(4);
-        for offset in 1..=5 {
-            let a = App::ALL[(start + offset) % 5];
+            .unwrap_or(App::ALL.len() - 1);
+        for offset in 1..=App::ALL.len() {
+            let a = App::ALL[(start + offset) % App::ALL.len()];
             if self.visible(a) {
                 self.front(a);
                 break;
@@ -316,8 +321,8 @@ impl Desktop {
             .focus
             .and_then(|a| App::ALL.iter().position(|x| *x == a))
             .unwrap_or(0);
-        for offset in 1..=5 {
-            let app = App::ALL[(start + 5 - offset) % 5];
+        for offset in 1..=App::ALL.len() {
+            let app = App::ALL[(start + App::ALL.len() - offset) % App::ALL.len()];
             if self.visible(app) {
                 self.front(app);
                 break;
@@ -631,7 +636,7 @@ mod tests {
         d.open(App::Files);
         d.open(App::Monitor);
         assert_eq!(d.focused(), Some(App::Monitor));
-        assert_eq!(d.order()[4], App::Monitor);
+        assert_eq!(d.order()[5], App::Monitor);
         d.action(Action::Minimize);
         assert_eq!(d.window(App::Monitor).state, WindowState::Minimized);
         assert_eq!(d.focused(), Some(App::Files));

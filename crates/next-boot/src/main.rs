@@ -4,7 +4,7 @@ mod serial;
 mod uefi;
 use core::{
     arch::{asm, global_asm},
-    fmt::{self, Write},
+    fmt::{self, Arguments, Write},
     mem::MaybeUninit,
     panic::PanicInfo,
 };
@@ -41,18 +41,12 @@ pub unsafe extern "efiapi" fn efi_main(image: usize, table: *mut uefi::SystemTab
     // final memory-map key. Do not execute an unvalidated image.
     let deployment = match uefi::load_deployment(image, table) {
         Ok(deployment) => deployment,
-        Err(error) => {
-            log!("NEXT BOOT FAILED: {}", error);
-            halt();
-        }
+        Err(error) => fail(uefi::FailureCode::Deployment, format_args!("{}", error)),
     };
     log!("NEXT BOOT: SIGNATURE PASS Ed25519 + SHA-256 owner development key; EFI loader unsigned; Secure Boot/TPM not certified");
     let kernel = match uefi::load_kernel(image, table, &deployment.kernel) {
         Ok(kernel) => kernel,
-        Err(error) => {
-            log!("NEXT BOOT FAILED: {}", error);
-            halt();
-        }
+        Err(error) => fail(uefi::FailureCode::Kernel, format_args!("{}", error)),
     };
     log!(
         "NEXT BOOT: ELF LOAD PASS entry={:#x} base={:#x} bytes={}",
@@ -62,10 +56,7 @@ pub unsafe extern "efiapi" fn efi_main(image: usize, table: *mut uefi::SystemTab
     );
     let initrd = match uefi::load_initrd(image, table, &kernel, &deployment.initrd) {
         Ok(range) => range,
-        Err(error) => {
-            log!("NEXT BOOT FAILED: {}", error);
-            halt();
-        }
+        Err(error) => fail(uefi::FailureCode::Initrd, format_args!("{}", error)),
     };
     log!(
         "NEXT BOOT: INITRD LOAD PASS base={:#x} bytes={} CRC archive authenticated by signed deployment",
@@ -74,10 +65,10 @@ pub unsafe extern "efiapi" fn efi_main(image: usize, table: *mut uefi::SystemTab
     );
     let handoff = match uefi::prepare_and_exit(image, table) {
         Ok(h) => h,
-        Err(error) => {
-            log!("NEXT BOOT FAILED: {}", error);
-            halt();
-        }
+        Err(error) => fail(
+            uefi::FailureCode::FirmwareHandoff,
+            format_args!("{}", error),
+        ),
     };
     let mut boot = BootInfo::new();
     boot.framebuffer = Framebuffer {
@@ -115,8 +106,10 @@ pub unsafe extern "efiapi" fn efi_main(image: usize, table: *mut uefi::SystemTab
     }
     boot.seal();
     if let Err(error) = boot.validate() {
-        log!("NEXT BOOT FAILED: BootInfo {:?}", error);
-        halt();
+        fail(
+            uefi::FailureCode::BootRecord,
+            format_args!("BootInfo {:?}", error),
+        );
     }
     let pointer = core::ptr::addr_of_mut!(BOOT).cast::<BootInfo>();
     pointer.write(boot);
@@ -129,8 +122,17 @@ fn halt() -> ! {
         }
     }
 }
+
+/// Emit a stable recovery identifier before the human-readable diagnosis, then
+/// stop in place. The serial transcript is the loader's available writable log
+/// channel; firmware reset loops are intentionally avoided.
+fn fail(code: uefi::FailureCode, detail: Arguments<'_>) -> ! {
+    let _ = code.write_record(&mut Serial);
+    log!("NEXT BOOT FAILED: {}", detail);
+    halt()
+}
+
 #[panic_handler]
 fn panic(info: &PanicInfo<'_>) -> ! {
-    log!("NEXT BOOT FAILED: panic {}", info);
-    halt()
+    fail(uefi::FailureCode::Panic, format_args!("panic {}", info))
 }

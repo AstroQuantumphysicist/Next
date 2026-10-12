@@ -500,7 +500,9 @@ impl Runtime {
                 Ok(())
             }
             Object::File(handle) => crate::file::close(handle),
-            Object::Event(handle) => crate::event::close(handle),
+            Object::Event(handle) => {
+                crate::event::close_and_wake(handle, &mut self.scheduler).map(|_| ())
+            }
             Object::Process { slot, generation } => {
                 let process = &mut self.processes[slot];
                 if process.generation != generation || process.task.is_none() {
@@ -741,6 +743,12 @@ impl Runtime {
             }
             _ => return Err(Status::InvalidHandle),
         };
+        self.write_wait_result(owner, output, code)
+    }
+    fn write_wait_result(&mut self, owner: usize, output: u64, code: i64) -> Result<(), Status> {
+        if !user_range(&self.processes[owner], output, 8, true) {
+            return Err(Status::InvalidArgument);
+        }
         unsafe {
             copy_nonoverlapping(
                 code.to_le_bytes().as_ptr(),
@@ -750,16 +758,53 @@ impl Runtime {
         }
         Ok(())
     }
+    fn record_pending_wait(
+        &mut self,
+        owner: usize,
+        handle: Handle,
+        output: u64,
+        deadline: u64,
+        writable: bool,
+        frame: &CpuFrame,
+    ) {
+        self.processes[owner].pending_wait = Some(PendingWait {
+            handle,
+            output,
+            deadline,
+            writable,
+        });
+        self.processes[owner].frame = *frame;
+    }
     fn wake_waiters(&mut self) {
         let now = timer::nanoseconds();
         for owner in 0..PROCESSES {
             let Some(wait) = self.processes[owner].pending_wait else {
                 continue;
             };
-            let result = if wait.deadline != 0 && now >= wait.deadline {
-                Err(Status::TimedOut)
-            } else {
-                self.poll_wait(owner, wait.handle, wait.output, wait.writable)
+            let object = self.processes[owner]
+                .handles
+                .get(wait.handle, Rights::WAIT)
+                .ok()
+                .copied();
+            let task = self.processes[owner].task;
+            let timed_out = wait.deadline != 0 && now >= wait.deadline;
+            let result = match object {
+                Some(Object::Event(event)) if timed_out => {
+                    if let Some(task) = task {
+                        let _ = crate::event::abandon_wait(event, task);
+                    }
+                    Err(Status::TimedOut)
+                }
+                Some(Object::Event(event)) => match task {
+                    Some(task) => match crate::event::take_completion(event, task) {
+                        Ok(true) => self.write_wait_result(owner, wait.output, 0),
+                        Ok(false) => Err(Status::WouldBlock),
+                        Err(error) => Err(error),
+                    },
+                    None => Err(Status::InvalidHandle),
+                },
+                _ if timed_out => Err(Status::TimedOut),
+                _ => self.poll_wait(owner, wait.handle, wait.output, wait.writable),
             };
             if result == Err(Status::WouldBlock) {
                 continue;
@@ -1073,7 +1118,9 @@ impl Runtime {
             }
         }
         if let Some(task) = p.task {
-            let _ = self.scheduler.exit(task);
+            if self.scheduler.exit(task).is_ok() {
+                crate::event::discard_exited_task_waits(task);
+            }
         }
         crate::trace::record(
             crate::trace::Category::Process,
@@ -1418,11 +1465,15 @@ pub extern "sysv64" fn native_dispatch(frame: *mut CpuFrame) -> u64 {
                 Err(Status::InvalidArgument)
             } else {
                 let handle = Handle::from_raw(f.rdi);
-                // Validate authority/copyout before parking or deadline outcome.
-                let validation = rt.processes[slot]
+                // Preserve the validated object for the event-specific atomic
+                // wait path. Authority and copyout checks happen before any
+                // event signal can be consumed or the task can be parked.
+                let object = rt.processes[slot]
                     .handles
                     .get(handle, Rights::WAIT)
-                    .map_err(handle_error)
+                    .copied()
+                    .map_err(handle_error);
+                let validation = object
                     .and_then(|object| match object {
                         Object::Datagram(_) => rt.processes[slot].network_authority(Rights::WAIT),
                         Object::Dns(_) if f.rdx & 2 == 0 => {
@@ -1447,47 +1498,58 @@ pub extern "sysv64" fn native_dispatch(frame: *mut CpuFrame) -> u64 {
                         if f.rdx & 1 != 0 && f.r10 != 0 && timer::nanoseconds() >= f.r10 {
                             return Err(Status::TimedOut);
                         }
-                        match rt.poll_wait(slot, handle, f.rsi, f.rdx & 2 != 0) {
-                            Ok(()) => Ok(0),
-                            Err(Status::WouldBlock) if f.rdx & 1 != 0 => {
-                                rt.scheduler
-                                    .block_current()
-                                    .map_err(|_| Status::InvalidArgument)?;
-                                if matches!(
-                                    rt.processes[slot].handles.get(handle, Rights::WAIT),
-                                    Ok(Object::Datagram(_))
-                                ) {
-                                    log!(
-                                        "HELIX: DATAGRAM WAIT parked pid={} direction={}",
-                                        rt.processes[slot].pid,
-                                        if f.rdx & 2 != 0 { "write" } else { "read" }
-                                    );
+                        match object {
+                            Ok(Object::Event(event)) if f.rdx & 1 != 0 => {
+                                match crate::event::wait_current(event, &mut rt.scheduler)? {
+                                    crate::event::WaitResult::Signaled => {
+                                        rt.write_wait_result(slot, f.rsi, 0)?;
+                                        Ok(0)
+                                    }
+                                    crate::event::WaitResult::Blocked => {
+                                        rt.record_pending_wait(
+                                            slot, handle, f.rsi, f.r10, false, f,
+                                        );
+                                        Ok(1)
+                                    }
                                 }
-                                if matches!(
-                                    rt.processes[slot].handles.get(handle, Rights::WAIT),
-                                    Ok(Object::Dns(_))
-                                ) {
-                                    log!("HELIX: DNS WAIT parked pid={}", rt.processes[slot].pid);
-                                }
-                                if matches!(
-                                    rt.processes[slot].handles.get(handle, Rights::WAIT),
-                                    Ok(Object::Surface(_))
-                                ) {
-                                    log!(
-                                        "HELIX: CLIENT INPUT WAIT parked pid={}",
-                                        rt.processes[slot].pid
-                                    );
-                                }
-                                rt.processes[slot].pending_wait = Some(PendingWait {
-                                    handle,
-                                    output: f.rsi,
-                                    deadline: f.r10,
-                                    writable: f.rdx & 2 != 0,
-                                });
-                                rt.processes[slot].frame = *f;
-                                Ok(1)
                             }
-                            Err(error) => Err(error),
+                            _ => match rt.poll_wait(slot, handle, f.rsi, f.rdx & 2 != 0) {
+                                Ok(()) => Ok(0),
+                                Err(Status::WouldBlock) if f.rdx & 1 != 0 => {
+                                    rt.scheduler
+                                        .block_current()
+                                        .map_err(|_| Status::InvalidArgument)?;
+                                    if matches!(object, Ok(Object::Datagram(_))) {
+                                        log!(
+                                            "HELIX: DATAGRAM WAIT parked pid={} direction={}",
+                                            rt.processes[slot].pid,
+                                            if f.rdx & 2 != 0 { "write" } else { "read" }
+                                        );
+                                    }
+                                    if matches!(object, Ok(Object::Dns(_))) {
+                                        log!(
+                                            "HELIX: DNS WAIT parked pid={}",
+                                            rt.processes[slot].pid
+                                        );
+                                    }
+                                    if matches!(object, Ok(Object::Surface(_))) {
+                                        log!(
+                                            "HELIX: CLIENT INPUT WAIT parked pid={}",
+                                            rt.processes[slot].pid
+                                        );
+                                    }
+                                    rt.record_pending_wait(
+                                        slot,
+                                        handle,
+                                        f.rsi,
+                                        f.r10,
+                                        f.rdx & 2 != 0,
+                                        f,
+                                    );
+                                    Ok(1)
+                                }
+                                Err(error) => Err(error),
+                            },
                         }
                     })
                     .map(|parked| if parked == 1 { 1 } else { 0 })
@@ -2439,25 +2501,21 @@ pub extern "sysv64" fn native_dispatch(frame: *mut CpuFrame) -> u64 {
         22 | 23 => rt.processes[slot]
             .handles
             .get(Handle::from_raw(f.rdi), Rights::SIGNAL)
+            .copied()
             .map_err(handle_error)
-            .and_then(|object| {
-                if let Object::Event(event) = object {
-                    if number == 22 {
-                        crate::event::signal(*event)
-                    } else {
-                        crate::event::reset(*event)
-                    }
-                } else {
-                    Err(Status::InvalidHandle)
+            .and_then(|object| match object {
+                Object::Event(event) if number == 22 => {
+                    crate::event::signal(event, &mut rt.scheduler).map(|_| 0)
                 }
-            })
-            .map(|()| 0),
+                Object::Event(event) => crate::event::reset(event).map(|()| 0),
+                _ => Err(Status::InvalidHandle),
+            }),
         _ => Err(Status::NotSupported),
     };
     if number == 4 && rt.processes[slot].pending_wait.is_some() {
         return 1;
     }
-    if number == 22 {
+    if number == 2 || number == 22 {
         rt.wake_waiters();
     }
     f.rax = result.unwrap_or_else(status);
@@ -2853,6 +2911,46 @@ fn linux_open(rt: &Runtime, slot: usize, address: u64, flags: u64, mode: u64) ->
         })
         .unwrap_or_else(|error| error)
 }
+fn linux_pread(rt: &Runtime, slot: usize, fd: u64, address: u64, count: u64, offset: u64) -> u64 {
+    let size = count.min(crate::linux_fs::MAX_IO as u64) as usize;
+    if !user_range(&rt.processes[slot], address, size, true) {
+        return linux::EFAULT;
+    }
+    let mut bytes = [0u8; crate::linux_fs::MAX_IO];
+    match crate::linux_fs::pread(
+        slot,
+        rt.processes[slot].generation,
+        fd,
+        offset as i64,
+        &mut bytes[..size],
+    ) {
+        Ok(length) => {
+            if length != 0 {
+                unsafe {
+                    copy_nonoverlapping(bytes.as_ptr(), physical_pointer(slot, address), length)
+                }
+            }
+            length as u64
+        }
+        Err(error) => error,
+    }
+}
+fn linux_pwrite(rt: &Runtime, slot: usize, fd: u64, address: u64, count: u64, offset: u64) -> u64 {
+    let size = count.min(crate::linux_fs::MAX_IO as u64) as usize;
+    let mut bytes = [0u8; crate::linux_fs::MAX_IO];
+    if copy_in(rt, slot, address, &mut bytes[..size]).is_err() {
+        return linux::EFAULT;
+    }
+    crate::linux_fs::pwrite(
+        slot,
+        rt.processes[slot].generation,
+        fd,
+        offset as i64,
+        &bytes[..size],
+    )
+    .map(|length| length as u64)
+    .unwrap_or_else(|error| error)
+}
 fn native_path<'a>(
     rt: &Runtime,
     slot: usize,
@@ -3056,6 +3154,8 @@ pub extern "sysv64" fn linux_dispatch(frame: *mut CpuFrame) -> u64 {
                 crate::linux_fs::seek(slot, generation, frame.rdi, frame.rsi as i64, frame.rdx)
                     .unwrap_or_else(|error| error)
         }
+        17 => frame.rax = linux_pread(rt, slot, frame.rdi, frame.rsi, frame.rdx, frame.r10),
+        18 => frame.rax = linux_pwrite(rt, slot, frame.rdi, frame.rsi, frame.rdx, frame.r10),
         32 => {
             frame.rax = crate::linux_fs::duplicate(slot, generation, frame.rdi)
                 .unwrap_or_else(|error| error)

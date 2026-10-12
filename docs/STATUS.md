@@ -18,7 +18,7 @@ Evidence distinguishes host-tested primitives, boot smoke tests, integrated syst
 | NEXT-BOOT-007 | boot-critical input and display fallback must not depend on Prism or GPU acceleration. | partial | boot_smoke, integrated |
 | NEXT-KRN-001 | no allocator allocations in interrupt handlers unless using a bounded IRQ-safe pool. | partial | boot_smoke, host_tested, integrated |
 | NEXT-KRN-002 | an unhandled user fault kills or signals only the offending user process, not the whole kernel. | partial | boot_smoke, integrated |
-| NEXT-KRN-003 | kernel panic is reserved for violated kernel invariants; expose panic ID, CPU, thread, backtrace if possible, and serial log. | pending | none |
+| NEXT-KRN-003 | kernel panic is reserved for violated kernel invariants; expose panic ID, CPU, thread, backtrace if possible, and serial log. | partial | host_tested |
 | NEXT-KRN-004 | all public kernel structures have opaque handles; users cannot pass raw kernel pointers as authority. | partial | boot_smoke, host_tested, integrated |
 | NEXT-KRN-005 | syscalls consume only validated user buffers; copyin/copyout protects against invalid mappings and integer wraparound. | partial | boot_smoke, host_tested, integrated |
 | NEXT-KRN-006 | per-core state and interrupt priority are explicit. Lock ordering is written down; hard IRQ contexts must not block. | pending | none |
@@ -36,13 +36,13 @@ Evidence distinguishes host-tested primitives, boot smoke tests, integrated syst
 | NEXT-OBJ-002 | duplicate, inherit and transfer tests must prove no escalation even under cross-process races. | partial | boot_smoke, host_tested, integrated |
 | NEXT-OBJ-003 | object wait logic guarantees no missed wake-ups in signal/reset/close/cancel races. | partial | boot_smoke, host_tested, integrated |
 | NEXT-IPC-001 | malformed frames/fuzz input never panic kernel, leak handles or cross privilege boundaries. | partial | boot_smoke, host_tested, integrated |
-| NEXT-IPC-002 | IPC benchmark documents 1 B, 64 B, 4 KiB, 64 KiB payloads and handle-transfer overhead. | pending | none |
+| NEXT-IPC-002 | IPC benchmark documents 1 B, 64 B, 4 KiB, 64 KiB payloads and handle-transfer overhead. | partial | host_tested |
 | NEXT-SEC-001 | package manifest permission requests are not grants. Installation and runtime permission decisions are separate. | partial | boot_smoke, host_tested, integrated |
 | NEXT-SEC-002 | process spoofing another executable/app identity or permissions by renaming a file must be prevented through signed identity and launch token binding. | partial | boot_smoke, host_tested, integrated |
 | NEXT-SEC-003 | external USB/DMA mappings follow IOMMU policy when available; cannot claim DMA isolation on unsupported configurations. | pending | none |
 | NEXT-VFS-001 | no path traversal or mount boundary bypass through dot segments, symlink races, casefold, alternate data streams, device aliases, environment expansion, or NT `..`/reserved path syntax. | partial | host_tested |
 | NEXT-VFS-002 | file I/O must be cancellation-safe; buffer ownership and partial reads/writes are documented. | partial | boot_smoke, host_tested, integrated |
-| NEXT-VFS-003 | locking under `rename`/`unlink`/`open` must not deadlock in parallel directory operations. | pending | none |
+| NEXT-VFS-003 | locking under `rename`/`unlink`/`open` must not deadlock in parallel directory operations. | partial | host_tested |
 | NEXT-PKG-001 | install cannot escape destination root via archives, symlinks, `..`, absolute paths, case aliases, hardlinks, special files or oversized metadata. | partial | host_tested |
 | NEXT-PKG-002 | revoked/invalid/mismatched signatures block privileged installation; developer override clearly isolated. | partial | boot_smoke, host_tested |
 | NEXT-PKG-003 | dependency/version migration failures do not corrupt pre-existing installed apps. | partial | host_tested |

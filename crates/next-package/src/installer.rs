@@ -101,9 +101,8 @@ fn read(path: &Path, max: usize) -> Result<Vec<u8>, Error> {
     }
     Ok(out)
 }
-fn sync_directory(path: &Path) -> Result<(), Error> {
-    File::open(path)?.sync_all()?;
-    Ok(())
+fn sync_directory(path: &Path) -> std::io::Result<()> {
+    File::open(path)?.sync_all()
 }
 impl Installer {
     /// Authenticate before consulting the destination. This never creates a
@@ -194,7 +193,19 @@ impl Installer {
             packages,
         })
     }
-    fn commit(&self, mut registry: Registry) -> Result<(), Error> {
+    fn commit(&self, registry: Registry) -> Result<(), Error> {
+        self.commit_with_hooks(registry, || Ok(()), sync_directory)
+    }
+    fn commit_with_hooks<BeforeRename, SyncRoot>(
+        &self,
+        mut registry: Registry,
+        before_rename: BeforeRename,
+        sync_root: SyncRoot,
+    ) -> Result<(), Error>
+    where
+        BeforeRename: FnOnce() -> Result<(), Error>,
+        SyncRoot: FnOnce(&Path) -> std::io::Result<()>,
+    {
         registry.generation = registry
             .generation
             .checked_add(1)
@@ -223,11 +234,9 @@ impl Installer {
         let result = (|| {
             file.write_all(bytes.as_bytes())?;
             file.sync_all()?;
+            before_rename()?;
             fs::rename(&temporary, self.root.join("registry"))?;
-            sync_directory(&self.root).map_err(|error| match error {
-                Error::Io(error) => Error::Indeterminate(error),
-                other => other,
-            })
+            sync_root(&self.root).map_err(Error::Indeterminate)
         })();
         if result.is_err() {
             let _ = fs::remove_file(temporary);
@@ -474,6 +483,22 @@ mod tests {
         crate::tests::seal(&mut bytes);
         bytes
     }
+    fn staged_update(installer: &Installer, bytes: &[u8], anchors: &[TrustAnchor]) -> Registry {
+        let package = VerifiedPackage::verify(bytes, anchors).unwrap();
+        let current = crate::sha256(bytes);
+        installer.stage(bytes, &package, &current, anchors).unwrap();
+        let mut registry = installer.load().unwrap();
+        let previous = registry.packages.get(package.id()).unwrap().current;
+        registry.packages.insert(
+            package.id().to_string(),
+            Installed {
+                id: package.id().into(),
+                current,
+                previous: Some(previous),
+            },
+        );
+        registry
+    }
     #[test]
     fn installation_update_rollback_and_uninstall_persist_registry() {
         let root = Temporary::new();
@@ -567,6 +592,65 @@ mod tests {
                 .unwrap(),
             b"new!"
         );
+    }
+    #[test]
+    fn failed_synced_registry_temporary_preserves_active_version_and_cleans_up() {
+        let root = Temporary::new();
+        let installer = root.installer();
+        let anchors = [crate::tests::anchor()];
+        let old = bundle("org.next.test", b"old!", 0);
+        let new = bundle("org.next.test", b"new!", 1);
+        installer.install(&old, &anchors).unwrap();
+        let registry = fs::read(root.0.join("registry")).unwrap();
+
+        let result = installer.commit_with_hooks(
+            staged_update(&installer, &new, &anchors),
+            || Err(Error::InjectedFailure),
+            sync_directory,
+        );
+
+        assert!(matches!(result, Err(Error::InjectedFailure)));
+        assert_eq!(fs::read(root.0.join("registry")).unwrap(), registry);
+        assert!(!root.0.join(".registry.next").exists());
+        assert_eq!(
+            root.installer()
+                .file("org.next.test", "assets/help.txt", &anchors)
+                .unwrap(),
+            b"old!"
+        );
+
+        installer.update(&new, &anchors).unwrap();
+        assert_eq!(
+            root.installer()
+                .file("org.next.test", "assets/help.txt", &anchors)
+                .unwrap(),
+            b"new!"
+        );
+    }
+    #[test]
+    fn directory_sync_failure_after_registry_rename_is_indeterminate_but_consistent() {
+        let root = Temporary::new();
+        let installer = root.installer();
+        let anchors = [crate::tests::anchor()];
+        let old = bundle("org.next.test", b"old!", 0);
+        let new = bundle("org.next.test", b"new!", 1);
+        installer.install(&old, &anchors).unwrap();
+
+        let result = installer.commit_with_hooks(
+            staged_update(&installer, &new, &anchors),
+            || Ok(()),
+            |_| Err(std::io::Error::other("injected directory sync failure")),
+        );
+
+        assert!(matches!(result, Err(Error::Indeterminate(_))));
+        let reopened = root.installer();
+        assert_eq!(
+            reopened
+                .file("org.next.test", "assets/help.txt", &anchors)
+                .unwrap(),
+            b"new!"
+        );
+        assert!(!root.0.join(".registry.next").exists());
     }
     #[test]
     fn app_path_ownership_isolated_and_conflicts_cannot_replace_existing_data() {

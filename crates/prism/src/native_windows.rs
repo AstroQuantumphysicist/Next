@@ -1,5 +1,6 @@
 //! Trusted ordinary window stacking and native placement, independent of pixels.
 use crate::{client_interaction::SurfaceRef, App, Bounds};
+const WINDOW_CAPACITY: usize = App::ALL.len() + 2;
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum WindowRef {
     Builtin(App),
@@ -27,10 +28,10 @@ struct Drag {
     bounds: Bounds,
 }
 pub struct Windows {
-    order: [Option<WindowRef>; 7],
+    order: [Option<WindowRef>; WINDOW_CAPACITY],
     native: [Option<Native>; 2],
     drag: Option<Drag>,
-    switch: [Option<WindowRef>; 7],
+    switch: [Option<WindowRef>; WINDOW_CAPACITY],
     switching: bool,
     index: usize,
 }
@@ -48,17 +49,18 @@ impl Windows {
                 Some(WindowRef::Builtin(App::Monitor)),
                 Some(WindowRef::Builtin(App::Settings)),
                 Some(WindowRef::Builtin(App::Editor)),
+                Some(WindowRef::Builtin(App::Calculator)),
                 None,
                 None,
             ],
             native: [None; 2],
             drag: None,
-            switch: [None; 7],
+            switch: [None; WINDOW_CAPACITY],
             switching: false,
             index: 0,
         }
     }
-    pub fn order(&self) -> [Option<WindowRef>; 7] {
+    pub fn order(&self) -> [Option<WindowRef>; WINDOW_CAPACITY] {
         self.order
     }
     pub fn install(&mut self, id: SurfaceRef, bounds: Bounds) {
@@ -76,11 +78,11 @@ impl Windows {
             bounds,
             minimized: false,
         });
-        let mut next = [None; 7];
+        let mut next = [None; WINDOW_CAPACITY];
         next[0] = Some(WindowRef::Native(id));
         let mut len = 1;
         for entry in self.order.into_iter().flatten() {
-            if len < 7 {
+            if len < WINDOW_CAPACITY {
                 next[len] = Some(entry);
                 len += 1;
             }
@@ -97,7 +99,7 @@ impl Windows {
             if self.drag.is_some_and(|d| d.id == id) {
                 self.drag = None;
             }
-            let mut next = [None; 7];
+            let mut next = [None; WINDOW_CAPACITY];
             let mut len = 0;
             for e in self.order.into_iter().flatten() {
                 if e != WindowRef::Native(id) {
@@ -129,7 +131,7 @@ impl Windows {
         if !self.order.contains(&Some(id)) {
             return;
         }
-        let mut next = [None; 7];
+        let mut next = [None; WINDOW_CAPACITY];
         let mut len = 0;
         for e in self.order.into_iter().flatten() {
             if e != id {
@@ -231,11 +233,12 @@ impl Windows {
             self.switch.reverse();
             self.index = current
                 .and_then(|id| self.switch.iter().position(|e| *e == Some(id)))
-                .unwrap_or(if reverse { 0 } else { 6 });
+                .unwrap_or(if reverse { 0 } else { WINDOW_CAPACITY - 1 });
             self.switching = true;
         }
-        for _ in 0..7 {
-            self.index = (self.index + if reverse { 6 } else { 1 }) % 7;
+        for _ in 0..WINDOW_CAPACITY {
+            self.index =
+                (self.index + if reverse { WINDOW_CAPACITY - 1 } else { 1 }) % WINDOW_CAPACITY;
             if let Some(id) = self.switch[self.index]
                 .filter(|id| self.order.contains(&Some(*id)) && eligible(*id))
             {
@@ -306,7 +309,7 @@ mod tests {
         let eligible = |_: WindowRef| true;
         assert_eq!(
             w.switch(Some(WindowRef::Native(id())), false, eligible),
-            Some(WindowRef::Builtin(App::Editor))
+            Some(WindowRef::Builtin(App::Calculator))
         );
         w.remove(id());
         let new = SurfaceRef {
@@ -316,7 +319,7 @@ mod tests {
         w.install(new, b);
         assert!(w.presentation(id(), None).is_none());
         assert!(!w.minimize(id()));
-        for _ in 0..7 {
+        for _ in 0..WINDOW_CAPACITY {
             assert_ne!(
                 w.switch(None, false, eligible),
                 Some(WindowRef::Native(new))

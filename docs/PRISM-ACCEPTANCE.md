@@ -1,5 +1,11 @@
 # Prism acceptance and next implementation gates
 
+The [current guest visual gallery](PRISM-VISUAL-GALLERY.md) shows the six
+development panels, Home, notifications and the shortcut guide. It is a visual
+record of the current working tree; the source-pinned gates below remain the
+acceptance evidence for their named images and do not inherit this gallery's
+results.
+
 This review compares the eighth development desktop source and the actual 1280×800 QEMU screenshot at `build/eighth-qemu64/screenshot.ppm` with the unchanged Next 1.0 spec §§13–14 and 22–23. The eighth image is `e1aa0516b94e20f349cea2bbe4593bbce4d27e3ac4b014e7971fe635b267741e`; its frozen 207-file source manifest is `work/eighth-wave/source-manifest.json`, SHA-256 `37b72e7d411ae6f37bbd845fbe8c3c9d4c8dda6db6ebfde96fe4566fd3bc9ee1`. This is a scoped review, not a complete-product acceptance result. The requirement ledger remains tied to its last completed immutable milestone until the eighth proof set is reconciled.
 
 The inspected screenshot has legible antialiased text, consistent light surfaces, rounded window/taskbar chrome, recognizable original icons and a coherent blue procedural wallpaper. The terminal text and controls fit within the visible window, and the taskbar stays separate from it. This screenshot shows only Terminal; it cannot establish Files, Home, notifications, Settings, modal dialogs, scaling, keyboard access or interaction correctness. A reviewer’s preference for the design does not substitute for those functional checks.
@@ -214,4 +220,4 @@ Prism refreshes Home, taskbar, Files, Terminal, and Settings with a consistent l
 
 The source-bound two-boot Files gate passed on the same image. Real QMP input created and navigated folders, created a nested child, renamed and moved an empty folder across parents, refused removal of a non-empty folder, then removed empty folders. A separately compiled read-only Store oracle checked actual journal state after each operation and after reboot. The root listing and final empty-folder screenshots, action timeline, serial logs, reports, audio capture, source manifest and hashes are retained beside this review. This validates the bounded directory feature; it does not establish a general host filesystem or multi-user volume service.
 
-The current Next 1.0 requirement ledger still reports 195 requirements: 84 pending, 111 partial, 0 verified, and `product_ready=false`. Source 18 improves and validates Prism, but the full specification is not complete.
+The Source 18 snapshot recorded here had 195 requirements: 84 pending, 111 partial, 0 verified, and `product_ready=false`. The [current requirement ledger](STATUS.md) reflects later work; the full specification remains incomplete.

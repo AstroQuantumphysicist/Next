@@ -54,6 +54,7 @@ pub enum NetworkError {
     FrameSize,
     Packet,
     Dhcp,
+    DhcpRouteChanged,
 }
 impl core::fmt::Display for NetworkError {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
@@ -212,6 +213,7 @@ struct Device {
     rx: Queue,
     tx: Queue,
     lease_at: u64,
+    dhcp_client: Option<dhcp::Client>,
 }
 impl Device {
     unsafe fn setup(base: u16) -> Result<Self, NetworkError> {
@@ -240,6 +242,7 @@ impl Device {
             rx,
             tx,
             lease_at: 0,
+            dhcp_client: None,
         };
         device
             .rx
@@ -323,7 +326,9 @@ impl Device {
                 match client.accept(&inbound[..count], now) {
                     Ok(Some(_)) => {
                         self.lease_at = now;
-                        return client.lease(now).ok_or(NetworkError::Dhcp);
+                        let lease = client.lease(now).ok_or(NetworkError::Dhcp)?;
+                        self.dhcp_client = Some(client);
+                        return Ok(lease);
                     }
                     _ if client.state() == dhcp::State::Failed => return Err(NetworkError::Dhcp),
                     _ => {}
@@ -875,6 +880,7 @@ mod tests {
             rx: pending_queue(),
             tx: pending_queue(),
             lease_at: 0,
+            dhcp_client: None,
         };
         let buffer = TX_BUFFER.0.get().cast::<u8>();
         let mut before = [0; BUFFER_BYTES];

@@ -1,0 +1,175 @@
+{
+  "schema": "next.helix-core.channel-host-benchmark.v1",
+  "passed": true,
+  "mode": "host model only: production helix-core framing and bounded queue APIs",
+  "scope": "No kernel syscall, process-table authorization/retain-release, device, or guest latency is measured.",
+  "host": {
+    "system": "Linux",
+    "machine": "x86_64",
+    "python": "3.12.14",
+    "rustc": "rustc 1.90.0 (1159e78c4 2025-09-14)",
+    "optimization": "release opt-level=2; LTO disabled for standalone host linking"
+  },
+  "production_limits": {
+    "queue_depth_frames": 4,
+    "max_payload_bytes_per_frame": 256,
+    "max_attached_references_per_frame": 4,
+    "wire_header_bytes": 40
+  },
+  "workload_notes": [
+    "1 B and 64 B workloads use one frame per logical payload.",
+    "4 KiB and 64 KiB are logical payload streams fragmented into 256 B maximum frames; a single channel frame cannot carry either size.",
+    "Attachment cases measure copying and queueing generic owned-reference tokens through send_attached/peek/take. They do not measure kernel handle-table rights checks or object retain/release.",
+    "Fixed deterministic payload bytes, iteration counts, five samples, and source hashes make runs comparable; timings remain host- and load-dependent."
+  ],
+  "validation": {
+    "passed": true,
+    "payload_fragment_order_and_bytes_checked": true,
+    "attachment_identity_and_count_checked": true,
+    "samples_per_workload": 5
+  },
+  "source_sha256": {
+    "crates/helix-core/src/channel.rs": "a4476cb2a84fd08c4e68d6cbf0103ce831f94355ebeb89feadf638381be20956",
+    "crates/helix-core/src/ipc.rs": "69cec52c6899623fbe287af06760a9be33abc33801d0dd8976b4567fc6c84dca",
+    "tools/channel_benchmark.rs": "11a61aba80d13d8d447d85c35e8861f087234e77f681eb0bef16f9dc67185921"
+  },
+  "workloads": [
+    {
+      "name": "payload_1B",
+      "logical_payload_bytes": 1,
+      "iterations": 20000,
+      "fragments_per_payload": 1,
+      "frames": 20000,
+      "attachments_per_frame": 0,
+      "elapsed_ns_samples": [
+        991940,
+        979201,
+        1000432,
+        978029,
+        983969
+      ],
+      "median_elapsed_ns": 983969,
+      "min_elapsed_ns": 978029,
+      "max_elapsed_ns": 1000432,
+      "median_ns_per_frame": 49.19845,
+      "logical_payload_mib_per_second": 19.38423499940039,
+      "framed_bytes_per_second": 833359587.5479817,
+      "encoded_framed_bytes_per_frame_average": 41.0
+    },
+    {
+      "name": "payload_64B",
+      "logical_payload_bytes": 64,
+      "iterations": 20000,
+      "fragments_per_payload": 1,
+      "frames": 20000,
+      "attachments_per_frame": 0,
+      "elapsed_ns_samples": [
+        1024138,
+        1043617,
+        1024628,
+        1019941,
+        1022044
+      ],
+      "median_elapsed_ns": 1024138,
+      "min_elapsed_ns": 1019941,
+      "max_elapsed_ns": 1043617,
+      "median_ns_per_frame": 51.2069,
+      "logical_payload_mib_per_second": 1191.9322640112955,
+      "framed_bytes_per_second": 2030976294.2103508,
+      "encoded_framed_bytes_per_frame_average": 104.0
+    },
+    {
+      "name": "payload_4KiB_fragmented",
+      "logical_payload_bytes": 4096,
+      "iterations": 1024,
+      "fragments_per_payload": 16,
+      "frames": 16384,
+      "attachments_per_frame": 0,
+      "elapsed_ns_samples": [
+        1053841,
+        1014463,
+        1026081,
+        1043927,
+        1021995
+      ],
+      "median_elapsed_ns": 1026081,
+      "min_elapsed_ns": 1014463,
+      "max_elapsed_ns": 1053841,
+      "median_ns_per_frame": 62.62701416015625,
+      "logical_payload_mib_per_second": 3898.327714868514,
+      "framed_bytes_per_second": 4726394894.750024,
+      "encoded_framed_bytes_per_frame_average": 296.0
+    },
+    {
+      "name": "payload_64KiB_fragmented",
+      "logical_payload_bytes": 65536,
+      "iterations": 128,
+      "fragments_per_payload": 256,
+      "frames": 32768,
+      "attachments_per_frame": 0,
+      "elapsed_ns_samples": [
+        2041585,
+        2055095,
+        2097538,
+        2062737,
+        2043398
+      ],
+      "median_elapsed_ns": 2055095,
+      "min_elapsed_ns": 2041585,
+      "max_elapsed_ns": 2097538,
+      "median_ns_per_frame": 62.716522216796875,
+      "logical_payload_mib_per_second": 3892.7640814658207,
+      "framed_bytes_per_second": 4719649456.594464,
+      "encoded_framed_bytes_per_frame_average": 296.0
+    },
+    {
+      "name": "payload_64B_plus_1_attachment",
+      "logical_payload_bytes": 64,
+      "iterations": 20000,
+      "fragments_per_payload": 1,
+      "frames": 20000,
+      "attachments_per_frame": 1,
+      "elapsed_ns_samples": [
+        1104136,
+        1086099,
+        1085489,
+        1163063,
+        1216082
+      ],
+      "median_elapsed_ns": 1104136,
+      "min_elapsed_ns": 1085489,
+      "max_elapsed_ns": 1216082,
+      "median_ns_per_frame": 55.2068,
+      "logical_payload_mib_per_second": 1105.5731585601775,
+      "framed_bytes_per_second": 2028735590.543194,
+      "encoded_framed_bytes_per_frame_average": 112.0,
+      "median_ns_per_frame_over_64B_unattached": 3.999900000000004,
+      "percent_over_64B_unattached": 7.811251999242296
+    },
+    {
+      "name": "payload_64B_plus_4_attachments",
+      "logical_payload_bytes": 64,
+      "iterations": 20000,
+      "fragments_per_payload": 1,
+      "frames": 20000,
+      "attachments_per_frame": 4,
+      "elapsed_ns_samples": [
+        1329029,
+        1650025,
+        1529496,
+        1266016,
+        1524739
+      ],
+      "median_elapsed_ns": 1524739,
+      "min_elapsed_ns": 1266016,
+      "max_elapsed_ns": 1650025,
+      "median_ns_per_frame": 76.23695,
+      "logical_payload_mib_per_second": 800.5980859675,
+      "framed_bytes_per_second": 1783911869.5068467,
+      "encoded_framed_bytes_per_frame_average": 136.0,
+      "median_ns_per_frame_over_64B_unattached": 25.030049999999996,
+      "percent_over_64B_unattached": 48.8802290316344
+    }
+  ],
+  "raw_output": "SAMPLE\tpayload_1B\t1\t20000\t0\t1\t0\t991940\nSAMPLE\tpayload_1B\t1\t20000\t0\t1\t1\t979201\nSAMPLE\tpayload_1B\t1\t20000\t0\t1\t2\t1000432\nSAMPLE\tpayload_1B\t1\t20000\t0\t1\t3\t978029\nSAMPLE\tpayload_1B\t1\t20000\t0\t1\t4\t983969\nSAMPLE\tpayload_64B\t64\t20000\t0\t1\t0\t1024138\nSAMPLE\tpayload_64B\t64\t20000\t0\t1\t1\t1043617\nSAMPLE\tpayload_64B\t64\t20000\t0\t1\t2\t1024628\nSAMPLE\tpayload_64B\t64\t20000\t0\t1\t3\t1019941\nSAMPLE\tpayload_64B\t64\t20000\t0\t1\t4\t1022044\nSAMPLE\tpayload_4KiB_fragmented\t4096\t1024\t0\t16\t0\t1053841\nSAMPLE\tpayload_4KiB_fragmented\t4096\t1024\t0\t16\t1\t1014463\nSAMPLE\tpayload_4KiB_fragmented\t4096\t1024\t0\t16\t2\t1026081\nSAMPLE\tpayload_4KiB_fragmented\t4096\t1024\t0\t16\t3\t1043927\nSAMPLE\tpayload_4KiB_fragmented\t4096\t1024\t0\t16\t4\t1021995\nSAMPLE\tpayload_64KiB_fragmented\t65536\t128\t0\t256\t0\t2041585\nSAMPLE\tpayload_64KiB_fragmented\t65536\t128\t0\t256\t1\t2055095\nSAMPLE\tpayload_64KiB_fragmented\t65536\t128\t0\t256\t2\t2097538\nSAMPLE\tpayload_64KiB_fragmented\t65536\t128\t0\t256\t3\t2062737\nSAMPLE\tpayload_64KiB_fragmented\t65536\t128\t0\t256\t4\t2043398\nSAMPLE\tpayload_64B_plus_1_attachment\t64\t20000\t1\t1\t0\t1104136\nSAMPLE\tpayload_64B_plus_1_attachment\t64\t20000\t1\t1\t1\t1086099\nSAMPLE\tpayload_64B_plus_1_attachment\t64\t20000\t1\t1\t2\t1085489\nSAMPLE\tpayload_64B_plus_1_attachment\t64\t20000\t1\t1\t3\t1163063\nSAMPLE\tpayload_64B_plus_1_attachment\t64\t20000\t1\t1\t4\t1216082\nSAMPLE\tpayload_64B_plus_4_attachments\t64\t20000\t4\t1\t0\t1329029\nSAMPLE\tpayload_64B_plus_4_attachments\t64\t20000\t4\t1\t1\t1650025\nSAMPLE\tpayload_64B_plus_4_attachments\t64\t20000\t4\t1\t2\t1529496\nSAMPLE\tpayload_64B_plus_4_attachments\t64\t20000\t4\t1\t3\t1266016\nSAMPLE\tpayload_64B_plus_4_attachments\t64\t20000\t4\t1\t4\t1524739\nVALIDATION\tpassed\n"
+}

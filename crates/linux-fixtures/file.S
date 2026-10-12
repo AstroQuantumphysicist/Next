@@ -4,6 +4,64 @@
 .equ PAYLOAD_LENGTH, payload_end-payload
 .section .text
 _start:
+    /* The bounded launcher supplies an EOF-only /dev/null-style stdin. */
+    mov eax, 0
+    xor edi, edi
+    lea rsi, [rip + buffer]
+    mov edx, 1
+    syscall
+    test rax, rax
+    jne failed
+    mov eax, 5
+    xor edi, edi
+    lea rsi, [rip + status]
+    syscall
+    test rax, rax
+    jne failed
+    mov eax, dword ptr [rip + status + 24]
+    and eax, 0xf000
+    cmp eax, 0x2000 /* S_IFCHR */
+    jne failed
+    cmp qword ptr [rip + status + 48], 0
+    jne failed
+    mov eax, 8
+    xor edi, edi
+    mov esi, 17
+    xor edx, edx
+    syscall
+    test rax, rax /* /dev/null's file position remains zero */
+    jne failed
+    mov eax, 32
+    xor edi, edi
+    syscall
+    cmp rax, 3
+    jne failed
+    mov ebx, eax
+    mov eax, 3
+    xor edi, edi
+    syscall
+    test rax, rax
+    jne failed
+    mov eax, 0
+    xor edi, edi
+    lea rsi, [rip + buffer]
+    mov edx, 1
+    syscall
+    cmp rax, -9
+    jne failed
+    mov eax, 0
+    mov rdi, rbx
+    lea rsi, [rip + buffer]
+    mov edx, 1
+    syscall
+    test rax, rax
+    jne failed
+    mov eax, 3
+    mov rdi, rbx
+    syscall
+    test rax, rax
+    jne failed
+
     lea r15, [rip + default_path]
     cmp qword ptr [rsp], 2
     jb path_ready
@@ -22,6 +80,101 @@ path_ready:
     mov rdi, r12
     lea rsi, [rip + payload]
     mov edx, PAYLOAD_LENGTH
+    syscall
+    cmp rax, PAYLOAD_LENGTH
+    jne failed
+    /* pread64 reads independently of the shared open-description offset. */
+    mov eax, 17
+    mov rdi, r12
+    lea rsi, [rip + buffer]
+    mov edx, 5
+    xor r10d, r10d
+    syscall
+    cmp rax, 5
+    jne failed
+    lea rsi, [rip + payload]
+    lea rdi, [rip + buffer]
+    mov ecx, 5
+    repe cmpsb
+    jne failed
+    mov eax, 8
+    mov rdi, r12
+    xor esi, esi
+    mov edx, 1 /* SEEK_CUR */
+    syscall
+    cmp rax, PAYLOAD_LENGTH
+    jne failed
+    /* A negative positional offset is EINVAL and still preserves the cursor. */
+    mov eax, 17
+    mov rdi, r12
+    lea rsi, [rip + buffer]
+    mov edx, 1
+    mov r10, -1
+    syscall
+    cmp rax, -22
+    jne failed
+    mov eax, 8
+    mov rdi, r12
+    xor esi, esi
+    mov edx, 1 /* SEEK_CUR */
+    syscall
+    cmp rax, PAYLOAD_LENGTH
+    jne failed
+    mov eax, 18
+    mov rdi, r12
+    lea rsi, [rip + patch_byte]
+    mov edx, 1
+    mov r10, -1
+    syscall
+    cmp rax, -22
+    jne failed
+    /* A large valid offset past EOF is a short read of zero bytes. */
+    mov eax, 17
+    mov rdi, r12
+    lea rsi, [rip + buffer]
+    mov edx, 1
+    mov r10, 0x100000000
+    syscall
+    test rax, rax
+    jne failed
+    mov eax, 8
+    mov rdi, r12
+    xor esi, esi
+    mov edx, 1 /* SEEK_CUR */
+    syscall
+    cmp rax, PAYLOAD_LENGTH
+    jne failed
+    /* pwrite64 changes byte five to its existing value, without moving f_pos. */
+    mov eax, 18
+    mov rdi, r12
+    lea rsi, [rip + patch_byte]
+    mov edx, 1
+    mov r10d, 5
+    syscall
+    cmp rax, 1
+    jne failed
+    mov eax, 8
+    mov rdi, r12
+    xor esi, esi
+    mov edx, 1 /* SEEK_CUR */
+    syscall
+    cmp rax, PAYLOAD_LENGTH
+    jne failed
+    mov eax, 17
+    mov rdi, r12
+    lea rsi, [rip + buffer]
+    mov edx, 1
+    mov r10d, 5
+    syscall
+    cmp rax, 1
+    jne failed
+    mov al, byte ptr [rip + buffer]
+    cmp al, byte ptr [rip + patch_byte]
+    jne failed
+    mov eax, 8
+    mov rdi, r12
+    xor esi, esi
+    mov edx, 1 /* SEEK_CUR */
     syscall
     cmp rax, PAYLOAD_LENGTH
     jne failed
@@ -133,12 +286,21 @@ path_ready:
     syscall
     test rax, rax
     jne failed
-    mov eax, 1
+    /* Linux pwrite64 on O_APPEND appends but preserves f_pos. */
+    mov eax, 18
     mov rdi, r12
     lea rsi, [rip + suffix]
     mov edx, 1
+    xor r10d, r10d
     syscall
     cmp rax, 1
+    jne failed
+    mov eax, 8
+    mov rdi, r12
+    xor esi, esi
+    mov edx, 1 /* SEEK_CUR */
+    syscall
+    test rax, rax
     jne failed
     mov eax, 3
     mov rdi, r12
@@ -203,6 +365,7 @@ failed:
 payload: .ascii "linux-static-file-data"
 payload_end:
 suffix: .ascii "!"
+patch_byte: .ascii "-"
 default_path: .asciz "/native/linux"
 forbidden_path: .asciz "/etc/passwd"
 message: .ascii "LINUX FILE ELF: open/read/write/seek/stat/dup/close compatibility PASS\n"

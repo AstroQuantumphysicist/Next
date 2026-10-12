@@ -94,6 +94,11 @@ fn blocking_event_checks(info: &rt::StartInfo, rights: next_abi::Rights) {
         rt::event_signal(auto as u64) == 0,
         "NEXTD: blocking auto-event signal failed\n",
     );
+    require(
+        info,
+        rt::event_reset(auto as u64) == 0,
+        "NEXTD: auto-event reset after blocked signal failed\n",
+    );
     let mut code = 99;
     require(
         info,
@@ -166,7 +171,7 @@ fn blocking_event_checks(info: &rt::StartInfo, rights: next_abi::Rights) {
             "NEXTD: event reference leaked after wait cancellation\n",
         );
     }
-    rt::log(info.log,"NEXTD: blocking event timeout, auto wake, manual broadcast, process wait and kill cancellation passed\n");
+    rt::log(info.log,"NEXTD: blocking event timeout, signal-reset auto wake, manual broadcast, process wait and kill cancellation passed\n");
 }
 
 static SERVICE_READONLY: [u8; next_abi::service::MAX_BYTES] = [0x5a; next_abi::service::MAX_BYTES];

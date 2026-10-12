@@ -5,6 +5,7 @@
 use next_abi::{
     elf::{Elf64, ElfError, PF_R, PF_W, PF_X, PT_LOAD},
     native::{IMAGE_BASE, IMAGE_BYTES, IMAGE_PAGES, MAX_FILE_BYTES},
+    Status,
 };
 pub const ENOSYS: u64 = (-38i64) as u64;
 pub const EFAULT: u64 = (-14i64) as u64;
@@ -14,6 +15,26 @@ pub const ENOMEM: u64 = (-12i64) as u64;
 pub const EPERM: u64 = (-1i64) as u64;
 pub const ENODEV: u64 = (-19i64) as u64;
 pub const EOVERFLOW: u64 = (-75i64) as u64;
+pub const EACCES: u64 = (-13i64) as u64;
+pub const ENOENT: u64 = (-2i64) as u64;
+pub const EAGAIN: u64 = (-11i64) as u64;
+pub const EIO: u64 = (-5i64) as u64;
+pub const EFBIG: u64 = (-27i64) as u64;
+
+/// Translate shared kernel status values into the Linux syscall errno ABI.
+/// Keep this mapping at the personality boundary; native status numbers are
+/// not Linux errno values.
+pub const fn status_errno(error: Status) -> u64 {
+    match error {
+        Status::InvalidHandle => EBADF,
+        Status::InvalidArgument => EINVAL,
+        Status::AccessDenied => EACCES,
+        Status::NotFound => ENOENT,
+        Status::NoMemory => ENOMEM,
+        Status::WouldBlock => EAGAIN,
+        _ => EIO,
+    }
+}
 pub const ANON_BASE: u64 = IMAGE_BASE + 0x8_0000;
 pub const ANON_PAGES: usize = 64;
 pub const ANON_END: u64 = ANON_BASE + ANON_PAGES as u64 * 4096;

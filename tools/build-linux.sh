@@ -52,7 +52,7 @@ import tempfile
 binary = Path('build/compat/linux/file.elf')
 with tempfile.TemporaryDirectory(prefix='next-linux-file-') as directory:
     scratch = Path(directory) / 'fixture.txt'
-    result = subprocess.run([str(binary.resolve()), str(scratch)], capture_output=True, timeout=3)
+    result = subprocess.run([str(binary.resolve()), str(scratch)], capture_output=True, timeout=3, stdin=subprocess.DEVNULL)
     expected = b'LINUX FILE ELF: open/read/write/seek/stat/dup/close compatibility PASS\n'
     if result.returncode != 46 or result.stdout != expected or result.stderr or scratch.read_bytes() != b'linux-static-file-data!':
         raise SystemExit(f'Host Linux file fixture failed: status={result.returncode}, stdout={result.stdout!r}, stderr={result.stderr!r}')

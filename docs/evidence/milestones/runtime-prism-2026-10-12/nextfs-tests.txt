@@ -1,0 +1,45 @@
+
+running 41 tests
+test journal::concurrency_tests::try_gate_reports_reentrancy_immediately_and_releases_after_scope ... ok
+test journal::directory_tests::current_folder_and_receipts_bind_exact_id_and_revision ... ok
+test journal::directory_tests::cross_parent_rename_and_remove_bind_both_exact_snapshots ... ok
+test journal::directory_tests::exact_generation_owner_collision_full_and_readonly_preserve_whole_media ... ok
+test journal::directory_tests::explicit_nested_hierarchy_survives_remount_and_parent_enforcement ... ok
+test journal::directory_tests::files_do_not_manufacture_prefix_folders_and_magic_bytes_are_only_data ... ok
+test journal::directory_tests::invalid_canonical_paths_and_self_descendant_rename_issue_zero_writes ... ok
+test journal::directory_tests::interleaved_stale_unlink_cannot_remove_a_same_path_replacement ... ok
+test journal::directory_tests::malformed_private_metadata_and_root_shadow_are_not_repaired ... ok
+test journal::tests::commit_barriers_precede_root_and_superblock_publication ... ok
+test journal::tests::corrupt_both_roots_and_relocated_volume_fail_closed ... ok
+test journal::tests::corrupt_latest_data_or_metadata_falls_back_read_only_without_repair_writes ... ok
+test journal::tests::extent_capability_excludes_all_protected_ranges_and_checks_overflow ... ok
+test journal::tests::generation_wrap_and_corrupt_read_never_mutate_output_or_issue_writes ... ok
+test journal::tests::golden_superblock_layout_crc_and_empty_root_are_stable ... ok
+test journal::tests::latest_snapshot_media_errors_recover_previous_snapshot_read_only ... ok
+test journal::concurrency_tests::concurrent_directory_open_rename_and_unlink_are_serial_and_make_progress ... ok
+test journal::tests::metadata_reserved_fields_duplicates_and_versions_reject_even_with_fresh_crc ... ok
+test journal::tests::rename_and_delete_crashes_have_complete_pre_or_post_namespace ... ok
+test journal::tests::crash_at_every_write_and_flush_boundary_keeps_only_old_or_new_snapshot ... ok
+test journal::tests::metadata_byte_mutations_never_panic_with_or_without_recomputed_crc ... ok
+test journal::tests::transaction_tests::full_read_only_and_checksum_failure_refuse_before_any_write ... ok
+test journal::tests::transaction_tests::namespace_and_metadata_publish_in_one_generation_and_one_commit ... ok
+test journal::tests::torn_data_root_and_superblock_writes_cannot_publish_partial_data ... ok
+test journal::tests::transaction_tests::two_distinct_payloads_and_create_then_rename_use_staged_data_correctly ... ok
+test journal::tests::transaction_tests::validation_failure_never_writes_or_partially_stages_first_operation ... ok
+test journal::tests::trusted_read_only_attenuation_preserves_data_and_rejects_all_mutations ... ok
+test journal::tests::validation_and_full_volume_do_not_issue_writes ... ok
+test journal::tests::write_update_rename_replace_delete_and_reopen_are_atomic ... ok
+test tests::deleted_lfn_and_volume_entries_are_skipped ... ok
+test tests::detects_cycles_before_output_and_short_chains ... ok
+test tests::rejects_malformed_and_out_of_bounds_geometry ... ok
+test tests::short_buffer_and_paths_are_explicit_errors ... ok
+test tests::sparse_realistic_volume_multicluster_and_nested_paths ... ok
+test tests::unterminated_directory_cycle_is_bounded ... ok
+test trash_record::tests::canonical_roundtrip_and_binding ... ok
+test trash_record::tests::every_bit_corruption_and_noncanonical_padding_reject ... ok
+test trash_record::tests::keys_and_untrusted_paths_are_strictly_bounded ... ok
+test journal::tests::transaction_tests::torn_writes_never_publish_namespace_without_matching_metadata ... ok
+test journal::tests::transaction_tests::every_write_and_flush_failure_keeps_whole_old_or_new_transaction_after_crash ... ok
+test journal::directory_tests::every_write_flush_fault_recovers_complete_old_or_new_directory_namespace ... ok
+
+test result: ok. 41 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.71s

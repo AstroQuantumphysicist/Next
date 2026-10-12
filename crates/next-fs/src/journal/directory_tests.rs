@@ -461,3 +461,70 @@ fn cross_parent_rename_and_remove_bind_both_exact_snapshots() {
         Err(DirError::<()>::NotFound)
     );
 }
+
+#[test]
+fn interleaved_stale_unlink_cannot_remove_a_same_path_replacement() {
+    let mut ram = setup();
+    let mut store = Store::mount(part(&mut ram)).unwrap();
+    let generation = store.generation();
+    directory::mkdir(&mut store, 1, generation, "/native/destination").unwrap();
+
+    // Model two actors that both captured source and destination snapshots
+    // before either actor mutates the namespace. The first actor moves the
+    // source; the second still holds the old unlink/rename intent.
+    let stale_source = directory::snapshot(&mut store, 1, "/native/a").unwrap();
+    let destination = directory::snapshot(&mut store, 1, "/native/destination").unwrap();
+    let original_id = stale_source.folder.id;
+    directory::rename_between_snapshots(
+        &mut store,
+        1,
+        stale_source,
+        destination,
+        "/native/destination/a",
+    )
+    .unwrap();
+
+    assert_eq!(
+        directory::rmdir_snapshot(&mut store, 1, stale_source),
+        Err(DirError::<()>::Conflict)
+    );
+    assert_eq!(
+        directory::rename_between_snapshots(
+            &mut store,
+            1,
+            stale_source,
+            destination,
+            "/native/destination/second-name",
+        ),
+        Err(DirError::<()>::Conflict)
+    );
+
+    // Recreate the old spelling. Repeated stale unlink attempts must not
+    // resolve by path and accidentally delete this new directory identity.
+    let generation = store.generation();
+    directory::mkdir(&mut store, 1, generation, "/native/a").unwrap();
+    let replacement = directory::snapshot(&mut store, 1, "/native/a").unwrap();
+    assert_ne!(replacement.folder.id, original_id);
+    for _ in 0..32 {
+        assert_eq!(
+            directory::rmdir_snapshot(&mut store, 1, stale_source),
+            Err(DirError::<()>::Conflict)
+        );
+    }
+    assert_eq!(store.generation(), replacement.generation);
+
+    assert_eq!(
+        directory::snapshot(&mut store, 1, "/native/a")
+            .unwrap()
+            .folder
+            .id,
+        replacement.folder.id
+    );
+    assert_eq!(
+        directory::snapshot(&mut store, 1, "/native/destination/a")
+            .unwrap()
+            .folder
+            .id,
+        original_id
+    );
+}

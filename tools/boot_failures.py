@@ -51,11 +51,16 @@ def main():
                 subprocess.run(["mcopy", "-o", "-i", str(copy), str(payload), "::/EFI/NEXT/HELIX.ELF"], check=True)
             output = ROOT / "build/failures" / name
             command = [sys.executable, str(ROOT / "tools/boot_smoke.py"), "--image", str(copy),
-                       "--output-dir", str(output), "--expect-boot-failure", diagnostic]
+                       "--output-dir", str(output), "--expect-boot-failure", diagnostic,
+                       "--expect-failure-stage", "kernel"]
             result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
             report = json.loads((output / "boot-smoke.json").read_text())
-            results.append({"case": name, "passed": result.returncode == 0 and report["passed"],
+            serial = (output / "serial.log").read_text(errors="replace")
+            failure_record = "NEXT BOOT FAILURE: code=0x4e580201 stage=kernel action=HALT"
+            record_present = failure_record in serial
+            results.append({"case": name, "passed": result.returncode == 0 and report["passed"] and record_present,
                             "checks": report["checks"], "artifact": str(output.relative_to(ROOT) / "serial.log"),
+                            "stable_failure_record_present": record_present,
                             "error": report.get("error")})
             print(f"{name}: {'PASS' if results[-1]['passed'] else 'FAIL'}", flush=True)
     unchanged = hashlib.sha256(image.read_bytes()).hexdigest() == digest

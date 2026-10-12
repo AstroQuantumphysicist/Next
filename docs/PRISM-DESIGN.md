@@ -11,8 +11,15 @@ Windows 11 documentation informed spacing, corner treatment, and hierarchy.
 The wallpaper and icons are original Next artwork; reference pixels are not
 embedded in the operating system. Prism now draws an original high-contrast
 Windows-style pointer shape with a dark contour and edge clipping; it does not
-bundle Microsoft's cursor artwork. The current font and cursor have host raster
-tests, while their appearance in a frozen guest image remains pending.
+bundle Microsoft's cursor artwork. The QEMU gallery captures the Selawik atlas
+and pointer in the running desktop. Those captures show rendering, but do not
+replace font-layout, scaling, accessibility, or physical-display validation.
+
+![Prism Home from a completed guest framebuffer capture](images/prism-home.png)
+
+See the [guest-captured visual gallery](PRISM-VISUAL-GALLERY.md) for Home,
+Terminal, Files, Monitor, Settings, Editor, Calculator, notifications, and the
+keyboard shortcut guide.
 
 ## Reviewed reference images
 

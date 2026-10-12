@@ -6,6 +6,7 @@ mod accessibility_shell;
 pub mod appearance;
 pub mod appearance_ui;
 pub mod calculator;
+pub mod calculator_app;
 pub mod client_interaction;
 pub mod client_surface;
 pub mod cursor;
@@ -21,6 +22,7 @@ mod native_window_shell;
 pub mod native_windows;
 pub mod notifications;
 pub mod palette;
+pub mod shortcuts;
 pub mod snap;
 pub mod surface_state;
 pub mod theme;
@@ -216,6 +218,9 @@ pub enum Key {
 const LINE_CAPACITY: usize = 96;
 const HISTORY_CAPACITY: usize = 20;
 const FILE_CAPACITY: usize = 9;
+const HOME_ACTION_COUNT: usize = desktop::ACTIONS.len() + 1;
+const TASKBAR_ITEM_COUNT: usize = App::ALL.len() + 2;
+const TASKBAR_NOTIFICATIONS_INDEX: usize = App::ALL.len() + 1;
 #[derive(Clone, Copy)]
 struct Line {
     bytes: [u8; LINE_CAPACITY],
@@ -278,6 +283,7 @@ enum EditorDeferred {
 enum SearchResult {
     App(App),
     File(usize),
+    Shortcuts,
 }
 fn search_matches(candidate: &str, query: &str) -> bool {
     query.is_empty()
@@ -340,6 +346,7 @@ pub struct Shell {
     file_available: bool,
     uptime_seconds: Option<u64>,
     desktop: Desktop,
+    calculator: calculator_app::CalculatorApp,
     selection: usize,
     files: [FileEntry; FILE_CAPACITY],
     file_selection: usize,
@@ -383,6 +390,7 @@ pub struct Shell {
     notification_selected: Option<u64>,
     notification_control: usize,
     notification_toast: Option<(u64, u64)>,
+    shortcuts: shortcuts::Model,
 }
 impl Default for Shell {
     fn default() -> Self {
@@ -410,6 +418,7 @@ impl Shell {
             file_available: false,
             uptime_seconds: None,
             desktop: Desktop::new(),
+            calculator: calculator_app::CalculatorApp::new(),
             selection: 0,
             files: [FileEntry::empty(); FILE_CAPACITY],
             file_selection: 0,
@@ -453,6 +462,7 @@ impl Shell {
             notification_selected: None,
             notification_control: 0,
             notification_toast: None,
+            shortcuts: shortcuts::Model::new(),
         }
     }
     /// Populate startup messages in place. This does not construct another Shell.
@@ -468,6 +478,9 @@ impl Shell {
     }
     pub fn desktop(&self) -> &Desktop {
         &self.desktop
+    }
+    pub fn calculator(&self) -> &calculator_app::CalculatorApp {
+        &self.calculator
     }
     pub fn set_viewport(&mut self, width: usize, height: usize) {
         self.desktop.viewport(width, height);
@@ -2053,6 +2066,12 @@ impl Shell {
     pub fn search_query(&self) -> Option<&str> {
         (self.launcher && self.search_mode).then(|| self.search_input.as_str())
     }
+    pub fn shortcuts_open(&self) -> bool {
+        self.shortcuts.open()
+    }
+    pub fn shortcuts_selected(&self) -> usize {
+        self.shortcuts.selected()
+    }
     fn search_result(&self, mut index: usize) -> Option<SearchResult> {
         for app in App::ALL {
             if search_matches(app.title(), self.search_input.as_str()) {
@@ -2070,10 +2089,16 @@ impl Shell {
                 index -= 1;
             }
         }
+        if !self.search_input.as_str().is_empty()
+            && search_matches("Keyboard shortcuts", self.search_input.as_str())
+            && index == 0
+        {
+            return Some(SearchResult::Shortcuts);
+        }
         None
     }
     fn search_count(&self) -> usize {
-        (0..App::ALL.len() + FILE_CAPACITY)
+        (0..App::ALL.len() + FILE_CAPACITY + 1)
             .take_while(|i| self.search_result(*i).is_some())
             .count()
     }
@@ -2086,6 +2111,12 @@ impl Shell {
                     if let Err(error) = self.request_editor_open(path.as_str()) {
                         self.editor_status.set(error.message());
                     }
+                }
+                SearchResult::Shortcuts => {
+                    self.shortcuts.show();
+                    self.launcher = false;
+                    self.search_mode = false;
+                    return;
                 }
             }
             self.launcher = false;
@@ -2334,11 +2365,11 @@ impl Shell {
         }
     }
     pub fn taskbar_item_bounds(&self, index: usize) -> Option<Bounds> {
-        if index > 6 {
+        if index >= TASKBAR_ITEM_COUNT {
             return None;
         }
         let b = self.taskbar_bounds();
-        let slot = ((b.width - 24).max(0) / 7).max(1);
+        let slot = ((b.width - 24).max(0) / TASKBAR_ITEM_COUNT as i32).max(1);
         Some(Bounds {
             x: b.x + 12 + index as i32 * slot,
             y: b.y + 6,
@@ -2358,13 +2389,13 @@ impl Shell {
         }
     }
     pub fn home_action_bounds(&self, index: usize) -> Option<Bounds> {
-        if index >= desktop::ACTIONS.len() {
+        if index >= HOME_ACTION_COUNT {
             return None;
         }
         let b = self.home_bounds();
         let inner = (b.width - 56).max(0);
-        if index < 5 {
-            let column = (inner / 5).max(1);
+        if index < App::ALL.len() {
+            let column = (inner / App::ALL.len() as i32).max(1);
             Some(Bounds {
                 x: b.x + 28 + index as i32 * column,
                 y: b.y + 126,
@@ -2372,14 +2403,70 @@ impl Shell {
                 height: 88,
             })
         } else {
-            let item = index - 5;
+            let item = index - App::ALL.len();
             let column = (inner / 2).max(1);
+            let row_step = if b.height < 420 { 34 } else { 40 };
             Some(Bounds {
                 x: b.x + 28 + (item % 2) as i32 * column,
-                y: b.y + 244 + (item / 2) as i32 * 40,
+                y: b.y + 244 + (item / 2) as i32 * row_step,
                 width: (column - 12).max(0),
                 height: 32,
             })
+        }
+    }
+    pub fn calculator_bounds(&self) -> Bounds {
+        let window = self.desktop.window(App::Calculator).bounds;
+        Bounds {
+            x: window.x.saturating_add(8),
+            y: window.y.saturating_add(48),
+            width: window.width.saturating_sub(16).max(0),
+            height: window.height.saturating_sub(56).max(0),
+        }
+    }
+    pub fn shortcuts_bounds(&self) -> Bounds {
+        let (screen_width, screen_height) = self.desktop.dimensions();
+        let width = screen_width.saturating_sub(32).clamp(1, 720);
+        let height = screen_height.saturating_sub(32).clamp(1, 560);
+        Bounds {
+            x: (screen_width - width) / 2,
+            y: (screen_height - height) / 2,
+            width,
+            height,
+        }
+    }
+    pub fn shortcut_row_bounds(&self, index: usize) -> Option<Bounds> {
+        if index >= shortcuts::ENTRIES.len() {
+            return None;
+        }
+        let panel = self.shortcuts_bounds();
+        Some(Bounds {
+            x: panel.x + 16,
+            y: panel.y + 72 + index as i32 * 32,
+            width: (panel.width - 32).max(0),
+            height: 30,
+        })
+    }
+    fn shortcut_close_bounds(&self) -> Bounds {
+        let panel = self.shortcuts_bounds();
+        Bounds {
+            x: panel.x + panel.width - 106,
+            y: panel.y + panel.height - 46,
+            width: 90,
+            height: 32,
+        }
+    }
+    fn shortcuts_pointer(&mut self, x: i32, y: i32) {
+        if Self::hit(self.shortcut_close_bounds(), x, y) {
+            self.shortcuts.close();
+            return;
+        }
+        if let Some(index) = (0..shortcuts::ENTRIES.len()).find(|index| {
+            self.shortcut_row_bounds(*index)
+                .is_some_and(|b| Self::hit(b, x, y))
+        }) {
+            self.shortcuts.select(index);
+        } else if !Self::hit(self.shortcuts_bounds(), x, y) {
+            self.shortcuts.close();
         }
     }
     fn hit(bounds: Bounds, x: i32, y: i32) -> bool {
@@ -2402,6 +2489,16 @@ impl Shell {
         self.pointer_buttons = buttons;
         self.pointer = Some((x, y));
         if self.files_directory.dialog_active() {
+            if buttons & 1 != 0 && previous & 1 == 0 {
+                self.on_pointer(Pointer::Down(x, y));
+            } else if buttons & 1 == 0 && previous & 1 != 0 {
+                self.on_pointer(Pointer::Up);
+            } else {
+                self.on_pointer(Pointer::Move(x, y));
+            }
+            return;
+        }
+        if self.shortcuts.open() {
             if buttons & 1 != 0 && previous & 1 == 0 {
                 self.on_pointer(Pointer::Down(x, y));
             } else if buttons & 1 == 0 && previous & 1 != 0 {
@@ -2481,6 +2578,12 @@ impl Shell {
             }
             return;
         }
+        if self.shortcuts.open() {
+            if let Pointer::Down(x, y) = event {
+                self.shortcuts_pointer(x, y);
+            }
+            return;
+        }
         if let Pointer::Down(x, y) = event {
             if self.editor_deferred.is_some() {
                 let b = self.desktop.window(App::Editor).bounds;
@@ -2500,7 +2603,7 @@ impl Shell {
             }
             if self.notification_open {
                 if self
-                    .taskbar_item_bounds(6)
+                    .taskbar_item_bounds(TASKBAR_NOTIFICATIONS_INDEX)
                     .is_some_and(|b| Self::hit(b, x, y))
                 {
                     self.toggle_notifications();
@@ -2509,7 +2612,7 @@ impl Shell {
                 }
                 return;
             }
-            for index in 0..7 {
+            for index in 0..TASKBAR_ITEM_COUNT {
                 if self
                     .taskbar_item_bounds(index)
                     .is_some_and(|b| Self::hit(b, x, y))
@@ -2522,7 +2625,7 @@ impl Shell {
                             self.search_input = Line::new();
                             self.selection = 0;
                         }
-                        6 => self.toggle_notifications(),
+                        TASKBAR_NOTIFICATIONS_INDEX => self.toggle_notifications(),
                         _ => self.apply_window_action(Action::Open(App::ALL[index - 1])),
                     }
                     return;
@@ -2548,13 +2651,17 @@ impl Shell {
                         self.launcher = false;
                         self.search_mode = false;
                     }
-                } else if let Some(index) = (0..desktop::ACTIONS.len()).find(|i| {
+                } else if let Some(index) = (0..HOME_ACTION_COUNT).find(|i| {
                     self.home_action_bounds(*i)
                         .is_some_and(|item| Self::hit(item, x, y))
                 }) {
                     self.selection = index;
-                    self.apply_window_action(desktop::ACTIONS[index]);
-                    self.launcher = false;
+                    if index == desktop::ACTIONS.len() {
+                        self.shortcuts.show();
+                    } else {
+                        self.apply_window_action(desktop::ACTIONS[index]);
+                        self.launcher = false;
+                    }
                 } else {
                     self.launcher = false;
                 }
@@ -2651,6 +2758,14 @@ impl Shell {
             }
         }
         if let Pointer::Down(x, y) = event {
+            if self.desktop.focused() == Some(App::Calculator)
+                && self
+                    .calculator
+                    .on_pointer_embedded(x, y, self.calculator_bounds())
+                    != calculator_app::Change::Ignored
+            {
+                return;
+            }
             if self.desktop.focused() == Some(App::Settings) && self.settings_pointer(x, y) {
                 return;
             }
@@ -2926,6 +3041,10 @@ impl Shell {
             self.file_dialog_key(key);
             return;
         }
+        if self.shortcuts.open() {
+            self.shortcuts.on_key(key);
+            return;
+        }
         if self.client_input_allowed() && matches!(key, Key::WindowNext | Key::WindowPrevious) {
             self.switch_ordinary_window(key == Key::WindowPrevious);
             return;
@@ -3073,6 +3192,23 @@ impl Shell {
             self.file_detail = false;
             return;
         }
+        if self.desktop.focused() == Some(App::Calculator)
+            && matches!(
+                key,
+                Key::Tab
+                    | Key::BackTab
+                    | Key::Up
+                    | Key::Down
+                    | Key::Enter
+                    | Key::Escape
+                    | Key::Delete
+                    | Key::Backspace
+                    | Key::Character(_)
+            )
+        {
+            self.calculator.on_key(key);
+            return;
+        }
         if self.launcher && self.search_mode && key != Key::Menu {
             self.search_key(key);
             return;
@@ -3093,16 +3229,17 @@ impl Shell {
                 return;
             }
             match key {
-                Key::Tab | Key::Down => {
-                    self.selection = (self.selection + 1) % desktop::ACTIONS.len()
-                }
+                Key::Tab | Key::Down => self.selection = (self.selection + 1) % HOME_ACTION_COUNT,
                 Key::Up | Key::BackTab => {
-                    self.selection =
-                        (self.selection + desktop::ACTIONS.len() - 1) % desktop::ACTIONS.len()
+                    self.selection = (self.selection + HOME_ACTION_COUNT - 1) % HOME_ACTION_COUNT
                 }
                 Key::Enter => {
-                    self.apply_window_action(desktop::ACTIONS[self.selection]);
-                    self.launcher = false;
+                    if self.selection == desktop::ACTIONS.len() {
+                        self.shortcuts.show();
+                    } else {
+                        self.apply_window_action(desktop::ACTIONS[self.selection]);
+                        self.launcher = false;
+                    }
                 }
                 _ => {}
             }
@@ -3145,6 +3282,9 @@ impl Shell {
             Some(App::Terminal) => self.terminal_key(key),
             Some(App::Editor) => self.editor_key(key),
             Some(App::Settings) => self.settings_key(key),
+            Some(App::Calculator) => {
+                self.calculator.on_key(key);
+            }
             Some(App::Files) => {
                 if self.files_directory.listing().is_some() {
                     self.files_directory_key(key);
@@ -3412,6 +3552,9 @@ impl Shell {
                     }
                 }
                 App::Editor => self.render_editor(canvas, b.x, b.y, width, height, columns),
+                App::Calculator => self
+                    .calculator
+                    .render_embedded(canvas, self.calculator_bounds()),
                 App::Settings => {
                     if !self.settings_diagnostics {
                         self.render_appearance(canvas, b.x, b.y, width, height, columns);
@@ -3509,6 +3652,9 @@ impl Shell {
         if self.file_portal.is_some() {
             self.render_file_portal(canvas);
         }
+        if self.shortcuts.open() {
+            self.render_shortcuts(canvas);
+        }
         if let Some((x, y)) = self.pointer {
             // A software cursor is drawn last, from actual pointer events.
             cursor::draw(canvas, x, y);
@@ -3546,7 +3692,7 @@ impl Shell {
             );
         }
 
-        for index in 0..7 {
+        for index in 0..TASKBAR_ITEM_COUNT {
             let Some(item) = self.taskbar_item_bounds(index) else {
                 continue;
             };
@@ -3555,7 +3701,7 @@ impl Shell {
             }
             let active = match index {
                 0 => self.launcher,
-                6 => self.notification_open,
+                TASKBAR_NOTIFICATIONS_INDEX => self.notification_open,
                 _ => self.desktop.focused() == Some(App::ALL[index - 1]),
             };
 
@@ -3572,7 +3718,7 @@ impl Shell {
             }
             let icon = match index {
                 0 => theme::Icon::Next,
-                6 => theme::Icon::Notices,
+                TASKBAR_NOTIFICATIONS_INDEX => theme::Icon::Notices,
                 _ => app_icon(App::ALL[index - 1]),
             };
             let size = item.width.min(item.height.saturating_sub(8)).clamp(0, 24);
@@ -3586,7 +3732,7 @@ impl Shell {
             );
 
             if index > 0
-                && index < 6
+                && index < TASKBAR_NOTIFICATIONS_INDEX
                 && self.desktop.window(App::ALL[index - 1]).state != WindowState::Closed
             {
                 let indicator_width =
@@ -3604,7 +3750,7 @@ impl Shell {
                     if active { theme::ACCENT } else { theme::MUTED },
                 );
             }
-            if index == 6 && self.notifications.unread() > 0 {
+            if index == TASKBAR_NOTIFICATIONS_INDEX && self.notifications.unread() > 0 {
                 theme::rounded_rect(
                     canvas,
                     Bounds {
@@ -3729,6 +3875,7 @@ impl Shell {
                 let (label, icon) = match result {
                     SearchResult::App(app) => (app.title(), app_icon(app)),
                     SearchResult::File(i) => (self.files[i].path.as_str(), theme::Icon::Files),
+                    SearchResult::Shortcuts => ("Keyboard shortcuts", theme::Icon::Notices),
                 };
                 theme::icon(canvas, icon, b.x + 34, y + 7, 16, theme::ACCENT);
                 theme::text(
@@ -3831,7 +3978,7 @@ impl Shell {
                 theme::TEXT,
                 theme::Font::Small,
             );
-            for index in 5..desktop::ACTIONS.len() {
+            for index in App::ALL.len()..HOME_ACTION_COUNT {
                 let Some(item) = self.home_action_bounds(index) else {
                     continue;
                 };
@@ -3858,11 +4005,16 @@ impl Shell {
                     fill,
                 );
                 canvas.rect(item.x + 12, item.y + 12, 8, 8, theme::ACCENT);
+                let label = if index == desktop::ACTIONS.len() {
+                    "Keyboard shortcuts"
+                } else {
+                    desktop::ACTIONS[index].label()
+                };
                 theme::text(
                     canvas,
                     item.x + 30,
                     item.y + 7,
-                    desktop::ACTIONS[index].label(),
+                    label,
                     theme::TEXT,
                     theme::Font::Small,
                 );
@@ -3882,6 +4034,107 @@ impl Shell {
             footer_y,
             "Arrows choose    Enter opens    Esc closes",
             theme::MUTED,
+            theme::Font::Small,
+        );
+    }
+    fn render_shortcuts(&self, canvas: &mut Canvas<'_>) {
+        let b = self.shortcuts_bounds();
+        theme::shadow(canvas, b, 16);
+        theme::rounded_rect(canvas, b, 14, theme::SURFACE);
+        theme::outline(canvas, b, 14, theme::BORDER);
+        canvas.rect(b.x + 18, b.y + 1, (b.width - 36).max(0), 2, theme::ACCENT);
+        theme::icon(
+            canvas,
+            theme::Icon::Notices,
+            b.x + 22,
+            b.y + 19,
+            22,
+            theme::ACCENT,
+        );
+        theme::text(
+            canvas,
+            b.x + 54,
+            b.y + 16,
+            "Keyboard shortcuts",
+            theme::TEXT,
+            theme::Font::Title,
+        );
+        theme::text(
+            canvas,
+            b.x + 22,
+            b.y + 48,
+            "Use Tab or the arrow keys to browse. Escape closes this guide.",
+            theme::MUTED,
+            theme::Font::Small,
+        );
+        let key_x = b.x + b.width * 58 / 100;
+        for (index, entry) in shortcuts::ENTRIES.iter().enumerate() {
+            let Some(row) = self.shortcut_row_bounds(index) else {
+                continue;
+            };
+            let selected = index == self.shortcuts.selected();
+            if selected {
+                theme::rounded_rect(canvas, row, 7, theme::ACCENT);
+                theme::rounded_rect(
+                    canvas,
+                    Bounds {
+                        x: row.x + 1,
+                        y: row.y + 1,
+                        width: row.width - 2,
+                        height: row.height - 2,
+                    },
+                    6,
+                    theme::ACCENT_SOFT,
+                );
+            } else if index % 2 == 1 {
+                theme::rounded_rect(canvas, row, 7, theme::SURFACE_RAISED);
+            }
+            let label_columns = text_fit_columns(entry.name, key_x - row.x - 18);
+            draw_limited(
+                canvas,
+                row.x + 10,
+                row.y + 1,
+                entry.name,
+                label_columns,
+                theme::TEXT,
+            );
+            let key_columns = text_fit_columns(entry.keys, row.x + row.width - key_x - 12);
+            draw_limited(
+                canvas,
+                key_x,
+                row.y + 1,
+                entry.keys,
+                key_columns,
+                if selected {
+                    theme::ACCENT
+                } else {
+                    theme::MUTED
+                },
+            );
+        }
+        let close = self.shortcut_close_bounds();
+        if self.shortcuts.selected() == shortcuts::ENTRIES.len() {
+            theme::rounded_rect(canvas, close, 8, theme::TEXT);
+            theme::rounded_rect(
+                canvas,
+                Bounds {
+                    x: close.x + 2,
+                    y: close.y + 2,
+                    width: close.width - 4,
+                    height: close.height - 4,
+                },
+                6,
+                theme::ACCENT,
+            );
+        } else {
+            theme::rounded_rect(canvas, close, 8, theme::ACCENT);
+        }
+        theme::text(
+            canvas,
+            close.x + 18,
+            close.y,
+            "Close",
+            0xffffff,
             theme::Font::Small,
         );
     }
@@ -5580,6 +5833,7 @@ fn app_icon(app: App) -> theme::Icon {
         App::Monitor => theme::Icon::Monitor,
         App::Settings => theme::Icon::Settings,
         App::Editor => theme::Icon::Editor,
+        App::Calculator => theme::Icon::Calculator,
     }
 }
 
@@ -5591,6 +5845,17 @@ fn draw_limited(canvas: &mut Canvas<'_>, x: i32, y: i32, text: &str, columns: us
         .map(|(i, _)| i)
         .unwrap_or(text.len());
     theme::text(canvas, x, y, &text[..end], color, theme::Font::Body);
+}
+fn text_fit_columns(text: &str, width: i32) -> usize {
+    if width <= 0 {
+        return 0;
+    }
+    text.char_indices()
+        .take_while(|(start, c)| {
+            let end = start + c.len_utf8();
+            theme::text_width(&text[..end], theme::Font::Body) <= width
+        })
+        .count()
 }
 
 fn glyph(c: char) -> [u8; 7] {
@@ -5799,7 +6064,7 @@ mod tests {
         shell.on_key(Key::WindowNext);
         assert_eq!(shell.desktop().focused(), Some(App::Terminal));
         shell.on_key(Key::Escape);
-        for _ in 0..6 {
+        for _ in 0..7 {
             shell.on_key(Key::Tab);
         }
         shell.on_key(Key::Enter);
@@ -5808,6 +6073,73 @@ mod tests {
         shell.on_key(Key::Left);
         shell.on_key(Key::Escape);
         assert_eq!(shell.desktop().window(App::Terminal).bounds, original);
+    }
+    #[test]
+    fn calculator_launches_from_home_search_and_taskbar_and_closes_cleanly() {
+        let mut shell = Shell::new();
+        shell.set_viewport(1280, 800);
+
+        shell.on_key(Key::Menu);
+        let pinned = shell.home_action_bounds(App::Calculator as usize).unwrap();
+        shell.on_pointer(Pointer::Down(
+            pinned.x + pinned.width / 2,
+            pinned.y + pinned.height / 2,
+        ));
+        assert_eq!(shell.desktop().focused(), Some(App::Calculator));
+        assert_eq!(
+            shell.desktop().window(App::Calculator).state,
+            WindowState::Floating
+        );
+        for character in "7 * 6".chars() {
+            shell.on_key(Key::Character(character));
+        }
+        let bounds = shell.calculator_bounds();
+        let calculate = calculator_app::calculate_bounds(bounds);
+        shell.on_pointer(Pointer::Down(
+            calculate.x + calculate.width / 2,
+            calculate.y + calculate.height / 2,
+        ));
+        assert_eq!(shell.calculator.result(), Some(Ok(42)));
+
+        let mut snapshot = accessibility::Snapshot::empty();
+        shell.write_accessibility_snapshot(&mut snapshot).unwrap();
+        assert!(snapshot.complete);
+        assert_eq!(snapshot.nodes()[0].role, accessibility::Role::Window);
+        assert_eq!(snapshot.nodes()[0].name(), "Next Calculator");
+        assert!(snapshot
+            .nodes()
+            .iter()
+            .any(|node| node.name() == "Calculation result" && node.value() == "42"));
+        assert!(shell.take_accessibility_event().is_some());
+
+        shell.on_key(Key::CloseWindow);
+        assert_eq!(
+            shell.desktop().window(App::Calculator).state,
+            WindowState::Closed
+        );
+        assert_eq!(shell.desktop().focused(), Some(App::Terminal));
+
+        shell.on_key(Key::OpenSearch);
+        for character in "calculator".chars() {
+            shell.on_key(Key::Character(character));
+        }
+        assert_eq!(shell.search_count(), 1);
+        shell.on_key(Key::Enter);
+        assert_eq!(shell.desktop().focused(), Some(App::Calculator));
+        shell.on_key(Key::CloseWindow);
+        assert_eq!(
+            shell.desktop().window(App::Calculator).state,
+            WindowState::Closed
+        );
+
+        let calculator = shell
+            .taskbar_item_bounds(App::Calculator as usize + 1)
+            .unwrap();
+        shell.on_pointer(Pointer::Down(
+            calculator.x + calculator.width / 2,
+            calculator.y + calculator.height / 2,
+        ));
+        assert_eq!(shell.desktop().focused(), Some(App::Calculator));
     }
     #[test]
     fn supplied_command_and_panel_data_are_bounded_and_actual() {
@@ -6269,11 +6601,11 @@ mod tests {
         let home = shell.home_bounds();
         shell.on_pointer(Pointer::Down(home.x + 50, home.y + 70));
         assert_eq!(shell.search_query(), Some(""));
-        assert_eq!(shell.search_count(), 14);
-        for _ in 0..13 {
+        assert_eq!(shell.search_count(), 15);
+        for _ in 0..14 {
             shell.on_key(Key::Down);
         }
-        assert_eq!(shell.selection, 13);
+        assert_eq!(shell.selection, 14);
         shell.on_pointer(Pointer::Down(home.x + 50, home.y + 116 + 8 * 32 + 8)); // ninth visible result at end
         let Some(EditorAction::Open { path }) = shell.take_editor_action() else {
             panic!("last file accessible");
@@ -6634,7 +6966,7 @@ mod tests {
                     && b.x + b.width <= width as i32
                     && b.y + b.height <= height as i32
             );
-            for index in 0..7 {
+            for index in 0..TASKBAR_ITEM_COUNT {
                 let item = shell.taskbar_item_bounds(index).unwrap();
                 assert!(item.x >= b.x && item.x + item.width <= b.x + b.width);
                 assert!(item.y >= b.y && item.y + item.height <= b.y + b.height);
@@ -6652,7 +6984,7 @@ mod tests {
                     && panel.x + panel.width <= width as i32
                     && panel.y + panel.height < b.y
             );
-            for index in 0..5 {
+            for index in 0..App::ALL.len() {
                 let item = shell.home_action_bounds(index).unwrap();
                 assert!(item.x >= panel.x && item.x + item.width <= panel.x + panel.width);
                 assert!(item.y >= panel.y && item.y + item.height <= panel.y + panel.height);
@@ -7242,6 +7574,101 @@ mod tests {
         shell.on_key(Key::Menu);
         assert!(!shell.launcher_open());
         assert_eq!(shell.input(), "x");
+    }
+    #[test]
+    fn home_shortcut_guide_is_keyboard_navigable_and_publishes_focus_events() {
+        use accessibility::{EventKind, Role, Snapshot};
+        let mut shell = Shell::new();
+        shell.set_viewport(640, 480);
+        shell.on_key(Key::Menu);
+        for _ in 0..desktop::ACTIONS.len() {
+            shell.on_key(Key::Down);
+        }
+        assert_eq!(shell.selection, desktop::ACTIONS.len());
+        let home = shell.home_bounds();
+        let guide = shell.home_action_bounds(desktop::ACTIONS.len()).unwrap();
+        assert!(guide.y >= home.y && guide.y + guide.height <= home.y + home.height);
+
+        let mut snapshot = Snapshot::empty();
+        shell.write_accessibility_snapshot(&mut snapshot).unwrap();
+        assert!(snapshot.complete);
+        let home_entry = snapshot
+            .nodes()
+            .iter()
+            .find(|node| node.name() == "Keyboard shortcuts")
+            .unwrap();
+        assert_eq!(home_entry.role, Role::Button);
+        assert!(home_entry.state.focused);
+
+        shell.on_key(Key::Enter);
+        assert!(shell.shortcuts_open());
+        assert!(shell.launcher_open());
+        shell.write_accessibility_snapshot(&mut snapshot).unwrap();
+        assert_eq!(snapshot.context, 28);
+        assert_eq!(snapshot.nodes()[0].role, Role::Dialog);
+        assert_eq!(snapshot.nodes()[0].name(), "Keyboard shortcuts");
+        assert_eq!(
+            snapshot
+                .nodes()
+                .iter()
+                .find(|node| node.state.focused)
+                .unwrap()
+                .name(),
+            shortcuts::ENTRIES[0].name
+        );
+        while shell.take_accessibility_event().is_some() {}
+        shell.on_key(Key::Tab);
+        shell.write_accessibility_snapshot(&mut snapshot).unwrap();
+        assert_eq!(
+            snapshot
+                .nodes()
+                .iter()
+                .find(|node| node.state.focused)
+                .unwrap()
+                .name(),
+            shortcuts::ENTRIES[1].name
+        );
+        let mut focus_changed = false;
+        while let Some(event) = shell.take_accessibility_event() {
+            focus_changed |= event.kind == EventKind::FocusChanged;
+        }
+        assert!(focus_changed);
+        for _ in 1..shortcuts::ENTRIES.len() {
+            shell.on_key(Key::Tab);
+        }
+        shell.write_accessibility_snapshot(&mut snapshot).unwrap();
+        let close = snapshot
+            .nodes()
+            .iter()
+            .find(|node| node.name() == "Close keyboard shortcuts")
+            .unwrap();
+        assert_eq!(close.role, Role::Button);
+        assert!(close.state.focused);
+        shell.on_key(Key::Enter);
+        assert!(!shell.shortcuts_open());
+        assert!(shell.launcher_open());
+    }
+    #[test]
+    fn shortcut_guide_is_searchable_and_pointer_modal_does_not_activate_background() {
+        let mut shell = Shell::new();
+        shell.set_viewport(640, 480);
+        shell.on_key(Key::Menu);
+        for character in "keyboard shortcuts".chars() {
+            shell.on_key(Key::Character(character));
+        }
+        assert_eq!(shell.search_count(), 1);
+        shell.on_key(Key::Enter);
+        assert!(shell.shortcuts_open());
+        assert!(!shell.launcher_open());
+        assert_eq!(shell.desktop().focused(), Some(App::Terminal));
+
+        let row = shell.shortcut_row_bounds(4).unwrap();
+        shell.on_pointer_packet(row.x + 8, row.y + 8, 1);
+        assert_eq!(shell.shortcuts_selected(), 4);
+        shell.on_pointer_packet(row.x + 8, row.y + 8, 0);
+        shell.on_pointer_packet(4, 4, 1);
+        assert!(!shell.shortcuts_open());
+        assert_eq!(shell.desktop().focused(), Some(App::Terminal));
     }
     #[test]
     fn alt_close_uses_cancel_and_failed_save_preserves_dirty_editor() {

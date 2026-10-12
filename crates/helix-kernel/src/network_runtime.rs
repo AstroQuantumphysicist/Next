@@ -14,6 +14,7 @@ struct Runtime {
     lease: Option<dhcp::Lease>,
     gateway_mac: [u8; 6],
     expires: u64,
+    dhcp_restarts: u8,
     tx_pending: bool,
     tx_deadline: u64,
     failed: Option<NetworkError>,
@@ -27,6 +28,7 @@ static RUNTIME: Shared = Shared(UnsafeCell::new(Runtime {
     lease: None,
     gateway_mac: [0; 6],
     expires: 0,
+    dhcp_restarts: 0,
     tx_pending: false,
     tx_deadline: 0,
     failed: None,
@@ -51,6 +53,14 @@ pub(super) fn retain(device: Device, info: NetworkInfo) -> Result<(), NetworkErr
     if runtime.device.is_some() {
         return Err(NetworkError::Busy);
     }
+    if device
+        .dhcp_client
+        .as_ref()
+        .and_then(|client| client.lease(device.lease_at))
+        != Some(info.lease)
+    {
+        return Err(NetworkError::Dhcp);
+    }
     runtime.expires = info.lease.expires_at(device.lease_at);
     runtime.lease = Some(info.lease);
     runtime.gateway_mac = info.gateway_mac;
@@ -58,7 +68,7 @@ pub(super) fn retain(device: Device, info: NetworkInfo) -> Result<(), NetworkErr
     Ok(())
 }
 /// The actual leased interface is only available while its retained driver and
-/// lease remain usable. This profile does not implement DHCP renewal.
+/// DHCP client report a usable lease.
 pub fn datagram_address() -> Option<[u8; 4]> {
     let _guard = Guard::acquire().ok()?;
     let runtime = unsafe { &*RUNTIME.0.get() };
@@ -135,6 +145,41 @@ fn transmit_completion(
         None => Ok(false),
     }
 }
+fn is_dhcp_reply(frame: &[u8]) -> bool {
+    frame.len() >= 42
+        && u16::from_be_bytes([frame[12], frame[13]]) == 0x0800
+        && frame[23] == 17
+        && u16::from_be_bytes([frame[34], frame[35]]) == 67
+        && u16::from_be_bytes([frame[36], frame[37]]) == 68
+}
+fn accept_dhcp_reply(
+    client: &mut dhcp::Client,
+    current: dhcp::Lease,
+    frame: &[u8],
+    now: u64,
+) -> Result<Option<dhcp::Lease>, NetworkError> {
+    if !is_dhcp_reply(frame) {
+        return Ok(None);
+    }
+    match client.accept(frame, now) {
+        Ok(Some(renewed)) => {
+            // The retained route has no ARP refresh path yet. Keep routing only
+            // when the acknowledged configuration matches the active route.
+            if renewed.address != current.address
+                || renewed.subnet_mask != current.subnet_mask
+                || renewed.gateway != current.gateway
+            {
+                return Err(NetworkError::DhcpRouteChanged);
+            }
+            Ok(Some(renewed))
+        }
+        Ok(None) => Ok(None),
+        Err(_) if client.state() == dhcp::State::Failed => Err(NetworkError::Dhcp),
+        // Invalid, stale, or unrelated DHCP traffic is ignored; it must not
+        // prevent this bounded pump from servicing other sockets.
+        Err(_) => Ok(None),
+    }
+}
 /// At most one completion check, four RX completions and one TX submission.
 /// DMA ownership survives socket teardown and any driver error. A failed
 /// device remains claimed, with its permanent buffers retained and unreused.
@@ -149,10 +194,15 @@ pub(crate) fn datagram_pump_dns(
 impl Runtime {
     fn run(&mut self, store: &mut Datagrams<8>, dns: &mut Broker) -> Result<(), NetworkError> {
         if let Some(error) = self.failed {
-            return Err(error);
+            if error != NetworkError::Dhcp || !self.restart_dhcp(clock_now()) {
+                return Err(error);
+            }
         }
         let result = unsafe { self.pump(store, dns) };
         if let Err(error) = result {
+            if error == NetworkError::Dhcp && self.restart_dhcp(clock_now()) {
+                return Ok(());
+            }
             if !matches!(error, NetworkError::NotFound | NetworkError::Busy) {
                 self.failed = Some(error);
             }
@@ -163,13 +213,56 @@ impl Runtime {
         if let Some(error) = self.failed {
             return Err(error);
         }
-        if self.device.is_none() || self.lease.is_none() {
+        let Some(device) = self.device.as_ref() else {
             return Err(NetworkError::NotFound);
-        }
-        if now >= self.expires {
+        };
+        let Some(lease) = self.lease else {
+            return Err(NetworkError::NotFound);
+        };
+        if now >= self.expires
+            || device
+                .dhcp_client
+                .as_ref()
+                .and_then(|client| client.lease(now))
+                != Some(lease)
+        {
             return Err(NetworkError::Dhcp);
         }
         Ok(())
+    }
+    fn restart_dhcp(&mut self, now: u64) -> bool {
+        const MAX_RESTARTS: u8 = 2;
+        if self.dhcp_restarts >= MAX_RESTARTS {
+            return false;
+        }
+        let Some(device) = self.device.as_mut() else {
+            return false;
+        };
+        let Some(previous) = device.dhcp_client.as_ref() else {
+            return false;
+        };
+        let state = previous.state();
+        let lost = state == dhcp::State::Failed
+            || (matches!(
+                state,
+                dhcp::State::Bound | dhcp::State::Renewing | dhcp::State::Rebinding
+            ) && now >= self.expires);
+        if !lost {
+            return false;
+        }
+        let mac_tail =
+            u32::from_be_bytes([device.mac[2], device.mac[3], device.mac[4], device.mac[5]]);
+        let seed = unsafe { core::arch::x86_64::_rdtsc() as u32 }
+            ^ now as u32
+            ^ mac_tail
+            ^ (self.dhcp_restarts as u32).wrapping_mul(0x9e37_79b9);
+        let Ok(client) = dhcp::Client::new(device.mac, seed.max(1), now) else {
+            return false;
+        };
+        device.dhcp_client = Some(client);
+        self.dhcp_restarts += 1;
+        self.failed = None;
+        true
     }
     unsafe fn pump(
         &mut self,
@@ -178,9 +271,18 @@ impl Runtime {
     ) -> Result<(), NetworkError> {
         let now = clock_now();
         dns.progress(now);
-        self.health(now)?;
+        let mut lease_usable = self.health(now).is_ok();
         let device = self.device.as_mut().ok_or(NetworkError::NotFound)?;
-        let lease = self.lease.ok_or(NetworkError::NotFound)?;
+        let mut lease = self.lease.ok_or(NetworkError::NotFound)?;
+        let recovering = device.dhcp_client.as_ref().is_some_and(|client| {
+            matches!(
+                client.state(),
+                dhcp::State::Discovering | dhcp::State::Requesting
+            )
+        });
+        if !lease_usable && !recovering {
+            return Err(NetworkError::Dhcp);
+        }
         if self.tx_pending && transmit_completion(device.tx.poll()?, now, self.tx_deadline)? {
             self.tx_pending = false;
             self.tx_deadline = 0;
@@ -192,19 +294,43 @@ impl Runtime {
             let Some(count) = device.receive(&mut frame)? else {
                 break;
             };
-            if let Some((port, payload)) =
-                decode_dns(&frame[..count], device.mac, self.gateway_mac, lease.address)
-            {
-                dns.receive(port, DNS_SERVER, payload, now);
-            } else if let Some((local, peer, payload)) =
-                decode(&frame[..count], device.mac, self.gateway_mac, lease.address)
-            {
-                // A full destination queue drops this datagram; it never
-                // changes already queued payloads or fabricates readiness.
-                let _ = store.deliver(local, peer, payload);
+            if is_dhcp_reply(&frame[..count]) {
+                let client = device.dhcp_client.as_mut().ok_or(NetworkError::Dhcp)?;
+                if let Some(renewed) = accept_dhcp_reply(client, lease, &frame[..count], now)? {
+                    lease = renewed;
+                    device.lease_at = now;
+                    self.expires = renewed.expires_at(now);
+                    self.lease = Some(renewed);
+                    lease_usable = true;
+                }
+            } else if lease_usable {
+                if let Some((port, payload)) =
+                    decode_dns(&frame[..count], device.mac, self.gateway_mac, lease.address)
+                {
+                    dns.receive(port, DNS_SERVER, payload, now);
+                } else if let Some((local, peer, payload)) =
+                    decode(&frame[..count], device.mac, self.gateway_mac, lease.address)
+                {
+                    // A full destination queue drops this datagram; it never
+                    // changes already queued payloads or fabricates readiness.
+                    let _ = store.deliver(local, peer, payload);
+                }
             }
         }
         if !self.tx_pending {
+            let mut request = [0; MAX_FRAME];
+            let client = device.dhcp_client.as_mut().ok_or(NetworkError::Dhcp)?;
+            if let Some(count) = client
+                .request(now, &mut request)
+                .map_err(|_| NetworkError::Dhcp)?
+            {
+                device.submit_transmit(&request[..count])?;
+                self.tx_pending = true;
+                self.tx_deadline = now.saturating_add(2_000_000_000);
+                return Ok(());
+            }
+        }
+        if lease_usable && !self.tx_pending {
             let mut query = [0; helix_core::dns::PACKET_BYTES];
             if let Some((port, length)) = dns.next_query(now, &mut query) {
                 let count = udp::encode(
@@ -227,7 +353,7 @@ impl Runtime {
                 self.tx_deadline = now.saturating_add(2_000_000_000);
             }
         }
-        if !self.tx_pending {
+        if lease_usable && !self.tx_pending {
             let mut payload = [0; datagram::MAX_PAYLOAD];
             match store.next_transmit(&mut payload) {
                 Ok(packet) => {
@@ -265,6 +391,91 @@ impl Runtime {
 #[cfg(test)]
 mod tests {
     use super::*;
+    const CLIENT_MAC: [u8; 6] = [0x52, 0x54, 0, 0x12, 0x34, 0x56];
+    const SERVER_MAC: [u8; 6] = [0x52, 0x55, 10, 0, 2, 2];
+    const XID: u32 = 0x4e58_5431;
+
+    fn checksum(bytes: &[u8]) -> u16 {
+        let mut sum = 0u32;
+        for pair in bytes.chunks(2) {
+            sum += ((pair[0] as u32) << 8) | pair.get(1).copied().unwrap_or(0) as u32;
+        }
+        while sum > 0xffff {
+            sum = (sum & 0xffff) + (sum >> 16);
+        }
+        !(sum as u16)
+    }
+
+    fn udp_checksum(source: [u8; 4], destination: [u8; 4], udp: &[u8]) -> u16 {
+        let mut bytes = std::vec::Vec::with_capacity(12 + udp.len());
+        bytes.extend_from_slice(&source);
+        bytes.extend_from_slice(&destination);
+        bytes.extend_from_slice(&[0, 17]);
+        bytes.extend_from_slice(&(udp.len() as u16).to_be_bytes());
+        bytes.extend_from_slice(udp);
+        checksum(&bytes)
+    }
+
+    fn dhcp_reply(kind: u8, xid: u32, lease_seconds: u32, gateway: [u8; 4]) -> [u8; 342] {
+        let mut frame = [0; 342];
+        frame[..6].copy_from_slice(&CLIENT_MAC);
+        frame[6..12].copy_from_slice(&SERVER_MAC);
+        frame[12..14].copy_from_slice(&0x0800u16.to_be_bytes());
+        frame[14] = 0x45;
+        frame[16..18].copy_from_slice(&328u16.to_be_bytes());
+        frame[20..22].copy_from_slice(&0x4000u16.to_be_bytes());
+        frame[22] = 64;
+        frame[23] = 17;
+        frame[26..30].copy_from_slice(&[10, 0, 2, 2]);
+        frame[30..34].copy_from_slice(&[10, 0, 2, 15]);
+        frame[34..36].copy_from_slice(&67u16.to_be_bytes());
+        frame[36..38].copy_from_slice(&68u16.to_be_bytes());
+        frame[38..40].copy_from_slice(&308u16.to_be_bytes());
+        let bootp = &mut frame[42..];
+        bootp[0] = 2;
+        bootp[1] = 1;
+        bootp[2] = 6;
+        bootp[4..8].copy_from_slice(&xid.to_be_bytes());
+        bootp[16..20].copy_from_slice(&[10, 0, 2, 15]);
+        bootp[28..34].copy_from_slice(&CLIENT_MAC);
+        bootp[236..240].copy_from_slice(&[99, 130, 83, 99]);
+        let mut options = [0; 46];
+        if kind == 6 {
+            options[..10].copy_from_slice(&[53, 1, 6, 54, 4, 10, 0, 2, 2, 255]);
+        } else {
+            options[0..9].copy_from_slice(&[53, 1, kind, 54, 4, 10, 0, 2, 2]);
+            options[9..15].copy_from_slice(&[1, 4, 255, 255, 255, 0]);
+            options[15..21]
+                .copy_from_slice(&[3, 4, gateway[0], gateway[1], gateway[2], gateway[3]]);
+            options[21..27].copy_from_slice(&[6, 4, 10, 0, 2, 3]);
+            options[27..33].copy_from_slice(&[51, 4, 0, 0, 0, 0]);
+            options[29..33].copy_from_slice(&lease_seconds.to_be_bytes());
+            options[33..39].copy_from_slice(&[58, 4, 0, 0, 0, 0]);
+            options[35..39].copy_from_slice(&(lease_seconds / 2).to_be_bytes());
+            options[39..45].copy_from_slice(&[59, 4, 0, 0, 0, 0]);
+            options[41..45].copy_from_slice(&(lease_seconds * 7 / 8).to_be_bytes());
+            options[45] = 255;
+        }
+        bootp[240..240 + options.len()].copy_from_slice(&options);
+        let ip_checksum = checksum(&frame[14..34]);
+        frame[24..26].copy_from_slice(&ip_checksum.to_be_bytes());
+        let udp = udp_checksum([10, 0, 2, 2], [10, 0, 2, 15], &frame[34..]);
+        frame[40..42].copy_from_slice(&(if udp == 0 { 0xffff } else { udp }).to_be_bytes());
+        frame
+    }
+
+    fn bound_client() -> (dhcp::Client, dhcp::Lease) {
+        let mut client = dhcp::Client::new(CLIENT_MAC, XID, 0).unwrap();
+        let mut outgoing = [0; MAX_FRAME];
+        client.request(0, &mut outgoing).unwrap();
+        let offer = dhcp_reply(2, XID, 40, [10, 0, 2, 2]);
+        client.accept(&offer, 1).unwrap();
+        client.request(1, &mut outgoing).unwrap();
+        let ack = dhcp_reply(5, XID, 40, [10, 0, 2, 2]);
+        let lease = client.accept(&ack, 2).unwrap().unwrap();
+        (client, lease)
+    }
+
     #[test]
     fn dns_reserved_ports_and_exact_resolver_tuple_are_independent_from_native_udp() {
         let mac = [2, 1, 2, 3, 4, 5];
@@ -365,27 +576,20 @@ mod tests {
             submitted: 1,
             completed: 0,
         };
-        let lease = dhcp::Lease {
-            address: [10, 0, 2, 15],
-            subnet_mask: [255, 255, 255, 0],
-            gateway: [10, 0, 2, 2],
-            dns: [10, 0, 2, 3],
-            server: [10, 0, 2, 2],
-            lease_seconds: 4,
-            renew_after: 1,
-            rebind_after: 2,
-        };
+        let (client, lease) = bound_client();
         let mut runtime = Runtime {
             device: Some(Device {
                 base: 0,
-                mac: [0; 6],
+                mac: CLIENT_MAC,
                 rx,
                 tx,
-                lease_at: 0,
+                lease_at: 2,
+                dhcp_client: Some(client),
             }),
             lease: Some(lease),
             gateway_mac: [0; 6],
-            expires: 4_000_000_000,
+            expires: lease.expires_at(2),
+            dhcp_restarts: 0,
             tx_pending: true,
             tx_deadline: 0,
             failed: None,
@@ -408,6 +612,151 @@ mod tests {
         assert_eq!(device.tx.submitted, 1);
         assert_eq!(device.tx.completed, 0);
         assert!(runtime.lease.is_some());
+    }
+
+    #[test]
+    fn runtime_renews_through_retained_client_and_refreshes_expiry_only_for_safe_ack() {
+        let (mut client, current) = bound_client();
+        let renew_at = 20_000_000_002;
+        let mut outgoing = [0; MAX_FRAME];
+        let count = client.request(renew_at, &mut outgoing).unwrap().unwrap();
+        assert_eq!(count, 342);
+        assert_eq!(client.state(), dhcp::State::Renewing);
+        assert_eq!(&outgoing[0..6], &SERVER_MAC);
+        assert_eq!(&outgoing[26..30], &current.address);
+        assert_eq!(&outgoing[30..34], &current.server);
+        let renewal_xid = u32::from_be_bytes(outgoing[46..50].try_into().unwrap());
+
+        assert_eq!(
+            accept_dhcp_reply(&mut client, current, &[0; 64], renew_at + 1),
+            Ok(None)
+        );
+        let ack = dhcp_reply(5, renewal_xid, 60, [10, 0, 2, 2]);
+        let renewed = accept_dhcp_reply(&mut client, current, &ack, renew_at + 1)
+            .unwrap()
+            .unwrap();
+        assert_eq!(renewed.address, current.address);
+        assert_eq!(renewed.lease_seconds, 60);
+        assert_eq!(renewed.expires_at(renew_at + 1), renew_at + 60_000_000_001);
+        assert_eq!(client.state(), dhcp::State::Bound);
+
+        let (mut client, current) = bound_client();
+        let count = client.request(renew_at, &mut outgoing).unwrap().unwrap();
+        let renewal_xid = u32::from_be_bytes(outgoing[46..50].try_into().unwrap());
+        let changed_route = dhcp_reply(5, renewal_xid, 60, [10, 0, 2, 3]);
+        assert_eq!(
+            accept_dhcp_reply(&mut client, current, &changed_route, renew_at + 1),
+            Err(NetworkError::DhcpRouteChanged)
+        );
+        assert_eq!(client.state(), dhcp::State::Bound);
+        assert_eq!(count, 342);
+    }
+
+    #[test]
+    fn renewal_nak_becomes_terminal_and_malformed_dhcp_does_not_poison_runtime() {
+        let (mut client, current) = bound_client();
+        let renew_at = 20_000_000_002;
+        let mut outgoing = [0; MAX_FRAME];
+        client.request(renew_at, &mut outgoing).unwrap();
+        let renewal_xid = u32::from_be_bytes(outgoing[46..50].try_into().unwrap());
+        let mut malformed = dhcp_reply(5, renewal_xid, 60, [10, 0, 2, 2]);
+        malformed[24] ^= 0x80;
+        assert_eq!(
+            accept_dhcp_reply(&mut client, current, &malformed, renew_at + 1),
+            Ok(None)
+        );
+        assert_eq!(client.state(), dhcp::State::Renewing);
+        let nak = dhcp_reply(6, renewal_xid, 0, [10, 0, 2, 2]);
+        assert_eq!(
+            accept_dhcp_reply(&mut client, current, &nak, renew_at + 1),
+            Err(NetworkError::Dhcp)
+        );
+        assert_eq!(client.state(), dhcp::State::Failed);
+    }
+
+    #[test]
+    fn lease_loss_restarts_discovery_at_most_twice_and_keeps_the_old_route_fail_closed() {
+        fn exhaust_discovery(client: &mut dhcp::Client, now: &mut u64) {
+            let mut out = [0; MAX_FRAME];
+            for _ in 0..3 {
+                assert!(client.request(*now, &mut out).unwrap().is_some());
+                *now += 1_000_000_000;
+            }
+            assert_eq!(client.request(*now, &mut out), Err(dhcp::Error::Timeout));
+        }
+        fn queue() -> super::super::Queue {
+            super::super::Queue {
+                memory: core::ptr::null_mut(),
+                count: 1,
+                avail: 0,
+                used: 0,
+                submitted: 0,
+                completed: 0,
+            }
+        }
+        let (client, lease) = bound_client();
+        let expires = lease.expires_at(2);
+        let mut runtime = Runtime {
+            device: Some(Device {
+                base: 0,
+                mac: CLIENT_MAC,
+                rx: queue(),
+                tx: queue(),
+                lease_at: 2,
+                dhcp_client: Some(client),
+            }),
+            lease: Some(lease),
+            gateway_mac: SERVER_MAC,
+            expires,
+            dhcp_restarts: 0,
+            tx_pending: false,
+            tx_deadline: 0,
+            failed: None,
+        };
+        assert_eq!(runtime.health(expires), Err(NetworkError::Dhcp));
+        assert!(runtime.restart_dhcp(expires));
+        assert_eq!(runtime.dhcp_restarts, 1);
+        assert_eq!(
+            runtime
+                .device
+                .as_ref()
+                .unwrap()
+                .dhcp_client
+                .as_ref()
+                .unwrap()
+                .state(),
+            dhcp::State::Discovering
+        );
+        // A client already reacquiring is not repeatedly replaced on every
+        // pump while the retained interface remains without a valid lease.
+        assert!(!runtime.restart_dhcp(expires));
+
+        let mut now = expires;
+        exhaust_discovery(
+            runtime
+                .device
+                .as_mut()
+                .unwrap()
+                .dhcp_client
+                .as_mut()
+                .unwrap(),
+            &mut now,
+        );
+        assert!(runtime.restart_dhcp(now));
+        assert_eq!(runtime.dhcp_restarts, 2);
+        exhaust_discovery(
+            runtime
+                .device
+                .as_mut()
+                .unwrap()
+                .dhcp_client
+                .as_mut()
+                .unwrap(),
+            &mut now,
+        );
+        assert!(!runtime.restart_dhcp(now));
+        assert_eq!(runtime.lease, Some(lease));
+        assert_eq!(runtime.health(now), Err(NetworkError::Dhcp));
     }
 
     #[test]
@@ -477,34 +826,27 @@ mod tests {
                 completed: 0,
             }
         }
+        let (client, lease) = bound_client();
         let device = Device {
             base: 0,
-            mac: [0; 6],
+            mac: CLIENT_MAC,
             rx: queue(),
             tx: queue(),
-            lease_at: 0,
-        };
-        let lease = dhcp::Lease {
-            address: [10, 0, 2, 15],
-            subnet_mask: [255, 255, 255, 0],
-            gateway: [10, 0, 2, 2],
-            dns: [10, 0, 2, 3],
-            server: [10, 0, 2, 2],
-            lease_seconds: 4,
-            renew_after: 1,
-            rebind_after: 2,
+            lease_at: 2,
+            dhcp_client: Some(client),
         };
         let mut runtime = Runtime {
             device: Some(device),
             lease: Some(lease),
             gateway_mac: [0; 6],
-            expires: 4_000_000_000,
+            expires: lease.expires_at(2),
+            dhcp_restarts: 0,
             tx_pending: false,
             tx_deadline: 0,
             failed: None,
         };
-        assert_eq!(runtime.health(3_999_999_999), Ok(()));
-        assert_eq!(runtime.health(4_000_000_000), Err(NetworkError::Dhcp));
+        assert_eq!(runtime.health(lease.expires_at(2) - 1), Ok(()));
+        assert_eq!(runtime.health(lease.expires_at(2)), Err(NetworkError::Dhcp));
         runtime.failed = Some(NetworkError::InvalidCompletion);
         assert_eq!(runtime.health(0), Err(NetworkError::InvalidCompletion));
         runtime.device = None;

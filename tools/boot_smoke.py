@@ -24,6 +24,34 @@ from tcp_responder import Responder as TcpResponder
 from lapic_outcome import parse_outcome as parse_lapic_outcome, verify_continuation as verify_lapic_continuation
 
 ROOT = Path(__file__).resolve().parents[1]
+BOOT_FAILURE_CODES = {
+    "panic": 0x4E580001,
+    "deployment": 0x4E580101,
+    "kernel": 0x4E580201,
+    "initrd": 0x4E580301,
+    "firmware-handoff": 0x4E580401,
+    "boot-record": 0x4E580501,
+}
+
+
+def validate_boot_failure_record(serial_data, expected_stage=None):
+    """Validate one stable loader failure record in an expected rejection log."""
+    if expected_stage is not None and expected_stage not in BOOT_FAILURE_CODES:
+        raise ValueError(f"unknown boot failure stage: {expected_stage}")
+    matches = re.findall(
+        rb"(?m)^NEXT BOOT FAILURE: code=0x([0-9a-f]{8}) stage=([a-z-]+) action=HALT\r?$",
+        serial_data,
+    )
+    if len(matches) != 1:
+        raise RuntimeError(f"expected exactly one stable loader failure record, found {len(matches)}")
+    code_text, stage_bytes = matches[0]
+    stage = stage_bytes.decode("ascii")
+    code = int(code_text, 16)
+    if stage not in BOOT_FAILURE_CODES or code != BOOT_FAILURE_CODES[stage]:
+        raise RuntimeError(f"unknown or inconsistent loader failure record: code=0x{code:08x} stage={stage}")
+    if expected_stage is not None and stage != expected_stage:
+        raise RuntimeError(f"loader failure stage was {stage}, expected {expected_stage}")
+    return f"NEXT BOOT FAILURE: code=0x{code:08x} stage={stage} action=HALT"
 
 
 def exercise_file_portal(serial, serial_data, wait_text, wait_regex, wait_exit,
@@ -95,12 +123,18 @@ def main():
     parser.add_argument("--image", type=Path, default=ROOT / "build/next-dev.img")
     parser.add_argument("--output-dir", type=Path, default=ROOT / "build")
     parser.add_argument("--expect-boot-failure", help="require this exact loader diagnostic and no kernel entry")
+    parser.add_argument("--expect-failure-stage", choices=sorted(BOOT_FAILURE_CODES),
+                        help="require the corresponding stable loader failure code in serial output")
+    parser.add_argument("--capture-prism-gallery", action="store_true",
+                        help="capture actual guest Home, Files, Settings and Terminal screens")
     parser.add_argument("--persistent-data", action="store_true", help="write only to a disposable image below work/")
     parser.add_argument("--gpt-data-profile", action="store_true", help="require owner-authenticated GPT journal mount instead of legacy superfloppy storage markers")
     parser.add_argument("--persistence-phase", choices=["create", "verify"])
     args = parser.parse_args()
     if not math.isfinite(args.timeout) or args.timeout <= 0:
         parser.error("timeout must be positive and finite")
+    if args.expect_failure_stage and not args.expect_boot_failure:
+        parser.error("--expect-failure-stage requires --expect-boot-failure")
     build = args.output_dir.resolve()
     if not build.is_relative_to(ROOT / "build"):
         parser.error("output directory must be below build/")
@@ -266,6 +300,11 @@ def main():
             qmp_command("qmp_capabilities")
             if args.expect_boot_failure:
                 wait_text("NEXT BOOT FAILED: " + args.expect_boot_failure)
+                failure_record = validate_boot_failure_record(
+                    bytes(serial_data), args.expect_failure_stage
+                )
+                report["loader_failure_record"] = failure_record
+                report["checks"].append("stable loader failure record: " + failure_record)
                 # Keep observing a halted guest: no kernel/desktop entry and no
                 # firmware reboot after the diagnostic. Serial polling is bounded.
                 end_observation = time.monotonic() + 0.5
@@ -323,7 +362,7 @@ def main():
                     ("PROBE: anonymous memory zeroing/range/W^X checks passed", "native anonymous memory supports zeroed multi-page mappings and enforces range/permissions"),
                     ("NEXTD: authenticated service configuration and copyout checks passed", "PID1 reads authenticated signed service declarations with no partial writes on short, null, readonly or guard-crossing outputs"),
                     ("NEXTD: manual/auto event lifecycle and rights checks passed", "actual manual/auto events enforce wait/signal rights and copyout-before-consumption"),
-                    ("NEXTD: blocking event timeout, auto wake, manual broadcast, process wait and kill cancellation passed", "actual blocking waits enforce deadlines, wake one auto waiter, broadcast manual events and clean up killed waiters"),
+                    ("NEXTD: blocking event timeout, signal-reset auto wake, manual broadcast, process wait and kill cancellation passed", "actual blocking waits enforce deadlines, preserve a delivered auto-event completion across reset, broadcast manual events and clean up killed waiters"),
                     ("NEXTD: native file read/write/seek/stat and copyout checks passed", "capability-backed COW file streams preserve offsets on denied copyout and enforce attenuated rights"),
                     ("PROBE: transferred readonly file rights enforced", "cross-process file capability transfer grants read and denies write"),
                     ("NEXTD: transferred log authority written", "cross-process capability move produces usable attenuated recipient authority"),
@@ -717,6 +756,81 @@ def main():
                 report["screenshot"] = {"path": "build/screenshot.ppm", "width": width, "height": height, "distinct_colors": len(colors),
                                         "validation": "PPM dimensions and at least four colors; no visual layout or accessibility verification"}
                 report["checks"].append("nonblank framebuffer screenshot")
+                if args.capture_prism_gallery:
+                    gallery_dir = build / "prism-gallery"
+                    gallery_dir.mkdir(parents=True, exist_ok=True)
+                    gallery = {}
+
+                    def gallery_key(*keys, expected=None):
+                        mark = len(serial_data)
+                        qmp_command("input-send-event", {"events": [
+                            {"type": "key", "data": {"down": True,
+                             "key": {"type": "qcode", "data": key}}}
+                            for key in keys
+                        ]})
+                        time.sleep(min(0.08, remaining()))
+                        qmp_command("input-send-event", {"events": [
+                            {"type": "key", "data": {"down": False,
+                             "key": {"type": "qcode", "data": key}}}
+                            for key in reversed(keys)
+                        ]})
+                        if expected is None:
+                            transition = wait_regex(rb"PRISM FRAME: generation=\d+", mark)
+                        else:
+                            transition = wait_regex(expected, mark)
+                            wait_text("PRISM FRAME:", transition.end())
+                        return transition
+
+                    def capture_gallery(name):
+                        path = gallery_dir / (name + ".ppm")
+                        qmp_command("screendump", {"filename": str(path), "format": "ppm"})
+                        data = path.read_bytes()
+                        match = re.match(rb"P6\s+(\d+)\s+(\d+)\s+255\s", data)
+                        if not match:
+                            raise RuntimeError(f"invalid Prism gallery screenshot: {name}")
+                        shot_width, shot_height = int(match[1]), int(match[2])
+                        if (shot_width, shot_height) != (width, height) or len(data[match.end():]) != shot_width * shot_height * 3:
+                            raise RuntimeError(f"Prism gallery screenshot dimensions differ: {name}")
+                        gallery[name] = {"path": str(path.relative_to(ROOT)),
+                                         "width": shot_width, "height": shot_height}
+
+                    # The main smoke leaves several built-in windows open. Close
+                    # them one at a time so each published gallery frame has one
+                    # frontmost panel instead of a stack of test windows.
+                    focus_pattern = rb"PRISM DESKTOP: focused=(None|Some\([^\r\n]*?\)) home=false"
+                    for _ in range(8):
+                        closed = gallery_key("alt", "f4", expected=focus_pattern)
+                        if closed[1] == b"None":
+                            break
+                    gallery_key("f10", expected=rb"PRISM DESKTOP: focused=None home=true")
+                    capture_gallery("home")
+                    gallery_key("esc", expected=rb"PRISM DESKTOP: focused=None home=false")
+                    apps = ("terminal", "files", "monitor", "settings", "editor", "calculator")
+                    for index, name in enumerate(apps):
+                        gallery_key("f10", expected=rb"PRISM DESKTOP: focused=None home=true")
+                        for _ in range(index):
+                            gallery_key("tab", expected=rb"PRISM DESKTOP: focused=None home=true")
+                        app_title = {"terminal": "Terminal", "files": "Files", "monitor": "Monitor",
+                                     "settings": "Settings", "editor": "Editor", "calculator": "Calculator"}[name]
+                        gallery_key("ret", expected=(rb"PRISM DESKTOP: focused=Some\(" + app_title.encode()
+                                                       + rb"\) home=false"))
+                        capture_gallery(name)
+                        for _ in range(8):
+                            closed = gallery_key("alt", "f4", expected=focus_pattern)
+                            if closed[1] == b"None":
+                                break
+                    gallery_key("f10", expected=rb"PRISM DESKTOP: focused=None home=true")
+                    for _ in range(12):
+                        gallery_key("tab", expected=rb"PRISM DESKTOP: focused=None home=true")
+                    gallery_key("ret", expected=rb"PRISM DESKTOP: focused=None home=true")
+                    capture_gallery("shortcuts")
+                    gallery_key("esc")
+                    gallery_key("esc", expected=rb"PRISM DESKTOP: focused=None home=false")
+                    gallery_key("f8", expected=rb"PRISM DESKTOP: focused=None home=false")
+                    capture_gallery("notifications")
+                    gallery_key("f8", expected=rb"PRISM DESKTOP: focused=None home=false")
+                    report["visual_gallery"] = gallery
+                    report["checks"].append("actual QMP keyboard launched and captured completed guest frames for Home, six first-party panels, shortcut guide and notifications")
             if dns_peer is not None and not args.expect_boot_failure:
                 boot_dropped = dns_peer.stats.get("boot_dropped", dns_peer.stats["dropped"])
                 boot_answers = dns_peer.stats.get("boot_answers", dns_peer.stats["answers"])

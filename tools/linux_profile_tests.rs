@@ -1,5 +1,23 @@
 //! Host tests exercise the exact bounded parser linked into Helix.
 extern crate self as next_abi;
+#[repr(i64)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Status {
+    Success = 0,
+    InvalidArgument = -1,
+    AccessDenied = -2,
+    InvalidHandle = -3,
+    NotFound = -4,
+    NoMemory = -5,
+    NotSupported = -6,
+    WouldBlock = -7,
+    TimedOut = -8,
+    BufferTooSmall = -9,
+    IoError = -10,
+    Faulted = -11,
+    PeerClosed = -12,
+    Cancelled = -13,
+}
 #[path = "../crates/next-abi/src/elf.rs"]
 pub mod elf;
 #[allow(dead_code)]
@@ -64,6 +82,25 @@ fn hostile_mapping_alignment_flags_and_size_reject() {
     bytes.resize(native::MAX_FILE_BYTES + 1, 0);
     assert!(linux::LinuxImage::parse(&bytes).is_err());
 }
+
+#[test]
+fn shared_status_errors_use_linux_errno_values() {
+    use next_abi::Status;
+
+    assert_eq!(linux::status_errno(Status::InvalidHandle), (-9i64) as u64);
+    assert_eq!(
+        linux::status_errno(Status::InvalidArgument),
+        (-22i64) as u64
+    );
+    assert_eq!(linux::status_errno(Status::AccessDenied), (-13i64) as u64);
+    assert_eq!(linux::status_errno(Status::NotFound), (-2i64) as u64);
+    assert_eq!(linux::status_errno(Status::NoMemory), (-12i64) as u64);
+    assert_eq!(linux::status_errno(Status::WouldBlock), linux::EAGAIN);
+    assert_eq!(linux::EAGAIN, (-11i64) as u64);
+    assert_eq!(linux::status_errno(Status::IoError), (-5i64) as u64);
+    assert_eq!(linux::status_errno(Status::Cancelled), (-5i64) as u64);
+}
+
 #[test]
 fn nt_original_shims_resolve_validated_iat_without_writable_code() {
     let bytes = include_bytes!("../build/compat/nt/hello.exe");

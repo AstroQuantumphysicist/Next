@@ -2,8 +2,12 @@
 //! wait registration, signal/reset/consume and copyout. Scheduler wakeups run in
 //! that runtime; the object store never calls into an IRQ or arbitrary callback.
 use core::cell::UnsafeCell;
-pub use helix_core::event::EventHandle;
-use helix_core::event::{Error, Events};
+pub use helix_core::event::{EventHandle, WaitResult};
+use helix_core::{
+    event::{Error, Events},
+    handle::Handle,
+    scheduler::Scheduler,
+};
 use next_abi::Status;
 struct Global(UnsafeCell<Events<16>>);
 // The boot CPU owns all operations; interrupt handlers never access EVENTS.
@@ -12,8 +16,10 @@ static EVENTS: Global = Global(UnsafeCell::new(Events::new()));
 fn status(error: Error) -> Status {
     match error {
         Error::InvalidHandle => Status::InvalidHandle,
-        Error::Full | Error::References => Status::NoMemory,
-        Error::WouldBlock => Status::WouldBlock,
+        Error::Full | Error::References | Error::WaitersFull => Status::NoMemory,
+        Error::WouldBlock | Error::Waiters => Status::WouldBlock,
+        Error::NoCurrentTask | Error::NotWaiting => Status::InvalidArgument,
+        Error::Cancelled => Status::Cancelled,
     }
 }
 pub fn create(manual: bool, signaled: bool) -> Result<EventHandle, Status> {
@@ -29,12 +35,60 @@ pub fn retain(handle: EventHandle) -> Result<(), Status> {
 pub fn close(handle: EventHandle) -> Result<(), Status> {
     unsafe { (&mut *EVENTS.0.get()).close(handle).map_err(status) }
 }
-pub fn signal(handle: EventHandle) -> Result<(), Status> {
-    unsafe { (&mut *EVENTS.0.get()).signal(handle).map_err(status) }
+pub fn close_and_wake<const TASKS: usize>(
+    handle: EventHandle,
+    scheduler: &mut Scheduler<TASKS>,
+) -> Result<usize, Status> {
+    unsafe {
+        (&mut *EVENTS.0.get())
+            .close_and_wake(handle, scheduler)
+            .map_err(status)
+    }
+}
+pub fn signal<const TASKS: usize>(
+    handle: EventHandle,
+    scheduler: &mut Scheduler<TASKS>,
+) -> Result<usize, Status> {
+    unsafe {
+        (&mut *EVENTS.0.get())
+            .signal_and_wake(handle, scheduler)
+            .map_err(status)
+    }
 }
 pub fn reset(handle: EventHandle) -> Result<(), Status> {
     unsafe { (&mut *EVENTS.0.get()).reset(handle).map_err(status) }
 }
 pub fn try_wait(handle: EventHandle) -> Result<(), Status> {
     unsafe { (&mut *EVENTS.0.get()).try_wait(handle).map_err(status) }
+}
+pub fn wait_current<const TASKS: usize>(
+    handle: EventHandle,
+    scheduler: &mut Scheduler<TASKS>,
+) -> Result<WaitResult, Status> {
+    unsafe {
+        (&mut *EVENTS.0.get())
+            .wait_current(handle, scheduler)
+            .map_err(status)
+    }
+}
+pub fn take_completion(handle: EventHandle, task: Handle) -> Result<bool, Status> {
+    unsafe {
+        match (&mut *EVENTS.0.get())
+            .take_completion(handle, task)
+            .map_err(status)?
+        {
+            Some(WaitResult::Signaled) => Ok(true),
+            Some(WaitResult::Blocked) | None => Ok(false),
+        }
+    }
+}
+pub fn abandon_wait(handle: EventHandle, task: Handle) -> Result<(), Status> {
+    unsafe {
+        (&mut *EVENTS.0.get())
+            .abandon_wait(handle, task)
+            .map_err(status)
+    }
+}
+pub fn discard_exited_task_waits(task: Handle) -> usize {
+    unsafe { (&mut *EVENTS.0.get()).discard_exited_task_waits(task) }
 }

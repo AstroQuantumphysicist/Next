@@ -16,6 +16,11 @@ use crate::BlockDevice;
 #[path = "journal/transaction.rs"]
 pub mod transaction;
 
+/// Try-only mutation guard used by shared journal owners that cannot sleep
+/// while retaining exclusive access to their device and namespace state.
+#[path = "journal/locking.rs"]
+pub mod locking;
+
 /// Checksummed, bounded explicit directories over the COW journal namespace.
 #[path = "journal/directories.rs"]
 pub mod directories;
@@ -1205,3 +1210,7 @@ mod tests {
 #[cfg(test)]
 #[path = "journal/directory_tests.rs"]
 mod directory_tests;
+
+#[cfg(test)]
+#[path = "journal/concurrency_tests.rs"]
+mod concurrency_tests;

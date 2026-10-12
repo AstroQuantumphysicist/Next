@@ -41,6 +41,7 @@ Original PE fixtures build separately with `bash tools/build-nt.sh`. `objdump -p
 
 ```sh
 python3 tools/boot_smoke.py
+python3 tools/boot_smoke.py --capture-prism-gallery
 python3 tools/boot_failures.py
 python3 tools/initrd_failures.py
 python3 tools/package_failures.py

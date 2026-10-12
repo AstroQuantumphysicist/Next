@@ -249,6 +249,52 @@ pub enum Error {
     ArtifactDigest,
 }
 
+/// Stable machine-readable failure identifiers written to the serial boot log.
+/// Keep existing values fixed so external boot-log collectors can classify a
+/// failed boot across loader releases. The loader deliberately halts after a
+/// failure; it never retries by rebooting into an unvalidated image.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
+pub enum FailureCode {
+    Panic = 0x4e58_0001,
+    Deployment = 0x4e58_0101,
+    Kernel = 0x4e58_0201,
+    Initrd = 0x4e58_0301,
+    FirmwareHandoff = 0x4e58_0401,
+    BootRecord = 0x4e58_0501,
+}
+
+impl FailureCode {
+    pub const fn value(self) -> u32 {
+        self as u32
+    }
+
+    pub const fn stage(self) -> &'static str {
+        match self {
+            Self::Panic => "panic",
+            Self::Deployment => "deployment",
+            Self::Kernel => "kernel",
+            Self::Initrd => "initrd",
+            Self::FirmwareHandoff => "firmware-handoff",
+            Self::BootRecord => "boot-record",
+        }
+    }
+
+    /// Format the stable, machine-readable recovery record before free-form
+    /// diagnostic text. Callers should write this to the best available log
+    /// sink before halting.
+    pub fn write_record(self, output: &mut impl core::fmt::Write) -> core::fmt::Result {
+        core::fmt::write(
+            output,
+            format_args!(
+                "NEXT BOOT FAILURE: code=0x{:08x} stage={} action=HALT\n",
+                self.value(),
+                self.stage()
+            ),
+        )
+    }
+}
+
 impl core::fmt::Display for Error {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
@@ -670,10 +716,7 @@ pub unsafe fn load_kernel(
     table: *mut SystemTable,
     expected_digest: &[u8; 32],
 ) -> Result<LoadedKernel, Error> {
-    use next_abi::{
-        boot::PhysicalRange,
-        kernel::{KernelImage, MAX_KERNEL_FILE},
-    };
+    use next_abi::{boot::PhysicalRange, kernel::MAX_KERNEL_FILE};
     let table = table.as_ref().ok_or(Error::InvalidSystemTable)?;
     if table.header.signature != SYSTEM_TABLE_SIGNATURE || table.boot_services.is_null() {
         return Err(Error::InvalidSystemTable);
@@ -762,7 +805,7 @@ pub unsafe fn load_kernel(
             break;
         }
     }
-    let kernel = KernelImage::parse(&bytes[..total]).map_err(Error::Kernel)?;
+    let kernel = parse_kernel_image(&bytes[..total])?;
     if next_package::sha256(&bytes[..total]) != *expected_digest {
         return Err(Error::ArtifactDigest);
     }
@@ -797,6 +840,14 @@ pub unsafe fn load_kernel(
         range,
         loader,
     })
+}
+
+/// Apply the fixed Helix executable profile at the loader boundary. The shared
+/// parser validates ELF structure, segment bounds/alignment/overlap, entry
+/// mapping and W^X; this profile additionally rejects every non-PT_LOAD record
+/// because this kernel image has no interpreter, dynamic loader or extensions.
+fn parse_kernel_image(bytes: &[u8]) -> Result<next_abi::kernel::KernelImage<'_>, Error> {
+    next_abi::kernel::KernelImage::parse(bytes).map_err(Error::Kernel)
 }
 
 /// Acquire firmware data and exit boot services. After success no firmware
@@ -1006,6 +1057,89 @@ mod tests {
     static MAP_CALLS: AtomicUsize = AtomicUsize::new(0);
     static EXIT_CALLS: AtomicUsize = AtomicUsize::new(0);
     static ALLOC_CALLS: AtomicUsize = AtomicUsize::new(0);
+
+    #[test]
+    fn recovery_failure_identifiers_are_stable_and_stage_specific() {
+        let failures = [
+            (FailureCode::Panic, 0x4e58_0001, "panic"),
+            (FailureCode::Deployment, 0x4e58_0101, "deployment"),
+            (FailureCode::Kernel, 0x4e58_0201, "kernel"),
+            (FailureCode::Initrd, 0x4e58_0301, "initrd"),
+            (
+                FailureCode::FirmwareHandoff,
+                0x4e58_0401,
+                "firmware-handoff",
+            ),
+            (FailureCode::BootRecord, 0x4e58_0501, "boot-record"),
+        ];
+        for (index, (failure, expected_code, expected_stage)) in failures.iter().enumerate() {
+            assert_eq!(failure.value(), *expected_code);
+            assert_eq!(failure.stage(), *expected_stage);
+            assert!(failures[..index]
+                .iter()
+                .all(|(previous, _, _)| previous.value() != failure.value()));
+            let mut record = std::string::String::new();
+            failure.write_record(&mut record).unwrap();
+            assert_eq!(
+                record,
+                std::format!(
+                    "NEXT BOOT FAILURE: code=0x{:08x} stage={} action=HALT\n",
+                    expected_code,
+                    expected_stage
+                )
+            );
+        }
+    }
+
+    fn kernel_fixture(program_headers: u16) -> std::vec::Vec<u8> {
+        let mut bytes = std::vec![0; 4112];
+        bytes[..7].copy_from_slice(b"\x7fELF\x02\x01\x01");
+        for (at, value) in [
+            (16, 2u16),
+            (18, 62),
+            (52, 64),
+            (54, 56),
+            (56, program_headers),
+        ] {
+            bytes[at..at + 2].copy_from_slice(&value.to_le_bytes());
+        }
+        bytes[20..24].copy_from_slice(&1u32.to_le_bytes());
+        for (at, value) in [
+            (24, 0x0400_0000u64),
+            (32, 64u64),
+            (72, 4096u64),
+            (80, 0x0400_0000u64),
+            (88, 0x0400_0000u64),
+            (96, 16u64),
+            (104, 4096u64),
+            (112, 4096u64),
+        ] {
+            bytes[at..at + 8].copy_from_slice(&value.to_le_bytes());
+        }
+        bytes[64..68].copy_from_slice(&next_abi::elf::PT_LOAD.to_le_bytes());
+        bytes[68..72].copy_from_slice(&(next_abi::elf::PF_R | next_abi::elf::PF_X).to_le_bytes());
+        bytes[4096..].fill(0xa5);
+        bytes
+    }
+
+    #[test]
+    fn loader_kernel_profile_rejects_unknown_records_and_wx_segments() {
+        let mut unknown_record = kernel_fixture(2);
+        unknown_record[120..124].copy_from_slice(&3u32.to_le_bytes()); // PT_INTERP
+        assert!(matches!(
+            parse_kernel_image(&unknown_record),
+            Err(Error::Kernel(next_abi::elf::ElfError::ProgramHeaders))
+        ));
+
+        let mut writable_executable = kernel_fixture(1);
+        writable_executable[68..72].copy_from_slice(
+            &(next_abi::elf::PF_R | next_abi::elf::PF_W | next_abi::elf::PF_X).to_le_bytes(),
+        );
+        assert!(matches!(
+            parse_kernel_image(&writable_executable),
+            Err(Error::Kernel(next_abi::elf::ElfError::WritableExecutable))
+        ));
+    }
 
     unsafe extern "efiapi" fn allocate(
         mode: u32,

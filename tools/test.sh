@@ -22,8 +22,13 @@ CARGO_PROFILE_RELEASE_LTO=false RUSTFLAGS="$NEXT_USER_FLAGS" cargo clippy --lock
 mkdir -p build
 rustc --edition=2021 --test crates/helix-kernel/src/storage.rs -o build/storage-tests
 build/storage-tests
+rustc --edition=2021 --test crates/helix-kernel/src/panic_report.rs -o build/panic-report-tests
+build/panic-report-tests
 rustc --edition=2021 --test tools/linux_profile_tests.rs -o build/linux-profile-tests
 build/linux-profile-tests
+python3 tools/test-linux-fs-contract.py
+python3 tools/test-network-runtime.py
+python3 tools/channel-benchmark.py
 python3 -m unittest discover -s tools -p 'test_*.py'
 python3 tools/spec_audit.py --self-test
 python3 tools/spec_audit.py

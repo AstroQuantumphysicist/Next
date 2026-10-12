@@ -71,7 +71,8 @@ def main():
                 subprocess.run(['mcopy', '-o', '-i', str(copy), str(archive), '::/EFI/NEXT/INITRD.NXI'], check=True)
             output = ROOT / 'build/failures' / name
             command = [sys.executable, str(ROOT / 'tools/boot_smoke.py'), '--image', str(copy),
-                       '--output-dir', str(output), '--expect-boot-failure', diagnostic]
+                       '--output-dir', str(output), '--expect-boot-failure', diagnostic,
+                       '--expect-failure-stage', 'initrd']
             result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
             report = json.loads((output / 'boot-smoke.json').read_text())
             results.append({'case': name, 'passed': result.returncode == 0 and report['passed'],

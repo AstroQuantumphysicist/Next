@@ -187,6 +187,7 @@ pub enum Icon {
     Monitor,
     Settings,
     Editor,
+    Calculator,
     Search,
     Notices,
     Close,
@@ -284,6 +285,17 @@ pub fn icon(canvas: &mut Canvas<'_>, kind: Icon, x: i32, y: i32, size: i32, colo
             l(9, 10, 17, 10);
             l(9, 14, 17, 14);
             l(9, 18, 14, 18);
+        }
+        Icon::Calculator => {
+            l(5, 2, 19, 2);
+            l(19, 2, 19, 22);
+            l(19, 22, 5, 22);
+            l(5, 22, 5, 2);
+            l(8, 6, 16, 6);
+            l(8, 11, 9, 12);
+            l(14, 11, 15, 12);
+            l(8, 16, 9, 17);
+            l(14, 16, 15, 17);
         }
         Icon::Search => {
             l(5, 3, 13, 3);

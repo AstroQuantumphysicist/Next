@@ -108,17 +108,30 @@ def main():
                     changed.write_bytes(payload)
                     subprocess.run(["mcopy", "-o", "-i", str(copy), str(changed), destination], check=True, timeout=15)
                 output = ROOT / "build/failures" / name
+                expected_stage = {
+                    "pkg-kernel-binding": "kernel",
+                    "pkg-initrd-binding": "initrd",
+                }.get(name, "deployment")
                 command = [sys.executable, str(ROOT / "tools/boot_smoke.py"),
                            "--image", str(copy), "--output-dir", str(output),
-                           "--timeout", str(args.timeout), "--expect-boot-failure", diagnostic]
+                           "--timeout", str(args.timeout), "--expect-boot-failure", diagnostic,
+                           "--expect-failure-stage", expected_stage]
                 status, transcript = bounded_boot(command, args.timeout)
                 boot = json.loads((output / "boot-smoke.json").read_text())
                 serial = (output / "serial.log").read_bytes()
                 observed = diagnostic.encode() in serial and b"HELIX:" not in serial
-                passed = status == 0 and boot.get("passed") is True and observed
+                failure_record_by_case = {
+                    "pkg-kernel-binding": b"NEXT BOOT FAILURE: code=0x4e580201 stage=kernel action=HALT",
+                    "pkg-initrd-binding": b"NEXT BOOT FAILURE: code=0x4e580301 stage=initrd action=HALT",
+                }
+                failure_record = failure_record_by_case.get(
+                    name, b"NEXT BOOT FAILURE: code=0x4e580101 stage=deployment action=HALT")
+                failure_record_present = failure_record in serial
+                passed = status == 0 and boot.get("passed") is True and observed and failure_record_present
                 (output / "runner.log").write_text(transcript)
                 results.append({"case": name, "passed": passed,
                                 "diagnostic": diagnostic, "checks": boot.get("checks", []),
+                                "stable_failure_record_present": failure_record_present,
                                 "artifact": str(output.relative_to(ROOT) / "serial.log"), "error": boot.get("error")})
                 print(f"{name}: {'PASS' if passed else 'FAIL'}", flush=True)
     except (OSError, ValueError, TimeoutError, subprocess.SubprocessError) as exception:
