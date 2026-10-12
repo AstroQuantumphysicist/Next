@@ -1,0 +1,185 @@
+{
+  "scope": "QEMU q35/TCG/OVMF, qemu64, one configured vCPU; APs stopped; scheduler on BSP",
+  "passed": true,
+  "check_count": 128,
+  "signed_image_sha256": "1b226f5ee89a59656cf74a673ea381f7d56e9dbe764bb852c75d224a902d6c6b",
+  "qemu_report": "boot-smoke.json",
+  "screenshots": [
+    {
+      "name": "home",
+      "guest_ppm": "build/fstat-getdents-files-r3/prism-gallery/home.ppm",
+      "guest_ppm_sha256": "9240f6957c6686e0900071a01e04cbf5049ab87e0a5031af4bbfd47752390e0c",
+      "committed_png": "docs/images/prism-home.png",
+      "committed_png_sha256": "76298cf1065184b4a7bc68abe17a946e622c3bf25bace1483e4139ac5f22c412",
+      "dimensions": [
+        1280,
+        800
+      ]
+    },
+    {
+      "name": "terminal",
+      "guest_ppm": "build/fstat-getdents-files-r3/prism-gallery/terminal.ppm",
+      "guest_ppm_sha256": "71d3a9e4b85a788ca8a904a5ae2dbfd345f21695e8b9d28ce4486da7e229a9cf",
+      "committed_png": "docs/images/prism-terminal.png",
+      "committed_png_sha256": "341bf540ed858f486287971d3092b17f3687e8eb1764738e0ef3bb9b9b821bb1",
+      "dimensions": [
+        1280,
+        800
+      ]
+    },
+    {
+      "name": "files",
+      "guest_ppm": "build/fstat-getdents-files-r3/prism-gallery/files.ppm",
+      "guest_ppm_sha256": "f4755359f9f4ed29120f28111ea2cb24bb5f3eb1362e22106fb590cc10f2b744",
+      "committed_png": "docs/images/prism-files.png",
+      "committed_png_sha256": "b2ddee7ba4ac4d5b4dfec05afab07a7de3e827b4c0b7ec09c813b8473d391387",
+      "dimensions": [
+        1280,
+        800
+      ]
+    },
+    {
+      "name": "monitor",
+      "guest_ppm": "build/fstat-getdents-files-r3/prism-gallery/monitor.ppm",
+      "guest_ppm_sha256": "d87f549aa69be0efcfd63bccef898a959af8ac795ca17a70f58e155c5274b7b7",
+      "committed_png": "docs/images/prism-monitor.png",
+      "committed_png_sha256": "f9a0167e04f0fa516e95028f031483eac740fe753145713d4c01e357c2e80c28",
+      "dimensions": [
+        1280,
+        800
+      ]
+    },
+    {
+      "name": "settings",
+      "guest_ppm": "build/fstat-getdents-files-r3/prism-gallery/settings.ppm",
+      "guest_ppm_sha256": "78de57883f501ac9641126114258a30364567da6b370de1d28568eed7f0e0cfb",
+      "committed_png": "docs/images/prism-settings.png",
+      "committed_png_sha256": "be39d39828d80198f062f6832a56d08c78a6622350cedd796ce7cb1c7550b1d9",
+      "dimensions": [
+        1280,
+        800
+      ]
+    },
+    {
+      "name": "settings-accessibility",
+      "guest_ppm": "build/fstat-getdents-files-r3/prism-gallery/settings-accessibility.ppm",
+      "guest_ppm_sha256": "195f150f72bd8bd13a9aa4c0058327cf723cb38a54a84074fb6bd75358dc9f39",
+      "committed_png": "docs/images/prism-settings-accessibility.png",
+      "committed_png_sha256": "07c483345d547e431a2888c42af8d2f5c7eb2ee3184228014b96921d39ad9f1c",
+      "dimensions": [
+        1280,
+        800
+      ]
+    },
+    {
+      "name": "settings-text-scale",
+      "guest_ppm": "build/fstat-getdents-files-r3/prism-gallery/settings-text-scale.ppm",
+      "guest_ppm_sha256": "703c2f4e8bda04155a1cf3fbc73267e7bec24d31075399d5ad8845ec0cbc0f2a",
+      "committed_png": "docs/images/prism-settings-text-scale.png",
+      "committed_png_sha256": "985e360e907ce5b9a87d86d92b7aa7ebcd1b4fc8eeb97b5f2ac03971569a5808",
+      "dimensions": [
+        1280,
+        800
+      ]
+    },
+    {
+      "name": "editor",
+      "guest_ppm": "build/fstat-getdents-files-r3/prism-gallery/editor.ppm",
+      "guest_ppm_sha256": "806be3f9da12c14ae5abbe8dde3673ec35bb4e0a81bb9021b18890517d10c2dd",
+      "committed_png": "docs/images/prism-editor.png",
+      "committed_png_sha256": "40f0b040f4f51184b047b151512816b75043167360a1a9e25a584474f773b0d2",
+      "dimensions": [
+        1280,
+        800
+      ]
+    },
+    {
+      "name": "calculator",
+      "guest_ppm": "build/fstat-getdents-files-r3/prism-gallery/calculator.ppm",
+      "guest_ppm_sha256": "06f2ae150edd0ce01a87ecc01fa4898d6667e3706cd9835e49dd57377e087da5",
+      "committed_png": "docs/images/prism-calculator.png",
+      "committed_png_sha256": "d5d801e2971e0a0f19d84549a87498e2dd54e3dce5cf6dbf48eb69f3c0e3333a",
+      "dimensions": [
+        1280,
+        800
+      ]
+    },
+    {
+      "name": "shortcuts",
+      "guest_ppm": "build/fstat-getdents-files-r3/prism-gallery/shortcuts.ppm",
+      "guest_ppm_sha256": "42a4d6455016db6427839a196660dba1562fe3fc7f8d11b21a4220847bea9274",
+      "committed_png": "docs/images/prism-shortcuts.png",
+      "committed_png_sha256": "2f1a083413ec313e82c992fe57cd6ee71605704778df79f37c2a37961d0c413e",
+      "dimensions": [
+        1280,
+        800
+      ]
+    },
+    {
+      "name": "notifications",
+      "guest_ppm": "build/fstat-getdents-files-r3/prism-gallery/notifications.ppm",
+      "guest_ppm_sha256": "adbb1f8fda2797df41468ddf6b55eb98ebffd2b9cb35e73308e7fc38c637be93",
+      "committed_png": "docs/images/prism-notifications.png",
+      "committed_png_sha256": "0f2246ab593fabeff0f215ea8e9e39b43661a869adac8b2c705a83eca75c6107",
+      "dimensions": [
+        1280,
+        800
+      ]
+    },
+    {
+      "name": "files-tabs-root",
+      "guest_ppm": "build/fstat-getdents-files-r3/files-tabs-root.ppm",
+      "guest_ppm_sha256": "6cb9c1dbc12a8c57d585d7b394f97e448300b68fc609976842f22ddbfdab02a2",
+      "committed_png": "docs/images/prism-files-tabs-root.png",
+      "committed_png_sha256": "5eb2efd77bc4cad3eba9ebac16392142bb4467d6ec06f9909b3096eb0c9144ca",
+      "dimensions": [
+        1280,
+        800
+      ]
+    },
+    {
+      "name": "files-tabs-nested",
+      "guest_ppm": "build/fstat-getdents-files-r3/files-tabs-nested.ppm",
+      "guest_ppm_sha256": "375721bfe17b6cf5c74212a49c7f0afc17f480ae1dfca125f7ca66ebc9e4a0fb",
+      "committed_png": "docs/images/prism-files-tabs-nested.png",
+      "committed_png_sha256": "74b42780477390f4d084d681755a66563c49e80fcb321aa21594d1b35adc3bb0",
+      "dimensions": [
+        1280,
+        800
+      ]
+    },
+    {
+      "name": "files-tabs-ibeam",
+      "guest_ppm": "build/fstat-getdents-files-r3/files-tabs-ibeam-address.ppm",
+      "guest_ppm_sha256": "b5ba8bf87c32ac2af50dba42763808cc58a016e6d4769fcd690c42eef9e437f9",
+      "committed_png": "docs/images/prism-files-tabs-ibeam.png",
+      "committed_png_sha256": "22cc2e6980b1d62a6a60e9e8a76f650c989d40102ab08a7e916bc07c5b13834e",
+      "dimensions": [
+        1280,
+        800
+      ]
+    },
+    {
+      "name": "files-dual-pane",
+      "guest_ppm": "build/fstat-getdents-files-r3/files-tabs-dual-pane-left-root-right-nested.ppm",
+      "guest_ppm_sha256": "9251a47d70ae97ff4979d83e78cd96e80a1d0f7a71c655efc2cef6800d5cd23d",
+      "committed_png": "docs/images/prism-files-dual-pane.png",
+      "committed_png_sha256": "94bb70475c8b8c80e329a05d90c7ac0331928492717c5e9926a1d761c781f4fc",
+      "dimensions": [
+        1280,
+        800
+      ]
+    },
+    {
+      "name": "snap-quadrant",
+      "guest_ppm": "build/fstat-getdents-files-r3/prism-quadrant-snap.ppm",
+      "guest_ppm_sha256": "6a7bb413ae451508d2172e53ea409a47e7ae47e442b3f1815bbfe5324672b1cc",
+      "committed_png": "docs/images/prism-snap-quadrant.png",
+      "committed_png_sha256": "7c2e530d8b1784da4aaeed649a1ca56376901342c30804eca7aa69445a65cfc9",
+      "dimensions": [
+        1280,
+        800
+      ]
+    }
+  ]
+}

@@ -159,6 +159,9 @@ pub fn info(h: FileHandle) -> Result<(usize, usize), Status> {
 pub fn inode(h: FileHandle) -> Result<u64, Status> {
     unsafe { (&mut *FILES.0.get()).inode(h).map_err(status) }
 }
+pub fn link_count(h: FileHandle) -> Result<u64, Status> {
+    unsafe { (&mut *FILES.0.get()).link_count(h).map_err(status) }
+}
 
 /// Only the trusted Appearance adapter can commit the exact bounded record.
 pub fn replace_preferences(bytes: &[u8; 32]) -> Result<(), Status> {

@@ -27,7 +27,7 @@ as --64 -o build/compat/linux/namespace.o crates/linux-fixtures/namespace.S
 ld -static --build-id=none -z max-page-size=4096 -T crates/linux-fixtures/linux.ld -o build/compat/linux/namespace.elf build/compat/linux/namespace.o
 as --64 --defsym NEXT_CROSS=1 -o build/compat/linux/namespace-gate.o crates/linux-fixtures/namespace.S
 ld -static --build-id=none -z max-page-size=4096 -T crates/linux-fixtures/linux.ld -o build/compat/linux/namespace-gate.elf build/compat/linux/namespace-gate.o
-for fixture in getpid uname lseek; do
+for fixture in getpid uname lseek fstat getdents; do
     as --64 -o "build/compat/linux/$fixture.o" "crates/linux-fixtures/$fixture.S"
     ld -static --build-id=none -z max-page-size=4096 -T crates/linux-fixtures/linux.ld \
         -o "build/compat/linux/$fixture.elf" "build/compat/linux/$fixture.o"
@@ -91,4 +91,26 @@ with tempfile.TemporaryDirectory(prefix='next-linux-lseek-') as directory:
     if result.returncode != 53 or result.stdout != expected or result.stderr or scratch.read_bytes() != b'abcdef':
         raise SystemExit(f'Host Linux lseek fixture failed: status={result.returncode}, stdout={result.stdout!r}, stderr={result.stderr!r}, file={scratch.read_bytes()!r}')
 print('Independent Linux lseek ELF host execution PASS (exit 53)')
+binary = Path('build/compat/linux/fstat.elf')
+with tempfile.TemporaryDirectory(prefix='next-linux-fstat-') as directory:
+    scratch = Path(directory) / 'fixture.txt'
+    result = subprocess.run([str(binary.resolve()), str(scratch)], capture_output=True, timeout=3, stdin=subprocess.DEVNULL)
+    expected = b'LINUX FSTAT ELF: identity, type, size, EBADF and EFAULT PASS\n'
+    if result.returncode != 54 or result.stdout != expected or result.stderr or scratch.read_bytes() != b'fstat-linux':
+        raise SystemExit(f'Host Linux fstat fixture failed: status={result.returncode}, stdout={result.stdout!r}, stderr={result.stderr!r}, file={scratch.read_bytes()!r}')
+print('Independent Linux fstat ELF host execution PASS (exit 54)')
 PY
+
+python3 - <<'PYGETDENTS'
+from pathlib import Path
+import subprocess,tempfile
+binary=Path('build/compat/linux/getdents.elf').resolve()
+with tempfile.TemporaryDirectory(prefix='next-linux-getdents-') as directory:
+    (Path(directory)/'alpha').write_bytes(b'directory fixture')
+    (Path(directory)/'child').mkdir()
+    result=subprocess.run([str(binary),directory],capture_output=True,timeout=3,stdin=subprocess.DEVNULL)
+    expected=b'LINUX GETDENTS ELF: records, cursor, dup, EOF and faults PASS\n'
+    if result.returncode != 55 or result.stdout != expected or result.stderr:
+        raise SystemExit(f'Host Linux getdents fixture failed: status={result.returncode}, stdout={result.stdout!r}, stderr={result.stderr!r}')
+print('Independent Linux getdents64 ELF host execution PASS (exit 55)')
+PYGETDENTS

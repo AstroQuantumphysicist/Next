@@ -2,6 +2,7 @@
 use crate::files_actions::Path;
 pub const CAPACITY: usize = 8;
 pub const TAB_CAPACITY: usize = 4;
+pub const PANE_COUNT: usize = 2;
 const REQUEST_STRIDE: u64 = 1 << 48;
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Kind {
@@ -156,6 +157,7 @@ pub struct Model {
     approve: bool,
     pending: Option<Action>,
     taken: bool,
+    refresh_after_pending: bool,
     next: u64,
     request_limit: u64,
     error: Option<BackendError>,
@@ -222,6 +224,7 @@ impl Model {
             approve: false,
             pending: None,
             taken: false,
+            refresh_after_pending: false,
             next: base,
             request_limit: base + REQUEST_STRIDE,
             error: None,
@@ -277,6 +280,37 @@ impl Model {
                     .filter(|path| permitted(*path))
             })
             .unwrap_or_else(root)
+    }
+    fn request_refresh(&mut self) -> Result<(), Error> {
+        if self.dialog_active() {
+            return Err(Error::Busy);
+        }
+        let path = self.requested_path();
+        self.listing = None;
+        self.selected = None;
+        self.error = None;
+        if self.busy() {
+            self.refresh_after_pending = true;
+            return Ok(());
+        }
+        self.refresh_after_pending = false;
+        self.navigate(path)
+    }
+    fn replace_pending_with_refresh(&mut self, request: u64) -> Result<(), Error> {
+        if !self.refresh_after_pending
+            || !self.taken
+            || self.pending.is_none_or(|action| action.request != request)
+        {
+            return Err(Error::StaleCompletion);
+        }
+        let path = self.requested_path();
+        self.pending = None;
+        self.taken = false;
+        self.refresh_after_pending = false;
+        self.listing = None;
+        self.selected = None;
+        self.error = None;
+        self.navigate(path)
     }
     pub fn input(&self) -> &str {
         self.input.text()
@@ -676,24 +710,26 @@ impl Default for Model {
     }
 }
 
-/// Four isolated, live Files browsing contexts. Requests use disjoint ID
-/// ranges, so switching tabs never loses or misroutes a backend completion.
-pub struct Workspace {
+/// Four isolated tab contexts owned by one visible browser pane.
+pub struct Pane {
     tabs: [Option<Model>; TAB_CAPACITY],
     active: usize,
     count: usize,
-    next_base: u64,
 }
-impl Workspace {
-    pub const fn new() -> Self {
+impl Pane {
+    const fn new(request_base: u64) -> Self {
         Self {
-            tabs: [Some(Model::with_request_base(1)), None, None, None],
+            tabs: [
+                Some(Model::with_request_base(request_base)),
+                None,
+                None,
+                None,
+            ],
             active: 0,
             count: 1,
-            next_base: REQUEST_STRIDE + 1,
         }
     }
-    fn active(&self) -> &Model {
+    pub fn active_model(&self) -> &Model {
         self.tabs[self.active].as_ref().expect("active Files tab")
     }
     fn active_mut(&mut self) -> &mut Model {
@@ -708,21 +744,116 @@ impl Workspace {
     pub fn tab(&self, index: usize) -> Option<&Model> {
         self.tabs.get(index)?.as_ref()
     }
-    pub fn switch_tab(&mut self, index: usize) -> bool {
-        if index >= self.count || self.active().dialog_active() {
+    pub fn listing(&self) -> Option<Listing> {
+        self.active_model().listing()
+    }
+    pub fn current_path(&self) -> Option<&str> {
+        self.active_model().current_path()
+    }
+    pub fn selected(&self) -> Option<Entry> {
+        self.active_model().selected()
+    }
+}
+
+/// Two independent Files panes, each with up to four isolated browsing tabs.
+/// Requests use disjoint ID ranges across all eight contexts, so navigation
+/// completions stay attached to their originating pane even after focus moves.
+pub struct Workspace {
+    panes: [Pane; PANE_COUNT],
+    active_pane: usize,
+    next_base: u64,
+}
+impl Workspace {
+    pub const fn new() -> Self {
+        Self {
+            panes: [Pane::new(1), Pane::new(REQUEST_STRIDE + 1)],
+            active_pane: 0,
+            next_base: REQUEST_STRIDE * 2 + 1,
+        }
+    }
+    fn active(&self) -> &Model {
+        self.panes[self.active_pane].active_model()
+    }
+    fn active_mut(&mut self) -> &mut Model {
+        self.panes[self.active_pane].active_mut()
+    }
+    pub const fn active_pane(&self) -> usize {
+        self.active_pane
+    }
+    pub fn pane(&self, index: usize) -> Option<&Pane> {
+        self.panes.get(index)
+    }
+    pub fn switch_pane(&mut self, index: usize) -> bool {
+        if index >= PANE_COUNT || self.active().dialog_active() {
             return false;
         }
-        self.active = index;
+        self.active_pane = index;
+        true
+    }
+    pub fn switch_next_pane(&mut self) -> bool {
+        self.switch_pane((self.active_pane + 1) % PANE_COUNT)
+    }
+    fn seed_other_pane(&mut self, source_pane: usize, listing: Listing) -> Result<(), Error> {
+        let other = 1 - source_pane;
+        let model = self.panes[other].tabs[0]
+            .as_mut()
+            .expect("initial Files tab");
+        if model.listing().is_none() && !model.busy() && !model.dialog_active() {
+            model.refresh(listing)?;
+        }
+        Ok(())
+    }
+    /// Requery every cached tab after a file or Trash mutation. In-flight
+    /// reads are discarded on completion and replaced with a fresh request.
+    pub fn refresh_all(&mut self) {
+        for pane in &mut self.panes {
+            for model in pane.tabs[..pane.count].iter_mut().flatten() {
+                let _ = model.request_refresh();
+            }
+        }
+    }
+    fn refresh_after_directory_mutation(&mut self, changed: Listing) -> Result<(), Error> {
+        for pane in &mut self.panes {
+            for model in pane.tabs[..pane.count].iter_mut().flatten() {
+                if model.busy() {
+                    model.request_refresh()?;
+                } else if model.requested_path() == changed.folder.path
+                    && model.refresh(changed).is_ok()
+                {
+                    // The mutation response is already authoritative for this
+                    // folder, so all cached views of it can adopt it directly.
+                } else {
+                    model.request_refresh()?;
+                }
+            }
+        }
+        Ok(())
+    }
+    pub const fn tab_count(&self) -> usize {
+        self.panes[self.active_pane].tab_count()
+    }
+    pub const fn active_index(&self) -> usize {
+        self.panes[self.active_pane].active_index()
+    }
+    pub fn tab(&self, index: usize) -> Option<&Model> {
+        self.panes[self.active_pane].tab(index)
+    }
+    pub fn switch_tab(&mut self, index: usize) -> bool {
+        if index >= self.tab_count() || self.active().dialog_active() {
+            return false;
+        }
+        self.panes[self.active_pane].active = index;
         true
     }
     pub fn switch_next(&mut self, forward: bool) -> bool {
-        if self.active().dialog_active() || self.count < 2 {
+        if self.active().dialog_active() || self.tab_count() < 2 {
             return false;
         }
-        self.active = if forward {
-            (self.active + 1) % self.count
+        let pane = &mut self.panes[self.active_pane];
+        pane.active = if forward {
+            (pane.active + 1) % pane.count
         } else {
-            (self.active + self.count - 1) % self.count
+            (pane.active + pane.count - 1) % pane.count
         };
         true
     }
@@ -730,47 +861,53 @@ impl Workspace {
         if self.active().dialog_active() {
             return Err(Error::Busy);
         }
-        if self.count == TAB_CAPACITY {
-            return Err(Error::Exhausted);
-        }
         if self.next_base > u64::MAX - REQUEST_STRIDE {
             return Err(Error::Exhausted);
         }
         let path = self.active().requested_path();
-        let slot = self.count;
+        let pane = &mut self.panes[self.active_pane];
+        if pane.count == TAB_CAPACITY {
+            return Err(Error::Exhausted);
+        }
+        let slot = pane.count;
         let base = self.next_base;
         self.next_base += REQUEST_STRIDE;
         let mut model = Model::with_request_base(base);
         model.navigate(path)?;
-        self.tabs[slot] = Some(model);
-        self.count += 1;
-        self.active = slot;
+        pane.tabs[slot] = Some(model);
+        pane.count += 1;
+        pane.active = slot;
         Ok(slot)
     }
     /// Close only idle tabs. A pending backend operation remains attached to
     /// its originating tab until its completion has been consumed.
     pub fn close_active(&mut self) -> bool {
-        if self.count <= 1 || self.active().busy() || self.active().dialog_active() {
+        let pane = &mut self.panes[self.active_pane];
+        if pane.count <= 1 || pane.active_model().busy() || pane.active_model().dialog_active() {
             return false;
         }
-        let removed = self.active;
-        for index in removed..self.count - 1 {
-            self.tabs[index] = self.tabs[index + 1].take();
+        let removed = pane.active;
+        for index in removed..pane.count - 1 {
+            pane.tabs[index] = pane.tabs[index + 1].take();
         }
-        self.count -= 1;
-        self.tabs[self.count] = None;
-        if self.active == self.count {
-            self.active -= 1;
+        pane.count -= 1;
+        pane.tabs[pane.count] = None;
+        if pane.active == pane.count {
+            pane.active -= 1;
         }
         true
     }
-    /// Return the next untaken action from any tab, preserving its original
-    /// request ID and ownership for the completion callback.
+    /// Return the next untaken action from either pane, preserving its original
+    /// request ID and owner for the completion callback.
     pub fn take(&mut self) -> Option<Action> {
-        for offset in 0..self.count {
-            let index = (self.active + offset) % self.count;
-            if let Some(action) = self.tabs[index].as_mut()?.take() {
-                return Some(action);
+        for pane_offset in 0..PANE_COUNT {
+            let pane_index = (self.active_pane + pane_offset) % PANE_COUNT;
+            let pane = &mut self.panes[pane_index];
+            for tab_offset in 0..pane.count {
+                let tab_index = (pane.active + tab_offset) % pane.count;
+                if let Some(action) = pane.tabs[tab_index].as_mut().and_then(Model::take) {
+                    return Some(action);
+                }
             }
         }
         None
@@ -780,14 +917,60 @@ impl Workspace {
         request: u64,
         result: Result<Listing, BackendError>,
     ) -> Result<(), Error> {
-        let Some(model) = self.tabs[..self.count].iter_mut().flatten().find(|model| {
-            model
-                .pending
-                .is_some_and(|action| action.request == request)
-        }) else {
+        let Some((pane_index, action)) =
+            self.panes
+                .iter()
+                .enumerate()
+                .find_map(|(pane_index, pane)| {
+                    pane.tabs[..pane.count].iter().flatten().find_map(|model| {
+                        model
+                            .pending
+                            .filter(|action| action.request == request)
+                            .map(|action| (pane_index, action))
+                    })
+                })
+        else {
             return Err(Error::StaleCompletion);
         };
-        model.complete(request, result)
+        let owner = self.panes[pane_index]
+            .tabs
+            .iter_mut()
+            .flatten()
+            .find(|model| {
+                model
+                    .pending
+                    .is_some_and(|pending| pending.request == request)
+            })
+            .expect("located Files request owner");
+        if owner.refresh_after_pending {
+            owner.replace_pending_with_refresh(request)?;
+            return Ok(());
+        }
+        let model = self.panes[pane_index]
+            .tabs
+            .iter_mut()
+            .flatten()
+            .find(|model| {
+                model
+                    .pending
+                    .is_some_and(|pending| pending.request == request)
+            })
+            .expect("located Files request owner");
+        model.complete(request, result)?;
+        if matches!(action.intent, Intent::Navigate { path } if path == root()) {
+            if let Ok(listing) = result {
+                self.seed_other_pane(pane_index, listing)?;
+            }
+        }
+        if matches!(
+            action.intent,
+            Intent::CreateFolder { .. } | Intent::MoveFolder { .. } | Intent::RemoveFolder { .. }
+        ) {
+            if let Ok(listing) = result {
+                self.refresh_after_directory_mutation(listing)?;
+            }
+        }
+        Ok(())
     }
 }
 impl Default for Workspace {
@@ -1244,6 +1427,213 @@ mod tests {
         assert_eq!(workspace.address(), "/native/docs");
         assert_eq!(workspace.error(), Some(BackendError::NotFound));
     }
+
+    #[test]
+    fn workspace_dual_panes_keep_paths_and_route_inactive_completions() {
+        let mut workspace = Workspace::new();
+        workspace.navigate(path("/native")).unwrap();
+        let root_load = workspace.take().unwrap();
+        let root_listing = listing(
+            "/native",
+            0,
+            4,
+            &[
+                ("/native/docs", Kind::Directory, 7),
+                ("/native/archive", Kind::Directory, 8),
+            ],
+        );
+        workspace
+            .complete(root_load.request, Ok(root_listing))
+            .unwrap();
+        assert_eq!(workspace.pane(0).unwrap().current_path(), Some("/native"));
+        assert_eq!(workspace.pane(1).unwrap().current_path(), Some("/native"));
+
+        assert!(workspace.switch_pane(1));
+        workspace.navigate(path("/native/archive")).unwrap();
+        let right_navigation = workspace.take().unwrap();
+        assert!(workspace.switch_pane(0));
+        workspace.navigate(path("/native/docs")).unwrap();
+        let left_navigation = workspace.take().unwrap();
+        assert_ne!(right_navigation.request, left_navigation.request);
+
+        // Complete the left request while the right pane is active. The
+        // request owner, not current focus, receives the new path and listing.
+        assert!(workspace.switch_pane(1));
+        workspace
+            .complete(
+                left_navigation.request,
+                Ok(listing(
+                    "/native/docs",
+                    7,
+                    5,
+                    &[("/native/docs/guide", Kind::File, 0)],
+                )),
+            )
+            .unwrap();
+        assert_eq!(
+            workspace.pane(0).unwrap().current_path(),
+            Some("/native/docs")
+        );
+        assert_eq!(workspace.pane(1).unwrap().current_path(), Some("/native"));
+
+        workspace
+            .complete(
+                right_navigation.request,
+                Ok(listing(
+                    "/native/archive",
+                    8,
+                    5,
+                    &[("/native/archive/old", Kind::File, 0)],
+                )),
+            )
+            .unwrap();
+        assert_eq!(
+            workspace.pane(0).unwrap().current_path(),
+            Some("/native/docs")
+        );
+        assert_eq!(
+            workspace.pane(1).unwrap().current_path(),
+            Some("/native/archive")
+        );
+        assert_eq!(
+            workspace.pane(0).unwrap().selected().unwrap().path,
+            path("/native/docs/guide")
+        );
+        assert_eq!(
+            workspace.pane(1).unwrap().selected().unwrap().path,
+            path("/native/archive/old")
+        );
+    }
+
+    #[test]
+    fn successful_directory_mutation_refreshes_other_panes_and_replaces_stale_reads() {
+        let mut workspace = Workspace::new();
+        workspace.navigate(path("/native")).unwrap();
+        let root_load = workspace.take().unwrap();
+        workspace
+            .complete(
+                root_load.request,
+                Ok(listing(
+                    "/native",
+                    0,
+                    1,
+                    &[("/native/docs", Kind::Directory, 2)],
+                )),
+            )
+            .unwrap();
+
+        assert!(workspace.switch_pane(1));
+        assert_eq!(workspace.new_tab(), Ok(1));
+        let second_root_load = workspace.take().unwrap();
+        workspace
+            .complete(
+                second_root_load.request,
+                Ok(listing(
+                    "/native",
+                    0,
+                    1,
+                    &[("/native/docs", Kind::Directory, 2)],
+                )),
+            )
+            .unwrap();
+        workspace.navigate(path("/native/docs")).unwrap();
+        let stale_docs_read = workspace.take().unwrap();
+        assert_eq!(workspace.pane(1).unwrap().current_path(), Some("/native"));
+
+        assert!(workspace.switch_pane(0));
+        workspace.begin_create().unwrap();
+        workspace.set_input("/native/new").unwrap();
+        workspace.choose_approve(true).unwrap();
+        workspace.confirm().unwrap();
+        let create = workspace.take().unwrap();
+        assert!(matches!(create.intent, Intent::CreateFolder { .. }));
+        workspace
+            .complete(
+                create.request,
+                Ok(listing(
+                    "/native",
+                    0,
+                    2,
+                    &[
+                        ("/native/docs", Kind::Directory, 2),
+                        ("/native/new", Kind::Directory, 3),
+                    ],
+                )),
+            )
+            .unwrap();
+
+        assert_eq!(
+            workspace
+                .pane(0)
+                .unwrap()
+                .listing()
+                .unwrap()
+                .folder
+                .revision,
+            2
+        );
+        assert_eq!(
+            workspace
+                .pane(1)
+                .unwrap()
+                .tab(0)
+                .unwrap()
+                .listing()
+                .unwrap()
+                .folder
+                .revision,
+            2
+        );
+        assert_eq!(workspace.pane(1).unwrap().listing(), None);
+        workspace
+            .complete(
+                stale_docs_read.request,
+                Ok(listing(
+                    "/native/docs",
+                    2,
+                    1,
+                    &[("/native/docs/old", Kind::File, 0)],
+                )),
+            )
+            .unwrap();
+        assert_eq!(workspace.pane(1).unwrap().listing(), None);
+
+        let refresh = workspace.take().unwrap();
+        assert!(matches!(
+            refresh.intent,
+            Intent::Navigate { path: requested } if requested == path("/native/docs")
+        ));
+        workspace
+            .complete(
+                refresh.request,
+                Ok(listing(
+                    "/native/docs",
+                    2,
+                    2,
+                    &[("/native/docs/new-file", Kind::File, 0)],
+                )),
+            )
+            .unwrap();
+        assert_eq!(
+            workspace.pane(1).unwrap().current_path(),
+            Some("/native/docs")
+        );
+        assert_eq!(
+            workspace
+                .pane(1)
+                .unwrap()
+                .listing()
+                .unwrap()
+                .folder
+                .revision,
+            2
+        );
+        assert_eq!(
+            workspace.pane(1).unwrap().selected().unwrap().path,
+            path("/native/docs/new-file")
+        );
+    }
+
     #[test]
     fn workspace_caps_tabs_and_closes_only_idle_contexts() {
         let mut workspace = Workspace::new();

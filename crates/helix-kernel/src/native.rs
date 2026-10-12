@@ -3260,17 +3260,23 @@ pub extern "sysv64" fn linux_dispatch(frame: *mut CpuFrame) -> u64 {
                 .unwrap_or_else(|error| error)
         }
         5 => {
-            if !user_range(
-                &rt.processes[slot],
-                frame.rsi,
-                crate::linux_fs::STAT_BYTES,
-                true,
-            ) {
-                frame.rax = linux::EFAULT;
-                return 0;
-            }
             let mut bytes = [0u8; crate::linux_fs::STAT_BYTES];
-            frame.rax = match crate::linux_fs::stat(slot, generation, frame.rdi, &mut bytes) {
+            frame.rax = match crate::linux_fs::stat(
+                slot,
+                generation,
+                u64::from(frame.rdi as u32),
+                &mut bytes,
+            ) {
+                Ok(())
+                    if !user_range(
+                        &rt.processes[slot],
+                        frame.rsi,
+                        crate::linux_fs::STAT_BYTES,
+                        true,
+                    ) =>
+                {
+                    linux::EFAULT
+                }
                 Ok(()) => {
                     unsafe {
                         copy_nonoverlapping(
@@ -3288,6 +3294,32 @@ pub extern "sysv64" fn linux_dispatch(frame: *mut CpuFrame) -> u64 {
             frame.rax =
                 crate::linux_fs::lseek(slot, generation, frame.rdi, frame.rsi as i64, frame.rdx)
                     .unwrap_or_else(|error| error)
+        }
+        217 => {
+            let size = frame.rdx as u32 as usize;
+            frame.rax = crate::linux_fs::getdents64(
+                slot,
+                generation,
+                u64::from(frame.rdi as u32),
+                size,
+                |bytes| {
+                    if !user_range(&rt.processes[slot], frame.rsi, bytes.len(), true) {
+                        return Err(linux::EFAULT);
+                    }
+                    if !bytes.is_empty() {
+                        unsafe {
+                            copy_nonoverlapping(
+                                bytes.as_ptr(),
+                                physical_pointer(slot, frame.rsi),
+                                bytes.len(),
+                            )
+                        }
+                    }
+                    Ok(())
+                },
+            )
+            .map(|length| length as u64)
+            .unwrap_or_else(|error| error);
         }
         17 => frame.rax = linux_pread(rt, slot, frame.rdi, frame.rsi, frame.rdx, frame.r10),
         18 => frame.rax = linux_pwrite(rt, slot, frame.rdi, frame.rsi, frame.rdx, frame.r10),

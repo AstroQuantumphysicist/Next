@@ -6,6 +6,18 @@ use std::sync::Mutex;
 
 static SERIAL: Mutex<()> = Mutex::new(());
 
+fn stat_u32(bytes: &[u8; linux_fs::STAT_BYTES], offset: usize) -> u32 {
+    u32::from_le_bytes(bytes[offset..offset + 4].try_into().unwrap())
+}
+
+fn stat_u64(bytes: &[u8; linux_fs::STAT_BYTES], offset: usize) -> u64 {
+    u64::from_le_bytes(bytes[offset..offset + 8].try_into().unwrap())
+}
+
+fn stat_i64(bytes: &[u8; linux_fs::STAT_BYTES], offset: usize) -> i64 {
+    i64::from_le_bytes(bytes[offset..offset + 8].try_into().unwrap())
+}
+
 #[allow(dead_code)]
 mod input {
     pub unsafe fn port_in(_: u16) -> u8 {
@@ -157,6 +169,24 @@ mod file {
             .ok_or(Status::InvalidHandle)?;
         Ok(entry.inode as u64 + 1)
     }
+    pub fn link_count(handle: FileHandle) -> Result<u64, Status> {
+        let mock = MOCK.lock().unwrap();
+        let entry = mock
+            .handles
+            .get(handle.0 as usize)
+            .and_then(Option::as_ref)
+            .ok_or(Status::InvalidHandle)?;
+        Ok(u64::from(!mock.files[entry.inode].path.is_empty()))
+    }
+    pub fn detach_for_test(path: &str) {
+        let mut mock = MOCK.lock().unwrap();
+        mock.files
+            .iter_mut()
+            .find(|entry| entry.path == path)
+            .unwrap()
+            .path
+            .clear();
+    }
     pub fn retain(handle: FileHandle) -> Result<(), Status> {
         let mut mock = MOCK.lock().unwrap();
         let entry = mock
@@ -172,6 +202,32 @@ mod file {
     }
     pub fn remove(_: &str) -> Result<(), Status> {
         Ok(())
+    }
+}
+
+mod filesystem {
+    use crate::linux_fs::dirent::{Entry, Snapshot};
+    pub fn linux_directory(path: &str) -> Result<Snapshot, u64> {
+        if path == "/native" || path == "/native/dir" {
+            let mut result = Snapshot::EMPTY;
+            for (ino, kind, name) in [(1, 4, "."), (1, 4, ".."), (2, 8, "alpha"), (3, 4, "child")] {
+                result.push(Entry::new(ino, kind, name).unwrap()).unwrap();
+            }
+            Ok(result)
+        } else if path.starts_with("/native/bad-") {
+            let mut result = Snapshot::EMPTY;
+            result.push(Entry::new(1, 4, ".").unwrap()).unwrap();
+            if path == "/native/bad-count" {
+                result.count = usize::MAX;
+            } else if path == "/native/bad-dots" {
+                result.push(Entry::new(1, 8, "wrong").unwrap()).unwrap();
+            }
+            Ok(result)
+        } else if path == "/native/missing-dir" {
+            Err((-2i64) as u64)
+        } else {
+            Err((-20i64) as u64)
+        }
     }
 }
 
@@ -244,6 +300,7 @@ fn stdin_is_eof_device_with_independent_duplicate_lifetime() {
         0x2000
     );
     assert_eq!(i64::from_le_bytes(stat[48..56].try_into().unwrap()), 0);
+    assert_eq!(u64::from_le_bytes(stat[40..48].try_into().unwrap()), 259);
 
     let duplicate = linux_fs::duplicate(SLOT, GENERATION, 0).unwrap();
     assert_eq!(duplicate, 3);
@@ -276,6 +333,72 @@ fn stdin_is_eof_device_with_independent_duplicate_lifetime() {
     );
 
     assert_eq!(linux_fs::read(SLOT, 2, 0, &mut byte), Ok(0));
+}
+
+#[test]
+fn fstat_serializes_bounded_x86_64_layout_and_handles_descriptor_errors() {
+    let _serial = SERIAL.lock().unwrap();
+    const SLOT: usize = 3;
+    const GENERATION: u64 = 17;
+
+    let fd = linux_fs::open(SLOT, GENERATION, true, "/native/fstat-contract", 2, 0).unwrap();
+    let mut stat = [0xa5; linux_fs::STAT_BYTES];
+    linux_fs::stat(SLOT, GENERATION, fd, &mut stat).unwrap();
+    assert_eq!(stat_u64(&stat, 0), 1); // synthetic st_dev
+    assert_ne!(stat_u64(&stat, 8), 0); // st_ino
+    assert_eq!(stat_u64(&stat, 16), 1); // st_nlink
+    assert_eq!(stat_u32(&stat, 24), 0o100600); // regular file, mode 0600
+    assert_eq!(stat_u32(&stat, 28), 1000); // synthetic st_uid
+    assert_eq!(stat_u32(&stat, 32), 1000); // synthetic st_gid
+    assert_eq!(&stat[36..40], &[0; 4]); // ABI padding
+    assert_eq!(stat_u64(&stat, 40), 0); // st_rdev
+    assert_eq!(stat_i64(&stat, 48), 8); // mock file is "readonly"
+    assert_eq!(stat_i64(&stat, 56), 512); // bounded store block size
+    assert_eq!(stat_i64(&stat, 64), 1); // one 512-byte block
+    assert!(stat[72..].iter().all(|byte| *byte == 0)); // times/reserved
+
+    let duplicate = linux_fs::duplicate(SLOT, GENERATION, fd).unwrap();
+    let mut duplicate_stat = [0; linux_fs::STAT_BYTES];
+    linux_fs::stat(SLOT, GENERATION, duplicate, &mut duplicate_stat).unwrap();
+    assert_eq!(&duplicate_stat[0..16], &stat[0..16]); // same dev+inode identity
+
+    for fd in [1, 2] {
+        let mut stream_stat = [0; linux_fs::STAT_BYTES];
+        linux_fs::stat(SLOT, GENERATION, fd, &mut stream_stat).unwrap();
+        assert_eq!(stat_u32(&stream_stat, 24) & 0xf000, 0x2000);
+        assert_ne!(stat_u64(&stream_stat, 0), stat_u64(&stat, 0));
+        assert_eq!(stat_i64(&stream_stat, 48), 0);
+        assert_eq!(stat_i64(&stream_stat, 56), 4096);
+    }
+
+    let mut input_stat = [0; linux_fs::STAT_BYTES];
+    linux_fs::stat(SLOT, GENERATION, 0, &mut input_stat).unwrap();
+    assert_ne!(stat_u64(&input_stat, 0), stat_u64(&stat, 0));
+    file::detach_for_test("/native/fstat-contract");
+    linux_fs::stat(SLOT, GENERATION, fd, &mut stat).unwrap();
+    linux_fs::stat(SLOT, GENERATION, duplicate, &mut duplicate_stat).unwrap();
+    assert_eq!(stat_u64(&stat, 16), 0);
+    assert_eq!(stat_u64(&duplicate_stat, 16), 0);
+    assert_eq!(stat_i64(&stat, 48), 8); // retained anonymous bytes survive
+    let mut sentinel = [0xa5; linux_fs::STAT_BYTES];
+    assert_eq!(
+        linux_fs::stat(SLOT, GENERATION, 99, &mut sentinel),
+        Err(linux::EBADF)
+    );
+    assert_eq!(sentinel, [0xa5; linux_fs::STAT_BYTES]);
+
+    assert_eq!(linux_fs::close(SLOT, GENERATION, 2), Ok(()));
+    let mut closed_stream = [0; linux_fs::STAT_BYTES];
+    assert_eq!(
+        linux_fs::stat(SLOT, GENERATION, 2, &mut closed_stream),
+        Err(linux::EBADF)
+    );
+    assert_eq!(linux_fs::close(SLOT, GENERATION, fd), Ok(()));
+    assert_eq!(
+        linux_fs::stat(SLOT, GENERATION, fd, &mut closed_stream),
+        Err(linux::EBADF)
+    );
+    assert_eq!(linux_fs::close(SLOT, GENERATION, duplicate), Ok(()));
 }
 
 #[test]
@@ -400,4 +523,220 @@ fn lseek_uses_linux_whence_and_signed_offset_errors() {
     let duplicate = linux_fs::duplicate(SLOT, GENERATION, fd).unwrap();
     assert_eq!(linux_fs::lseek(SLOT, GENERATION, duplicate, -1, 1), Ok(6));
     assert_eq!(linux_fs::lseek(SLOT, GENERATION, fd, 0, 1), Ok(6));
+}
+
+#[test]
+fn directory_layout_cursor_dup_independent_open_and_copyout_transaction() {
+    let _serial = SERIAL.lock().unwrap();
+    const SLOT: usize = 3;
+    const G: u64 = 91;
+    linux_fs::close_all(SLOT, G);
+    let fd = linux_fs::open(SLOT, G, true, "/native", 65536, 0).unwrap();
+    let dup = linux_fs::duplicate(SLOT, G, fd).unwrap();
+    let other = linux_fs::open(SLOT, G, true, "/native", 0, 0).unwrap();
+    let mut stat = [0; 144];
+    linux_fs::stat(SLOT, G, fd, &mut stat).unwrap();
+    assert_eq!(stat_u32(&stat, 24) & 0xf000, 0x4000);
+    assert_eq!(stat_u64(&stat, 16), 3);
+    let mut out = [0xa5; 128];
+    assert_eq!(
+        linux_fs::getdents64(SLOT, G, fd, 0x80000000, |_| panic!("overflow count copied")),
+        Err((-22i64) as u64)
+    );
+    assert_eq!(
+        linux_fs::getdents64(SLOT, G, fd, 0xffffffff, |_| panic!("overflow count copied")),
+        Err((-22i64) as u64)
+    );
+
+    assert_eq!(
+        linux_fs::getdents64(SLOT, G, fd, 23, |_| panic!("short first record copied")),
+        Err((-22i64) as u64)
+    );
+    assert_eq!(
+        linux_fs::getdents64(SLOT, G, fd, 24, |_| Err((-14i64) as u64)),
+        Err((-14i64) as u64)
+    );
+    assert_eq!(
+        linux_fs::getdents64(SLOT, G, fd, 24, |b| {
+            // Acquiring the adapter inside copyout proves the guard was released.
+            linux_fs::stat(SLOT, G, fd, &mut [0; 144]).unwrap();
+            out[..b.len()].copy_from_slice(b);
+            Ok(())
+        }),
+        Ok(24)
+    );
+    assert_eq!(&out[19..21], b".\0");
+    assert_eq!(linux_fs::lseek(SLOT, G, dup, 0, 1), Ok(1));
+    assert_eq!(i64::from_le_bytes(out[8..16].try_into().unwrap()), 1);
+    assert_eq!(
+        linux_fs::getdents64(SLOT, G, dup, 24, |b| {
+            out[..b.len()].copy_from_slice(b);
+            Ok(())
+        }),
+        Ok(24)
+    );
+    assert_eq!(&out[19..22], b"..\0");
+    assert_eq!(
+        linux_fs::getdents64(SLOT, G, other, 24, |b| {
+            out[..b.len()].copy_from_slice(b);
+            Ok(())
+        }),
+        Ok(24)
+    );
+    assert_eq!(&out[19..21], b".\0");
+    assert_eq!(
+        linux_fs::getdents64(SLOT, G, fd, 128, |b| {
+            out[..b.len()].copy_from_slice(b);
+            Ok(())
+        }),
+        Ok(64)
+    );
+    assert_eq!(&out[19..25], b"alpha\0");
+    assert_eq!(out[18], 8);
+    assert_eq!(out[32 + 18], 4);
+    assert_eq!(&out[32 + 19..32 + 25], b"child\0");
+    assert_eq!(
+        linux_fs::getdents64(SLOT, G, dup, 128, |b| {
+            assert!(b.is_empty());
+            Ok(())
+        }),
+        Ok(0)
+    );
+    assert_eq!(
+        linux_fs::getdents64(SLOT, G, dup, 4096, |_| panic!("EOF accessed user memory")),
+        Ok(0)
+    );
+    for capacity in [0, 0x80000000, 0xffffffff] {
+        assert_eq!(
+            linux_fs::getdents64(SLOT, G, dup, capacity, |_| panic!("EOF accessed memory")),
+            Ok(0)
+        );
+    }
+    assert_eq!(linux_fs::lseek(SLOT, G, dup, 1, 0), Ok(1));
+    assert_eq!(
+        linux_fs::getdents64(SLOT, G, fd, 24, |b| {
+            out[..b.len()].copy_from_slice(b);
+            Ok(())
+        }),
+        Ok(24)
+    );
+    assert_eq!(&out[19..22], b"..\0");
+    linux_fs::close(SLOT, G, fd).unwrap();
+    assert_eq!(
+        linux_fs::getdents64(SLOT, G, fd, 128, |_| Ok(())),
+        Err((-9i64) as u64)
+    );
+    linux_fs::close_all(SLOT, G);
+}
+#[test]
+fn directory_authority_type_errors_capacity_and_teardown() {
+    let _serial = SERIAL.lock().unwrap();
+    const SLOT: usize = 3;
+    const G: u64 = 92;
+    linux_fs::close_all(SLOT, G);
+    assert_eq!(
+        linux_fs::open(SLOT, G, false, "/native", 65536, 0),
+        Err((-13i64) as u64)
+    );
+    assert_eq!(
+        linux_fs::open(SLOT, G, true, "/etc", 65536, 0),
+        Err((-13i64) as u64)
+    );
+    assert_eq!(
+        linux_fs::open(SLOT, G, true, "/native", 65536 | 1, 0),
+        Err((-21i64) as u64)
+    );
+    assert_eq!(
+        linux_fs::open(SLOT, G, true, "/native/plain", 65536, 0),
+        Err((-20i64) as u64)
+    );
+    assert_eq!(
+        linux_fs::open(SLOT, G, true, "/native/missing-dir", 65536, 0),
+        Err((-2i64) as u64)
+    );
+    let file = linux_fs::open(SLOT, G, true, "/native/plain", 0, 0).unwrap();
+    assert_eq!(
+        linux_fs::getdents64(SLOT, G, file, 128, |_| panic!("regular file copied")),
+        Err((-20i64) as u64)
+    );
+    assert_eq!(
+        linux_fs::getdents64(SLOT, G, 1, 128, |_| Ok(())),
+        Err((-9i64) as u64)
+    );
+    assert_eq!(
+        linux_fs::getdents64(SLOT, G, 99, 128, |_| Ok(())),
+        Err((-9i64) as u64)
+    );
+    linux_fs::close_all(SLOT, G);
+    for _ in 0..8 {
+        linux_fs::open(SLOT, G, true, "/native", 65536, 0).unwrap();
+    }
+    assert_eq!(
+        linux_fs::open(SLOT, G, true, "/native", 65536, 0),
+        Err((-24i64) as u64)
+    );
+    linux_fs::close_all(SLOT, G);
+    assert_eq!(
+        linux_fs::open(SLOT, G + 1, true, "/native", 65536, 0),
+        Ok(3)
+    );
+    linux_fs::close_all(SLOT, G + 1);
+}
+
+#[test]
+fn malformed_directory_snapshots_never_install_a_descriptor_or_reach_stat() {
+    let _serial = SERIAL.lock().unwrap();
+    const SLOT: usize = 3;
+    const G: u64 = 101;
+    linux_fs::close_all(SLOT, G);
+    for path in ["/native/bad-short", "/native/bad-count", "/native/bad-dots"] {
+        assert_eq!(
+            linux_fs::open(SLOT, G, true, path, 65536, 0),
+            Err((-5i64) as u64)
+        );
+    }
+    let fd = linux_fs::open(SLOT, G, true, "/native", 65536, 0).unwrap();
+    assert_eq!(fd, 3); // Failed metadata imports release their reservations.
+    let mut stat = [0; 144];
+    linux_fs::stat(SLOT, G, fd, &mut stat).unwrap();
+    assert_eq!(stat_u32(&stat, 24) & 0xf000, 0x4000);
+    linux_fs::close_all(SLOT, G);
+}
+#[test]
+fn unlocked_copyout_cannot_commit_into_replaced_or_repositioned_directory() {
+    let _serial = SERIAL.lock().unwrap();
+    const SLOT: usize = 3;
+    const G: u64 = 102;
+    linux_fs::close_all(SLOT, G);
+    let fd = linux_fs::open(SLOT, G, true, "/native", 65536, 0).unwrap();
+    let mut replacement = 0;
+    assert_eq!(
+        linux_fs::getdents64(SLOT, G, fd, 24, |_| {
+            linux_fs::close(SLOT, G, fd).unwrap();
+            replacement = linux_fs::open(SLOT, G, true, "/native", 65536, 0).unwrap();
+            assert_eq!(replacement, fd);
+            Ok(())
+        }),
+        Err((-16i64) as u64)
+    );
+    assert_eq!(linux_fs::lseek(SLOT, G, replacement, 0, 1), Ok(0));
+    let dup = linux_fs::duplicate(SLOT, G, replacement).unwrap();
+    assert_eq!(
+        linux_fs::getdents64(SLOT, G, replacement, 24, |_| {
+            assert_eq!(linux_fs::lseek(SLOT, G, dup, 2, 0), Ok(2));
+            Ok(())
+        }),
+        Err((-16i64) as u64)
+    );
+    assert_eq!(linux_fs::lseek(SLOT, G, replacement, 0, 1), Ok(2));
+    let mut name = [0; 32];
+    assert_eq!(
+        linux_fs::getdents64(SLOT, G, dup, 32, |b| {
+            name.copy_from_slice(b);
+            Ok(())
+        }),
+        Ok(32)
+    );
+    assert_eq!(&name[19..25], b"alpha\0");
+    linux_fs::close_all(SLOT, G);
 }

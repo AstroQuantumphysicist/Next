@@ -2,7 +2,7 @@
   "schema": 1,
   "spec_sha256": "248a4f8c44f6c54e91dcf548ffeb0fb1e83c72dc2e378870f6315e6ca1592a22",
   "product_ready": false,
-  "note": "2026-10-12 final feature-wave evidence is bound to signed development image 8902846a7a484186361520c6c626846479710faef2afa8729bdad664e66825f3: the qemu64 desktop smoke passed 125 checks, a deterministic peer validated the bounded DHCPv6 candidate exchange, and Linux getpid/uname/lseek guest fixtures passed. Coverage remains 74 pending, 121 partial, 0 verified; product_ready=false. This is not Next 1.0 or hardware certification.",
+  "note": "2026-10-12 qemu64 development evidence uses signed image SHA256 1b226f5ee89a59656cf74a673ea381f7d56e9dbe764bb852c75d224a902d6c6b: the desktop smoke passed 128 checks, including original Linux fstat/getdents64 fixtures with exit statuses 54 and 55 and independent Files pane navigation. The separate bounded DHCPv6 peer exchange remains bound to the earlier 8902846a7a484186361520c6c626846479710faef2afa8729bdad664e66825f3 image. Coverage remains 74 pending, 121 partial, 0 verified; product_ready=false. This is not Next 1.0 or hardware certification.",
   "requirements": [
     {
       "id": "NEXT-BOOT-001",
@@ -585,28 +585,28 @@
         {
           "level": "boot_smoke",
           "command": "source tools/env.sh && python3 tools/boot_smoke.py --smp 1 --timeout 600 --output-dir build/final-image-qemu64",
-          "scope": "Earlier feature-wave image SHA256 f4986796\u2026; 120 checks passed with 1 QMP CPU object(s) and 1 enabled ACPI/MADT CPUs. APs remain stopped, reservations retained, and scheduler scope remains the BSP.",
+          "scope": "Earlier feature-wave image SHA256 f4986796…; 120 checks passed with 1 QMP CPU object(s) and 1 enabled ACPI/MADT CPUs. APs remain stopped, reservations retained, and scheduler scope remains the BSP.",
           "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/feature-wave/qemu64/boot-smoke.json",
           "sha256": "83a51ea215b57d750e3da5f108336849bd8de27cd48626ab1bf6087806e8cf35"
         },
         {
           "level": "boot_smoke",
           "command": "source tools/env.sh && python3 tools/boot_smoke.py --smp 2 --timeout 600 --output-dir build/final-image-smp2",
-          "scope": "Earlier feature-wave image SHA256 f4986796\u2026; 119 checks passed with 2 QMP CPU object(s) and 2 enabled ACPI/MADT CPUs. APs remain stopped, reservations retained, and scheduler scope remains the BSP.",
+          "scope": "Earlier feature-wave image SHA256 f4986796…; 119 checks passed with 2 QMP CPU object(s) and 2 enabled ACPI/MADT CPUs. APs remain stopped, reservations retained, and scheduler scope remains the BSP.",
           "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/feature-wave/smp/smp-2/boot-smoke.json",
           "sha256": "7a138613fe6c3305d2092d15e6e4c29c322debdad282ab3326de9c8ffec07dbf"
         },
         {
           "level": "boot_smoke",
           "command": "source tools/env.sh && python3 tools/boot_smoke.py --smp 4 --timeout 600 --output-dir build/final-image-smp4",
-          "scope": "Earlier feature-wave image SHA256 f4986796\u2026; 119 checks passed with 4 QMP CPU object(s) and 4 enabled ACPI/MADT CPUs. APs remain stopped, reservations retained, and scheduler scope remains the BSP.",
+          "scope": "Earlier feature-wave image SHA256 f4986796…; 119 checks passed with 4 QMP CPU object(s) and 4 enabled ACPI/MADT CPUs. APs remain stopped, reservations retained, and scheduler scope remains the BSP.",
           "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/feature-wave/smp/smp-4/boot-smoke.json",
           "sha256": "bb333c20c06da57ad3334628d36b9708532d78af451e01ac33b8945ba2ecd138"
         },
         {
           "level": "boot_smoke",
           "command": "source tools/env.sh && python3 tools/boot_smoke.py --smp 8 --timeout 600 --output-dir build/final-image-smp8",
-          "scope": "Earlier feature-wave image SHA256 f4986796\u2026; 119 checks passed with 8 QMP CPU object(s) and 8 enabled ACPI/MADT CPUs. APs remain stopped, reservations retained, and scheduler scope remains the BSP.",
+          "scope": "Earlier feature-wave image SHA256 f4986796…; 119 checks passed with 8 QMP CPU object(s) and 8 enabled ACPI/MADT CPUs. APs remain stopped, reservations retained, and scheduler scope remains the BSP.",
           "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/feature-wave/smp/smp-8/boot-smoke.json",
           "sha256": "ee3a6977b84296e2d728b3fb17a259b50614278f72a46c61eebec53fbdd6d7c3"
         },
@@ -2223,7 +2223,7 @@
         {
           "level": "boot_smoke",
           "command": "source tools/env.sh && python3 tools/dhcp_guest_smoke.py --dhcpv6-only --timeout 180 --image build/next-dev.img --output build/feature-wave-final-dhcpv6/dhcpv6-guest-smoke.json",
-          "scope": "Actual q35/TCG qemu64 image SHA256 8902846a7a484186361520c6c626846479710faef2afa8729bdad664e66825f3 with deterministic Ethernet peer: dropped first Solicit/Request, stable retry transaction IDs, Elapsed Time 0\u2192100 centiseconds, Request IA_NA T1/T2 and IAADDR lifetimes zero; matching Reply supplies T1/T2 20/40 and preferred/valid lifetimes 40/60. Guest logs a candidate only; no address install, DAD, or routes.",
+          "scope": "Actual q35/TCG qemu64 image SHA256 8902846a7a484186361520c6c626846479710faef2afa8729bdad664e66825f3 with deterministic Ethernet peer: dropped first Solicit/Request, stable retry transaction IDs, Elapsed Time 0→100 centiseconds, Request IA_NA T1/T2 and IAADDR lifetimes zero; matching Reply supplies T1/T2 20/40 and preferred/valid lifetimes 40/60. Guest logs a candidate only; no address install, DAD, or routes.",
           "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/feature-wave-final/dhcpv6-guest-smoke.json",
           "sha256": "102c68b4108be4c5a5b67fb025f0f345d252076ab8b3f4b4769dae750026b6d9"
         }
@@ -2453,7 +2453,7 @@
     {
       "id": "SECTION-14",
       "kind": "section",
-      "text": "Prism user experience \u2014 visual and behavioral specification",
+      "text": "Prism user experience — visual and behavioral specification",
       "status": "pending",
       "evidence": [],
       "remaining": "Implement and validate the complete specification contract."
@@ -2542,6 +2542,13 @@
           "scope": "Final signed image SHA256 8902846a7a484186361520c6c626846479710faef2afa8729bdad664e66825f3: actual PS/2 Super+arrow selects the BottomLeft work-area quadrant and captures the snapped Terminal with Editor behind it. This is a single-work-area software desktop interaction, not multi-monitor behavior.",
           "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/feature-wave-final/images/prism-snap-quadrant.png",
           "sha256": "e30add23fa32ec815ffe4d70b8b28baa40f5d3b964d5da3d99e112c9038bec1c"
+        },
+        {
+          "level": "boot_smoke",
+          "command": "source tools/env.sh && export NEXT_DEV_PUBLIC_KEY=\"$PWD/work/package-dev.pub\" && bash tools/build.sh && python3 tools/boot_smoke.py --cpu qemu64 --timeout 360 --capture-prism-gallery --image build/next-dev.img --output-dir build/fstat-getdents-files-r3",
+          "scope": "Signed q35/TCG/OVMF qemu64 image, SHA256 1b226f5ee89a59656cf74a673ea381f7d56e9dbe764bb852c75d224a902d6c6b: 128 guest checks include the 1280x800 Prism shell, Files tabs, two independently navigated panes, and all 16 current gallery captures. One vCPU only; APs stopped; this does not establish user compositor isolation or hardware display behavior.",
+          "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/fstat-getdents-files-r3/boot-smoke.json",
+          "sha256": "94af7284d227bbe078d53142c088bf80488eb2d5d2afad37c80017ae577aee97"
         }
       ],
       "remaining": "The kernel-hosted single-work-area shell and four-corner snap preview/restore are exercised. User compositor isolation, independent applications, multi-monitor/workspace topology, dynamic display layout and full production window management remain incomplete."
@@ -2663,6 +2670,13 @@
           "scope": "123 actual qemu64 assertions: gesture drag/preserved extent, minimize pixels absent/PID alive/no teardown, restore fresh focus, z-order/modal shielding, Exit50 exact cleanup; guarded emergency IST guest CPU probes and UART zero drops. No live resize, user compositor isolation or certified hardware.",
           "artifact": "docs/evidence/milestones/fd4b9165d269/native-window/boot-smoke.json",
           "sha256": "dc54d375f3897d1d7da28f7bdb3c7233d6022995cb92aba73bf46bf2198d2aac"
+        },
+        {
+          "level": "boot_smoke",
+          "command": "source tools/env.sh && export NEXT_DEV_PUBLIC_KEY=\"$PWD/work/package-dev.pub\" && bash tools/build.sh && python3 tools/boot_smoke.py --cpu qemu64 --timeout 360 --capture-prism-gallery --image build/next-dev.img --output-dir build/fstat-getdents-files-r3",
+          "scope": "Signed q35/TCG/OVMF qemu64 image, SHA256 1b226f5ee89a59656cf74a673ea381f7d56e9dbe764bb852c75d224a902d6c6b: guest keyboard/pointer flow switches Files tabs and panes, checks independent path completions and I-beam pixels, and captures all 16 screens. The panels remain kernel-hosted and their full product behaviors remain incomplete.",
+          "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/fstat-getdents-files-r3/boot-smoke.json",
+          "sha256": "94af7284d227bbe078d53142c088bf80488eb2d5d2afad37c80017ae577aee97"
         }
       ],
       "remaining": "Source12 adds real cooperative refusal/save/exit and bounded session Trash Undo to trusted kernel-hosted panels, native copied pixels/input and Files actions. Expanded max CPU and independent runtime/persistence/GPT/service/latency families remain unrun on this checkpoint. General application toolkit/user compositor isolation, workspaces, physical keyboard state/IME, localization, accessibility and finished apps/settings remain incomplete; later Source13/14 is separate."
@@ -2737,6 +2751,13 @@
           "scope": "Real GUI two-boot120create/117verify on exact60ab: retained Files/Appearance persistence gate plus Super Home/search/app shortcuts, pending terminal command preservation, committed conditional Copy cancellation/overwrite/source retention, and dirty AltF4 Cancel/Save/Discard checked against actual journal bytes. Copy test files are removed before reboot, so this does not establish copied-file reboot persistence. Initial Escape-to-Home harness assumption failure is retained separately.",
           "artifact": "docs/evidence/milestones/60ab816c97cc/shortcuts-copy/files-appearance.json",
           "sha256": "0da6e86bbb70560ac256efe005f1a5aeece86a728b6d626cd4cae0cfa7426aec"
+        },
+        {
+          "level": "boot_smoke",
+          "command": "source tools/env.sh && export NEXT_DEV_PUBLIC_KEY=\"$PWD/work/package-dev.pub\" && bash tools/build.sh && python3 tools/boot_smoke.py --cpu qemu64 --timeout 360 --capture-prism-gallery --image build/next-dev.img --output-dir build/fstat-getdents-files-r3",
+          "scope": "Signed q35/TCG/OVMF qemu64 image, SHA256 1b226f5ee89a59656cf74a673ea381f7d56e9dbe764bb852c75d224a902d6c6b: guest smoke opens the current kernel-hosted Prism panels and captures 16 UI states; Files pane navigation completes independently. This is a bounded development implementation, not a complete app suite or isolated user desktop.",
+          "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/fstat-getdents-files-r3/boot-smoke.json",
+          "sha256": "94af7284d227bbe078d53142c088bf80488eb2d5d2afad37c80017ae577aee97"
         }
       ],
       "remaining": "Tenth has trusted kernel-hosted panels, persistent theme/accent at scale100, real GUI create/edit/rename/permanent-delete/conditional-copy confirmations and actual Super/AltF4 routing. Original signed native surface pixels are immutably copied into trusted previews with readable authenticated origin and lifecycle cleanup. Client input and cooperative close are later source, not this image. User compositor isolation, general tabs/directories/workspaces, Trash, Unicode shaping/screen readers, full apps/settings and capture policy remain incomplete."
@@ -2802,6 +2823,13 @@
           "scope": "Final signed image SHA256 8902846a7a484186361520c6c626846479710faef2afa8729bdad664e66825f3: actual PS/2 Super+arrow selects the BottomLeft work-area quadrant and captures the snapped Terminal with Editor behind it. This is a single-work-area software desktop interaction, not multi-monitor behavior.",
           "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/feature-wave-final/images/prism-snap-quadrant.png",
           "sha256": "e30add23fa32ec815ffe4d70b8b28baa40f5d3b964d5da3d99e112c9038bec1c"
+        },
+        {
+          "level": "boot_smoke",
+          "command": "source tools/env.sh && export NEXT_DEV_PUBLIC_KEY=\"$PWD/work/package-dev.pub\" && bash tools/build.sh && python3 tools/boot_smoke.py --cpu qemu64 --timeout 360 --capture-prism-gallery --image build/next-dev.img --output-dir build/fstat-getdents-files-r3",
+          "scope": "Signed q35/TCG/OVMF qemu64 image, SHA256 1b226f5ee89a59656cf74a673ea381f7d56e9dbe764bb852c75d224a902d6c6b: 16 completed 1280x800 guest captures include Files dual panes, active Settings preferences, cursor state, and desktop snap. Host regression tests cover narrow row-label clipping and distinct compact tab markers. No accessibility certification, text shaping, or physical display validation.",
+          "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/fstat-getdents-files-r3/boot-smoke.json",
+          "sha256": "94af7284d227bbe078d53142c088bf80488eb2d5d2afad37c80017ae577aee97"
         }
       ],
       "remaining": "The software-rendered kernel-hosted shell has saved appearance/accessibility preferences, 100%/125% Settings text and single-work-area snapping. Full Unicode shaping, system-wide high-DPI/font controls, screen-reader and assistive-service testing, compositor isolation, multi-monitor support, GPU acceleration and performance certification remain unfinished."
@@ -2809,7 +2837,7 @@
     {
       "id": "SECTION-15",
       "kind": "section",
-      "text": "Compatibility architecture \u2014 principles and boundaries",
+      "text": "Compatibility architecture — principles and boundaries",
       "status": "pending",
       "evidence": [],
       "remaining": "Implement and validate the complete specification contract."
@@ -3015,6 +3043,13 @@
           "scope": "Actual signed q35/TCG/OVMF qemu64 image SHA256 8902846a7a484186361520c6c626846479710faef2afa8729bdad664e66825f3: 125 guest checks. Original Linux getpid, uname, and lseek fixtures exited 51, 52, and 53 respectively. This validates only these static fixtures and the explicit narrow Linux syscall profile.",
           "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/feature-wave-final/boot-smoke.json",
           "sha256": "ef0bb6e4fd8e8db9ac8834431296d3e918f5b4f92e578efa987a2642022ae157"
+        },
+        {
+          "level": "boot_smoke",
+          "command": "source tools/env.sh && export NEXT_DEV_PUBLIC_KEY=\"$PWD/work/package-dev.pub\" && bash tools/build.sh && python3 tools/boot_smoke.py --cpu qemu64 --timeout 360 --capture-prism-gallery --image build/next-dev.img --output-dir build/fstat-getdents-files-r3",
+          "scope": "Signed q35/TCG/OVMF qemu64 image, SHA256 1b226f5ee89a59656cf74a673ea381f7d56e9dbe764bb852c75d224a902d6c6b: original static Linux fstat/getdents64 fixtures exited 54 and 55 within 128 guest checks. Directory results are bounded open-time snapshots under /native; dynamic loading, libc, broad POSIX semantics, and real application compatibility remain absent.",
+          "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/fstat-getdents-files-r3/boot-smoke.json",
+          "sha256": "94af7284d227bbe078d53142c088bf80488eb2d5d2afad37c80017ae577aee97"
         }
       ],
       "remaining": "The static Linux profile runs its existing bounded guest fixtures; static guest fixtures now cover getpid, uname and lseek in the exact bounded profile. Dynamic loading, broad libc/POSIX semantics, signals, networking, VDSO, namespaces and real application compatibility remain absent."
@@ -3073,6 +3108,13 @@
           "scope": "Actual signed q35/TCG/OVMF qemu64 image SHA256 8902846a7a484186361520c6c626846479710faef2afa8729bdad664e66825f3: 125 guest checks. Original Linux getpid, uname, and lseek fixtures exited 51, 52, and 53 respectively. This validates only these static fixtures and the explicit narrow Linux syscall profile.",
           "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/feature-wave-final/boot-smoke.json",
           "sha256": "ef0bb6e4fd8e8db9ac8834431296d3e918f5b4f92e578efa987a2642022ae157"
+        },
+        {
+          "level": "boot_smoke",
+          "command": "source tools/env.sh && export NEXT_DEV_PUBLIC_KEY=\"$PWD/work/package-dev.pub\" && bash tools/build.sh && python3 tools/boot_smoke.py --cpu qemu64 --timeout 360 --capture-prism-gallery --image build/next-dev.img --output-dir build/fstat-getdents-files-r3",
+          "scope": "Signed q35/TCG/OVMF qemu64 image, SHA256 1b226f5ee89a59656cf74a673ea381f7d56e9dbe764bb852c75d224a902d6c6b: original static Linux ABI fixtures fstat/getdents64 exited 54 and 55; focused host contracts passed 15 cases for record layout, descriptors, cookies, bounded copyout, and cursor commit. This remains a narrow syscall gateway.",
+          "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/fstat-getdents-files-r3/boot-smoke.json",
+          "sha256": "94af7284d227bbe078d53142c088bf80488eb2d5d2afad37c80017ae577aee97"
         }
       ],
       "remaining": "The tested ABI gateway remains an explicit, narrow syscall subset. Static guest fixtures now cover getpid/uname/lseek in the explicit narrow profile; broad Linux and Windows ABI compatibility, dynamic loaders, libc and extensive applications remain unsupported."
@@ -3103,6 +3145,13 @@
           "scope": "Actual tenth60ab surface publication/presentation/teardown and DNS/foundation trace; Source11 interactive input/Trash/namespace grants and Source12 close requests are absent from this image.",
           "artifact": "docs/evidence/milestones/60ab816c97cc/serial.log",
           "sha256": "796424a4d0582983229e2555f7f3ec43c0c4248286b202e8dd3ff15850e4a0bb"
+        },
+        {
+          "level": "boot_smoke",
+          "command": "source tools/env.sh && export NEXT_DEV_PUBLIC_KEY=\"$PWD/work/package-dev.pub\" && bash tools/build.sh && python3 tools/boot_smoke.py --cpu qemu64 --timeout 360 --capture-prism-gallery --image build/next-dev.img --output-dir build/fstat-getdents-files-r3",
+          "scope": "Signed q35/TCG/OVMF qemu64 image, SHA256 1b226f5ee89a59656cf74a673ea381f7d56e9dbe764bb852c75d224a902d6c6b: the original static fstat/getdents64 ELFs passed with exits 54 and 55. This validates only the fixed static ELF profile and bounded /native descriptor adapter; dynamic linker and application catalog remain absent.",
+          "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/fstat-getdents-files-r3/boot-smoke.json",
+          "sha256": "94af7284d227bbe078d53142c088bf80488eb2d5d2afad37c80017ae577aee97"
         }
       ],
       "remaining": "Original identical static Linux hello/memory/clock/file fixtures execute on host Linux and Helix with selected syscall/error semantics, bounded descriptor operations, anonymous VM/heap and monotonic sleep/time. Dynamic loader/libc/language TLS/signals/sockets/VDSO/namespaces and substantial real application catalog remain absent."
@@ -4404,7 +4453,7 @@
         {
           "level": "boot_smoke",
           "command": "source tools/env.sh && python3 tools/dhcp_guest_smoke.py --dhcpv6-only --timeout 180 --image build/next-dev.img --output build/feature-wave-final-dhcpv6/dhcpv6-guest-smoke.json",
-          "scope": "Actual q35/TCG qemu64 image SHA256 8902846a7a484186361520c6c626846479710faef2afa8729bdad664e66825f3 with deterministic Ethernet peer: dropped first Solicit/Request, stable retry transaction IDs, Elapsed Time 0\u2192100 centiseconds, Request IA_NA T1/T2 and IAADDR lifetimes zero; matching Reply supplies T1/T2 20/40 and preferred/valid lifetimes 40/60. Guest logs a candidate only; no address install, DAD, or routes.",
+          "scope": "Actual q35/TCG qemu64 image SHA256 8902846a7a484186361520c6c626846479710faef2afa8729bdad664e66825f3 with deterministic Ethernet peer: dropped first Solicit/Request, stable retry transaction IDs, Elapsed Time 0→100 centiseconds, Request IA_NA T1/T2 and IAADDR lifetimes zero; matching Reply supplies T1/T2 20/40 and preferred/valid lifetimes 40/60. Guest logs a candidate only; no address install, DAD, or routes.",
           "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/feature-wave-final/dhcpv6-guest-smoke.json",
           "sha256": "102c68b4108be4c5a5b67fb025f0f345d252076ab8b3f4b4769dae750026b6d9"
         }
@@ -4574,6 +4623,13 @@
           "scope": "Actual tenth60ab surface publication/presentation/teardown and DNS/foundation trace; Source11 interactive input/Trash/namespace grants and Source12 close requests are absent from this image.",
           "artifact": "docs/evidence/milestones/60ab816c97cc/serial.log",
           "sha256": "796424a4d0582983229e2555f7f3ec43c0c4248286b202e8dd3ff15850e4a0bb"
+        },
+        {
+          "level": "boot_smoke",
+          "command": "source tools/env.sh && export NEXT_DEV_PUBLIC_KEY=\"$PWD/work/package-dev.pub\" && bash tools/build.sh && python3 tools/boot_smoke.py --cpu qemu64 --timeout 360 --capture-prism-gallery --image build/next-dev.img --output-dir build/fstat-getdents-files-r3",
+          "scope": "Signed q35/TCG/OVMF qemu64 image, SHA256 1b226f5ee89a59656cf74a673ea381f7d56e9dbe764bb852c75d224a902d6c6b: original static Linux fstat/getdents64 fixtures passed with exits 54 and 55; original unchanged ELF fixtures also run on host Linux. POSIX userspace, dynamic libraries, and substantial application coverage remain absent.",
+          "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/fstat-getdents-files-r3/boot-smoke.json",
+          "sha256": "94af7284d227bbe078d53142c088bf80488eb2d5d2afad37c80017ae577aee97"
         }
       ],
       "remaining": "An unchanged original static Linux ELF fixture executes on host Linux and Helix with selected Linux syscall semantics. POSIX userspace, dynamic libraries and substantial exact real application coverage remain absent."

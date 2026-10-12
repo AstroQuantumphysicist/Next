@@ -1,0 +1,508 @@
+{
+  "passed": true,
+  "scope": "QEMU q35/TCG with 1 configured vCPU(s), validated ACPI/MADT topology, APs intentionally stopped, and scheduler workload exercised only on the BSP; legacy PS/2, software framebuffer, PIT/PIC timer interrupts, legacy virtio read/write/flush in dedicated trailing data region, FAT32 reads, native processes and IPC; no SMP scheduling or hardware certification",
+  "configured_vcpus": 1,
+  "ap_startup_enabled": false,
+  "scheduler_cpu_scope": "bootstrap CPU only",
+  "started_utc": "2026-10-12T11:12:03.105309+00:00",
+  "checks": [
+    "QMP reports exactly 1 configured QEMU CPU object(s)",
+    "Ed25519 deployment signature and kernel/init-image SHA256 verified against workspace development anchor",
+    "separate validated ELF loaded from EFI boot-device filesystem",
+    "firmware boot services exited",
+    "versioned checksummed BootInfo with kernel/loader/map reservations",
+    "supervisor RX text, RO NX data, RW NX memory and guarded stacks",
+    "CPU kernel protection: RX text write",
+    "CPU kernel protection: RO data write",
+    "CPU kernel protection: user code physical alias write",
+    "CPU kernel protection: NX data execution",
+    "CPU kernel protection: kernel stack guard write",
+    "CPU kernel protection: interrupt stack guard write",
+    "kernel physical-page and handle selftest",
+    "isolated ring3 native code, bounded syscall, pointer denial and exit",
+    "CPU page fault isolation: supervisor read",
+    "CPU page fault isolation: RX code write",
+    "CPU page fault isolation: NX stack execution",
+    "PIT timer interrupts preserve tested integer registers and XMM0 sentinel",
+    "actual read-only legacy virtio block device",
+    "actual read-only FAT32 file access: /NEXT.TXT",
+    "kernel readback verifies only saved FX512 state is enabled; unsaved optional user controls and inherited TLS bases disabled",
+    "bounded boot-device init image loaded and retained",
+    "native SDK TLS setters/getters preserve private FS memory across yield, sleep and timer switches and reject invalid bases/copyout",
+    "native executable rejects invalid pointers and stale capability handles",
+    "native anonymous memory supports zeroed multi-page mappings and enforces range/permissions",
+    "PID1 reads authenticated signed service declarations with no partial writes on short, null, readonly or guard-crossing outputs",
+    "actual manual/auto events enforce wait/signal rights and copyout-before-consumption",
+    "actual blocking waits enforce deadlines, preserve a delivered auto-event completion across reset, broadcast manual events and clean up killed waiters",
+    "signed guest fixture validates ObjectWaitMany timeout cleanup, nonblocking WouldBlock, blocked wake, selected index and reset-stable completion across two transferred event handles",
+    "capability-backed COW file streams preserve offsets on denied copyout and enforce attenuated rights",
+    "cross-process file capability transfer grants read and denies write",
+    "cross-process capability move produces usable attenuated recipient authority",
+    "framed IPC request/reply between distinct native address spaces",
+    "CPU faults for supervisor access, RX write, NX execute, stack guard and invalid opcode terminate only offending child",
+    "native integer, all XMM and x87 sentinels survive noncooperative timer context switches",
+    "validated q35 HPET resource uses owned UC mapping and advancing hardware counter; PIT remains scheduler clock",
+    "read-only BSP LAPIC identity and version discovery with owned UC mapping",
+    "actual IOAPIC pin discovery and bounded masked ISA plan before the explicit routing transition",
+    "actual PIT IRQ0 routing transition reports ISR-observed IOAPIC delivery or verified PIC rollback",
+    "independently attenuated worker NETWORK grant blocks socket creation despite signed declaration",
+    "moving a socket to an unprivileged recipient cannot bypass NETWORK authority; denied import preserves ownership until teardown",
+    "ACPI/MADT discovery reports exactly 1 enabled CPU(s); this does not start APs",
+    "COW data store commits file write/rename/delete and remounts without touching ESP",
+    "actual AC97 DMA playback completes 12000 stereo frames at 48 kHz",
+    "actual DHCP Discover/Offer/Request/Ack obtains bounded QEMU lease",
+    "actual virtio Ethernet ARP, ICMP echo and checksummed UDP request/reply with local host peer",
+    "actual local UDP A/AAAA lookups validate framed replies, TTL cache hits, real monotonic expiry and wire refresh",
+    "actual TCP handshake, bounded HTTP response and connection teardown with local host peer",
+    "PS/2 auxiliary mouse initialized",
+    "dedicated data-sector write/read/flush and original contents restored",
+    "native child fault terminates offender while supervisor survives",
+    "timer preempts non-yielding child and supervisor kills it",
+    "process results survive repeated and duplicated waits; signed exit -7 is distinct from WouldBlock and bad copyout cannot consume result",
+    "native process exit, wait, stale handles and slot reuse",
+    "isolated native privileged VFS fixture checks independent/shared offsets, rename replacement, open unlink lifetime and recreate isolation",
+    "native PID1 executes real isolated-worker crash restart and heartbeat timeout recovery with bounded policy",
+    "live native nextd supervisor signals readiness",
+    "kernel completes bounded native startup",
+    "AP trampoline and scratch remain reserved with APs stopped; scheduler workload ran only on the BSP",
+    "actual masked LAPIC countdown calibrated against two bounded HPET windows; masked firmware timer adopted/stopped, LVT/divider restored and PIT retained",
+    "actual q35 CMOS UTC anchor agrees with host UTC at QEMU launch",
+    "framebuffer shell ready",
+    "distinct worker PIDs and exit statuses prove crash restart and watchdog recovery ordering",
+    "recovered isolated service remains live alongside PID1 after desktop readiness",
+    "serial command: status",
+    "serial command: about",
+    "serial command: help",
+    "serial command: cat /NEXT.TXT",
+    "serial command: write /smoke hello world",
+    "serial command: cat /smoke",
+    "serial command: mv /smoke /renamed",
+    "serial command: ls",
+    "serial command: rm /renamed",
+    "serial command: cat /renamed",
+    "serial command: ps",
+    "serial command: kill 1",
+    "serial command: run /system/missing.elf",
+    "serial command: run /system/untrusted.elf",
+    "serial command: trace",
+    "serial command: calc (2 + 3) * 4",
+    "serial command: calc 1 / 0",
+    "serial command: nextunknown",
+    "signed application authentication rejects tampered archive member before process creation",
+    "structured trace captures actual numeric process and namespace outcomes",
+    "interactive spawn and kill of non-yielding native child; supervisor protected",
+    "same static Linux ELF executes Linux SYSCALL subset and exits 37",
+    "original Linux getpid fixture returns one stable positive process identity: /compat/linux/getpid.elf",
+    "original Linux uname fixture checks six 65-byte fields, zero padding and EFAULT: /compat/linux/uname.elf",
+    "original Linux lseek fixture checks read positions, invalid whence/fd, signed underflow and cursor preservation: /compat/linux/lseek.elf",
+    "original Linux fstat fixture checks x86-64 stat identity/type/size, descriptor errors and copyout bounds: /compat/linux/fstat.elf",
+    "original Linux getdents64 fixture checks records, shared directory cookies, EOF, descriptor errors and copyout bounds: /compat/linux/getdents.elf",
+    "Linux profile cannot invoke native readiness capability syscall",
+    "original Linux clock fixture: /compat/linux/clock.elf",
+    "original Linux clock fixture: /compat/linux/clock-gate.elf",
+    "native realtime clock normalizes UTC and rejects null, readonly and guard-crossing copyout",
+    "native clock utility uses actual monotonic time",
+    "console-owned program output reaches Prism terminal through bounded queue",
+    "original Linux brk/mmap/munmap fixture: /compat/linux/memory.elf",
+    "original Linux brk/mmap/munmap fixture: /compat/linux/memory-gate.elf",
+    "original Linux shared-open, rename/unlink lifetime fixture: /compat/linux/namespace.elf",
+    "original Linux shared-open, rename/unlink lifetime fixture: /compat/linux/namespace-gate.elf",
+    "Linux FS/GS bases survive gate, yield, preemption and bounds checks: /compat/linux/tls.elf",
+    "Linux FS/GS bases survive gate, yield, preemption and bounds checks: /compat/linux/tls-gate.elf",
+    "two overlapping Linux TLS instances preserve PID-specific private FS/GS contents across timer switches",
+    "original Linux common file-object fixture: /compat/linux/file.elf",
+    "original Linux common file-object fixture: /compat/linux/file-gate.elf",
+    "original NT PE32+ Win64 import fixture: /compat/nt/hello.exe",
+    "original NT PE32+ Win64 import fixture: /compat/nt/hello-gate.exe",
+    "native connected UDP capability sends actual nonce/empty datagrams through retained virtio device with copyout-safe receive, level wait, rights and stale-handle checks",
+    "console date reports normalized UTC from the same RTC/PIT clock",
+    "Home search matches actual file metadata and opens its authoritative content in Editor",
+    "trusted PS/2 file chooser grants scoped readonly authority to the authenticated caller; write denial, UI rejection, unattended deadline, cancellation and stale requests pass",
+    "actual PS/2 Super-arrow snap selects a quadrant, captures it, cancels, maximizes and restores original floating geometry",
+    "Editor actual load, PS/2 editing, Ctrl-S journal save, external-change conflict and unsaved-text preservation",
+    "monotonic PIT clock advances while serial console remains responsive",
+    "PS/2 keyboard command through QMP",
+    "PS/2 backspace corrects statuz to status",
+    "keyboard Home menu opens actual Files window without executing terminal input",
+    "actual PS/2 mouse motion and left-button event reaches desktop hit testing",
+    "serial console restores Terminal focus from Files panel",
+    "Files creates /native/alpha, opens a second /native tab, navigates it, switches both tabs and captures root/nested views",
+    "Files address renders a guest I-beam cursor with a dark stem and white surround",
+    "Files left and right panes navigate independently, preserve inactive paths, and capture a distinct root/nested view",
+    "bounded UART transmit FIFO preserves queued output across stalls and reports zero rejected/absent bytes",
+    "screenshot taken after completed software back-buffer presentation",
+    "nonblank framebuffer screenshot",
+    "actual QMP keyboard launched and captured completed guest frames for Home, six first-party panels, saved Accessibility focus and 125% Settings text size, shortcut guide and notifications",
+    "captured AC97 PCM contains matching stereo channels and a 1 kHz waveform"
+  ],
+  "image_sha256": "1b226f5ee89a59656cf74a673ea381f7d56e9dbe764bb852c75d224a902d6c6b",
+  "qemu_profile": "q35,accel=tcg; cpu=qemu64; 256M; smp=1; vga=std",
+  "qmp_cpus": [
+    {
+      "cpu_index": 0,
+      "thread_id": 567448,
+      "apic_id": null
+    }
+  ],
+  "guarded_emergency_stack_verified": false,
+  "acpi_topology": {
+    "enabled_cpus": 1,
+    "io_apics": 1,
+    "overrides": 5,
+    "validated_tables": 7,
+    "bootstrap_apic_id": 0
+  },
+  "ioapic_delivery": {
+    "gsi": 2,
+    "apic_interrupts": 3,
+    "pic_interrupts": 0
+  },
+  "ap_status": {
+    "startup_enabled": false,
+    "scheduler_cpu_scope": "bootstrap CPU only",
+    "ap_reservation_retained": true,
+    "ap_scratch_retained": true,
+    "ap_online_markers": []
+  },
+  "lapic_calibration": {
+    "calibration_verified": true,
+    "reason": null,
+    "divider": 16,
+    "divided_hz": 62761980,
+    "pit_retained": true,
+    "continuation": {
+      "pit_timer_verified": true,
+      "ioapic_interrupts": 3,
+      "preemption_verified": true
+    }
+  },
+  "rtc_anchor": {
+    "guest_utc_seconds": 1791803525,
+    "host_qemu_launch_utc_seconds": 1791803523,
+    "difference_seconds": 2
+  },
+  "service_instance_pids": [
+    21,
+    22,
+    23
+  ],
+  "concurrent_tls_pids": [
+    41,
+    42
+  ],
+  "portal_probe_pid": 48,
+  "snap_preview_screenshot": {
+    "path": "build/fstat-getdents-files-r3/prism-quadrant-snap.ppm",
+    "width": 1280,
+    "height": 800,
+    "applied_zone": "BottomLeft"
+  },
+  "clock_samples": [
+    [
+      7815,
+      78144629235
+    ],
+    [
+      7843,
+      78424609992
+    ]
+  ],
+  "files_tabs": {
+    "captures": {
+      "root": {
+        "path": "build/fstat-getdents-files-r3/files-tabs-root.ppm",
+        "sha256": "6cb9c1dbc12a8c57d585d7b394f97e448300b68fc609976842f22ddbfdab02a2",
+        "width": 1280,
+        "height": 800
+      },
+      "nested": {
+        "path": "build/fstat-getdents-files-r3/files-tabs-nested.ppm",
+        "sha256": "375721bfe17b6cf5c74212a49c7f0afc17f480ae1dfca125f7ca66ebc9e4a0fb",
+        "width": 1280,
+        "height": 800
+      }
+    },
+    "actions": [
+      {
+        "request": 281474976710657,
+        "kind": "CreateFolder { parent: FolderSnapshot { path: Path { bytes: [47, 110, 97, 116, 105, 118, 101, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], len: 7 }, revision: 58, id: 0 }, path: Path { bytes: [47, 110, 97, 116, 105, 118, 101, 47, 97, 108, 112, 104, 97, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], len: 13 } }",
+        "paths": [
+          "/native",
+          "/native/alpha"
+        ],
+        "result": "Ok(59)"
+      },
+      {
+        "request": 562949953421313,
+        "kind": "Navigate { path: Path { bytes: [47, 110, 97, 116, 105, 118, 101, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], len: 7 } }",
+        "paths": [
+          "/native"
+        ],
+        "result": "Ok(59)"
+      },
+      {
+        "request": 562949953421314,
+        "kind": "Navigate { path: Path { bytes: [47, 110, 97, 116, 105, 118, 101, 47, 97, 108, 112, 104, 97, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], len: 13 } }",
+        "paths": [
+          "/native/alpha"
+        ],
+        "result": "Ok(59)"
+      },
+      {
+        "request": 562949953421315,
+        "kind": "Navigate { path: Path { bytes: [47, 110, 97, 116, 105, 118, 101, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], len: 7 } }",
+        "paths": [
+          "/native"
+        ],
+        "result": "Ok(59)"
+      }
+    ],
+    "action_presentations": [
+      {
+        "request": 281474976710657,
+        "kind": "accessibility",
+        "path": "/native/alpha",
+        "frame": 1496,
+        "generation": 1454
+      },
+      {
+        "request": 562949953421313,
+        "kind": "accessibility",
+        "path": "/native",
+        "frame": 1500,
+        "generation": 1455
+      },
+      {
+        "request": 562949953421314,
+        "kind": "accessibility",
+        "path": "/native/alpha",
+        "frame": 1516,
+        "generation": 1456
+      },
+      {
+        "request": 562949953421315,
+        "kind": "accessibility",
+        "path": "/native",
+        "frame": 1529,
+        "generation": 1459
+      },
+      {
+        "request": 562949953421316,
+        "kind": "accessibility",
+        "path": "/native/alpha",
+        "frame": 1555,
+        "generation": 1460
+      },
+      {
+        "request": 281474976710658,
+        "kind": "accessibility",
+        "path": "/native/alpha",
+        "frame": 1578,
+        "generation": 1462
+      },
+      {
+        "request": 562949953421317,
+        "kind": "accessibility",
+        "path": "/native",
+        "frame": 1587,
+        "generation": 1463
+      },
+      {
+        "request": 281474976710659,
+        "kind": "accessibility",
+        "path": "/native",
+        "frame": 1596,
+        "generation": 1465
+      }
+    ],
+    "ibeam_capture": {
+      "path": "build/fstat-getdents-files-r3/files-tabs-ibeam-address.ppm",
+      "sha256": "b5ba8bf87c32ac2af50dba42763808cc58a016e6d4769fcd690c42eef9e437f9",
+      "width": 1280,
+      "height": 800
+    },
+    "switch_events": [
+      {
+        "tab": "root",
+        "click_position": [
+          203,
+          222
+        ],
+        "path_check": "Backspace at /native caused no navigation"
+      },
+      {
+        "tab": "nested",
+        "click_position": [
+          413,
+          222
+        ],
+        "path_check": "Backspace from /native/alpha navigated to /native",
+        "action": {
+          "request": 562949953421315,
+          "kind": "Navigate { path: Path { bytes: [47, 110, 97, 116, 105, 118, 101, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], len: 7 } }",
+          "paths": [
+            "/native"
+          ],
+          "result": "Ok(59)",
+          "presentation": {
+            "kind": "accessibility",
+            "frame": 1529,
+            "generation": 1459
+          }
+        }
+      }
+    ]
+  },
+  "files_dual_pane": {
+    "capture": {
+      "path": "build/fstat-getdents-files-r3/files-tabs-dual-pane-left-root-right-nested.ppm",
+      "sha256": "9251a47d70ae97ff4979d83e78cd96e80a1d0f7a71c655efc2cef6800d5cd23d",
+      "width": 1280,
+      "height": 800
+    },
+    "actions": {
+      "left_nested": {
+        "request": 562949953421316,
+        "kind": "Navigate { path: Path { bytes: [47, 110, 97, 116, 105, 118, 101, 47, 97, 108, 112, 104, 97, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], len: 13 } }",
+        "paths": [
+          "/native/alpha"
+        ],
+        "result": "Ok(59)",
+        "presentation": {
+          "kind": "accessibility",
+          "frame": 1555,
+          "generation": 1460
+        }
+      },
+      "right_nested": {
+        "request": 281474976710658,
+        "kind": "Navigate { path: Path { bytes: [47, 110, 97, 116, 105, 118, 101, 47, 97, 108, 112, 104, 97, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], len: 13 } }",
+        "paths": [
+          "/native/alpha"
+        ],
+        "result": "Ok(59)",
+        "presentation": {
+          "kind": "accessibility",
+          "frame": 1578,
+          "generation": 1462
+        }
+      },
+      "left_parent": {
+        "request": 562949953421317,
+        "kind": "Navigate { path: Path { bytes: [47, 110, 97, 116, 105, 118, 101, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], len: 7 } }",
+        "paths": [
+          "/native"
+        ],
+        "result": "Ok(59)",
+        "presentation": {
+          "kind": "accessibility",
+          "frame": 1587,
+          "generation": 1463
+        }
+      },
+      "right_parent": {
+        "request": 281474976710659,
+        "kind": "Navigate { path: Path { bytes: [47, 110, 97, 116, 105, 118, 101, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], len: 7 } }",
+        "paths": [
+          "/native"
+        ],
+        "result": "Ok(59)",
+        "presentation": {
+          "kind": "accessibility",
+          "frame": 1596,
+          "generation": 1465
+        }
+      }
+    },
+    "check": "left and right panes navigate independently and retain the inactive pane location"
+  },
+  "uart_metrics": {
+    "accepted": 224703,
+    "transmitted": 224703,
+    "dropped": 0,
+    "stalled": 3489,
+    "absent": 0,
+    "pending": 0
+  },
+  "screenshot": {
+    "path": "build/fstat-getdents-files-r3/screenshot.ppm",
+    "width": 1280,
+    "height": 800,
+    "distinct_colors": 2778,
+    "validation": "PPM dimensions and at least four colors; no visual layout or accessibility verification"
+  },
+  "visual_gallery": {
+    "home": {
+      "path": "build/fstat-getdents-files-r3/prism-gallery/home.ppm",
+      "width": 1280,
+      "height": 800
+    },
+    "terminal": {
+      "path": "build/fstat-getdents-files-r3/prism-gallery/terminal.ppm",
+      "width": 1280,
+      "height": 800
+    },
+    "files": {
+      "path": "build/fstat-getdents-files-r3/prism-gallery/files.ppm",
+      "width": 1280,
+      "height": 800
+    },
+    "monitor": {
+      "path": "build/fstat-getdents-files-r3/prism-gallery/monitor.ppm",
+      "width": 1280,
+      "height": 800
+    },
+    "settings": {
+      "path": "build/fstat-getdents-files-r3/prism-gallery/settings.ppm",
+      "width": 1280,
+      "height": 800
+    },
+    "settings-accessibility": {
+      "path": "build/fstat-getdents-files-r3/prism-gallery/settings-accessibility.ppm",
+      "width": 1280,
+      "height": 800
+    },
+    "settings-text-scale": {
+      "path": "build/fstat-getdents-files-r3/prism-gallery/settings-text-scale.ppm",
+      "width": 1280,
+      "height": 800
+    },
+    "editor": {
+      "path": "build/fstat-getdents-files-r3/prism-gallery/editor.ppm",
+      "width": 1280,
+      "height": 800
+    },
+    "calculator": {
+      "path": "build/fstat-getdents-files-r3/prism-gallery/calculator.ppm",
+      "width": 1280,
+      "height": 800
+    },
+    "shortcuts": {
+      "path": "build/fstat-getdents-files-r3/prism-gallery/shortcuts.ppm",
+      "width": 1280,
+      "height": 800
+    },
+    "notifications": {
+      "path": "build/fstat-getdents-files-r3/prism-gallery/notifications.ppm",
+      "width": 1280,
+      "height": 800
+    }
+  },
+  "dns_peer": {
+    "dropped": 1,
+    "answers": 3,
+    "requests": 4
+  },
+  "dns_boot_flow": {
+    "dropped": 1,
+    "answers": 3,
+    "validation": "First valid bootstrap UDP source flow, independently scoped from native lookup source ports"
+  },
+  "audio": {
+    "path": "build/fstat-getdents-files-r3/audio.wav",
+    "sample_rate": 48000,
+    "channels": 2,
+    "active_frames": 11097
+  },
+  "finished_utc": "2026-10-12T11:13:41.847384+00:00"
+}

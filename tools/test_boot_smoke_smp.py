@@ -126,7 +126,8 @@ class BootSmokeSmpProfileTests(unittest.TestCase):
     def test_files_tab_click_geometry_matches_default_guest_window(self):
         self.assertEqual(
             boot_smoke.files_tab_click_targets(1280, 800),
-            {"add": (675, 234), "root": (237, 234), "nested": (515, 234), "address": (120, 268)},
+            {"add": (528, 222), "root": (203, 222), "nested": (413, 222),
+             "address": (120, 257), "left_switch": (533, 257), "right_switch": (1009, 257)},
         )
         small = boot_smoke.files_tab_click_targets(1024, 768)
         self.assertTrue(all(0 <= x < 1024 and 0 <= y < 768 for x, y in small.values()))

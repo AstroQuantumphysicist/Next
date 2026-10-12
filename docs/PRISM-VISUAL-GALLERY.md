@@ -5,12 +5,15 @@ q35/TCG/OVMF guest. The smoke harness launches or opens each view with QMP
 keyboard input, captures the guest screen, and validates the image dimensions.
 They document the current development build; they do not certify accessibility,
 hardware display behavior, text shaping, or Next 1.0 completion. The current
-qemu64 run passed 125 checks on image SHA256
-`8902846a7a484186361520c6c626846479710faef2afa8729bdad664e66825f3`. The report,
-source captures, and related test evidence are retained in the [runtime and
-Prism evidence](evidence/milestones/runtime-prism-2026-10-12/).
+qemu64 run passed 128 checks on image SHA256
+`1b226f5ee89a59656cf74a673ea381f7d56e9dbe764bb852c75d224a902d6c6b`. The report,
+capture hashes, and related test evidence are retained in the [runtime and
+Prism evidence](evidence/milestones/runtime-prism-2026-10-12/fstat-getdents-files-r3/).
+Prism uses Microsoft Selawik, an open-source metric-compatible replacement
+for Segoe UI; it is not Segoe UI Variable. The raster atlas, provenance, and
+unsupported shaping limits are listed in the [font notices](third-party/README.md#font-assets).
 
-![Overview contact sheet of all fifteen guest captures](images/prism-overview.png)
+![Overview contact sheet of all sixteen guest captures](images/prism-overview.png)
 
 Regenerate the source captures with:
 
@@ -18,7 +21,7 @@ Regenerate the source captures with:
 source tools/env.sh
 bash tools/build.sh
 python3 tools/boot_smoke.py --cpu qemu64 --timeout 360 --capture-prism-gallery \
-  --image build/next-dev.img --output-dir build/feature-wave-final-corrected-qemu64
+  --image build/next-dev.img --output-dir build/fstat-getdents-files-r3
 ```
 
 The gallery includes all six kernel-hosted first-party panels and two additional
@@ -30,13 +33,13 @@ remain informational with unavailable settings rows. The larger text applies
 only within Settings; it does not establish screen reader, speech,
 magnification, or other services that remain unavailable. The quarter-snap
 frame captures Terminal in the BottomLeft work-area quadrant with Editor behind
-it. Snap behavior is limited to the single current work area. The 15-image set
-also includes a guest-created Files root tab and nested tab retained beside it,
-plus the I-beam rendered over the editable location field. The smoke switches
-between the tabs, checks path isolation, and checks the cursor pixels. The
-Settings gallery flow selects Accessibility preferences, saves them, and
-confirms the accepted save request. The Calculator is an expression utility
-rather than a complete scientific calculator.
+it. Snap behavior is limited to the single current work area. The 16-image set
+also includes guest-created Files root and nested tabs, two panes that retain
+independent paths, and the I-beam rendered over the editable location field.
+The smoke switches between tabs and panes, checks path isolation, and checks the
+cursor pixels. The Settings gallery flow selects Accessibility preferences,
+saves them, and confirms the accepted save request. The Calculator is an
+expression utility rather than a complete scientific calculator.
 
 ## Home
 
@@ -64,6 +67,11 @@ the separate Files tab views and cursor state exercised by the smoke.
 ### Files location I-beam cursor
 
 ![Prism Files showing the I-beam pointer over its editable location field](images/prism-files-tabs-ibeam.png)
+
+![Prism Files with independent left and right panes at different paths](images/prism-files-dual-pane.png)
+
+The guest smoke changes each pane separately and confirms that navigation in
+one pane retains the other pane's path.
 
 ## System Monitor
 
@@ -100,3 +108,5 @@ the separate Files tab views and cursor state exercised by the smoke.
 ## Quarter snapping
 
 ![Terminal snapped to the BottomLeft quadrant over the Editor window](images/prism-snap-quadrant.png)
+
+For a captioned walkthrough of these frames, see the [Prism visual tour](PRISM-VISUAL-TOUR.md).

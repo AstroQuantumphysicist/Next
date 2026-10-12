@@ -27,6 +27,10 @@ impl Shell {
             Ok(()) => "Trash operation undone.",
             Err(error) => error.message(),
         });
+        if result.is_ok() && self.files_directory_mode {
+            self.files_directory.refresh_all();
+            self.sync_selected_directory_file();
+        }
         if result.is_ok() && receipt.is_some_and(|r| r.kind == trash_ui::UndoKind::Move) {
             self.file_pending_selection = receipt.map(|r| r.path);
         }
@@ -64,6 +68,10 @@ impl Shell {
         let intent = self.trash.intent();
         self.trash.complete(request, result)?;
         if result.is_ok() {
+            if self.files_directory_mode {
+                self.files_directory.refresh_all();
+                self.sync_selected_directory_file();
+            }
             self.file_status.set(match intent {
                 Some(trash_ui::Intent::Move { .. }) => "File moved to Trash.",
                 Some(trash_ui::Intent::Restore { .. }) => "File restored.",
@@ -113,6 +121,15 @@ impl Shell {
         })
     }
     pub(super) fn begin_trash_move(&mut self) {
+        if self.files_directory_mode {
+            let Some(index) = self.selected_file_binding_index() else {
+                self.file_selection = 0;
+                self.file_status
+                    .set("Select a stored file from the active folder first.");
+                return;
+            };
+            self.file_selection = index;
+        }
         if self.file_selection == 0 || !self.files[self.file_selection].available {
             self.file_status
                 .set("Select a native file to move to Trash.");

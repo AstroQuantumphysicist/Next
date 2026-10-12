@@ -1262,7 +1262,7 @@ impl Shell {
         request: u64,
         result: Result<(), files_actions::BackendError>,
     ) -> Result<(), files_actions::Error> {
-        let refresh_directory = result.is_ok() && self.files_directory.current_path().is_some();
+        let refresh_directory = result.is_ok() && self.files_directory_mode;
         self.file_dialog.complete(request, result)?;
         if let Some(outcome) = self.file_dialog.take_outcome() {
             self.file_pending_selection = match outcome {
@@ -1280,13 +1280,8 @@ impl Shell {
             self.file_outcome = Some(outcome);
         }
         if refresh_directory {
-            if let Some(path) = self
-                .files_directory
-                .current_path()
-                .and_then(|path| files_actions::Path::new(path).ok())
-            {
-                let _ = self.files_directory.navigate(path);
-            }
+            self.files_directory.refresh_all();
+            self.sync_selected_directory_file();
         }
         self.sync_file_dialog_focus();
         self.sync_files_focus();
@@ -1302,11 +1297,16 @@ impl Shell {
     pub fn cursor_shape_at(&self, x: i32, y: i32) -> cursor::Shape {
         if self.desktop.focused() == Some(App::Files)
             && !self.trash_page
-            && (Self::hit(self.files_address_bounds(), x, y)
-                || self.file_query_open
-                    && self
-                        .file_query_control_bounds(0)
-                        .is_some_and(|bounds| Self::hit(bounds, x, y))
+            && ((0..files_directory::PANE_COUNT).any(|pane| {
+                self.files_pane_address_bounds(pane)
+                    .zip(self.files_pane_switch_bounds(pane))
+                    .is_some_and(|(address, switch)| {
+                        Self::hit(address, x, y) && !Self::hit(switch, x, y)
+                    })
+            }) || self.file_query_open
+                && self
+                    .file_query_control_bounds(0)
+                    .is_some_and(|bounds| Self::hit(bounds, x, y))
                 || self.files_directory.dialog_active() && {
                     let b = self.files_directory_dialog_bounds();
                     Self::hit(
@@ -1354,52 +1354,132 @@ impl Shell {
             height: 32,
         })
     }
-    pub fn files_tab_bounds(&self, index: usize) -> Option<Bounds> {
-        if index >= self.files_directory.tab_count() {
+    pub fn files_pane_bounds(&self, pane: usize) -> Option<Bounds> {
+        if pane >= files_directory::PANE_COUNT {
             return None;
         }
         let b = self.desktop.window(App::Files).bounds;
-        let inner = (b.width - 16).max(0);
-        let utility = 72.min(inner);
-        let gaps = (self.files_directory.tab_count().saturating_sub(1) as i32) * 4;
-        let tab_width = ((inner - utility - gaps).max(0)
-            / self.files_directory.tab_count().max(1) as i32)
-            .max(24);
+        let width = ((b.width - 24).max(0) / files_directory::PANE_COUNT as i32).max(0);
         Some(Bounds {
-            x: b.x + 8 + index as i32 * (tab_width + 4),
-            y: b.y + 96,
+            x: b.x + 8 + pane as i32 * (width + 8),
+            y: b.y + 168,
+            width,
+            height: (b.height - 176).max(0),
+        })
+    }
+    pub fn files_pane_address_bounds(&self, pane: usize) -> Option<Bounds> {
+        let area = self.files_pane_bounds(pane)?;
+        Some(Bounds {
+            x: area.x,
+            y: self.desktop.window(App::Files).bounds.y + 130,
+            width: area.width,
+            height: 30,
+        })
+    }
+    pub fn files_pane_switch_bounds(&self, pane: usize) -> Option<Bounds> {
+        let address = self.files_pane_address_bounds(pane)?;
+        let width = if address.width < 260 {
+            48.min(address.width)
+        } else {
+            70.min(address.width)
+        };
+        Some(Bounds {
+            x: address.x + address.width - width,
+            y: address.y + 4,
+            width,
+            height: 22,
+        })
+    }
+    pub fn files_pane_path_bounds(&self, pane: usize) -> Option<Bounds> {
+        let address = self.files_pane_address_bounds(pane)?;
+        let switch = self.files_pane_switch_bounds(pane)?;
+        let compact = address.width < 260;
+        let x = address.x + if compact { 24 } else { 48 };
+        let count_width = if compact { 0 } else { 58 };
+        let right = if compact {
+            switch.x - 8
+        } else {
+            switch.x - count_width - 16
+        };
+        Some(Bounds {
+            x,
+            y: address.y,
+            width: (right - x).max(0),
+            height: address.height,
+        })
+    }
+    pub fn files_pane_tab_bounds(&self, pane: usize, index: usize) -> Option<Bounds> {
+        let pane_state = self.files_directory.pane(pane)?;
+        if index >= pane_state.tab_count() {
+            return None;
+        }
+        let area = self.files_pane_bounds(pane)?;
+        let utility = 52.min(area.width);
+        let tab_area = (area.width - utility).max(0);
+        let count = pane_state.tab_count().max(1) as i32;
+        let gap = if tab_area >= (count - 1) * 4 { 4 } else { 0 };
+        let tab_width = ((tab_area - (count - 1) * gap).max(0) / count).max(0);
+        Some(Bounds {
+            x: area.x + index as i32 * (tab_width + gap),
+            y: self.desktop.window(App::Files).bounds.y + 96,
             width: tab_width,
             height: 28,
         })
     }
-    pub fn files_tab_add_bounds(&self) -> Bounds {
-        let b = self.desktop.window(App::Files).bounds;
-        let inner = (b.width - 16).max(0);
-        Bounds {
-            x: b.x + 8 + inner - 64,
-            y: b.y + 96,
-            width: 30,
+    pub fn files_pane_tab_add_bounds(&self, pane: usize) -> Option<Bounds> {
+        let area = self.files_pane_bounds(pane)?;
+        let utility = 52.min(area.width);
+        let button_width = ((utility - 4) / 2).max(0);
+        Some(Bounds {
+            x: area.x + area.width - utility,
+            y: self.desktop.window(App::Files).bounds.y + 96,
+            width: button_width,
             height: 28,
-        }
+        })
+    }
+    pub fn files_pane_tab_close_bounds(&self, pane: usize) -> Option<Bounds> {
+        let area = self.files_pane_bounds(pane)?;
+        let utility = 52.min(area.width);
+        let button_width = ((utility - 4) / 2).max(0);
+        Some(Bounds {
+            x: area.x + area.width - utility + button_width + 4,
+            y: self.desktop.window(App::Files).bounds.y + 96,
+            width: (utility - button_width - 4).max(0),
+            height: 28,
+        })
+    }
+    fn files_visible_rows(area: Bounds) -> usize {
+        ((area.height - 29).max(0) / 27).min(files_directory::CAPACITY as i32) as usize
+    }
+    pub fn files_tab_bounds(&self, index: usize) -> Option<Bounds> {
+        self.files_pane_tab_bounds(self.files_directory.active_pane(), index)
+    }
+    pub fn files_tab_add_bounds(&self) -> Bounds {
+        self.files_pane_tab_add_bounds(self.files_directory.active_pane())
+            .unwrap_or(Bounds {
+                x: 0,
+                y: 0,
+                width: 0,
+                height: 0,
+            })
     }
     pub fn files_tab_close_bounds(&self) -> Bounds {
-        let b = self.desktop.window(App::Files).bounds;
-        let inner = (b.width - 16).max(0);
-        Bounds {
-            x: b.x + 8 + inner - 30,
-            y: b.y + 96,
-            width: 30,
-            height: 28,
-        }
+        self.files_pane_tab_close_bounds(self.files_directory.active_pane())
+            .unwrap_or(Bounds {
+                x: 0,
+                y: 0,
+                width: 0,
+                height: 0,
+            })
     }
     pub fn files_address_bounds(&self) -> Bounds {
-        let b = self.desktop.window(App::Files).bounds;
-        Bounds {
-            x: b.x + 8,
-            y: b.y + 130,
-            width: (b.width - 16).max(0),
-            height: 30,
-        }
+        self.files_pane_address_bounds(self.files_directory.active_pane())
+            .unwrap_or(Bounds {
+                x: 0,
+                y: 0,
+                width: 0,
+                height: 0,
+            })
     }
     fn files_directory_dialog_bounds(&self) -> Bounds {
         let (w, h) = self.desktop.dimensions();
@@ -1458,10 +1538,9 @@ impl Shell {
             let _ = self.file_focus.replace_scope(5, &[]);
             let _ = self.file_focus.replace_scope(6, &[]);
             let _ = self.file_focus.replace_scope(7, &[]);
-            let selected_file = self
-                .files_directory
-                .selected()
-                .is_some_and(|entry| entry.kind == files_directory::Kind::File);
+            let selected_file = self.selected_file_binding_index().is_some();
+            let left = self.files_directory.pane(0).unwrap();
+            let right = self.files_directory.pane(1).unwrap();
             let controls = [
                 Self::file_control(2, 1, "Directory list", keyboard_focus::Role::ListItem, true),
                 Self::file_control(2, 2, "Go up one folder", keyboard_focus::Role::Button, true),
@@ -1486,44 +1565,100 @@ impl Shell {
                 Self::file_control(
                     2,
                     9,
-                    "Files tab 1",
+                    "Left pane Files tab 1",
                     keyboard_focus::Role::Button,
-                    self.files_directory.tab_count() > 0,
+                    left.tab_count() > 0,
                 ),
                 Self::file_control(
                     2,
                     10,
-                    "Files tab 2",
+                    "Left pane Files tab 2",
                     keyboard_focus::Role::Button,
-                    self.files_directory.tab_count() > 1,
+                    left.tab_count() > 1,
                 ),
                 Self::file_control(
                     2,
                     11,
-                    "Files tab 3",
+                    "Left pane Files tab 3",
                     keyboard_focus::Role::Button,
-                    self.files_directory.tab_count() > 2,
+                    left.tab_count() > 2,
                 ),
                 Self::file_control(
                     2,
                     12,
-                    "Files tab 4",
+                    "Left pane Files tab 4",
                     keyboard_focus::Role::Button,
-                    self.files_directory.tab_count() > 3,
+                    left.tab_count() > 3,
                 ),
                 Self::file_control(
                     2,
                     13,
-                    "New Files tab",
+                    "New left pane Files tab",
                     keyboard_focus::Role::Button,
-                    self.files_directory.tab_count() < files_directory::TAB_CAPACITY,
+                    left.tab_count() < files_directory::TAB_CAPACITY,
                 ),
                 Self::file_control(
                     2,
                     14,
-                    "Close current Files tab",
+                    "Close left pane Files tab",
                     keyboard_focus::Role::Button,
-                    self.files_directory.tab_count() > 1 && !self.files_directory.busy(),
+                    left.tab_count() > 1 && !left.active_model().busy(),
+                ),
+                Self::file_control(
+                    2,
+                    15,
+                    "Switch to left Files pane",
+                    keyboard_focus::Role::Button,
+                    true,
+                ),
+                Self::file_control(
+                    2,
+                    16,
+                    "Switch to right Files pane",
+                    keyboard_focus::Role::Button,
+                    true,
+                ),
+                Self::file_control(
+                    2,
+                    17,
+                    "Right pane Files tab 1",
+                    keyboard_focus::Role::Button,
+                    right.tab_count() > 0,
+                ),
+                Self::file_control(
+                    2,
+                    18,
+                    "Right pane Files tab 2",
+                    keyboard_focus::Role::Button,
+                    right.tab_count() > 1,
+                ),
+                Self::file_control(
+                    2,
+                    19,
+                    "Right pane Files tab 3",
+                    keyboard_focus::Role::Button,
+                    right.tab_count() > 2,
+                ),
+                Self::file_control(
+                    2,
+                    20,
+                    "Right pane Files tab 4",
+                    keyboard_focus::Role::Button,
+                    right.tab_count() > 3,
+                ),
+                Self::file_control(
+                    2,
+                    21,
+                    "New right pane Files tab",
+                    keyboard_focus::Role::Button,
+                    right.tab_count() < files_directory::TAB_CAPACITY,
+                ),
+                Self::file_control(
+                    2,
+                    22,
+                    "Close right pane Files tab",
+                    keyboard_focus::Role::Button,
+                    right.tab_count() > 1 && !right.active_model().busy(),
                 ),
             ];
             if self.file_focus.active_scope() != 2 {
@@ -1622,19 +1757,41 @@ impl Shell {
         }
     }
     fn sync_selected_directory_file(&mut self) {
-        if let Some(entry) = self
+        if self.files_directory_mode {
+            self.file_selection = self.selected_file_binding_index().unwrap_or(0);
+        }
+    }
+    fn selected_file_binding_index(&self) -> Option<usize> {
+        if !self.files_directory_mode {
+            return (self.file_selection > 0
+                && self
+                    .files
+                    .get(self.file_selection)
+                    .is_some_and(|file| file.available))
+            .then_some(self.file_selection);
+        }
+        let selected = self
             .files_directory
             .selected()
-            .filter(|entry| entry.kind == files_directory::Kind::File)
-        {
-            if let Some(index) = self
-                .files
-                .iter()
-                .position(|file| file.available && file.path.as_str() == entry.path.as_str())
-            {
-                self.file_selection = index;
-            }
+            .filter(|entry| entry.kind == files_directory::Kind::File)?;
+        self.files
+            .iter()
+            .enumerate()
+            .skip(1)
+            .find(|(_, file)| file.available && file.path.as_str() == selected.path.as_str())
+            .map(|(index, _)| index)
+    }
+    fn activate_files_pane(&mut self, pane: usize) -> bool {
+        let changed = self.files_directory.active_pane() != pane;
+        if !self.files_directory.switch_pane(pane) {
+            return false;
         }
+        if changed {
+            self.files_directory_address_editing = false;
+            self.sync_selected_directory_file();
+        }
+        self.sync_files_focus();
+        true
     }
     fn begin_files_directory_action(&mut self, index: usize) {
         self.file_status.set("");
@@ -1788,6 +1945,10 @@ impl Shell {
                 self.sync_selected_directory_file();
                 self.begin_file_operation(2);
             }
+            Key::Character('p') => {
+                let next = (self.files_directory.active_pane() + 1) % files_directory::PANE_COUNT;
+                self.activate_files_pane(next);
+            }
             Key::Character('[') => {
                 if self.files_directory.switch_next(false) {
                     self.files_directory_address_editing = false;
@@ -1824,11 +1985,13 @@ impl Shell {
                 let focused = self.file_focus.focused().map(|id| id.local);
                 match focused {
                     Some(local @ 9..=12) => {
+                        self.activate_files_pane(0);
                         let _ = self.files_directory.switch_tab(local as usize - 9);
                         self.files_directory_address_editing = false;
                         self.sync_selected_directory_file();
                     }
                     Some(13) => {
+                        self.activate_files_pane(0);
                         if self.files_directory.new_tab().is_err() {
                             self.file_status.set("Files supports up to four open tabs.");
                         }
@@ -1836,6 +1999,36 @@ impl Shell {
                         self.sync_selected_directory_file();
                     }
                     Some(14) => {
+                        self.activate_files_pane(0);
+                        if !self.files_directory.close_active() {
+                            self.file_status
+                                .set("Close an idle tab; one Files tab must stay open.");
+                        }
+                        self.files_directory_address_editing = false;
+                        self.sync_selected_directory_file();
+                    }
+                    Some(15) => {
+                        self.activate_files_pane(0);
+                    }
+                    Some(16) => {
+                        self.activate_files_pane(1);
+                    }
+                    Some(local @ 17..=20) => {
+                        self.activate_files_pane(1);
+                        let _ = self.files_directory.switch_tab(local as usize - 17);
+                        self.files_directory_address_editing = false;
+                        self.sync_selected_directory_file();
+                    }
+                    Some(21) => {
+                        self.activate_files_pane(1);
+                        if self.files_directory.new_tab().is_err() {
+                            self.file_status.set("Files supports up to four open tabs.");
+                        }
+                        self.files_directory_address_editing = false;
+                        self.sync_selected_directory_file();
+                    }
+                    Some(22) => {
+                        self.activate_files_pane(1);
                         if !self.files_directory.close_active() {
                             self.file_status
                                 .set("Close an idle tab; one Files tab must stay open.");
@@ -1925,12 +2118,20 @@ impl Shell {
             return;
         }
         self.sync_files_focus();
-        let source = files_actions::Path::new(self.files[self.file_selection].path.as_str())
-            .ok()
-            .map(|path| files_actions::Snapshot {
-                path,
-                revision: self.files_revision,
-            });
+        let source_index = self.selected_file_binding_index();
+        if let Some(index) = source_index {
+            self.file_selection = index;
+        } else if self.files_directory_mode {
+            self.file_selection = 0;
+        }
+        let source = source_index.and_then(|index| {
+            files_actions::Path::new(self.files[index].path.as_str())
+                .ok()
+                .map(|path| files_actions::Snapshot {
+                    path,
+                    revision: self.files_revision,
+                })
+        });
         let result = match index {
             0 => self.file_dialog.begin_create(
                 files_actions::Namespace::new(
@@ -1939,7 +2140,7 @@ impl Shell {
                 .unwrap(),
             ),
             1 | 3 => source
-                .filter(|_| self.file_selection != 0)
+                .filter(|_| source_index.is_some())
                 .ok_or(files_actions::Error::InvalidPath)
                 .and_then(|source| {
                     let text = source.path.as_str();
@@ -1964,7 +2165,7 @@ impl Shell {
                     })
                 }),
             _ => source
-                .filter(|_| self.file_selection != 0)
+                .filter(|_| source_index.is_some())
                 .ok_or(files_actions::Error::InvalidPath)
                 .and_then(|source| self.file_dialog.begin_delete(source)),
         };
@@ -3405,19 +3606,10 @@ impl Shell {
             }
             return;
         }
-        if Self::hit(self.file_action_button_bounds(0).unwrap(), x, y)
-            || Self::hit(self.file_action_button_bounds(1).unwrap(), x, y)
-            || Self::hit(self.file_action_button_bounds(2).unwrap(), x, y)
-            || Self::hit(self.file_action_button_bounds(3).unwrap(), x, y)
-            || Self::hit(self.file_action_button_bounds(4).unwrap(), x, y)
-            || Self::hit(self.file_action_button_bounds(5).unwrap(), x, y)
-        {
-            let index = (0..6)
-                .find(|i| {
-                    self.file_action_button_bounds(*i)
-                        .is_some_and(|b| Self::hit(b, x, y))
-                })
-                .unwrap_or(0);
+        if let Some(index) = (0..6).find(|index| {
+            self.file_action_button_bounds(*index)
+                .is_some_and(|bounds| Self::hit(bounds, x, y))
+        }) {
             let _ = self.file_focus.select(
                 keyboard_focus::ControlId {
                     scope: 2,
@@ -3428,93 +3620,131 @@ impl Shell {
             self.begin_files_directory_action(index);
             return;
         }
-        if Self::hit(self.files_tab_add_bounds(), x, y) {
-            let _ = self.file_focus.select(
-                keyboard_focus::ControlId {
-                    scope: 2,
-                    local: 13,
-                },
-                keyboard_focus::Input::Pointer,
-            );
-            if self.files_directory.new_tab().is_err() {
-                self.file_status.set("Files supports up to four open tabs.");
-            }
-            self.files_directory_address_editing = false;
-            self.sync_selected_directory_file();
-            self.sync_files_focus();
-            return;
-        }
-        if Self::hit(self.files_tab_close_bounds(), x, y) {
-            let _ = self.file_focus.select(
-                keyboard_focus::ControlId {
-                    scope: 2,
-                    local: 14,
-                },
-                keyboard_focus::Input::Pointer,
-            );
-            if !self.files_directory.close_active() {
-                self.file_status
-                    .set("Close an idle tab; one Files tab must stay open.");
-            }
-            self.files_directory_address_editing = false;
-            self.sync_selected_directory_file();
-            self.sync_files_focus();
-            return;
-        }
-        for index in 0..self.files_directory.tab_count() {
+        for pane in 0..files_directory::PANE_COUNT {
+            let (add_local, close_local, first_tab_local) =
+                if pane == 0 { (13, 14, 9) } else { (21, 22, 17) };
             if self
-                .files_tab_bounds(index)
-                .is_some_and(|tab| Self::hit(tab, x, y))
+                .files_pane_tab_add_bounds(pane)
+                .is_some_and(|bounds| Self::hit(bounds, x, y))
             {
-                let _ = self.file_focus.select(
-                    keyboard_focus::ControlId {
-                        scope: 2,
-                        local: 9 + index as u32,
-                    },
-                    keyboard_focus::Input::Pointer,
-                );
-                let _ = self.files_directory.switch_tab(index);
-                self.files_directory_address_editing = false;
+                if self.activate_files_pane(pane) {
+                    let _ = self.file_focus.select(
+                        keyboard_focus::ControlId {
+                            scope: 2,
+                            local: add_local,
+                        },
+                        keyboard_focus::Input::Pointer,
+                    );
+                    if self.files_directory.new_tab().is_err() {
+                        self.file_status.set("Files supports up to four open tabs.");
+                    }
+                    self.files_directory_address_editing = false;
+                    self.sync_selected_directory_file();
+                    self.sync_files_focus();
+                }
+                return;
+            }
+            if self
+                .files_pane_tab_close_bounds(pane)
+                .is_some_and(|bounds| Self::hit(bounds, x, y))
+            {
+                if self.activate_files_pane(pane) {
+                    let _ = self.file_focus.select(
+                        keyboard_focus::ControlId {
+                            scope: 2,
+                            local: close_local,
+                        },
+                        keyboard_focus::Input::Pointer,
+                    );
+                    if !self.files_directory.close_active() {
+                        self.file_status
+                            .set("Close an idle tab; one Files tab must stay open.");
+                    }
+                    self.files_directory_address_editing = false;
+                    self.sync_selected_directory_file();
+                    self.sync_files_focus();
+                }
+                return;
+            }
+            for index in 0..files_directory::TAB_CAPACITY {
+                if self
+                    .files_pane_tab_bounds(pane, index)
+                    .is_some_and(|bounds| Self::hit(bounds, x, y))
+                {
+                    if self.activate_files_pane(pane) {
+                        let _ = self.file_focus.select(
+                            keyboard_focus::ControlId {
+                                scope: 2,
+                                local: first_tab_local + index as u32,
+                            },
+                            keyboard_focus::Input::Pointer,
+                        );
+                        let _ = self.files_directory.switch_tab(index);
+                        self.files_directory_address_editing = false;
+                        self.sync_selected_directory_file();
+                        self.sync_files_focus();
+                    }
+                    return;
+                }
+            }
+            if self
+                .files_pane_switch_bounds(pane)
+                .is_some_and(|bounds| Self::hit(bounds, x, y))
+            {
+                if self.activate_files_pane(pane) {
+                    let _ = self.file_focus.select(
+                        keyboard_focus::ControlId {
+                            scope: 2,
+                            local: 15 + pane as u32,
+                        },
+                        keyboard_focus::Input::Pointer,
+                    );
+                }
+                return;
+            }
+            if self
+                .files_pane_address_bounds(pane)
+                .is_some_and(|bounds| Self::hit(bounds, x, y))
+            {
+                if self.activate_files_pane(pane) {
+                    let _ = self.files_directory.set_address("");
+                    self.files_directory_address_editing = true;
+                    let _ = self.file_focus.select(
+                        keyboard_focus::ControlId { scope: 2, local: 8 },
+                        keyboard_focus::Input::Pointer,
+                    );
+                }
+                return;
+            }
+            if let Some(area) = self
+                .files_pane_bounds(pane)
+                .filter(|area| Self::hit(*area, x, y))
+            {
+                if !self.activate_files_pane(pane) {
+                    return;
+                }
+                let row = ((y - area.y) / 27) as usize;
+                if row >= Self::files_visible_rows(area) {
+                    return;
+                }
+                let open = self.files_directory.selected_index() == Some(row);
+                if !self.files_directory.select(row) {
+                    return;
+                }
                 self.sync_selected_directory_file();
                 self.sync_files_focus();
-                return;
-            }
-        }
-        let b = self.desktop.window(App::Files).bounds;
-        if Self::hit(self.files_address_bounds(), x, y) {
-            let _ = self.files_directory.set_address("");
-            self.files_directory_address_editing = true;
-            let _ = self.file_focus.select(
-                keyboard_focus::ControlId { scope: 2, local: 8 },
-                keyboard_focus::Input::Pointer,
-            );
-            return;
-        }
-        if x >= b.x + 8 && x < b.x + b.width - 8 && y >= b.y + 168 && y < b.y + b.height - 8 {
-            let row = ((y - b.y - 168) / 27) as usize;
-            let max_rows =
-                ((b.height - 198).max(0) / 27).min(files_directory::CAPACITY as i32) as usize;
-            if row >= max_rows {
-                return;
-            }
-            let open = self.files_directory.selected_index() == Some(row);
-            if !self.files_directory.select(row) {
-                return;
-            }
-            self.sync_selected_directory_file();
-            self.sync_files_focus();
-            // A second click on the selected row activates it, matching the
-            // existing Files row behavior while keeping selection authoritative.
-            let _ = self.file_focus.select(
-                keyboard_focus::ControlId { scope: 2, local: 1 },
-                keyboard_focus::Input::Pointer,
-            );
-            if open {
-                if let Ok(Some(path)) = self.files_directory.open_selected() {
-                    if let Err(error) = self.request_editor_open(path.as_str()) {
-                        self.editor_status.set(error.message());
+                let _ = self.file_focus.select(
+                    keyboard_focus::ControlId { scope: 2, local: 1 },
+                    keyboard_focus::Input::Pointer,
+                );
+                if open {
+                    if let Ok(Some(path)) = self.files_directory.open_selected() {
+                        if let Err(error) = self.request_editor_open(path.as_str()) {
+                            self.editor_status.set(error.message());
+                        }
                     }
                 }
+                return;
             }
         }
     }
@@ -6356,10 +6586,9 @@ impl Shell {
         y: i32,
         width: i32,
         height: i32,
-        columns: usize,
+        _columns: usize,
     ) {
-        let selected_kind = self.files_directory.selected().map(|entry| entry.kind);
-        let selected_file = selected_kind == Some(files_directory::Kind::File);
+        let selected_file = self.selected_file_binding_index().is_some();
         let toolbar = Bounds {
             x: x + 8,
             y: y + 48,
@@ -6413,19 +6642,20 @@ impl Shell {
                     theme::BACKGROUND
                 },
             );
+            let compact_label = [
+                "Up",
+                "New",
+                "Move",
+                if selected_file { "Trash" } else { "Remove" },
+                "Trash",
+                "Find",
+            ][index];
             theme::text(
                 canvas,
                 button.x + 7,
                 button.y + 6,
                 if button.width < 82 {
-                    [
-                        "Up",
-                        "New",
-                        "Move",
-                        if selected_file { "Trash" } else { "Remove" },
-                        "Trash",
-                        "Find",
-                    ][index]
+                    compact_label
                 } else {
                     label
                 },
@@ -6441,16 +6671,218 @@ impl Shell {
                 theme::outline(canvas, button, 8, theme::ACCENT);
             }
         }
-        for index in 0..self.files_directory.tab_count() {
-            let Some(tab) = self.files_tab_bounds(index) else {
+
+        let active_pane = self.files_directory.active_pane();
+        for pane_index in 0..files_directory::PANE_COUNT {
+            let pane = self.files_directory.pane(pane_index).unwrap();
+            let model = pane.active_model();
+            let pane_active = pane_index == active_pane;
+            let first_tab_local = if pane_index == 0 { 9 } else { 17 };
+            let add_local = if pane_index == 0 { 13 } else { 21 };
+            let close_local = add_local + 1;
+            let tab_fill = if pane_active {
+                theme::ACCENT_SOFT
+            } else {
+                theme::SURFACE
+            };
+            let pane_border = if pane_active {
+                theme::ACCENT
+            } else {
+                theme::BORDER
+            };
+
+            for tab_index in 0..pane.tab_count() {
+                let Some(tab_bounds) = self.files_pane_tab_bounds(pane_index, tab_index) else {
+                    continue;
+                };
+                let tab_active = tab_index == pane.active_index();
+                theme::rounded_rect(
+                    canvas,
+                    tab_bounds,
+                    7,
+                    if tab_active { tab_fill } else { theme::SURFACE },
+                );
+                Self::control_border(
+                    canvas,
+                    tab_bounds,
+                    if tab_active {
+                        pane_border
+                    } else {
+                        theme::BORDER
+                    },
+                );
+                if self.file_focus.focus_visible()
+                    && self.file_focus.focused().is_some_and(|id| {
+                        id.scope == 2 && id.local == first_tab_local + tab_index as u32
+                    })
+                {
+                    theme::outline(canvas, tab_bounds, 7, theme::ACCENT);
+                }
+                let path = pane.tab(tab_index).map_or("", |tab| tab.address());
+                let name = path
+                    .rsplit('/')
+                    .find(|part| !part.is_empty())
+                    .unwrap_or("Files");
+                if tab_bounds.width < 36 {
+                    // At compact widths a clipped path looks like an unlabeled pill.
+                    // A centered ordinal keeps each tab identifiable down to the
+                    // minimum supported viewport while preserving the active fill.
+                    let marker = files_compact_tab_marker(tab_index);
+                    let marker_width =
+                        theme::text_width_scaled(marker, theme::Font::Small, canvas.text_scale());
+                    theme::text(
+                        canvas,
+                        tab_bounds.x + ((tab_bounds.width - marker_width).max(0) / 2),
+                        tab_bounds.y + 9,
+                        marker,
+                        if tab_active {
+                            theme::TEXT
+                        } else {
+                            theme::MUTED
+                        },
+                        theme::Font::Small,
+                    );
+                } else {
+                    let max_chars = ((tab_bounds.width - 16).max(0) / 7) as usize;
+                    let shown = if name.len() > max_chars && max_chars > 1 {
+                        &name[name.len() - (max_chars - 1)..]
+                    } else {
+                        name
+                    };
+                    draw_limited(
+                        canvas,
+                        tab_bounds.x + 7,
+                        tab_bounds.y + 8,
+                        shown,
+                        max_chars,
+                        if tab_active {
+                            theme::TEXT
+                        } else {
+                            theme::MUTED
+                        },
+                    );
+                }
+            }
+            if let Some(add) = self.files_pane_tab_add_bounds(pane_index) {
+                theme::rounded_rect(canvas, add, 6, theme::SURFACE);
+                Self::control_border(canvas, add, theme::BORDER);
+                theme::text(
+                    canvas,
+                    add.x + 7,
+                    add.y + 7,
+                    "+",
+                    theme::TEXT,
+                    theme::Font::Small,
+                );
+                if self.file_focus.focus_visible()
+                    && self
+                        .file_focus
+                        .focused()
+                        .is_some_and(|id| id.scope == 2 && id.local == add_local)
+                {
+                    theme::outline(canvas, add, 6, theme::ACCENT);
+                }
+            }
+            if let Some(close) = self.files_pane_tab_close_bounds(pane_index) {
+                theme::rounded_rect(canvas, close, 6, theme::SURFACE);
+                Self::control_border(canvas, close, theme::BORDER);
+                theme::text(
+                    canvas,
+                    close.x + 8,
+                    close.y + 7,
+                    "x",
+                    theme::TEXT,
+                    theme::Font::Small,
+                );
+                if self.file_focus.focus_visible()
+                    && self
+                        .file_focus
+                        .focused()
+                        .is_some_and(|id| id.scope == 2 && id.local == close_local)
+                {
+                    theme::outline(canvas, close, 6, theme::ACCENT);
+                }
+            }
+
+            let Some(address) = self.files_pane_address_bounds(pane_index) else {
                 continue;
             };
-            let active = index == self.files_directory.active_index();
+            theme::rounded_rect(canvas, address, 8, theme::SURFACE_RAISED);
+            Self::control_border(
+                canvas,
+                address,
+                if pane_active && self.files_directory_address_editing {
+                    theme::ACCENT
+                } else if pane_active {
+                    pane_border
+                } else {
+                    theme::BORDER
+                },
+            );
+            let compact_header = address.width < 260;
+            let pane_label = if compact_header {
+                if pane_index == 0 {
+                    "L"
+                } else {
+                    "R"
+                }
+            } else if pane_index == 0 {
+                "LEFT"
+            } else {
+                "RIGHT"
+            };
+            theme::text(
+                canvas,
+                address.x + 8,
+                address.y + 9,
+                pane_label,
+                if pane_active {
+                    theme::ACCENT
+                } else {
+                    theme::MUTED
+                },
+                theme::Font::Small,
+            );
+            let switch = self.files_pane_switch_bounds(pane_index).unwrap();
+            let count = model
+                .listing()
+                .map_or(0, |listing| listing.entries.iter().flatten().count());
+            let count_label = match count {
+                0 => "0 ITEMS",
+                1 => "1 ITEM",
+                2 => "2 ITEMS",
+                3 => "3 ITEMS",
+                4 => "4 ITEMS",
+                5 => "5 ITEMS",
+                6 => "6 ITEMS",
+                7 => "7 ITEMS",
+                _ => "8 ITEMS",
+            };
+            if !compact_header {
+                theme::text(
+                    canvas,
+                    switch.x - 66,
+                    address.y + 9,
+                    count_label,
+                    theme::MUTED,
+                    theme::Font::Small,
+                );
+            }
+            let path = model.address();
+            let path_bounds = self.files_pane_path_bounds(pane_index).unwrap();
+            draw_limited(
+                canvas,
+                path_bounds.x,
+                address.y + 9,
+                path,
+                (path_bounds.width / 7) as usize,
+                theme::TEXT,
+            );
             theme::rounded_rect(
                 canvas,
-                tab,
-                7,
-                if active {
+                switch,
+                6,
+                if pane_active {
                     theme::ACCENT_SOFT
                 } else {
                     theme::SURFACE
@@ -6458,309 +6890,246 @@ impl Shell {
             );
             Self::control_border(
                 canvas,
-                tab,
-                if active { theme::ACCENT } else { theme::BORDER },
+                switch,
+                if pane_active {
+                    theme::ACCENT
+                } else {
+                    theme::BORDER
+                },
+            );
+            theme::text(
+                canvas,
+                switch.x + 8,
+                switch.y + 7,
+                if compact_header {
+                    if pane_active {
+                        "ON"
+                    } else {
+                        "USE"
+                    }
+                } else if pane_active {
+                    "ACTIVE"
+                } else {
+                    "USE PANE"
+                },
+                if pane_active {
+                    theme::ACCENT
+                } else {
+                    theme::TEXT
+                },
+                theme::Font::Small,
             );
             if self.file_focus.focus_visible()
                 && self
                     .file_focus
                     .focused()
-                    .is_some_and(|id| id.scope == 2 && id.local == 9 + index as u32)
+                    .is_some_and(|id| id.scope == 2 && id.local == 15 + pane_index as u32)
             {
-                theme::outline(canvas, tab, 7, theme::ACCENT);
+                theme::outline(canvas, switch, 6, theme::ACCENT);
             }
-            let path = self
-                .files_directory
-                .tab(index)
-                .map_or("", |model| model.address());
-            let name = path
-                .rsplit('/')
-                .find(|part| !part.is_empty())
-                .unwrap_or("Files");
-            let max_chars = ((tab.width - 18).max(0) / 7) as usize;
-            let shown = if name.len() > max_chars && max_chars > 1 {
-                &name[name.len() - (max_chars - 1)..]
-            } else {
-                name
-            };
-            draw_limited(
-                canvas,
-                tab.x + 8,
-                tab.y + 8,
-                shown,
-                max_chars,
-                if active { theme::TEXT } else { theme::MUTED },
-            );
-        }
-        let add_tab = self.files_tab_add_bounds();
-        theme::rounded_rect(canvas, add_tab, 7, theme::SURFACE);
-        Self::control_border(canvas, add_tab, theme::BORDER);
-        theme::text(
-            canvas,
-            add_tab.x + 10,
-            add_tab.y + 7,
-            "+",
-            theme::TEXT,
-            theme::Font::Body,
-        );
-        let close_tab = self.files_tab_close_bounds();
-        theme::rounded_rect(canvas, close_tab, 7, theme::SURFACE);
-        Self::control_border(canvas, close_tab, theme::BORDER);
-        theme::text(
-            canvas,
-            close_tab.x + 10,
-            close_tab.y + 8,
-            "x",
-            theme::TEXT,
-            theme::Font::Small,
-        );
-        if self.file_focus.focus_visible()
-            && self
-                .file_focus
-                .focused()
-                .is_some_and(|id| id.scope == 2 && matches!(id.local, 13 | 14))
-        {
-            theme::outline(
-                canvas,
-                if self.file_focus.focused().is_some_and(|id| id.local == 13) {
-                    add_tab
-                } else {
-                    close_tab
-                },
-                7,
-                theme::ACCENT,
-            );
-        }
-        let address = self.files_address_bounds();
-        theme::rounded_rect(canvas, address, 8, theme::SURFACE_RAISED);
-        Self::control_border(
-            canvas,
-            address,
-            if self.files_directory_address_editing {
-                theme::ACCENT
-            } else {
-                theme::BORDER
-            },
-        );
-        theme::text(
-            canvas,
-            address.x + 10,
-            address.y + 4,
-            "LOCATION",
-            theme::MUTED,
-            theme::Font::Small,
-        );
-        let text = self.files_directory.address();
-        draw_limited(
-            canvas,
-            address.x + 86,
-            address.y + 4,
-            text,
-            ((width - 220).max(0) / 8) as usize,
-            theme::TEXT,
-        );
-        let count = self
-            .files_directory
-            .listing()
-            .map_or(0, |listing| listing.entries.iter().flatten().count());
-        let count_label = match count {
-            0 => "0 ITEMS",
-            1 => "1 ITEM",
-            2 => "2 ITEMS",
-            3 => "3 ITEMS",
-            4 => "4 ITEMS",
-            5 => "5 ITEMS",
-            6 => "6 ITEMS",
-            7 => "7 ITEMS",
-            _ => "8 ITEMS",
-        };
-        theme::text(
-            canvas,
-            x + width - 108,
-            address.y + 4,
-            count_label,
-            theme::MUTED,
-            theme::Font::Small,
-        );
-        let Some(listing) = self.files_directory.listing() else {
-            self.panel_line(
-                canvas,
-                x,
-                y,
-                3,
-                "Loading /native directory…",
-                columns,
-                height,
-                theme::MUTED,
-            );
-            if let Some(error) = self.files_directory.error() {
-                draw_limited(
-                    canvas,
-                    x + 12,
-                    y + height - 26,
-                    error.message(),
-                    columns,
-                    0xa53b34,
-                );
-            } else if !self.file_status.as_str().is_empty() {
-                draw_limited(
-                    canvas,
-                    x + 12,
-                    y + height - 26,
-                    self.file_status.as_str(),
-                    columns,
-                    theme::MUTED,
-                );
-            }
-            if self.files_directory.dialog_active() {
-                self.render_files_directory_dialog(canvas);
-            }
-            return;
-        };
-        let visible_rows =
-            ((height - 198).max(0) / 27).min(files_directory::CAPACITY as i32) as usize;
-        if listing.entries.iter().all(Option::is_none) {
-            let empty = Bounds {
-                x: x + 8,
-                y: y + 170,
-                width: (width - 16).max(0),
-                height: 76,
-            };
-            theme::rounded_rect(canvas, empty, 10, theme::SURFACE);
-            theme::text(
-                canvas,
-                empty.x + 16,
-                empty.y + 12,
-                "This folder is empty",
-                theme::TEXT,
-                theme::Font::Body,
-            );
-            theme::text(
-                canvas,
-                empty.x + 16,
-                empty.y + 42,
-                "Create a folder or file to get started.",
-                theme::MUTED,
-                theme::Font::Small,
-            );
-        }
-        for (row, entry) in listing
-            .entries
-            .iter()
-            .flatten()
-            .take(visible_rows)
-            .enumerate()
-        {
-            let top = y + 168 + row as i32 * 27;
-            let row_bounds = Bounds {
-                x: x + 8,
-                y: top,
-                width: (width - 16).max(0),
-                height: 25,
-            };
-            if self.files_directory.selected_index() == Some(row) {
-                theme::rounded_rect(canvas, row_bounds, 7, theme::ACCENT_SOFT);
-                canvas.rect(x + 8, top + 5, 3, 15, theme::ACCENT);
-                Self::control_border(canvas, row_bounds, theme::BORDER);
-            } else if row % 2 == 1 {
-                theme::rounded_rect(canvas, row_bounds, 7, theme::SURFACE);
-            }
+
+            let area = self.files_pane_bounds(pane_index).unwrap();
             theme::rounded_rect(
                 canvas,
-                Bounds {
-                    x: x + 15,
-                    y: top + 3,
-                    width: 20,
-                    height: 19,
-                },
-                5,
-                if entry.kind == files_directory::Kind::Directory {
-                    theme::ACCENT_SOFT
+                area,
+                8,
+                if pane_active {
+                    theme::SURFACE_RAISED
                 } else {
-                    theme::BACKGROUND
+                    theme::SURFACE
                 },
             );
-            theme::icon(
+            Self::control_border(
                 canvas,
-                if entry.kind == files_directory::Kind::Directory {
-                    theme::Icon::Files
-                } else {
-                    theme::Icon::Editor
-                },
-                x + 17,
-                top + 4,
-                16,
-                if entry.kind == files_directory::Kind::Directory {
+                area,
+                if pane_active {
                     theme::ACCENT
                 } else {
-                    theme::MUTED
+                    theme::BORDER
                 },
             );
-            let name = entry
-                .path
-                .as_str()
-                .rsplit('/')
-                .next()
-                .unwrap_or(entry.path.as_str());
-            theme::text(
-                canvas,
-                x + 40,
-                top + 4,
-                name,
-                theme::TEXT,
-                theme::Font::Body,
-            );
-            if entry.kind == files_directory::Kind::Directory {
+            if pane_active
+                && self.file_focus.focus_visible()
+                && self
+                    .file_focus
+                    .focused()
+                    .is_some_and(|id| id.scope == 2 && id.local == 1)
+            {
+                theme::outline(canvas, area, 8, theme::ACCENT);
+            }
+            let Some(listing) = model.listing() else {
+                let message = if model.busy() {
+                    "Loading folder listing…"
+                } else {
+                    "Waiting for an authoritative folder listing."
+                };
                 theme::text(
                     canvas,
-                    x + width - 78,
-                    top + 7,
-                    "FOLDER",
+                    area.x + 12,
+                    area.y + 16,
+                    message,
                     theme::MUTED,
                     theme::Font::Small,
                 );
-            } else {
+                if let Some(error) = model.error() {
+                    draw_limited(
+                        canvas,
+                        area.x + 10,
+                        area.y + area.height - 23,
+                        error.message(),
+                        ((area.width - 20).max(0) / 7) as usize,
+                        0xa53b34,
+                    );
+                }
+                continue;
+            };
+
+            let visible_rows = Self::files_visible_rows(area);
+            if listing.entries.iter().all(Option::is_none) {
+                let empty = Bounds {
+                    x: area.x + 7,
+                    y: area.y + 8,
+                    width: (area.width - 14).max(0),
+                    height: 72,
+                };
+                theme::rounded_rect(canvas, empty, 8, theme::SURFACE);
                 theme::text(
                     canvas,
-                    x + width - 78,
-                    top + 7,
-                    "FILE",
+                    empty.x + 10,
+                    empty.y + 11,
+                    "This folder is empty",
+                    theme::TEXT,
+                    theme::Font::Small,
+                );
+                theme::text(
+                    canvas,
+                    empty.x + 10,
+                    empty.y + 39,
+                    "Create a folder to get started.",
                     theme::MUTED,
                     theme::Font::Small,
                 );
             }
-        }
-        if let Some(error) = self.files_directory.error() {
+            for (row, entry) in listing
+                .entries
+                .iter()
+                .flatten()
+                .take(visible_rows)
+                .enumerate()
+            {
+                let top = area.y + row as i32 * 27;
+                let row_bounds = Bounds {
+                    x: area.x + 5,
+                    y: top + 1,
+                    width: (area.width - 10).max(0),
+                    height: 25,
+                };
+                if model.selected_index() == Some(row) {
+                    theme::rounded_rect(
+                        canvas,
+                        row_bounds,
+                        6,
+                        if pane_active {
+                            theme::ACCENT_SOFT
+                        } else {
+                            theme::SURFACE_RAISED
+                        },
+                    );
+                    canvas.rect(
+                        area.x + 5,
+                        top + 6,
+                        3,
+                        14,
+                        if pane_active {
+                            theme::ACCENT
+                        } else {
+                            theme::MUTED
+                        },
+                    );
+                } else if row % 2 == 1 {
+                    theme::rounded_rect(canvas, row_bounds, 6, theme::SURFACE);
+                }
+                theme::rounded_rect(
+                    canvas,
+                    Bounds {
+                        x: area.x + 12,
+                        y: top + 4,
+                        width: 18,
+                        height: 18,
+                    },
+                    4,
+                    if entry.kind == files_directory::Kind::Directory {
+                        theme::ACCENT_SOFT
+                    } else {
+                        theme::BACKGROUND
+                    },
+                );
+                theme::icon(
+                    canvas,
+                    if entry.kind == files_directory::Kind::Directory {
+                        theme::Icon::Files
+                    } else {
+                        theme::Icon::Editor
+                    },
+                    area.x + 13,
+                    top + 4,
+                    16,
+                    if entry.kind == files_directory::Kind::Directory {
+                        theme::ACCENT
+                    } else {
+                        theme::MUTED
+                    },
+                );
+                let name = entry
+                    .path
+                    .as_str()
+                    .rsplit('/')
+                    .next()
+                    .unwrap_or(entry.path.as_str());
+                draw_ellipsized(
+                    canvas,
+                    area.x + 36,
+                    top + 6,
+                    name,
+                    files_entry_name_width(area),
+                    theme::TEXT,
+                    theme::Font::Small,
+                );
+                theme::text(
+                    canvas,
+                    area.x + area.width - 54,
+                    top + 7,
+                    if entry.kind == files_directory::Kind::Directory {
+                        "FOLDER"
+                    } else {
+                        "FILE"
+                    },
+                    theme::MUTED,
+                    theme::Font::Small,
+                );
+            }
+            let status = model.error().map(|error| error.message()).or_else(|| {
+                (pane_active && !self.file_status.as_str().is_empty())
+                    .then_some(self.file_status.as_str())
+            });
+            let footer = status.unwrap_or(if pane_active {
+                "P switches panes · Enter opens · [ ] switches tabs"
+            } else {
+                "Select pane to browse · tabs stay independent"
+            });
             draw_limited(
                 canvas,
-                x + 12,
-                y + height - 26,
-                error.message(),
-                columns,
-                0xa53b34,
-            );
-        } else if !self.file_status.as_str().is_empty() {
-            draw_limited(
-                canvas,
-                x + 12,
-                y + height - 26,
-                self.file_status.as_str(),
-                columns,
-                theme::MUTED,
-            );
-        } else {
-            draw_limited(
-                canvas,
-                x + 12,
-                y + height - 26,
-                "Enter open / [ ] tabs / + new / x close / g path",
-                columns,
+                area.x + 8,
+                area.y + area.height - 20,
+                footer,
+                ((area.width - 16).max(0) / 7) as usize,
                 theme::MUTED,
             );
         }
         if self.files_directory.dialog_active() {
             self.render_files_directory_dialog(canvas);
         }
+        let _ = (y, height);
     }
     fn render_files_directory_dialog(&self, canvas: &mut Canvas<'_>) {
         let b = self.files_directory_dialog_bounds();
@@ -7175,7 +7544,18 @@ fn draw_fit(
     if max_width <= 0 {
         return;
     }
-    let scale = canvas.text_scale();
+    let fitted = fitted_text_prefix(text, max_width, canvas.text_scale(), font);
+    theme::text(canvas, x, y, fitted, color, font);
+}
+fn fitted_text_prefix(
+    text: &str,
+    max_width: i32,
+    scale: appearance::TextScale,
+    font: theme::Font,
+) -> &str {
+    if max_width <= 0 {
+        return "";
+    }
     let mut end = 0;
     for (index, character) in text.char_indices() {
         let next = index + character.len_utf8();
@@ -7184,7 +7564,52 @@ fn draw_fit(
         }
         end = next;
     }
-    theme::text(canvas, x, y, &text[..end], color, font);
+    &text[..end]
+}
+fn draw_ellipsized(
+    canvas: &mut Canvas<'_>,
+    x: i32,
+    y: i32,
+    text: &str,
+    max_width: i32,
+    color: u32,
+    font: theme::Font,
+) {
+    if max_width <= 0 {
+        return;
+    }
+    let scale = canvas.text_scale();
+    if theme::text_width_scaled(text, font, scale) <= max_width {
+        theme::text(canvas, x, y, text, color, font);
+        return;
+    }
+    let ellipsis = "…";
+    let ellipsis_width = theme::text_width_scaled(ellipsis, font, scale);
+    if ellipsis_width > max_width {
+        return;
+    }
+    let prefix = fitted_text_prefix(text, max_width - ellipsis_width, scale, font);
+    theme::text(canvas, x, y, prefix, color, font);
+    theme::text(
+        canvas,
+        x + theme::text_width_scaled(prefix, font, scale),
+        y,
+        ellipsis,
+        color,
+        font,
+    );
+}
+fn files_entry_name_width(area: Bounds) -> i32 {
+    // Keep an eight-pixel gutter before the fixed FILE/FOLDER kind label.
+    (area.width - 36 - 54 - 8).max(0)
+}
+fn files_compact_tab_marker(index: usize) -> &'static str {
+    match index {
+        0 => "1",
+        1 => "2",
+        2 => "3",
+        _ => "4",
+    }
 }
 fn text_fit_columns(text: &str, width: i32) -> usize {
     if width <= 0 {
@@ -8714,6 +9139,436 @@ mod tests {
         assert_eq!(shell.files_directory.active_index(), 0);
         assert_eq!(shell.files_directory.current_path(), Some("/native"));
     }
+    #[test]
+    fn files_dual_panes_route_pointer_keyboard_and_tab_actions_to_owning_pane() {
+        let mut shell = loaded_directory_shell(&[
+            ("/native/docs", files_directory::Kind::Directory, 7),
+            ("/native/archive", files_directory::Kind::Directory, 8),
+        ]);
+        for pane in 0..files_directory::PANE_COUNT {
+            assert_eq!(
+                shell.files_directory.pane(pane).unwrap().current_path(),
+                Some("/native")
+            );
+            assert!(shell
+                .files_directory
+                .pane(pane)
+                .unwrap()
+                .listing()
+                .is_some());
+        }
+
+        // The keyboard shortcut switches the active pane. Its row activation
+        // queues a request owned by that pane.
+        shell.on_key(Key::Character('p'));
+        assert_eq!(shell.files_directory.active_pane(), 1);
+        let right = shell.files_pane_bounds(1).unwrap();
+        shell.on_pointer(Pointer::Down(right.x + 24, right.y + 13));
+        let right_navigation = shell.take_files_directory_action().unwrap();
+        assert!(matches!(
+            right_navigation.intent,
+            files_directory::Intent::Navigate { path }
+                if path.as_str() == "/native/docs"
+        ));
+
+        // Pointer switching and a different row keep the left pane's action
+        // independent from the still-pending right-pane navigation.
+        let left_switch = shell.files_pane_switch_bounds(0).unwrap();
+        shell.on_pointer(Pointer::Down(
+            left_switch.x + left_switch.width / 2,
+            left_switch.y + left_switch.height / 2,
+        ));
+        assert_eq!(shell.files_directory.active_pane(), 0);
+        let left = shell.files_pane_bounds(0).unwrap();
+        shell.on_pointer(Pointer::Down(left.x + 24, left.y + 40));
+        shell.on_pointer(Pointer::Down(left.x + 24, left.y + 40));
+        let left_navigation = shell.take_files_directory_action().unwrap();
+        assert!(matches!(
+            left_navigation.intent,
+            files_directory::Intent::Navigate { path }
+                if path.as_str() == "/native/archive"
+        ));
+        assert_ne!(right_navigation.request, left_navigation.request);
+
+        // The completion callbacks remain attached to their source panes even
+        // when the other pane is currently active.
+        shell.on_key(Key::Character('p'));
+        shell
+            .files_directory_action_result(
+                left_navigation.request,
+                Ok(directory_listing(
+                    "/native/archive",
+                    8,
+                    2,
+                    &[("/native/archive/old", files_directory::Kind::File, 0)],
+                )),
+            )
+            .unwrap();
+        assert_eq!(shell.files_directory.active_pane(), 1);
+        assert_eq!(
+            shell.files_directory.pane(0).unwrap().current_path(),
+            Some("/native/archive")
+        );
+        assert_eq!(
+            shell.files_directory.pane(1).unwrap().current_path(),
+            Some("/native")
+        );
+
+        shell.on_key(Key::Character('p'));
+        shell
+            .files_directory_action_result(
+                right_navigation.request,
+                Ok(directory_listing(
+                    "/native/docs",
+                    7,
+                    2,
+                    &[("/native/docs/guide", files_directory::Kind::File, 0)],
+                )),
+            )
+            .unwrap();
+        assert_eq!(
+            shell.files_directory.pane(1).unwrap().current_path(),
+            Some("/native/docs")
+        );
+
+        // New tabs inherit only their own pane's path and resolve through the
+        // normal directory backend action/completion interface.
+        shell.on_key(Key::Character('+'));
+        let left_tab_load = shell.take_files_directory_action().unwrap();
+        assert!(matches!(
+            left_tab_load.intent,
+            files_directory::Intent::Navigate { path }
+                if path.as_str() == "/native/archive"
+        ));
+        shell
+            .files_directory_action_result(
+                left_tab_load.request,
+                Ok(directory_listing(
+                    "/native/archive",
+                    8,
+                    2,
+                    &[("/native/archive/old", files_directory::Kind::File, 0)],
+                )),
+            )
+            .unwrap();
+        assert_eq!(shell.files_directory.pane(0).unwrap().tab_count(), 2);
+        assert_eq!(
+            shell.files_directory.pane(1).unwrap().current_path(),
+            Some("/native/docs")
+        );
+        shell.on_key(Key::Backspace);
+        let left_tab_up = shell.take_files_directory_action().unwrap();
+        assert!(matches!(
+            left_tab_up.intent,
+            files_directory::Intent::Navigate { path } if path.as_str() == "/native"
+        ));
+        shell
+            .files_directory_action_result(
+                left_tab_up.request,
+                Ok(directory_listing(
+                    "/native",
+                    0,
+                    2,
+                    &[
+                        ("/native/docs", files_directory::Kind::Directory, 7),
+                        ("/native/archive", files_directory::Kind::Directory, 8),
+                    ],
+                )),
+            )
+            .unwrap();
+        assert_eq!(shell.files_directory.current_path(), Some("/native"));
+        assert_eq!(
+            shell
+                .files_directory
+                .pane(0)
+                .unwrap()
+                .tab(0)
+                .unwrap()
+                .current_path(),
+            Some("/native/archive")
+        );
+
+        shell.on_key(Key::Character('p'));
+        shell.on_key(Key::Character('+'));
+        let right_tab_load = shell.take_files_directory_action().unwrap();
+        assert!(matches!(
+            right_tab_load.intent,
+            files_directory::Intent::Navigate { path }
+                if path.as_str() == "/native/docs"
+        ));
+        shell
+            .files_directory_action_result(
+                right_tab_load.request,
+                Ok(directory_listing(
+                    "/native/docs",
+                    7,
+                    2,
+                    &[("/native/docs/guide", files_directory::Kind::File, 0)],
+                )),
+            )
+            .unwrap();
+        assert_eq!(shell.files_directory.pane(1).unwrap().tab_count(), 2);
+        assert_eq!(
+            shell.files_directory.pane(0).unwrap().current_path(),
+            Some("/native")
+        );
+
+        // The visible USE PANE control also changes the active pane, while
+        // each pane preserves its own selected tab.
+        let left_switch = shell.files_pane_switch_bounds(0).unwrap();
+        shell.on_pointer(Pointer::Down(
+            left_switch.x + left_switch.width / 2,
+            left_switch.y + left_switch.height / 2,
+        ));
+        assert_eq!(shell.files_directory.active_pane(), 0);
+        assert_eq!(shell.files_directory.active_index(), 1);
+        assert_eq!(shell.files_directory.pane(1).unwrap().active_index(), 1);
+        shell.on_key(Key::Character('['));
+        assert_eq!(
+            shell.files_directory.current_path(),
+            Some("/native/archive")
+        );
+        assert_eq!(
+            shell.files_directory.pane(1).unwrap().current_path(),
+            Some("/native/docs")
+        );
+    }
+    #[test]
+    fn files_hidden_footer_row_cannot_be_selected_or_opened_by_pointer() {
+        let rows = [
+            ("/native/file0", files_directory::Kind::File, 0),
+            ("/native/file1", files_directory::Kind::File, 0),
+            ("/native/file2", files_directory::Kind::File, 0),
+            ("/native/file3", files_directory::Kind::File, 0),
+            ("/native/file4", files_directory::Kind::File, 0),
+            ("/native/file5", files_directory::Kind::File, 0),
+            ("/native/file6", files_directory::Kind::File, 0),
+            ("/native/hidden", files_directory::Kind::Directory, 9),
+        ];
+        let mut shell = loaded_directory_shell(&rows);
+        shell.set_viewport(1280, 560);
+        let area = shell.files_pane_bounds(0).unwrap();
+        let visible = Shell::files_visible_rows(area);
+        assert_eq!(visible, 7);
+        assert!(area.height / 27 > visible as i32);
+        let hidden_row_y = area.y + visible as i32 * 27 + 2;
+        assert!(hidden_row_y < area.y + area.height);
+
+        shell.on_pointer(Pointer::Down(area.x + 24, hidden_row_y));
+        shell.on_pointer(Pointer::Down(area.x + 24, hidden_row_y));
+        assert_eq!(shell.files_directory.selected_index(), Some(0));
+        assert!(shell.take_files_directory_action().is_none());
+    }
+
+    #[test]
+    fn files_narrow_four_tab_layout_keeps_tabs_utilities_and_address_disjoint() {
+        let mut shell = Shell::new();
+        shell.set_viewport(320, 240);
+        shell.open_app(App::Files);
+        for pane in 0..files_directory::PANE_COUNT {
+            if pane != 0 {
+                assert!(shell.files_directory.switch_pane(pane));
+            }
+            for _ in 1..files_directory::TAB_CAPACITY {
+                assert!(shell.files_directory.new_tab().is_ok());
+            }
+        }
+
+        for pane in 0..files_directory::PANE_COUNT {
+            let area = shell.files_pane_bounds(pane).unwrap();
+            let mut previous_right = area.x;
+            for tab in 0..files_directory::TAB_CAPACITY {
+                let bounds = shell.files_pane_tab_bounds(pane, tab).unwrap();
+                assert!(bounds.width >= 0);
+                assert!(bounds.x >= area.x);
+                assert!(bounds.x + bounds.width <= area.x + area.width);
+                assert!(bounds.x >= previous_right);
+                previous_right = bounds.x + bounds.width;
+            }
+
+            let add = shell.files_pane_tab_add_bounds(pane).unwrap();
+            let close = shell.files_pane_tab_close_bounds(pane).unwrap();
+            assert!(add.x >= previous_right);
+            assert!(add.x + add.width <= close.x);
+            assert!(close.x + close.width <= area.x + area.width);
+
+            let address = shell.files_pane_address_bounds(pane).unwrap();
+            let path = shell.files_pane_path_bounds(pane).unwrap();
+            let switch = shell.files_pane_switch_bounds(pane).unwrap();
+            assert!(path.x >= address.x);
+            assert!(path.x + path.width <= switch.x);
+            assert!(switch.x + switch.width <= address.x + address.width);
+        }
+    }
+
+    #[test]
+    fn files_narrow_rows_truncate_names_and_render_distinct_four_tab_markers() {
+        extern crate std;
+        let basename = "linux-fstat-very-long";
+        let mut shell = loaded_directory_shell(&[(
+            "/native/linux-fstat-very-long",
+            files_directory::Kind::File,
+            0,
+        )]);
+        shell.set_viewport(320, 560);
+
+        let area = shell.files_pane_bounds(0).unwrap();
+        assert_eq!(area.width, 140);
+        let name_width = files_entry_name_width(area);
+        let ellipsis_width = theme::text_width("…", theme::Font::Small);
+        let fitted = fitted_text_prefix(
+            basename,
+            name_width - ellipsis_width,
+            appearance::TextScale::Percent100,
+            theme::Font::Small,
+        );
+        assert!(theme::text_width(basename, theme::Font::Small) > name_width);
+        assert!(fitted.len() < basename.len());
+        let rendered_width = theme::text_width(fitted, theme::Font::Small) + ellipsis_width;
+        let name_x = area.x + 36;
+        let kind_label_x = area.x + area.width - 54;
+        assert!(name_x + rendered_width <= kind_label_x - 8);
+
+        let mut short_shell =
+            loaded_directory_shell(&[("/native/x", files_directory::Kind::File, 0)]);
+        short_shell.set_viewport(320, 560);
+        let mut long_name_pixels = std::vec![0; 320 * 560];
+        let mut short_name_pixels = std::vec![0; 320 * 560];
+        {
+            let mut canvas =
+                Canvas::new(&mut long_name_pixels, 320, 560, 320, PixelFormat::Bgr).unwrap();
+            shell.render(&mut canvas);
+        }
+        {
+            let mut canvas =
+                Canvas::new(&mut short_name_pixels, 320, 560, 320, PixelFormat::Bgr).unwrap();
+            short_shell.render(&mut canvas);
+        }
+        for y in area.y + 6..area.y + 24 {
+            for x in kind_label_x..area.x + area.width {
+                let offset = y as usize * 320 + x as usize;
+                assert_eq!(
+                    long_name_pixels[offset], short_name_pixels[offset],
+                    "long basename changed the FILE label region at ({x}, {y})"
+                );
+            }
+        }
+
+        for pane in 0..files_directory::PANE_COUNT {
+            assert!(shell.files_directory.switch_pane(pane));
+            for _ in 1..files_directory::TAB_CAPACITY {
+                assert!(shell.files_directory.new_tab().is_ok());
+            }
+        }
+
+        let mut pixels = std::vec![0; 320 * 560];
+        {
+            let mut canvas = Canvas::new(&mut pixels, 320, 560, 320, PixelFormat::Bgr).unwrap();
+            shell.render(&mut canvas);
+        }
+        for pane in 0..files_directory::PANE_COUNT {
+            let mut masks = std::vec::Vec::new();
+            for tab in 0..files_directory::TAB_CAPACITY {
+                let bounds = shell.files_pane_tab_bounds(pane, tab).unwrap();
+                assert!(bounds.width < 36);
+                let marker = files_compact_tab_marker(tab);
+                assert_eq!(marker, ["1", "2", "3", "4"][tab]);
+                assert!(theme::text_width(marker, theme::Font::Small) <= bounds.width);
+                let fill = if pane == shell.files_directory.active_pane()
+                    && tab == shell.files_directory.pane(pane).unwrap().active_index()
+                {
+                    theme::ACCENT_SOFT
+                } else {
+                    theme::SURFACE
+                };
+
+                let mut mask = std::vec::Vec::new();
+                for y in bounds.y + 4..bounds.y + bounds.height - 3 {
+                    for x in bounds.x + 3..bounds.x + bounds.width - 3 {
+                        mask.push(pixels[y as usize * 320 + x as usize] != fill);
+                    }
+                }
+                assert!(
+                    mask.iter().any(|pixel| *pixel),
+                    "tab {pane}:{tab} has a visible marker"
+                );
+                assert!(
+                    masks.iter().all(|other| other != &mask),
+                    "tab markers differ"
+                );
+                masks.push(mask);
+            }
+        }
+    }
+
+    #[test]
+    fn files_mutations_require_selected_row_binding_and_refresh_both_panes() {
+        let mut shell =
+            loaded_directory_shell(&[("/native/readme", files_directory::Kind::File, 0)]);
+        shell.set_file(1, "/native/stale", "old bytes");
+        shell.file_selection = 1;
+        shell.sync_selected_directory_file();
+        assert_eq!(shell.file_selection, 0);
+        shell.sync_files_focus();
+        for local in [4, 5] {
+            assert!(
+                !shell
+                    .file_focus
+                    .state(keyboard_focus::ControlId { scope: 2, local })
+                    .unwrap()
+                    .control
+                    .enabled
+            );
+        }
+        shell.begin_file_operation(1);
+        assert!(!shell.file_dialog_active());
+        shell.begin_file_operation(3);
+        assert!(!shell.file_dialog_active());
+        shell.begin_file_operation(2);
+        assert_eq!(shell.trash_state().phase(), trash_ui::Phase::Idle);
+
+        shell.set_file(1, "/native/readme", "current bytes");
+        shell.sync_selected_directory_file();
+        assert_eq!(shell.file_selection, 1);
+        shell.begin_file_operation(1);
+        assert_eq!(
+            shell.file_dialog().selected().unwrap().path.as_str(),
+            "/native/readme"
+        );
+        shell.file_dialog.cancel().unwrap();
+
+        shell.begin_file_operation(0);
+        shell.file_dialog.set_input("/native/new").unwrap();
+        shell.file_dialog.activate().unwrap();
+        let Some(files_actions::Action::InspectDestination { request, .. }) =
+            shell.take_file_action()
+        else {
+            panic!("destination inspection")
+        };
+        shell.file_destination_result(request, Ok(None)).unwrap();
+        let Some(files_actions::Action::Commit { request, .. }) = shell.take_file_action() else {
+            panic!("create commit")
+        };
+        shell.file_action_result(request, Ok(())).unwrap();
+        assert_eq!(shell.file_selection, 0);
+
+        for pane in 0..files_directory::PANE_COUNT {
+            let model = shell.files_directory.pane(pane).unwrap().active_model();
+            assert!(model.busy());
+            assert_eq!(model.listing(), None);
+        }
+        let first_refresh = shell.take_files_directory_action().unwrap();
+        let second_refresh = shell.take_files_directory_action().unwrap();
+        assert!(matches!(
+            first_refresh.intent,
+            files_directory::Intent::Navigate { .. }
+        ));
+        assert!(matches!(
+            second_refresh.intent,
+            files_directory::Intent::Navigate { .. }
+        ));
+    }
+
     #[test]
     fn files_text_fields_use_ibeam_and_controls_keep_arrow_cursor() {
         let mut shell =

@@ -1,6 +1,8 @@
 //! Development Linux descriptor adapter over the same native stream objects.
 //! Path opens require an explicit console-launch grant and stay in /native/.
-//! Eight file descriptors per process; open paths remain namespace-exclusive.
+//! Eight file descriptors per process; directory streams are bounded open snapshots.
+#[path = "linux_dirent.rs"]
+pub(crate) mod dirent;
 use crate::file::{self, FileHandle};
 use crate::linux;
 use core::{
@@ -14,6 +16,7 @@ use helix_core::{
 };
 use next_abi::Status;
 pub const MAX_IO: usize = 4096;
+/// Linux x86-64 `struct stat` size for syscall 5 (144-byte `newfstat` ABI).
 pub const STAT_BYTES: usize = 144;
 fn errno(n: u64) -> u64 {
     (0u64).wrapping_sub(n)
@@ -43,14 +46,32 @@ fn open_error(e: FileError) -> u64 {
 enum StreamObject {
     File(FileHandle),
     NullInput,
+    Directory(usize),
 }
 #[derive(Clone, Copy)]
 struct Stream {
     object: StreamObject,
     append: bool,
 }
+#[derive(Clone, Copy)]
+struct Directory {
+    generation: u64,
+    snapshot: dirent::Snapshot,
+    cursor: usize,
+    refs: u8,
+}
+impl Directory {
+    const EMPTY: Self = Self {
+        generation: 0,
+        snapshot: dirent::Snapshot::EMPTY,
+        cursor: 0,
+        refs: 0,
+    };
+}
 struct Owner {
     generation: u64,
+    directories: [Directory; 8],
+    next_directory_generation: u64,
     fds: Descriptors<Stream, 8>,
     stdin: bool,
     stdout: bool,
@@ -59,6 +80,8 @@ struct Owner {
 impl Owner {
     const EMPTY: Self = Self {
         generation: 0,
+        directories: [Directory::EMPTY; 8],
+        next_directory_generation: 1,
         fds: Descriptors::new(),
         stdin: true,
         stdout: true,
@@ -95,6 +118,7 @@ fn with_owner<T>(
                 let _ = file::close(handle);
             }
         }
+        owner.directories = [Directory::EMPTY; 8];
         owner.generation = generation;
         owner.stdin = true;
         owner.stdout = true;
@@ -111,10 +135,10 @@ pub fn open(
     flags: u64,
     mode: u64,
 ) -> Result<u64, u64> {
-    if !granted || !path.starts_with("/native/") {
+    if !granted || !(path == "/native" || path.starts_with("/native/")) {
         return Err(errno(13));
     }
-    const ALLOWED: u64 = 3 | 64 | 128 | 512 | 1024 | 524288;
+    const ALLOWED: u64 = 3 | 64 | 128 | 512 | 1024 | 65536 | 524288;
     if flags & !ALLOWED != 0 {
         return Err(errno(38));
     }
@@ -133,6 +157,57 @@ pub fn open(
     };
     with_owner(slot, generation, |owner| {
         let fd = owner.fds.reserve().map_err(fd_error)?;
+        // Directory lookup cannot create or mutate namespace entries.
+        match crate::filesystem::linux_directory(path) {
+            Ok(snapshot) => {
+                if !snapshot.valid_directory() {
+                    let _ = owner.fds.remove(fd);
+                    return Err(errno(5));
+                }
+                if access != 0 || flags & (64 | 128 | 512 | 1024) != 0 {
+                    let _ = owner.fds.remove(fd);
+                    return Err(errno(21));
+                }
+                let Some(index) = owner.directories.iter().position(|d| d.refs == 0) else {
+                    let _ = owner.fds.remove(fd);
+                    return Err(errno(24));
+                };
+                let Some(next_generation) = owner.next_directory_generation.checked_add(1) else {
+                    let _ = owner.fds.remove(fd);
+                    return Err(errno(24));
+                };
+                owner.directories[index] = Directory {
+                    generation: owner.next_directory_generation,
+                    snapshot,
+                    cursor: 0,
+                    refs: 1,
+                };
+                if let Err(error) = owner.fds.install(
+                    fd,
+                    Stream {
+                        object: StreamObject::Directory(index),
+                        append: false,
+                    },
+                    Rights::READ,
+                ) {
+                    owner.directories[index] = Directory::EMPTY;
+                    let _ = owner.fds.remove(fd);
+                    return Err(fd_error(error));
+                }
+                owner.next_directory_generation = next_generation;
+                return Ok(fd);
+            }
+            Err(error) if error == errno(20) || error == errno(2) => {
+                if flags & 65536 != 0 || path == "/native" {
+                    let _ = owner.fds.remove(fd);
+                    return Err(error);
+                }
+            }
+            Err(error) => {
+                let _ = owner.fds.remove(fd);
+                return Err(error);
+            }
+        }
         let native_flags = u64::from(flags & 64 != 0)
             | (u64::from(flags & 512 != 0) * 2)
             | (u64::from(flags & 128 != 0) * 4);
@@ -167,6 +242,7 @@ pub fn read(slot: usize, generation: u64, fd: u64, out: &mut [u8]) -> Result<usi
         }
         match stream.object {
             StreamObject::NullInput => Ok(0),
+            StreamObject::Directory(_) => Err(errno(21)),
             StreamObject::File(handle) => file::read(handle, out).map_err(status),
         }
     })
@@ -196,7 +272,11 @@ pub fn pread(
             return Err(errno(22));
         }
         let StreamObject::File(handle) = stream.object else {
-            return Ok(0);
+            return if matches!(stream.object, StreamObject::Directory(_)) {
+                Err(errno(21))
+            } else {
+                Ok(0)
+            };
         };
         if offset as u64 > FILE_BYTES as u64 {
             return Ok(0);
@@ -308,6 +388,13 @@ pub fn close(slot: usize, generation: u64, fd: u64) -> Result<(), u64> {
         match stream.object {
             StreamObject::File(handle) => file::close(handle).map_err(status),
             StreamObject::NullInput => Ok(()),
+            StreamObject::Directory(index) => {
+                owner.directories[index].refs -= 1;
+                if owner.directories[index].refs == 0 {
+                    owner.directories[index] = Directory::EMPTY;
+                }
+                Ok(())
+            }
         }
     })
 }
@@ -346,6 +433,17 @@ pub fn lseek(slot: usize, generation: u64, fd: u64, offset: i64, whence: u64) ->
                 } else {
                     Err(errno(22))
                 }
+            }
+            StreamObject::Directory(index) => {
+                let directory = &mut owner.directories[index];
+                if whence == 1 && offset == 0 {
+                    return Ok(directory.cursor as u64);
+                }
+                if whence != 0 || offset < 0 || offset as usize > directory.snapshot.count {
+                    return Err(errno(22));
+                }
+                directory.cursor = offset as usize;
+                Ok(offset as u64)
             }
             StreamObject::File(handle) => {
                 let (length, current) = file::info(handle).map_err(status)?;
@@ -395,7 +493,13 @@ pub fn duplicate(slot: usize, generation: u64, fd: u64) -> Result<u64, u64> {
                 return Err(status(error));
             }
         }
+        if let StreamObject::Directory(index) = stream.object {
+            owner.directories[index].refs += 1;
+        }
         if let Err(e) = owner.fds.install(new, stream, rights) {
+            if let StreamObject::Directory(index) = stream.object {
+                owner.directories[index].refs -= 1;
+            }
             if let StreamObject::File(handle) = stream.object {
                 let _ = file::close(handle);
             }
@@ -414,36 +518,119 @@ pub fn stat(slot: usize, generation: u64, fd: u64, out: &mut [u8; STAT_BYTES]) -
             fill_null_stat(out);
             return Ok(());
         }
-        let (stream, _) = owner.fds.get(fd).map_err(fd_error)?;
-        let StreamObject::File(handle) = stream.object else {
-            fill_null_stat(out);
+        if fd == 1 || fd == 2 {
+            let open = if fd == 1 { owner.stdout } else { owner.stderr };
+            if !open {
+                return Err(errno(9));
+            }
+            fill_console_stat(out, fd);
             return Ok(());
-        };
-        let (len, _) = file::info(handle).map_err(status)?;
-        let inode = file::inode(handle).map_err(status)?;
-        out.fill(0);
-        out[0..8].copy_from_slice(&1u64.to_le_bytes());
-        out[8..16].copy_from_slice(&inode.to_le_bytes());
-        out[16..24].copy_from_slice(&1u64.to_le_bytes());
-        out[24..28].copy_from_slice(&0o100600u32.to_le_bytes());
-        out[28..32].copy_from_slice(&1000u32.to_le_bytes());
-        out[32..36].copy_from_slice(&1000u32.to_le_bytes());
-        out[48..56].copy_from_slice(&(len as i64).to_le_bytes());
-        out[56..64].copy_from_slice(&512i64.to_le_bytes());
-        out[64..72].copy_from_slice(&(len.div_ceil(512) as i64).to_le_bytes());
-        Ok(())
+        }
+        let (stream, _) = owner.fds.get(fd).map_err(fd_error)?;
+        match stream.object {
+            StreamObject::File(handle) => {
+                let (len, _) = file::info(handle).map_err(status)?;
+                let inode = file::inode(handle).map_err(status)?;
+                let links = file::link_count(handle).map_err(status)?;
+                fill_stat(
+                    out,
+                    StatRecord {
+                        dev: 1,
+                        ino: inode,
+                        nlink: links,
+                        mode: 0o100600,
+                        rdev: 0,
+                        size: len as i64,
+                        block_size: 512,
+                        blocks: len.div_ceil(512) as i64,
+                    },
+                );
+                Ok(())
+            }
+            StreamObject::Directory(index) => {
+                fill_stat(
+                    out,
+                    StatRecord {
+                        dev: 3,
+                        ino: owner.directories[index].snapshot.entries[0].inode,
+                        nlink: 2 + owner.directories[index].snapshot.entries
+                            [2..owner.directories[index].snapshot.count]
+                            .iter()
+                            .filter(|entry| entry.kind == 4)
+                            .count() as u64,
+                        mode: 0o040700,
+                        rdev: 0,
+                        size: 0,
+                        block_size: 4096,
+                        blocks: 0,
+                    },
+                );
+                Ok(())
+            }
+            StreamObject::NullInput => {
+                fill_null_stat(out);
+                Ok(())
+            }
+        }
     })
 }
-fn fill_null_stat(out: &mut [u8; STAT_BYTES]) {
+/// Serialize only the documented synthetic metadata subset of the Linux
+/// x86-64 144-byte `struct stat`; timestamps, explicit padding and reserved
+/// words remain zero.
+struct StatRecord {
+    dev: u64,
+    ino: u64,
+    nlink: u64,
+    mode: u32,
+    rdev: u64,
+    size: i64,
+    block_size: i64,
+    blocks: i64,
+}
+fn fill_stat(out: &mut [u8; STAT_BYTES], record: StatRecord) {
     out.fill(0);
-    out[0..8].copy_from_slice(&1u64.to_le_bytes());
-    out[8..16].copy_from_slice(&1u64.to_le_bytes());
-    out[16..24].copy_from_slice(&1u64.to_le_bytes());
-    out[24..28].copy_from_slice(&0o020666u32.to_le_bytes());
+    out[0..8].copy_from_slice(&record.dev.to_le_bytes());
+    out[8..16].copy_from_slice(&record.ino.to_le_bytes());
+    out[16..24].copy_from_slice(&record.nlink.to_le_bytes());
+    out[24..28].copy_from_slice(&record.mode.to_le_bytes());
     out[28..32].copy_from_slice(&1000u32.to_le_bytes());
     out[32..36].copy_from_slice(&1000u32.to_le_bytes());
-    out[40..48].copy_from_slice(&259u64.to_le_bytes());
-    out[56..64].copy_from_slice(&4096i64.to_le_bytes());
+    out[40..48].copy_from_slice(&record.rdev.to_le_bytes());
+    out[48..56].copy_from_slice(&record.size.to_le_bytes());
+    out[56..64].copy_from_slice(&record.block_size.to_le_bytes());
+    out[64..72].copy_from_slice(&record.blocks.to_le_bytes());
+}
+fn fill_null_stat(out: &mut [u8; STAT_BYTES]) {
+    // Character streams occupy a separate device namespace from file inodes.
+    fill_stat(
+        out,
+        StatRecord {
+            dev: 2,
+            ino: 1,
+            nlink: 1,
+            mode: 0o020666,
+            rdev: 259,
+            size: 0,
+            block_size: 4096,
+            blocks: 0,
+        },
+    );
+}
+fn fill_console_stat(out: &mut [u8; STAT_BYTES], fd: u64) {
+    // Fds 1 and 2 are bounded synthetic character streams, not host TTYs.
+    fill_stat(
+        out,
+        StatRecord {
+            dev: 2,
+            ino: fd + 1,
+            nlink: 1,
+            mode: 0o020600,
+            rdev: 0,
+            size: 0,
+            block_size: 4096,
+            blocks: 0,
+        },
+    );
 }
 pub fn close_all(slot: usize, generation: u64) {
     let _ = with_owner(slot, generation, |owner| {
@@ -452,6 +639,7 @@ pub fn close_all(slot: usize, generation: u64) {
                 let _ = file::close(handle);
             }
         }
+        owner.directories = [Directory::EMPTY; 8];
         owner.stdin = false;
         owner.stdout = false;
         owner.stderr = false;
@@ -471,4 +659,64 @@ pub fn remove(granted: bool, path: &str) -> Result<(), u64> {
         return Err(errno(13));
     }
     file::remove(path).map_err(status)
+}
+
+/// Syscall217: shared directory cookie advances only after successful copyout.
+/// Copyout callback validates only returned bytes before writing; no guard
+/// spans callback execution. Failed copyout preserves the shared cookie.
+pub fn getdents64(
+    slot: usize,
+    generation: u64,
+    fd: u64,
+    capacity: usize,
+    copyout: impl FnOnce(&[u8]) -> Result<(), u64>,
+) -> Result<usize, u64> {
+    let mut bytes = [0; MAX_IO];
+    let (index, object_generation, cursor, length, next) = with_owner(slot, generation, |owner| {
+        if fd < 3 {
+            let live = match fd {
+                0 => owner.stdin,
+                1 => owner.stdout,
+                2 => owner.stderr,
+                _ => false,
+            };
+            return Err(errno(if live { 20 } else { 9 }));
+        }
+        let (stream, rights) = owner.fds.get(fd).map_err(fd_error)?;
+        if !rights.contains(Rights::READ) {
+            return Err(errno(9));
+        }
+        let StreamObject::Directory(index) = stream.object else {
+            return Err(errno(20));
+        };
+        let directory = &owner.directories[index];
+        // Linux's directory actor uses signed-int remaining capacity. At EOF
+        // no actor runs, so even an overflowing count remains a zero result.
+        if capacity > i32::MAX as usize && directory.cursor < directory.snapshot.count {
+            return Err(errno(22));
+        }
+        let (length, next) = directory
+            .snapshot
+            .encode(directory.cursor, &mut bytes[..capacity.min(MAX_IO)])
+            .map_err(|()| errno(22))?;
+        Ok((index, directory.generation, directory.cursor, length, next))
+    })?;
+    // EOF never accesses user memory, regardless of the supplied pointer.
+    if length == 0 {
+        return Ok(0);
+    }
+    // No adapter guard or Owner reference spans user validation/copyout.
+    // The kernel syscall executes with IF clear on the sole boot CPU.
+    copyout(&bytes[..length])?;
+    with_owner(slot, generation, |owner| {
+        let (stream, _) = owner.fds.get(fd).map_err(fd_error)?;
+        if !matches!(stream.object, StreamObject::Directory(i) if i == index)
+            || owner.directories[index].generation != object_generation
+            || owner.directories[index].cursor != cursor
+        {
+            return Err(errno(16));
+        }
+        owner.directories[index].cursor = next;
+        Ok(length)
+    })
 }

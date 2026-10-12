@@ -104,24 +104,34 @@ def validate_files_tab_action_sequence(serial_data):
 
 
 def files_tab_click_targets(width, height):
-    """Return pixel centers for the default Files '+' and two tab controls."""
+    """Return centers for the left-pane tabs and both pane-switch controls."""
     if width <= 0 or height <= 0:
         raise ValueError("viewport dimensions must be positive")
     area_x = min(8, max(0, width - 1))
     area_y = min(68, max(0, height - 81))
     area_width = max(width - 2 * area_x, 1)
     area_height = max(height - 80 - area_y - 8, 1)
-    window_width = min(max(640, min(240, area_width)), area_width)
-    window_height = min(max(400, min(144, area_height)), area_height)
+    window_width = min(max(960, min(240, area_width)), area_width)
+    window_height = min(max(600, min(144, area_height)), area_height)
     x = max(area_x, min(92, area_x + area_width - window_width))
     y = max(area_y, min(124, area_y + area_height - window_height))
-    inner = max(window_width - 16, 0)
-    add = (x + 8 + inner - 64 + 15, y + 96 + 14)
-    tab_width = max((inner - min(72, inner) - 4) // 2, 24)
-    root = (x + 8 + tab_width // 2, y + 96 + 14)
-    nested = (x + 8 + tab_width + 4 + tab_width // 2, y + 96 + 14)
-    address = (x + 8 + 20, y + 130 + 14)
-    return {"add": add, "root": root, "nested": nested, "address": address}
+    pane_width = max((window_width - 24) // 2, 0)
+    left_x = x + 8
+    utility = min(52, pane_width)
+    tab_area = max(pane_width - utility, 0)
+    gap = 4 if tab_area >= 4 else 0
+    tab_width = max((tab_area - gap) // 2, 0)
+    add_width = max((utility - 4) // 2, 0)
+    add = (left_x + pane_width - utility + add_width // 2, y + 96 + 14)
+    root = (left_x + tab_width // 2, y + 96 + 14)
+    nested = (left_x + tab_width + gap + tab_width // 2, y + 96 + 14)
+    address = (left_x + 20, y + 130 + 15)
+    switch_width = min(70, pane_width)
+    switch_y = y + 130 + 4 + 11
+    left_switch = (left_x + pane_width - switch_width // 2, switch_y)
+    right_switch = (left_x + pane_width + 8 + pane_width - switch_width // 2, switch_y)
+    return {"add": add, "root": root, "nested": nested, "address": address,
+            "left_switch": left_switch, "right_switch": right_switch}
 
 
 def validate_smp_profile_count(cpu_count):
@@ -679,6 +689,10 @@ def main():
                      "original Linux uname fixture checks six 65-byte fields, zero padding and EFAULT"),
                     ("/compat/linux/lseek.elf", "LINUX LSEEK ELF: position, signed errors, and cursor preservation PASS", 53,
                      "original Linux lseek fixture checks read positions, invalid whence/fd, signed underflow and cursor preservation"),
+                    ("/compat/linux/fstat.elf", "LINUX FSTAT ELF: identity, type, size, EBADF and EFAULT PASS", 54,
+                     "original Linux fstat fixture checks x86-64 stat identity/type/size, descriptor errors and copyout bounds"),
+                    ("/compat/linux/getdents.elf", "LINUX GETDENTS ELF: records, cursor, dup, EOF and faults PASS", 55,
+                     "original Linux getdents64 fixture checks records, shared directory cookies, EOF, descriptor errors and copyout bounds"),
                 ]:
                     start = len(serial_data)
                     serial.sendall(("run " + path + "\r").encode())
@@ -1150,6 +1164,42 @@ def main():
                 )
                 report["checks"].append(
                     "Files address renders a guest I-beam cursor with a dark stem and white surround"
+                )
+
+                # Exercise both independently owned directory panes. Start
+                # with a distinct path on the left, then navigate the right,
+                # return the left to its parent, and verify the right still
+                # retains its nested location after the other pane changes.
+                click_files_tab(tab_targets["left_switch"])
+                left_nested = navigate_files_address("/native/alpha")
+                click_files_tab(tab_targets["right_switch"])
+                right_nested = navigate_files_address("/native/alpha")
+                click_files_tab(tab_targets["left_switch"])
+                pane_left_parent_mark = len(serial_data)
+                editor_key("backspace")
+                left_parent = wait_tab_action(pane_left_parent_mark, "Navigate", "/native")
+                dual_pane_capture = capture_files_tabs("dual-pane-left-root-right-nested")
+                click_files_tab(tab_targets["right_switch"])
+                pane_right_parent_mark = len(serial_data)
+                editor_key("backspace")
+                right_parent = wait_tab_action(pane_right_parent_mark, "Navigate", "/native")
+                if (not (2 << 48) <= left_nested["request"] < (3 << 48)
+                        or not (2 << 48) <= left_parent["request"] < (3 << 48)
+                        or not (1 << 48) <= right_nested["request"] < (2 << 48)
+                        or not (1 << 48) <= right_parent["request"] < (2 << 48)):
+                    raise RuntimeError("Files pane actions used another pane's request-id range")
+                report["files_dual_pane"] = {
+                    "capture": dual_pane_capture,
+                    "actions": {
+                        "left_nested": left_nested,
+                        "right_nested": right_nested,
+                        "left_parent": left_parent,
+                        "right_parent": right_parent,
+                    },
+                    "check": "left and right panes navigate independently and retain the inactive pane location",
+                }
+                report["checks"].append(
+                    "Files left and right panes navigate independently, preserve inactive paths, and capture a distinct root/nested view"
                 )
                 mark = len(serial_data)
                 serial.sendall(b"uart\r")

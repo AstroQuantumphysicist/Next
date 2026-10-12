@@ -332,6 +332,11 @@ impl<const N: usize> Files<N> {
     pub fn inode(&mut self, h: FileHandle) -> Result<u64, Error> {
         Ok(self.get(h)?.1.id)
     }
+    /// This bounded namespace has at most one name per inode. Retained open
+    /// descriptions still address an anonymous inode after unlink/replacement.
+    pub fn link_count(&mut self, h: FileHandle) -> Result<u64, Error> {
+        Ok(u64::from(self.get(h)?.1.path_len != 0))
+    }
     pub fn read_path(
         &self,
         backend: &mut impl Backend,
@@ -737,17 +742,22 @@ mod tests {
         let a = f.open(&mut d, "/a", true, false).unwrap();
         f.write(&mut d, a, b"old").unwrap();
         let old_id = f.inode(a).unwrap();
+        assert_eq!(f.link_count(a), Ok(1));
         f.rename(&mut d, "/a", "/b").unwrap();
+        assert_eq!(f.link_count(a), Ok(1));
         assert!(!d.files.contains_key("/a"));
         f.write(&mut d, a, b"!").unwrap();
         assert_eq!(&d.files["/b"], b"old!");
         f.remove(&mut d, "/b").unwrap();
+        assert_eq!(f.link_count(a), Ok(0));
         let mutations = d.mutations;
         f.write(&mut d, a, b"anonymous").unwrap();
         assert_eq!(d.mutations, mutations);
         assert!(!d.files.contains_key("/b"));
         let b = f.open(&mut d, "/b", true, false).unwrap();
         assert_ne!(f.inode(b).unwrap(), old_id);
+        assert_eq!(f.link_count(b), Ok(1));
+        assert_eq!(f.link_count(a), Ok(0));
         f.write(&mut d, b, b"new").unwrap();
         f.close(a).unwrap();
         assert_eq!(&d.files["/b"], b"new");
@@ -768,6 +778,9 @@ mod tests {
         let old_destination = f.inode(b).unwrap();
         f.rename(&mut d, "/a", "/b").unwrap();
         let c = f.open(&mut d, "/b", false, false).unwrap();
+        assert_eq!(f.link_count(a), Ok(1));
+        assert_eq!(f.link_count(b), Ok(0));
+        assert_eq!(f.link_count(c), Ok(1));
         assert_eq!(f.inode(c), f.inode(a));
         assert_ne!(f.inode(c).unwrap(), old_destination);
         f.seek(b, 0, 0).unwrap();
@@ -795,6 +808,7 @@ mod tests {
         assert!(f.is_open("/a"));
         assert!(!f.is_open("/b"));
         assert_eq!(f.inode(a), id);
+        assert_eq!(f.link_count(a), Ok(1));
         assert_eq!(f.info(a), Ok((3, 3)));
         let mut out = [0; FILE_BYTES];
         assert_eq!(f.read_path(&mut d, "/a", &mut out), Ok(3));

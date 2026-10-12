@@ -157,6 +157,9 @@ impl Desktop {
             windows[i].restore = windows[i].bounds;
             i += 1;
         }
+        windows[App::Files as usize].bounds.width = 960;
+        windows[App::Files as usize].bounds.height = 600;
+        windows[App::Files as usize].restore = windows[App::Files as usize].bounds;
         windows[0] = Window {
             bounds,
             restore: bounds,
@@ -656,8 +659,8 @@ mod tests {
         d.open(App::Files);
         let original = d.window(App::Files).bounds;
         d.action(Action::Move);
-        d.edit_delta(32, 16);
-        assert_eq!(d.window(App::Files).bounds.x, original.x + 32);
+        d.edit_delta(-16, 16);
+        assert_eq!(d.window(App::Files).bounds.x, original.x - 16);
         d.finish_edit(false);
         assert_eq!(d.window(App::Files).bounds, original);
         d.action(Action::Resize);
@@ -703,10 +706,10 @@ mod tests {
         d.open(App::Files);
         let b = d.window(App::Files).bounds;
         d.pointer(Pointer::Down(b.x + 20, b.y + 10));
-        d.pointer(Pointer::Move(b.x + 52, b.y + 26));
+        d.pointer(Pointer::Move(b.x + 4, b.y + 26));
         d.pointer(Pointer::Up);
         let moved = d.window(App::Files).bounds;
-        assert_eq!((moved.x, moved.y), (b.x + 32, b.y + 16));
+        assert_eq!((moved.x, moved.y), (b.x - 16, b.y));
         d.pointer(Pointer::Down(
             moved.x + moved.width - 10,
             moved.y + moved.height - 10,
@@ -717,16 +720,27 @@ mod tests {
         ));
         d.pointer(Pointer::Up);
         let resized = d.window(App::Files).bounds;
-        assert_eq!(
-            (resized.width, resized.height),
-            (moved.width + 32, moved.height + 16)
-        );
+        assert_eq!(resized.width, moved.width + 32);
+        assert_eq!(resized.height, d.full().height);
         d.pointer(Pointer::Down(
             resized.x + resized.width - 10,
             resized.y + 10,
         ));
         assert_eq!(d.window(App::Files).state, WindowState::Closed);
         assert_eq!(d.focused(), Some(App::Terminal));
+    }
+
+    #[test]
+    fn files_default_window_has_room_for_two_browsing_panes_and_clamps_to_viewport() {
+        let desktop = Desktop::new();
+        let files = desktop.window(App::Files).bounds;
+        assert_eq!((files.width, files.height), (960, 600));
+
+        let mut compact = Desktop::new();
+        compact.viewport(320, 240);
+        let bounds = compact.window(App::Files).bounds;
+        assert!(bounds.x >= 8 && bounds.x + bounds.width <= 312);
+        assert!(bounds.y >= 68 && bounds.y + bounds.height <= 232);
     }
     #[test]
     fn snapping_preview_apply_cancel_restore_and_minimize_preserve_original() {

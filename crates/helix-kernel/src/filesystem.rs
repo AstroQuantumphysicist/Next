@@ -868,3 +868,56 @@ mod tests {
         assert_eq!(result.files[0].path(), "/native/trash-neighbor");
     }
 }
+
+/// Read-only bounded Linux directory snapshot from validated native ancestry.
+/// No user path can escape the owner-authenticated development volume.
+#[cfg(target_os = "none")]
+pub(crate) fn linux_directory(path: &str) -> Result<crate::linux_fs::dirent::Snapshot, u64> {
+    use crate::linux_fs::dirent::{Entry, Snapshot};
+    use next_fs::journal::directories::{self, Error, Kind};
+    let errno = |code: u64| 0u64.wrapping_sub(code);
+    let _guard = Guard::acquire().map_err(|_| errno(16))?;
+    let store = unsafe { &mut *STORE.0.get() }.as_mut().ok_or(errno(5))?;
+    let listing = directories::list(store, DEVELOPMENT_VOLUME_OWNER, path).map_err(|error| {
+        errno(match error {
+            Error::NotFound | Error::MissingParent => 2,
+            Error::NotDirectory => 20,
+            Error::Path => 22,
+            _ => 5,
+        })
+    })?;
+    let inode = |name: &str| {
+        let mut hash = 0xcbf29ce484222325u64;
+        for byte in name.bytes() {
+            hash = (hash ^ u64::from(byte)).wrapping_mul(0x100000001b3);
+        }
+        hash | (1 << 63)
+    };
+    let mut snapshot = Snapshot::EMPTY;
+    snapshot
+        .push(Entry::new(inode(path), 4, ".").ok_or(errno(5))?)
+        .ok_or(errno(5))?;
+    let parent = if path == "/native" {
+        "/native"
+    } else {
+        path.rsplit_once('/')
+            .map_or("/native", |(parent, _)| parent)
+    };
+    snapshot
+        .push(Entry::new(inode(parent), 4, "..").ok_or(errno(5))?)
+        .ok_or(errno(5))?;
+    for entry in &listing.entries[..listing.count] {
+        let name = entry.path().rsplit('/').next().ok_or(errno(5))?;
+        snapshot
+            .push(
+                Entry::new(
+                    inode(entry.path()),
+                    if entry.kind == Kind::Directory { 4 } else { 8 },
+                    name,
+                )
+                .ok_or(errno(5))?,
+            )
+            .ok_or(errno(5))?;
+    }
+    Ok(snapshot)
+}
