@@ -92,6 +92,88 @@ pub fn gettimeofday_copyout(
     }
     Ok(())
 }
+
+/// Linux x86-64 clock IDs implemented by this personality. `clockid_t` is a
+/// signed 32-bit argument, so classify the syscall's low 32 bits as Linux does.
+pub const CLOCK_REALTIME: u64 = 0;
+pub const CLOCK_MONOTONIC: u64 = 1;
+pub const TIMESPEC_BYTES: usize = 16;
+
+fn timespec_bytes(time: next_abi::Timespec) -> Result<[u8; TIMESPEC_BYTES], u64> {
+    if !(0..1_000_000_000).contains(&time.nanoseconds) {
+        return Err(EINVAL);
+    }
+    let mut bytes = [0; TIMESPEC_BYTES];
+    bytes[..8].copy_from_slice(&time.seconds.to_le_bytes());
+    bytes[8..].copy_from_slice(&time.nanoseconds.to_le_bytes());
+    Ok(bytes)
+}
+
+/// Prepare Linux `clock_gettime` output from the selected Helix source. Only
+/// realtime and monotonic clocks are currently available; other Linux clock
+/// IDs are reported as unsupported with `EINVAL` rather than fabricated.
+pub fn clock_gettime_record(
+    clock_id: u64,
+    read_realtime: impl FnOnce() -> Result<next_abi::Timespec, u64>,
+    read_monotonic: impl FnOnce() -> Result<next_abi::Timespec, u64>,
+) -> Result<[u8; TIMESPEC_BYTES], u64> {
+    let time = match clock_id as u32 as u64 {
+        CLOCK_REALTIME => read_realtime()?,
+        CLOCK_MONOTONIC => read_monotonic()?,
+        _ => return Err(EINVAL),
+    };
+    timespec_bytes(time)
+}
+
+/// Prepare the resolution reported by Linux `clock_getres`. The current PIT
+/// source is periodic, so round its fractional nanosecond interval upward.
+pub const fn clock_resolution_ns(source_hz: u32, divisor: u32) -> Option<u64> {
+    if source_hz == 0 || divisor == 0 {
+        return None;
+    }
+    let period = divisor as u64 * 1_000_000_000;
+    Some(period.div_ceil(source_hz as u64))
+}
+
+/// Construct a Linux timespec containing the clock's resolution. `None`
+/// denotes an invalid/unsupported clock ID. A zero internal resolution is
+/// rejected because Linux resolutions must be positive.
+pub fn clock_getres_record(clock_id: u64, resolution_ns: u64) -> Result<[u8; TIMESPEC_BYTES], u64> {
+    if !matches!(clock_id as u32 as u64, CLOCK_REALTIME | CLOCK_MONOTONIC) || resolution_ns == 0 {
+        return Err(EINVAL);
+    }
+    timespec_bytes(next_abi::Timespec {
+        seconds: (resolution_ns / 1_000_000_000) as i64,
+        nanoseconds: (resolution_ns % 1_000_000_000) as i64,
+    })
+}
+
+/// Linux permits a null `res` for `clock_getres`; still validate the clock ID.
+pub fn clock_getres_copyout(
+    clock_id: u64,
+    resolution_ns: u64,
+    result_requested: bool,
+    mut copyout: impl FnMut(&[u8]) -> Result<(), u64>,
+) -> Result<(), u64> {
+    let record = clock_getres_record(clock_id, resolution_ns)?;
+    if result_requested {
+        copyout(&record)?;
+    }
+    Ok(())
+}
+
+/// Perform the single-result copyout after successful source lookup, matching
+/// the Linux syscall's error ordering for unsupported IDs and bad pointers.
+pub fn clock_gettime_copyout(
+    clock_id: u64,
+    read_realtime: impl FnOnce() -> Result<next_abi::Timespec, u64>,
+    read_monotonic: impl FnOnce() -> Result<next_abi::Timespec, u64>,
+    mut copyout: impl FnMut(&[u8]) -> Result<(), u64>,
+) -> Result<(), u64> {
+    let record = clock_gettime_record(clock_id, read_realtime, read_monotonic)?;
+    copyout(&record)
+}
+
 pub const ANON_BASE: u64 = IMAGE_BASE + 0x8_0000;
 pub const ANON_PAGES: usize = 64;
 pub const ANON_END: u64 = ANON_BASE + ANON_PAGES as u64 * 4096;
@@ -482,5 +564,170 @@ mod gettimeofday_tests {
                 matches!(gettimeofday_records(true,true,||Ok(next_abi::Timespec{seconds:1,nanoseconds})),Err(e) if e==EINVAL)
             );
         }
+    }
+}
+
+#[cfg(test)]
+mod clock_syscall_tests {
+    use super::*;
+
+    fn timespec(bytes: &[u8]) -> (i64, i64) {
+        (
+            i64::from_le_bytes(bytes[..8].try_into().unwrap()),
+            i64::from_le_bytes(bytes[8..16].try_into().unwrap()),
+        )
+    }
+
+    #[test]
+    fn clock_gettime_selects_only_the_requested_source_and_encodes_timespec() {
+        let realtime = clock_gettime_record(
+            CLOCK_REALTIME,
+            || {
+                Ok(next_abi::Timespec {
+                    seconds: -7,
+                    nanoseconds: 123_456_789,
+                })
+            },
+            || panic!("realtime lookup must not read monotonic"),
+        )
+        .unwrap();
+        assert_eq!(timespec(&realtime), (-7, 123_456_789));
+
+        let monotonic = clock_gettime_record(
+            CLOCK_MONOTONIC,
+            || panic!("monotonic lookup must not read realtime"),
+            || {
+                Ok(next_abi::Timespec {
+                    seconds: i64::MAX,
+                    nanoseconds: 999_999_999,
+                })
+            },
+        )
+        .unwrap();
+        assert_eq!(timespec(&monotonic), (i64::MAX, 999_999_999));
+
+        // The syscall's clockid_t is a 32-bit signed argument; upper register
+        // bits do not change a valid low-32-bit ID.
+        let monotonic = clock_gettime_record(
+            0x1_0000_0001,
+            || panic!("monotonic lookup must not read realtime"),
+            || {
+                Ok(next_abi::Timespec {
+                    seconds: 3,
+                    nanoseconds: 4,
+                })
+            },
+        )
+        .unwrap();
+        assert_eq!(timespec(&monotonic), (3, 4));
+    }
+
+    #[test]
+    fn unsupported_clock_id_precedes_source_and_copyout_errors() {
+        for clock_id in [2, 4, 7, 0xffff_ffff_ffff_fffe, u64::MAX] {
+            let mut copied = false;
+            assert_eq!(
+                clock_gettime_copyout(
+                    clock_id,
+                    || panic!("unsupported clock must not read realtime"),
+                    || panic!("unsupported clock must not read monotonic"),
+                    |_| {
+                        copied = true;
+                        Err(EFAULT)
+                    }
+                ),
+                Err(EINVAL)
+            );
+            assert!(!copied);
+        }
+
+        assert_eq!(
+            clock_gettime_copyout(
+                CLOCK_MONOTONIC,
+                || panic!("monotonic lookup must not read realtime"),
+                || Ok(next_abi::Timespec {
+                    seconds: 1,
+                    nanoseconds: 2,
+                }),
+                |_| Err(EFAULT)
+            ),
+            Err(EFAULT)
+        );
+    }
+
+    #[test]
+    fn malformed_source_timespec_is_rejected_before_copyout() {
+        for nanoseconds in [-1, 1_000_000_000] {
+            let mut copied = false;
+            assert_eq!(
+                clock_gettime_copyout(
+                    CLOCK_REALTIME,
+                    || {
+                        Ok(next_abi::Timespec {
+                            seconds: 1,
+                            nanoseconds,
+                        })
+                    },
+                    || panic!("realtime lookup must not read monotonic"),
+                    |_| {
+                        copied = true;
+                        Ok(())
+                    }
+                ),
+                Err(EINVAL)
+            );
+            assert!(!copied);
+        }
+        assert_eq!(
+            clock_gettime_record(
+                CLOCK_REALTIME,
+                || Err(ENODEV),
+                || panic!("realtime lookup must not read monotonic")
+            ),
+            Err(ENODEV)
+        );
+    }
+
+    #[test]
+    fn clock_getres_reports_rounded_up_pit_resolution_and_allows_null_result() {
+        let resolution = clock_resolution_ns(1_193_182, 11_931).unwrap();
+        assert_eq!(resolution, 9_999_313);
+        assert_eq!(clock_resolution_ns(0, 1), None);
+        assert_eq!(clock_resolution_ns(1, 0), None);
+
+        let record = clock_getres_record(CLOCK_REALTIME, resolution).unwrap();
+        assert_eq!(timespec(&record), (0, 9_999_313));
+        assert_eq!(clock_getres_record(CLOCK_MONOTONIC, resolution), Ok(record));
+        assert_eq!(clock_getres_record(0x1_0000_0001, resolution), Ok(record));
+        assert_eq!(clock_getres_record(2, resolution), Err(EINVAL));
+        assert_eq!(clock_getres_record(CLOCK_REALTIME, 0), Err(EINVAL));
+
+        let mut copy_count = 0;
+        assert_eq!(
+            clock_getres_copyout(CLOCK_MONOTONIC, resolution, false, |_| {
+                copy_count += 1;
+                Err(EFAULT)
+            }),
+            Ok(())
+        );
+        assert_eq!(copy_count, 0);
+        assert_eq!(
+            clock_getres_copyout(7, resolution, false, |_| {
+                copy_count += 1;
+                Ok(())
+            }),
+            Err(EINVAL)
+        );
+        assert_eq!(copy_count, 0);
+
+        let mut copied = [0; TIMESPEC_BYTES];
+        assert_eq!(
+            clock_getres_copyout(CLOCK_MONOTONIC, resolution, true, |bytes| {
+                copied.copy_from_slice(bytes);
+                Ok(())
+            }),
+            Ok(())
+        );
+        assert_eq!(timespec(&copied), (0, 9_999_313));
     }
 }

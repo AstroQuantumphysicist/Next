@@ -1,6 +1,8 @@
 //! HPET counter discovery and bounded advancement probe. Comparator interrupts
 //! stay disabled and legacy replacement stays off, so PIT remains the scheduler
-//! clock. This does not claim calibrated HPET scheduling or SMP timer support.
+//! clock. A validated free-running counter also provides a high-resolution
+//! monotonic reading on the bootstrap CPU; this is not calibrated HPET
+//! scheduling or SMP timer support.
 use crate::acpi::Hpet;
 use core::{
     ptr,
@@ -74,6 +76,24 @@ pub fn authorize_development_mmio(
 impl HpetInfo {
     pub fn elapsed_ns(self, ticks: u64) -> u64 {
         ((ticks as u128 * self.period_fs as u128) / 1_000_000).min(u64::MAX as u128) as u64
+    }
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct MonotonicOrigin {
+    counter_ticks: u64,
+    monotonic_ns: u64,
+    period_fs: u32,
+}
+impl MonotonicOrigin {
+    fn at(self, counter_ticks: u64) -> Option<u64> {
+        let elapsed_ticks = counter_ticks.wrapping_sub(self.counter_ticks);
+        // Accept a natural 64-bit counter wrap, but reject readings at least
+        // half a counter-space away, which are indistinguishable from regression.
+        if elapsed_ticks >= 1u64 << 63 {
+            return None;
+        }
+        self.monotonic_ns
+            .checked_add(counter_nanoseconds(elapsed_ticks, self.period_fs)?)
     }
 }
 /// MMIO must be represented by reserved or memory-mapped I/O descriptors,
@@ -188,6 +208,20 @@ pub unsafe fn probe(descriptor: Hpet, regions: &MemoryRegions<'_>) -> Result<Hpe
         let delta = now.wrapping_sub(first);
         if delta != 0 && delta < 1u64 << 63 {
             info.counter_ticks = delta;
+            // Bridge the validated counter to the existing boot-relative PIT
+            // epoch. Read the PIT first so switching sources cannot move the
+            // public monotonic clock behind the value already observed there.
+            let monotonic_ns = crate::timer::nanoseconds();
+            let counter_ticks = ptr::read_volatile(counter);
+            if counter_ticks.wrapping_sub(first) == 0
+                || counter_ticks.wrapping_sub(first) >= 1u64 << 63
+            {
+                ptr::write_volatile(configuration, old);
+                fence(Ordering::SeqCst);
+                return Err(Error::Stopped);
+            }
+            MONOTONIC_BASE_NS.store(monotonic_ns, Ordering::Relaxed);
+            MONOTONIC_BASE_COUNTER.store(counter_ticks, Ordering::Relaxed);
             // Publish only after ACPI/resource/UC/capability/advancement checks.
             // This clock measures dispatch occupancy; PIT still delivers IRQs.
             ACCOUNTING_PERIOD_FS.store(info.period_fs as u64, Ordering::Relaxed);
@@ -202,6 +236,8 @@ pub unsafe fn probe(descriptor: Hpet, regions: &MemoryRegions<'_>) -> Result<Hpe
 }
 static ACCOUNTING_ADDRESS: AtomicU64 = AtomicU64::new(0);
 static ACCOUNTING_PERIOD_FS: AtomicU64 = AtomicU64::new(0);
+static MONOTONIC_BASE_COUNTER: AtomicU64 = AtomicU64::new(0);
+static MONOTONIC_BASE_NS: AtomicU64 = AtomicU64::new(0);
 /// Read only the kernel-owned validated counter. No caller supplies an MMIO
 /// address, and stopped/legacy-enabled hardware is unavailable, never invented.
 pub fn accounting_ns() -> Option<u64> {
@@ -222,6 +258,46 @@ pub fn accounting_ns() -> Option<u64> {
     {
         None
     }
+}
+/// Read the validated free-running counter in the PIT boot-time epoch. The
+/// source is bootstrap-CPU-only; callers retain a PIT fallback if it stops.
+pub fn monotonic_ns() -> Option<u64> {
+    let address = ACCOUNTING_ADDRESS.load(Ordering::Acquire);
+    if address == 0 {
+        return None;
+    }
+    #[cfg(target_os = "none")]
+    unsafe {
+        let config = ptr::read_volatile((address + 0x10) as *const u64);
+        if config & 3 != 1 {
+            return None;
+        }
+        let counter_ticks = ptr::read_volatile((address + 0xf0) as *const u64);
+        MonotonicOrigin {
+            counter_ticks: MONOTONIC_BASE_COUNTER.load(Ordering::Relaxed),
+            monotonic_ns: MONOTONIC_BASE_NS.load(Ordering::Relaxed),
+            period_fs: ACCOUNTING_PERIOD_FS.load(Ordering::Relaxed) as u32,
+        }
+        .at(counter_ticks)
+    }
+    #[cfg(not(target_os = "none"))]
+    {
+        None
+    }
+}
+/// Smallest representable monotonic step for the active validated source,
+/// rounded up to the nanosecond unit exposed by the POSIX timespec ABI.
+pub fn monotonic_resolution_ns() -> Option<u64> {
+    if ACCOUNTING_ADDRESS.load(Ordering::Acquire) == 0 {
+        return None;
+    }
+    resolution_ns_from_period(ACCOUNTING_PERIOD_FS.load(Ordering::Relaxed) as u32)
+}
+fn resolution_ns_from_period(period_fs: u32) -> Option<u64> {
+    if period_fs == 0 || period_fs > 100_000_000 {
+        return None;
+    }
+    Some(u64::from(period_fs).div_ceil(1_000_000))
 }
 fn counter_nanoseconds(ticks: u64, period_fs: u32) -> Option<u64> {
     if period_fs == 0 || period_fs > 100_000_000 {
@@ -244,6 +320,36 @@ mod tests {
         assert_eq!(counter_nanoseconds(1, 0), None);
         assert_eq!(counter_nanoseconds(1, 100_000_001), None);
         assert_eq!(accounting_ns(), None); // host harness never performs MMIO
+    }
+    #[test]
+    fn monotonic_origin_bridges_pit_epoch_and_handles_counter_wrap_safely() {
+        let origin = MonotonicOrigin {
+            counter_ticks: u64::MAX - 15,
+            monotonic_ns: 42_000_000,
+            period_fs: 10_000_000,
+        };
+        assert_eq!(origin.at(u64::MAX - 15), Some(42_000_000));
+        // Thirty-two ticks across the hardware wrap are 320 ns at 10 ns/tick.
+        assert_eq!(origin.at(16), Some(42_000_320));
+        assert_eq!(origin.at(u64::MAX - 16), None);
+        assert_eq!(
+            MonotonicOrigin {
+                counter_ticks: 0,
+                monotonic_ns: u64::MAX,
+                period_fs: 10_000_000,
+            }
+            .at(1),
+            None
+        );
+    }
+    #[test]
+    fn monotonic_resolution_rounds_counter_period_up_to_nanoseconds() {
+        assert_eq!(resolution_ns_from_period(10_000_000), Some(10));
+        assert_eq!(resolution_ns_from_period(1), Some(1));
+        assert_eq!(resolution_ns_from_period(1_000_001), Some(2));
+        assert_eq!(resolution_ns_from_period(0), None);
+        assert_eq!(resolution_ns_from_period(100_000_001), None);
+        assert_eq!(monotonic_resolution_ns(), None); // host harness never publishes MMIO
     }
     #[test]
     fn real_qemu_capability_profile_has_three_64bit_timers_at_100mhz() {

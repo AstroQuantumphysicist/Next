@@ -2,7 +2,7 @@
   "schema": 1,
   "spec_sha256": "248a4f8c44f6c54e91dcf548ffeb0fb1e83c72dc2e378870f6315e6ca1592a22",
   "product_ready": false,
-  "note": "2026-10-12 qemu64 development evidence uses signed image SHA256 64d07c2ff4b53c3e14dafdb23ed28b655bafc98eab9543fe099229910f302d10: the 138-check one-vCPU smoke includes two signed one-shot timer probes (exit 58, zero/absolute deadlines, cancellation, rights, transfer and quota cleanup), Home arithmetic search, Linux cwd/openat (exit 56) and gettimeofday/ftruncate (exit 57). Coverage remains 74 pending, 121 partial, 0 verified; product_ready=false. Separate earlier DHCPv6 candidate evidence remains bound to image 8902846a7a484186361520c6c626846479710faef2afa8729bdad664e66825f3. This is not Next 1.0 or hardware certification.",
+  "note": "2026-10-12 latest qemu64 development evidence uses signed image SHA256 6b245fa85c2c49ad1da63cf7d6fdfb813e3d351c3275217c736d7b1c43b1da15: the 138-check one-vCPU smoke includes two Linux clock_gettime/clock_getres/monotonic sleep fixture runs (exit 43), updated Prism notification controls, Home arithmetic search, Files tabs/panes/copy, and earlier unchanged native/runtime probes. Source-bound logs, screenshot manifests and captures are in docs/evidence/milestones/runtime-prism-2026-10-12/prism-clock-notifications-wave/. Coverage remains 74 pending, 121 partial, 0 verified; product_ready=false. Older image-specific evidence remains in its original bundles. This is not Next 1.0 or hardware certification.",
   "requirements": [
     {
       "id": "NEXT-BOOT-001",
@@ -375,9 +375,23 @@
           "scope": "The signed qemu64 guest runs two timer probes through the actual native runtime: zero/absolute deadlines, cancellation ordering, transferred rights, stale generations and creator quotas; each exits 58. This is one-vCPU BSP-only evidence, not a clock-quality or hardware result.",
           "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/prism-linux-search-wave/serial.log.gz",
           "sha256": "d772e6c9bc7ff0ce5eda3d91c4479c54268c5c2ddd51f034805253ab97dfbeeb"
+        },
+        {
+          "level": "boot_smoke",
+          "command": "source tools/env.sh && bash tools/test.sh && source tools/env.sh && bash tools/build.sh && python3 tools/boot_smoke.py --cpu qemu64 --timeout 360 --capture-prism-gallery --image build/next-dev.img --output-dir build/runtime-prism-clock-notification-r12",
+          "scope": "The signed qemu64 guest passed Linux realtime/monotonic clock_gettime, clock_getres, monotonic sleep and bounds fixtures twice (exit 43 each). A validated HPET supplies monotonic reads when present; scheduler deadlines and sleep dispatch remain PIT-based on the BSP.",
+          "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/prism-clock-notifications-wave/boot-smoke.json",
+          "sha256": "b31d6895676956677a40ed111fd77b08ccc759e7587df371656d51ec480e5dd3"
+        },
+        {
+          "level": "host_tested",
+          "command": "source tools/env.sh && bash tools/test.sh && source tools/env.sh && bash tools/build.sh && python3 tools/boot_smoke.py --cpu qemu64 --timeout 360 --capture-prism-gallery --image build/next-dev.img --output-dir build/runtime-prism-clock-notification-r12",
+          "scope": "Workspace tests cover HPET conversion/period rounding and PIT fallback, plus monotonicity preservation when the optional source stops. This does not establish high-resolution scheduling, suspend accounting, or SMP-safe timer delivery.",
+          "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/prism-clock-notifications-wave/validation.md",
+          "sha256": "2b7170708e6dddb731c97191a8600b6a012a7bb64df91ab310803a38663c032c"
         }
       ],
-      "remaining": "One-shot monotonic timers now support bounded creator quotas, terminal expiry/cancel ordering, absolute waits and capability transfer on the serialized BSP path. High-resolution/calibrated clock sources, wall-time service, suspend accounting, SMP-safe timer delivery and complete IRQ/lock policy remain absent."
+      "remaining": "The validated optional HPET can now provide higher-resolution monotonic clock reads with PIT fallback, and the qemu64 Linux clock fixtures exercise realtime/monotonic clock_gettime, clock_getres and sleep. Scheduler deadlines remain PIT-based; wall-time service, suspend accounting, SMP-safe timer delivery, periodic/UTC timers and complete IRQ/lock policy remain absent."
     },
     {
       "id": "NEXT-MEM-001",
@@ -606,28 +620,28 @@
         {
           "level": "boot_smoke",
           "command": "source tools/env.sh && python3 tools/boot_smoke.py --smp 1 --timeout 600 --output-dir build/final-image-qemu64",
-          "scope": "Earlier feature-wave image SHA256 f4986796\u2026; 120 checks passed with 1 QMP CPU object(s) and 1 enabled ACPI/MADT CPUs. APs remain stopped, reservations retained, and scheduler scope remains the BSP.",
+          "scope": "Earlier feature-wave image SHA256 f4986796…; 120 checks passed with 1 QMP CPU object(s) and 1 enabled ACPI/MADT CPUs. APs remain stopped, reservations retained, and scheduler scope remains the BSP.",
           "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/feature-wave/qemu64/boot-smoke.json",
           "sha256": "83a51ea215b57d750e3da5f108336849bd8de27cd48626ab1bf6087806e8cf35"
         },
         {
           "level": "boot_smoke",
           "command": "source tools/env.sh && python3 tools/boot_smoke.py --smp 2 --timeout 600 --output-dir build/final-image-smp2",
-          "scope": "Earlier feature-wave image SHA256 f4986796\u2026; 119 checks passed with 2 QMP CPU object(s) and 2 enabled ACPI/MADT CPUs. APs remain stopped, reservations retained, and scheduler scope remains the BSP.",
+          "scope": "Earlier feature-wave image SHA256 f4986796…; 119 checks passed with 2 QMP CPU object(s) and 2 enabled ACPI/MADT CPUs. APs remain stopped, reservations retained, and scheduler scope remains the BSP.",
           "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/feature-wave/smp/smp-2/boot-smoke.json",
           "sha256": "7a138613fe6c3305d2092d15e6e4c29c322debdad282ab3326de9c8ffec07dbf"
         },
         {
           "level": "boot_smoke",
           "command": "source tools/env.sh && python3 tools/boot_smoke.py --smp 4 --timeout 600 --output-dir build/final-image-smp4",
-          "scope": "Earlier feature-wave image SHA256 f4986796\u2026; 119 checks passed with 4 QMP CPU object(s) and 4 enabled ACPI/MADT CPUs. APs remain stopped, reservations retained, and scheduler scope remains the BSP.",
+          "scope": "Earlier feature-wave image SHA256 f4986796…; 119 checks passed with 4 QMP CPU object(s) and 4 enabled ACPI/MADT CPUs. APs remain stopped, reservations retained, and scheduler scope remains the BSP.",
           "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/feature-wave/smp/smp-4/boot-smoke.json",
           "sha256": "bb333c20c06da57ad3334628d36b9708532d78af451e01ac33b8945ba2ecd138"
         },
         {
           "level": "boot_smoke",
           "command": "source tools/env.sh && python3 tools/boot_smoke.py --smp 8 --timeout 600 --output-dir build/final-image-smp8",
-          "scope": "Earlier feature-wave image SHA256 f4986796\u2026; 119 checks passed with 8 QMP CPU object(s) and 8 enabled ACPI/MADT CPUs. APs remain stopped, reservations retained, and scheduler scope remains the BSP.",
+          "scope": "Earlier feature-wave image SHA256 f4986796…; 119 checks passed with 8 QMP CPU object(s) and 8 enabled ACPI/MADT CPUs. APs remain stopped, reservations retained, and scheduler scope remains the BSP.",
           "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/feature-wave/smp/smp-8/boot-smoke.json",
           "sha256": "ee3a6977b84296e2d728b3fb17a259b50614278f72a46c61eebec53fbdd6d7c3"
         },
@@ -2286,7 +2300,7 @@
         {
           "level": "boot_smoke",
           "command": "source tools/env.sh && python3 tools/dhcp_guest_smoke.py --dhcpv6-only --timeout 180 --image build/next-dev.img --output build/feature-wave-final-dhcpv6/dhcpv6-guest-smoke.json",
-          "scope": "Actual q35/TCG qemu64 image SHA256 8902846a7a484186361520c6c626846479710faef2afa8729bdad664e66825f3 with deterministic Ethernet peer: dropped first Solicit/Request, stable retry transaction IDs, Elapsed Time 0\u2192100 centiseconds, Request IA_NA T1/T2 and IAADDR lifetimes zero; matching Reply supplies T1/T2 20/40 and preferred/valid lifetimes 40/60. Guest logs a candidate only; no address install, DAD, or routes.",
+          "scope": "Actual q35/TCG qemu64 image SHA256 8902846a7a484186361520c6c626846479710faef2afa8729bdad664e66825f3 with deterministic Ethernet peer: dropped first Solicit/Request, stable retry transaction IDs, Elapsed Time 0→100 centiseconds, Request IA_NA T1/T2 and IAADDR lifetimes zero; matching Reply supplies T1/T2 20/40 and preferred/valid lifetimes 40/60. Guest logs a candidate only; no address install, DAD, or routes.",
           "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/feature-wave-final/dhcpv6-guest-smoke.json",
           "sha256": "102c68b4108be4c5a5b67fb025f0f345d252076ab8b3f4b4769dae750026b6d9"
         }
@@ -2516,7 +2530,7 @@
     {
       "id": "SECTION-14",
       "kind": "section",
-      "text": "Prism user experience \u2014 visual and behavioral specification",
+      "text": "Prism user experience — visual and behavioral specification",
       "status": "pending",
       "evidence": [],
       "remaining": "Implement and validate the complete specification contract."
@@ -2900,7 +2914,7 @@
     {
       "id": "SECTION-15",
       "kind": "section",
-      "text": "Compatibility architecture \u2014 principles and boundaries",
+      "text": "Compatibility architecture — principles and boundaries",
       "status": "pending",
       "evidence": [],
       "remaining": "Implement and validate the complete specification contract."
@@ -3113,6 +3127,13 @@
           "scope": "Signed q35/TCG/OVMF qemu64 image, SHA256 1b226f5ee89a59656cf74a673ea381f7d56e9dbe764bb852c75d224a902d6c6b: original static Linux fstat/getdents64 fixtures exited 54 and 55 within 128 guest checks. Directory results are bounded open-time snapshots under /native; dynamic loading, libc, broad POSIX semantics, and real application compatibility remain absent.",
           "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/fstat-getdents-files-r3/boot-smoke.json",
           "sha256": "94af7284d227bbe078d53142c088bf80488eb2d5d2afad37c80017ae577aee97"
+        },
+        {
+          "level": "boot_smoke",
+          "command": "source tools/env.sh && bash tools/test.sh && source tools/env.sh && bash tools/build.sh && python3 tools/boot_smoke.py --cpu qemu64 --timeout 360 --capture-prism-gallery --image build/next-dev.img --output-dir build/runtime-prism-clock-notification-r12",
+          "scope": "Two static Linux clock fixtures ran in the bounded profile and exited 43 after checking realtime/monotonic clock_gettime, clock_getres, monotonic sleep, pointer bounds and error behavior. Dynamic linking, VDSO, general libc, and broad application compatibility remain unsupported.",
+          "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/prism-clock-notifications-wave/boot-smoke.json",
+          "sha256": "b31d6895676956677a40ed111fd77b08ccc759e7587df371656d51ec480e5dd3"
         }
       ],
       "remaining": "The static Linux profile runs its existing bounded guest fixtures; static guest fixtures now cover getpid, uname and lseek in the exact bounded profile. Dynamic loading, broad libc/POSIX semantics, signals, networking, VDSO, namespaces and real application compatibility remain absent."
@@ -3178,9 +3199,23 @@
           "scope": "Signed q35/TCG/OVMF qemu64 image, SHA256 1b226f5ee89a59656cf74a673ea381f7d56e9dbe764bb852c75d224a902d6c6b: original static Linux ABI fixtures fstat/getdents64 exited 54 and 55; focused host contracts passed 15 cases for record layout, descriptors, cookies, bounded copyout, and cursor commit. This remains a narrow syscall gateway.",
           "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/fstat-getdents-files-r3/boot-smoke.json",
           "sha256": "94af7284d227bbe078d53142c088bf80488eb2d5d2afad37c80017ae577aee97"
+        },
+        {
+          "level": "host_tested",
+          "command": "source tools/env.sh && bash tools/test.sh && source tools/env.sh && bash tools/build.sh && python3 tools/boot_smoke.py --cpu qemu64 --timeout 360 --capture-prism-gallery --image build/next-dev.img --output-dir build/runtime-prism-clock-notification-r12",
+          "scope": "The clock syscall adapter and Linux path resolver have focused host contracts for supported IDs, resolution rounding, null/faulting copyout, malformed bases, confinement, and absolute paths independent of dirfd. The profile remains a bounded syscall subset.",
+          "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/prism-clock-notifications-wave/validation.md",
+          "sha256": "2b7170708e6dddb731c97191a8600b6a012a7bb64df91ab310803a38663c032c"
+        },
+        {
+          "level": "boot_smoke",
+          "command": "source tools/env.sh && bash tools/test.sh && source tools/env.sh && bash tools/build.sh && python3 tools/boot_smoke.py --cpu qemu64 --timeout 360 --capture-prism-gallery --image build/next-dev.img --output-dir build/runtime-prism-clock-notification-r12",
+          "scope": "The signed qemu64 guest ran clock.elf and clock-gate.elf; both passed clock_gettime/clock_getres, monotonic sleep and bounds checks and exited 43.",
+          "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/prism-clock-notifications-wave/boot-smoke.json",
+          "sha256": "b31d6895676956677a40ed111fd77b08ccc759e7587df371656d51ec480e5dd3"
         }
       ],
-      "remaining": "The tested ABI gateway remains an explicit, narrow syscall subset. Static guest fixtures now cover getpid/uname/lseek in the explicit narrow profile; broad Linux and Windows ABI compatibility, dynamic loaders, libc and extensive applications remain unsupported."
+      "remaining": "The tested ABI gateway remains an explicit, narrow syscall subset, now including bounded realtime/monotonic clock_gettime and clock_getres. Broad Linux and Windows ABI compatibility, dynamic loaders, VDSO, libc, signals, and extensive applications remain unsupported."
     },
     {
       "id": "SECTION-17.3",
@@ -3638,9 +3673,16 @@
           "scope": "Ten missing/malformed/forged deployment and independently altered boot-artifact cases reject on QEMU, including signature, signer, permission and digest binding. No private key used by mutations; unsigned EFI anchor is not Secure Boot.",
           "artifact": "docs/evidence/milestones/60ab816c97cc/package-failures.json",
           "sha256": "f375cef0e41c63ef2fb46cd973fcadd5ec743154ae20914d02d97b4770f064dc"
+        },
+        {
+          "level": "host_tested",
+          "command": "source tools/env.sh && bash tools/test.sh && source tools/env.sh && bash tools/build.sh && python3 tools/boot_smoke.py --cpu qemu64 --timeout 360 --capture-prism-gallery --image build/next-dev.img --output-dir build/runtime-prism-clock-notification-r12",
+          "scope": "Package installer tests confirm a process crash releases its kernel-managed advisory lock, a subsequent installer recovers, and concurrent live writers serialize. Stale staging cleanup remains owner-directed; this is not a durable transaction journal or guest package service.",
+          "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/prism-clock-notifications-wave/validation.md",
+          "sha256": "2b7170708e6dddb731c97191a8600b6a012a7bb64df91ab310803a38663c032c"
         }
       ],
-      "remaining": "Canonical Ed25519 bundles and host immutable deployments/atomic registry install-update-uninstall/verified rollback are tested. Owner-signed bounded rotation chains enforce exact generations, attenuation and retirement against caller-protected trust state. Guest package authority, durable monotonic boot-state integration, solver/migrations, repository expiry, GC and crash recovery remain absent."
+      "remaining": "Canonical Ed25519 bundles and host immutable deployments/atomic registry install-update-uninstall/verified rollback are tested. Owner-signed bounded rotation chains enforce exact generations, attenuation and retirement against caller-protected trust state. Crash-released advisory locking removes stale-lock deadlock, but durable install journals, stale staging automation, guest package authority, solver/migrations, repository expiry, GC, and protected monotonic boot-state integration remain absent."
     },
     {
       "id": "SECTION-20.3",
@@ -3791,9 +3833,23 @@
           "scope": "122 total assertions on immutable eighth image including actual PS2 taskbar/home/files/settings transitions, trusted notification origin/read/dismiss/DND, completed-frame screenshots and strict F8 consent crop preservation. This includes baseline assertions, not122 additional independent checks. No screen-reader/Unicode/user compositor claim.",
           "artifact": "docs/evidence/milestones/e1aa0516b94e/prism-interaction/boot-smoke.json",
           "sha256": "f3979eaa17baa83afc79c52a78c78c8d6f82dec98446b3109310a997973bd299"
+        },
+        {
+          "level": "host_tested",
+          "command": "source tools/env.sh && bash tools/test.sh && source tools/env.sh && bash tools/build.sh && python3 tools/boot_smoke.py --cpu qemu64 --timeout 360 --capture-prism-gallery --image build/next-dev.img --output-dir build/runtime-prism-clock-notification-r12",
+          "scope": "Publisher policy tests cover exact package-label matching, bounded session-only block/allow/reset behavior, no ID/history consumption on denied process notices, and unaffected system/service notifications.",
+          "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/prism-clock-notifications-wave/validation.md",
+          "sha256": "2b7170708e6dddb731c97191a8600b6a012a7bb64df91ab310803a38663c032c"
+        },
+        {
+          "level": "boot_smoke",
+          "command": "source tools/env.sh && bash tools/test.sh && source tools/env.sh && bash tools/build.sh && python3 tools/boot_smoke.py --cpu qemu64 --timeout 360 --capture-prism-gallery --image build/next-dev.img --output-dir build/runtime-prism-clock-notification-r12",
+          "scope": "The updated guest capture shows the selected process publisher and the Block app control. The policy is session-only and is not a persistent notification history or system-wide permission service.",
+          "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/prism-clock-notifications-wave/boot-smoke.json",
+          "sha256": "b31d6895676956677a40ed111fd77b08ccc759e7587df371656d51ec480e5dd3"
         }
       ],
-      "remaining": "Five bounded kernel-hosted panels, original licensed ASCII font/wallpaper/light surfaces and actual keyboard/mouse/Home/trusted session-only notification interactions work. Finished installed-app/Home/indexing/workspaces, persisted appearance/GUI file mutations, Unicode shaping, screen-reader accessibility, per-app notification permissions/history and user compositor remain absent in eighth image; newer ninth source is separate."
+      "remaining": "Five bounded kernel-hosted panels, original licensed ASCII font/wallpaper/light surfaces, and actual keyboard/mouse/Home interactions work. Process publishers can be blocked or allowed for the current session by exact package label; policy is not persistent. Finished installed-app/Home/indexing/workspaces, persistent notification history, Unicode shaping, screen-reader accessibility, and a user compositor remain absent."
     },
     {
       "id": "SECTION-22.2",
@@ -4516,7 +4572,7 @@
         {
           "level": "boot_smoke",
           "command": "source tools/env.sh && python3 tools/dhcp_guest_smoke.py --dhcpv6-only --timeout 180 --image build/next-dev.img --output build/feature-wave-final-dhcpv6/dhcpv6-guest-smoke.json",
-          "scope": "Actual q35/TCG qemu64 image SHA256 8902846a7a484186361520c6c626846479710faef2afa8729bdad664e66825f3 with deterministic Ethernet peer: dropped first Solicit/Request, stable retry transaction IDs, Elapsed Time 0\u2192100 centiseconds, Request IA_NA T1/T2 and IAADDR lifetimes zero; matching Reply supplies T1/T2 20/40 and preferred/valid lifetimes 40/60. Guest logs a candidate only; no address install, DAD, or routes.",
+          "scope": "Actual q35/TCG qemu64 image SHA256 8902846a7a484186361520c6c626846479710faef2afa8729bdad664e66825f3 with deterministic Ethernet peer: dropped first Solicit/Request, stable retry transaction IDs, Elapsed Time 0→100 centiseconds, Request IA_NA T1/T2 and IAADDR lifetimes zero; matching Reply supplies T1/T2 20/40 and preferred/valid lifetimes 40/60. Guest logs a candidate only; no address install, DAD, or routes.",
           "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/feature-wave-final/dhcpv6-guest-smoke.json",
           "sha256": "102c68b4108be4c5a5b67fb025f0f345d252076ab8b3f4b4769dae750026b6d9"
         }

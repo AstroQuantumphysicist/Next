@@ -82,9 +82,11 @@ next-package uninstall work/apps org.example.app
 The caller owns an existing private root and must protect its ancestors from
 hostile renaming. Roots writable by another user/group, symlinks, special-file
 payloads, unsafe paths, conflicting package IDs, and corrupt metadata fail
-closed. Writers serialize with an exclusive lock file. Signature and complete
-content verification occur before creating locks, staging files, or registry
-state. No package scripts run and declared permissions remain requests.
+closed. Writers serialize on a no-follow advisory lock file. The lock inode is
+reused, and the kernel releases its lock when a writer exits or crashes.
+Signature and complete content verification occur before creating locks,
+staging files, or registry state. No package scripts run and declared
+permissions remain requests.
 
 Each deployment is named by the SHA-256 of its complete authenticated bundle.
 Files live inside that deployment's private namespace, so another application's
@@ -99,10 +101,11 @@ Precommit failures leave active registry entries unchanged. A synchronization
 failure after registry rename is explicitly `Indeterminate`: the caller must
 reopen and inspect the registry, rather than assume the commit did not happen.
 Persistence still depends on the host filesystem and compliant hardware honoring
-synchronization requests. A process crash can leave a stale lock or inactive
-staging directory; these are not automatically erased or treated as trusted.
-Owner-directed recovery is needed. Uninstall removes registry activation but
-retains immutable deployments; garbage collection is not implemented.
+synchronization requests. A process crash releases its lock but can leave an
+inactive staging directory; staging data is not automatically trusted or
+removed, so owner-directed recovery is needed. Uninstall removes registry
+activation but retains immutable deployments; garbage collection is not
+implemented.
 
 This prototype has no dependency solver, repository expiry/rollback protection,
 user-data migration hooks, package garbage collector, or runtime permission UI.
@@ -110,11 +113,12 @@ It does not defend against an attacker who already controls the private root or
 its parent directories. Kernel installation and application execution must still
 validate native executable ABI and enforce process capabilities.
 
-Eight installer tests use real temporary directories and cover fresh install,
+Installer tests use real temporary directories and cover fresh install,
 update/reopen, rollback, uninstall, conflicting IDs, isolated file ownership,
-invalid signatures before mutation, two injected precommit failure boundaries,
-corrupt extracted files, corrupt rollback deployments, symlinks, malformed registry
-state, revoked rollback, and wrong-key rejection before destination access.
+invalid signatures before mutation, injected precommit failure boundaries,
+crash-left lock recovery and live-writer serialization, corrupt extracted files,
+corrupt rollback deployments, symlinks, malformed registry state, revoked
+rollback, and wrong-key rejection before destination access.
 
 ## Authenticated trust-root rotation
 

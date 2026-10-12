@@ -4,7 +4,7 @@
 use core::{
     cell::UnsafeCell,
     mem::MaybeUninit,
-    sync::atomic::{AtomicU8, Ordering},
+    sync::atomic::{AtomicU64, AtomicU8, Ordering},
 };
 use next_abi::Timespec;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -46,6 +46,24 @@ struct Global(UnsafeCell<MaybeUninit<Anchor>>);
 unsafe impl Sync for Global {}
 static ANCHOR: Global = Global(UnsafeCell::new(MaybeUninit::uninit()));
 static STATE: AtomicU8 = AtomicU8::new(0);
+static LAST_MONOTONIC_NS: AtomicU64 = AtomicU64::new(0);
+fn select_monotonic_ns(pit_ns: u64, hpet_ns: Option<u64>, previous_ns: u64) -> u64 {
+    // If HPET is available, use its validated sub-PIT-tick resolution. When it
+    // stalls or becomes unavailable, return to PIT and hold the last observed
+    // time until that fallback catches up. This preserves monotonicity across
+    // source changes without making scheduler deadlines depend on HPET.
+    hpet_ns
+        .filter(|value| *value > previous_ns || pit_ns <= previous_ns)
+        .unwrap_or(pit_ns)
+        .max(previous_ns)
+}
+fn monotonic_nanoseconds() -> u64 {
+    let pit_ns = crate::timer::nanoseconds();
+    let previous_ns = LAST_MONOTONIC_NS.load(Ordering::Acquire);
+    let candidate = select_monotonic_ns(pit_ns, crate::hpet::monotonic_ns(), previous_ns);
+    let raced = LAST_MONOTONIC_NS.fetch_max(candidate, Ordering::AcqRel);
+    candidate.max(raced)
+}
 /// Exactly one attempt. Even an unavailable RTC cannot later be silently
 /// substituted/reanchored; consumers see Unavailable for that boot.
 #[cfg(target_os = "none")]
@@ -55,7 +73,7 @@ pub fn initialize() -> Result<(), Error> {
         .map_err(|_| Error::AlreadyInitialized)?;
     let result = unsafe { crate::rtc::read_utc() }
         .map_err(Error::Rtc)
-        .and_then(|utc| Anchor::new(utc.seconds, crate::timer::nanoseconds()));
+        .and_then(|utc| Anchor::new(utc.seconds, monotonic_nanoseconds()));
     match result {
         Ok(anchor) => {
             unsafe {
@@ -77,11 +95,11 @@ pub fn realtime() -> Result<Timespec, Error> {
     unsafe {
         (*ANCHOR.0.get())
             .assume_init_ref()
-            .at(crate::timer::nanoseconds())
+            .at(monotonic_nanoseconds())
     }
 }
 pub fn monotonic() -> Timespec {
-    let now = crate::timer::nanoseconds();
+    let now = monotonic_nanoseconds();
     Timespec {
         seconds: (now / 1_000_000_000) as i64,
         nanoseconds: (now % 1_000_000_000) as i64,
@@ -173,5 +191,14 @@ mod tests {
         let first = anchor.at(7_123_456_789).unwrap();
         assert_eq!(anchor.at(7_123_456_789), Ok(first));
         assert_eq!(anchor.at(8_123_456_789).unwrap().seconds, first.seconds + 1);
+    }
+    #[test]
+    fn source_selection_keeps_time_monotonic_during_hpet_failover() {
+        assert_eq!(select_monotonic_ns(100, Some(101), 100), 101);
+        // A stopped HPET must not freeze time after PIT has passed it.
+        assert_eq!(select_monotonic_ns(120, Some(101), 110), 120);
+        // If fallback lags the last HPET value, hold time rather than regress.
+        assert_eq!(select_monotonic_ns(105, None, 110), 110);
+        assert_eq!(select_monotonic_ns(111, None, 110), 111);
     }
 }

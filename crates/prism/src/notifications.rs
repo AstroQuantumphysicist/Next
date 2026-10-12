@@ -2,6 +2,9 @@
 //! No native publisher capability, notification permission service, persistence,
 //! sound, lock-screen redaction, or destructive notification action is implied.
 pub const CAPACITY: usize = 8;
+/// Policies outlive individual notification records, so this is independent of
+/// `CAPACITY` and can cover more apps than the history can currently display.
+pub const APP_PERMISSION_CAPACITY: usize = 16;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Source {
     Process { pid: u64 },
@@ -19,8 +22,15 @@ pub enum Error {
     TextTooLong,
     InvalidOrigin,
     InvalidTitle,
+    PermissionDenied,
+    PermissionTableFull,
     Full,
     IdExhausted,
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum AppPermission {
+    Allowed,
+    Denied,
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Text<const N: usize> {
@@ -60,10 +70,16 @@ pub struct Published {
     pub show_alert: bool,
     pub evicted: Option<u64>,
 }
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct AppPolicy {
+    label: Text<64>,
+    permission: AppPermission,
+}
 /// Records are grouped by the complete authenticated label in the presentation
 /// adapter. Source kind and process/service identity remain independently visible.
 pub struct Center<const N: usize = CAPACITY> {
     records: [Option<Notification>; N],
+    app_policies: [Option<AppPolicy>; APP_PERMISSION_CAPACITY],
     next_id: u64,
     do_not_disturb: bool,
 }
@@ -76,6 +92,7 @@ impl<const N: usize> Center<N> {
     pub const fn new() -> Self {
         Self {
             records: [None; N],
+            app_policies: [None; APP_PERMISSION_CAPACITY],
             next_id: 1,
             do_not_disturb: false,
         }
@@ -95,6 +112,58 @@ impl<const N: usize> Center<N> {
     pub fn set_do_not_disturb(&mut self, value: bool) {
         self.do_not_disturb = value;
     }
+    /// Returns an explicit policy for the authenticated package label. Apps
+    /// without a stored policy are allowed by default for backwards
+    /// compatibility; service and system notifications do not use this table.
+    pub fn app_permission(&self, label: &str) -> Option<AppPermission> {
+        self.app_policies
+            .iter()
+            .flatten()
+            .find(|policy| policy.label.as_str() == label)
+            .map(|policy| policy.permission)
+    }
+    /// Sets or replaces an app's notification permission. Labels are exact,
+    /// authenticated package identities, not display names or prefixes.
+    pub fn set_app_permission(
+        &mut self,
+        label: &str,
+        permission: AppPermission,
+    ) -> Result<(), Error> {
+        let label = Self::validated_label(label)?;
+        if let Some(policy) = self
+            .app_policies
+            .iter_mut()
+            .flatten()
+            .find(|policy| policy.label == label)
+        {
+            policy.permission = permission;
+            return Ok(());
+        }
+        let Some(slot) = self.app_policies.iter_mut().find(|slot| slot.is_none()) else {
+            return Err(Error::PermissionTableFull);
+        };
+        *slot = Some(AppPolicy { label, permission });
+        Ok(())
+    }
+    /// Removes an explicit policy and restores the default allow behavior.
+    pub fn reset_app_permission(&mut self, label: &str) -> Result<bool, Error> {
+        let label = Self::validated_label(label)?;
+        let Some(slot) = self
+            .app_policies
+            .iter_mut()
+            .find(|slot| slot.is_some_and(|policy| policy.label == label))
+        else {
+            return Ok(false);
+        };
+        *slot = None;
+        Ok(true)
+    }
+    fn validated_label(label: &str) -> Result<Text<64>, Error> {
+        if label.is_empty() || label.chars().any(char::is_control) {
+            return Err(Error::InvalidOrigin);
+        }
+        Text::new(label)
+    }
     /// Only the privileged adapter supplies origin and priority; package text
     /// alone never turns a process event into a trusted system warning.
     #[allow(clippy::too_many_arguments)]
@@ -107,19 +176,21 @@ impl<const N: usize> Center<N> {
         priority: Priority,
         monotonic_ns: u64,
     ) -> Result<Published, Error> {
-        if label.is_empty()
-            || label.chars().any(char::is_control)
-            || matches!(
-                source,
-                Source::Process { pid: 0 } | Source::Service { id: 0 }
-            )
-        {
+        if matches!(
+            source,
+            Source::Process { pid: 0 } | Source::Service { id: 0 }
+        ) {
             return Err(Error::InvalidOrigin);
+        }
+        let label = Self::validated_label(label)?;
+        if matches!(source, Source::Process { .. })
+            && self.app_permission(label.as_str()) == Some(AppPermission::Denied)
+        {
+            return Err(Error::PermissionDenied);
         }
         if title.is_empty() || title.chars().any(char::is_control) {
             return Err(Error::InvalidTitle);
         }
-        let label = Text::new(label)?;
         let title = Text::new(title)?;
         let body = Text::new(body)?;
         let next_id = self.next_id.checked_add(1).ok_or(Error::IdExhausted)?;
@@ -227,6 +298,7 @@ impl<const N: usize> Center<N> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    extern crate std;
     fn emit<const N: usize>(c: &mut Center<N>, priority: Priority) -> Published {
         c.publish(
             Source::Process { pid: 42 },
@@ -335,6 +407,96 @@ mod tests {
         assert_eq!(
             empty.publish(Source::System, "Helix", "Title", "", Priority::Info, 0),
             Err(Error::Full)
+        );
+    }
+    #[test]
+    fn per_app_denial_rejects_process_events_without_hiding_services_or_using_ids() {
+        let mut c = Center::<4>::new();
+        let package = "org.next.mail-client";
+        assert_eq!(c.app_permission(package), None);
+        let first = c
+            .publish(
+                Source::Process { pid: 42 },
+                package,
+                "New mail",
+                "First message",
+                Priority::Info,
+                1,
+            )
+            .unwrap();
+        c.set_app_permission(package, AppPermission::Denied)
+            .unwrap();
+        assert_eq!(c.app_permission(package), Some(AppPermission::Denied));
+        assert_eq!(
+            c.publish(
+                Source::Process { pid: 77 },
+                package,
+                "New mail",
+                "Suppressed",
+                Priority::Critical,
+                2,
+            ),
+            Err(Error::PermissionDenied)
+        );
+        assert_eq!(c.len(), 1);
+        assert_eq!(c.unread(), 1);
+        assert!(c.get(first.id).is_some());
+
+        // The package policy does not accidentally suppress a trusted service
+        // event that happens to display the same label.
+        let service = c
+            .publish(
+                Source::Service { id: 5 },
+                package,
+                "Mail service stopped",
+                "Service status is independent of app permission",
+                Priority::Warning,
+                3,
+            )
+            .unwrap();
+        assert_eq!(service.id, first.id + 1);
+
+        c.set_app_permission(package, AppPermission::Allowed)
+            .unwrap();
+        let allowed = c
+            .publish(
+                Source::Process { pid: 77 },
+                package,
+                "New mail",
+                "Allowed again",
+                Priority::Info,
+                4,
+            )
+            .unwrap();
+        assert_eq!(allowed.id, service.id + 1);
+        assert!(c.reset_app_permission(package).unwrap());
+        assert_eq!(c.app_permission(package), None);
+        assert!(!c.reset_app_permission(package).unwrap());
+    }
+    #[test]
+    fn app_permission_table_is_bounded_updates_in_place_and_validates_identity() {
+        let mut c = Center::<1>::new();
+        assert_eq!(
+            c.set_app_permission("", AppPermission::Denied),
+            Err(Error::InvalidOrigin)
+        );
+        assert_eq!(
+            c.set_app_permission("org.next.bad\nlabel", AppPermission::Denied),
+            Err(Error::InvalidOrigin)
+        );
+        assert_eq!(
+            c.set_app_permission(&"x".repeat(65), AppPermission::Denied),
+            Err(Error::TextTooLong)
+        );
+        for index in 0..APP_PERMISSION_CAPACITY {
+            let label = std::format!("org.next.app{index}");
+            c.set_app_permission(&label, AppPermission::Denied).unwrap();
+        }
+        c.set_app_permission("org.next.app0", AppPermission::Allowed)
+            .unwrap();
+        assert_eq!(
+            c.set_app_permission("org.next.extra", AppPermission::Denied),
+            Err(Error::PermissionTableFull)
         );
     }
 }

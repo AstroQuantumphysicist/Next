@@ -268,28 +268,39 @@ impl Shell {
                     )?;
                 }
             }
-            for (i, name) in [
-                "Dismiss selected notification",
-                "Clear read notifications",
-                "Do not disturb",
-            ]
-            .iter()
-            .enumerate()
-            {
+            let selected_app = self
+                .notification_selected()
+                .filter(|n| matches!(n.source, notifications::Source::Process { .. }));
+            let app_blocked = selected_app.is_some_and(|n| {
+                self.notifications.app_permission(n.label.as_str())
+                    == Some(notifications::AppPermission::Denied)
+            });
+            for i in 0..4 {
+                let name = match i {
+                    0 => "Dismiss selected notification",
+                    1 => "Clear read notifications",
+                    2 => "Do not disturb",
+                    _ => "Block app notifications",
+                };
                 out.add(
                     2 + i as u32,
                     None,
-                    if i == 2 { Role::CheckBox } else { Role::Button },
+                    if i >= 2 { Role::CheckBox } else { Role::Button },
                     name,
                     "",
                     None,
                     State {
-                        focused: self.notification_control == i + 1,
-                        enabled: i != 0 || self.notification_selected.is_some(),
-                        checked: if i == 2 {
-                            Some(self.notifications.do_not_disturb())
-                        } else {
-                            None
+                        focused: self.notification_control == i + 1
+                            && (i != 3 || selected_app.is_some()),
+                        enabled: match i {
+                            0 => self.notification_selected.is_some(),
+                            3 => selected_app.is_some(),
+                            _ => true,
+                        },
+                        checked: match i {
+                            2 => Some(self.notifications.do_not_disturb()),
+                            3 => selected_app.map(|_| app_blocked),
+                            _ => None,
                         },
                         ..state
                     },

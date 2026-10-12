@@ -3,6 +3,41 @@
 .global _start
 .section .text
 _start:
+    /* Linux clock_getres accepts its defined clocks and a null result, reports
+       a normalized nonzero timespec, and leaves output untouched on bad IDs. */
+    mov eax, 229
+    mov edi, 1
+    lea rsi, [rip + resolution]
+    syscall
+    test rax, rax
+    jne failed
+    cmp qword ptr [rip + resolution], 0
+    jne failed
+    cmp qword ptr [rip + resolution + 8], 0
+    je failed
+    cmp qword ptr [rip + resolution + 8], 1000000000
+    jae failed
+    mov eax, 229
+    xor edi, edi
+    xor esi, esi
+    syscall
+    test rax, rax
+    jne failed
+    mov qword ptr [rip + bad_resolution], 0x13572468
+    mov eax, 229
+    mov edi, 99
+    lea rsi, [rip + bad_resolution]
+    syscall
+    cmp rax, -22
+    jne failed
+    cmp qword ptr [rip + bad_resolution], 0x13572468
+    jne failed
+    mov eax, 229
+    mov edi, 1
+    mov rsi, 0x400010fff8
+    syscall
+    cmp rax, -14
+    jne failed
     mov eax, 228
     mov edi, 99
     lea rsi, [rip + before]
@@ -155,13 +190,15 @@ failed:
 request: .quad 0, 20000000
 negative: .quad -1, 0
 bad_nsec: .quad 0, 1000000000
-message: .ascii "LINUX CLOCK ELF: monotonic/sleep/bounds compatibility PASS\n"
+message: .ascii "LINUX CLOCK ELF: gettime/getres/monotonic/sleep/bounds compatibility PASS\n"
 message_end:
 .section .bss
 .align 8
 before: .skip 16
 after: .skip 16
 remaining: .skip 16
+resolution: .skip 16
+bad_resolution: .skip 8
 utc_before: .skip 16
 utc_after: .skip 16
 .section .note.GNU-stack,"",@progbits

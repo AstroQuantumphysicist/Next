@@ -759,7 +759,7 @@ def main():
                 for path in ["/compat/linux/clock.elf", "/compat/linux/clock-gate.elf"]:
                     start = len(serial_data)
                     serial.sendall(("run " + path + "\r").encode())
-                    wait_text("LINUX CLOCK ELF: monotonic/sleep/bounds compatibility PASS",start)
+                    wait_text("LINUX CLOCK ELF: gettime/getres/monotonic/sleep/bounds compatibility PASS",start)
                     wait_text("status=43",start)
                     report["checks"].append("original Linux clock fixture: " + path)
                 start = len(serial_data)

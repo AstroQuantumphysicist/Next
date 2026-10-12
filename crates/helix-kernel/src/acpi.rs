@@ -160,6 +160,9 @@ fn table(reader: &impl Reader, address: u64) -> Result<&[u8], Error> {
     Ok(bytes)
 }
 fn rsdp(reader: &impl Reader, address: u64) -> Result<(u64, bool), Error> {
+    // Consume the exact address supplied by the UEFI ACPI configuration
+    // table. Do not round it: firmware may publish a valid RSDP at a
+    // non-16-byte-aligned address even though legacy scanning uses alignment.
     let b = reader.bytes(address, 20)?;
     if &b[..8] != b"RSD PTR " {
         return Err(Error::Signature);
@@ -691,6 +694,12 @@ mod tests {
         i.0[164..172].copy_from_slice(&u64::MAX.to_le_bytes());
         checksum(&mut i.0[128..180], 9);
         assert_eq!(discover_with(&i, 16).err(), Some(Error::PhysicalRange));
+    }
+    #[test]
+    fn uefi_rsdp_pointer_is_consumed_verbatim_even_when_unaligned() {
+        let mut i = fixture();
+        i.0.copy_within(16..68, 17);
+        assert!(discover_with(&i, 17).is_ok());
     }
     #[test]
     fn duplicate_roots_cpus_and_bad_madt_sizes_are_rejected() {

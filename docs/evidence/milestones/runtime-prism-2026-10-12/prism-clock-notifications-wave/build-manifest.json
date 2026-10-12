@@ -1,0 +1,18 @@
+{
+  "artifact": "Next development ESP image; NOT Next 1.0 or an installer",
+  "deployment_bundle": "SHA256/Ed25519 signed with workspace development key; not a production trust chain",
+  "sha256": {
+    "EFI/BOOT/BOOTX64.EFI": "10f61d92e4c649b836998c8c402d435486abddcc701d68e2ed20baf37f7a3f60",
+    "EFI/NEXT/A/HELIX.ELF": "4c7117bc671d8a39406710b224773ed43ea9940fdd25ebe6014f2469c51da767",
+    "EFI/NEXT/A/INITRD.NXI": "0726a48191550bbc4e573f2ae7390a379ba74aae471725f644988b0129ef70e9",
+    "EFI/NEXT/A/SYSTEM.NXP": "8f480865a8d52d09812dc133dfcd5deeeffb7e95928929140f24dba2c23e71d4",
+    "EFI/NEXT/B/HELIX.ELF": "4c7117bc671d8a39406710b224773ed43ea9940fdd25ebe6014f2469c51da767",
+    "EFI/NEXT/B/INITRD.NXI": "0726a48191550bbc4e573f2ae7390a379ba74aae471725f644988b0129ef70e9",
+    "EFI/NEXT/B/SYSTEM.NXP": "fea2580081a7d171d4e40c68e50b6c4ae73124d11be29e6cc72a68a98198ffb5",
+    "EFI/NEXT/HELIX.ELF": "4c7117bc671d8a39406710b224773ed43ea9940fdd25ebe6014f2469c51da767",
+    "EFI/NEXT/INITRD.NXI": "0726a48191550bbc4e573f2ae7390a379ba74aae471725f644988b0129ef70e9",
+    "EFI/NEXT/SYSTEM.NXP": "8f480865a8d52d09812dc133dfcd5deeeffb7e95928929140f24dba2c23e71d4",
+    "next-dev.img": "6b245fa85c2c49ad1da63cf7d6fdfb813e3d351c3275217c736d7b1c43b1da15"
+  },
+  "uefi_secure_boot_certified": false
+}

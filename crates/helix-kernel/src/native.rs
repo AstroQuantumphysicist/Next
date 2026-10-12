@@ -3534,37 +3534,65 @@ pub extern "sysv64" fn linux_dispatch(frame: *mut CpuFrame) -> u64 {
             .unwrap_or_else(|error| error);
         }
         228 => {
-            if frame.rdi > 1 {
-                frame.rax = linux::EINVAL;
-                return 0;
-            }
-            if !user_range(&rt.processes[slot], frame.rsi, 16, true) {
-                frame.rax = linux::EFAULT;
-                return 0;
-            }
-            let time = if frame.rdi == 1 {
-                crate::clock::monotonic()
-            } else {
-                match crate::clock::realtime() {
-                    Ok(time) => time,
-                    Err(error) => {
-                        frame.rax = if matches!(
+            let clock_id = frame.rdi;
+            let destination = frame.rsi;
+            frame.rax = linux::clock_gettime_copyout(
+                clock_id,
+                || {
+                    crate::clock::realtime().map_err(|error| {
+                        if matches!(
                             error,
                             crate::clock::Error::Overflow | crate::clock::Error::Regression
                         ) {
                             linux::EOVERFLOW
                         } else {
                             linux::ENODEV
-                        };
-                        return 0;
+                        }
+                    })
+                },
+                || Ok(crate::clock::monotonic()),
+                |bytes| {
+                    if !user_range(&rt.processes[slot], destination, bytes.len(), true) {
+                        return Err(linux::EFAULT);
                     }
-                }
+                    unsafe {
+                        copy_nonoverlapping(
+                            bytes.as_ptr(),
+                            physical_pointer(slot, destination),
+                            bytes.len(),
+                        )
+                    }
+                    Ok(())
+                },
+            )
+            .map(|()| 0)
+            .unwrap_or_else(|error| error);
+        }
+        229 => {
+            let Some(resolution_ns) = crate::hpet::monotonic_resolution_ns().or_else(|| {
+                linux::clock_resolution_ns(crate::timer::PIT_SOURCE_HZ, crate::timer::PIT_DIVISOR)
+            }) else {
+                frame.rax = linux::EINVAL;
+                return 0;
             };
-            let mut value = [0u8; 16];
-            value[..8].copy_from_slice(&time.seconds.to_le_bytes());
-            value[8..].copy_from_slice(&time.nanoseconds.to_le_bytes());
-            unsafe { copy_nonoverlapping(value.as_ptr(), physical_pointer(slot, frame.rsi), 16) }
-            frame.rax = 0;
+            let clock_id = frame.rdi;
+            let destination = frame.rsi;
+            frame.rax =
+                linux::clock_getres_copyout(clock_id, resolution_ns, destination != 0, |bytes| {
+                    if !user_range(&rt.processes[slot], destination, bytes.len(), true) {
+                        return Err(linux::EFAULT);
+                    }
+                    unsafe {
+                        copy_nonoverlapping(
+                            bytes.as_ptr(),
+                            physical_pointer(slot, destination),
+                            bytes.len(),
+                        )
+                    }
+                    Ok(())
+                })
+                .map(|()| 0)
+                .unwrap_or_else(|error| error);
         }
         35 => {
             let mut input = [0u8; 16];

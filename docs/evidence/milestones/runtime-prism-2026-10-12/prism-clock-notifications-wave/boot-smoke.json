@@ -1,0 +1,606 @@
+{
+  "passed": true,
+  "scope": "QEMU q35/TCG with 1 configured vCPU(s), validated ACPI/MADT topology, APs intentionally stopped, and scheduler workload exercised only on the BSP; legacy PS/2, software framebuffer, PIT/PIC timer interrupts, legacy virtio read/write/flush in dedicated trailing data region, FAT32 reads, native processes and IPC; no SMP scheduling or hardware certification",
+  "configured_vcpus": 1,
+  "ap_startup_enabled": false,
+  "scheduler_cpu_scope": "bootstrap CPU only",
+  "started_utc": "2026-10-12T14:32:21.622130+00:00",
+  "checks": [
+    "QMP reports exactly 1 configured QEMU CPU object(s)",
+    "Ed25519 deployment signature and kernel/init-image SHA256 verified against workspace development anchor",
+    "separate validated ELF loaded from EFI boot-device filesystem",
+    "firmware boot services exited",
+    "versioned checksummed BootInfo with kernel/loader/map reservations",
+    "supervisor RX text, RO NX data, RW NX memory and guarded stacks",
+    "CPU kernel protection: RX text write",
+    "CPU kernel protection: RO data write",
+    "CPU kernel protection: user code physical alias write",
+    "CPU kernel protection: NX data execution",
+    "CPU kernel protection: kernel stack guard write",
+    "CPU kernel protection: interrupt stack guard write",
+    "kernel physical-page and handle selftest",
+    "isolated ring3 native code, bounded syscall, pointer denial and exit",
+    "CPU page fault isolation: supervisor read",
+    "CPU page fault isolation: RX code write",
+    "CPU page fault isolation: NX stack execution",
+    "PIT timer interrupts preserve tested integer registers and XMM0 sentinel",
+    "actual read-only legacy virtio block device",
+    "actual read-only FAT32 file access: /NEXT.TXT",
+    "kernel readback verifies only saved FX512 state is enabled; unsaved optional user controls and inherited TLS bases disabled",
+    "bounded boot-device init image loaded and retained",
+    "native SDK TLS setters/getters preserve private FS memory across yield, sleep and timer switches and reject invalid bases/copyout",
+    "native executable rejects invalid pointers and stale capability handles",
+    "native anonymous memory supports zeroed multi-page mappings and enforces range/permissions",
+    "PID1 reads authenticated signed service declarations with no partial writes on short, null, readonly or guard-crossing outputs",
+    "actual manual/auto events enforce wait/signal rights and copyout-before-consumption",
+    "actual blocking waits enforce deadlines, preserve a delivered auto-event completion across reset, broadcast manual events and clean up killed waiters",
+    "signed guest fixture validates ObjectWaitMany timeout cleanup, nonblocking WouldBlock, blocked wake, selected index and reset-stable completion across two transferred event handles",
+    "capability-backed COW file streams preserve offsets on denied copyout and enforce attenuated rights",
+    "cross-process file capability transfer grants read and denies write",
+    "cross-process capability move produces usable attenuated recipient authority",
+    "framed IPC request/reply between distinct native address spaces",
+    "CPU faults for supervisor access, RX write, NX execute, stack guard and invalid opcode terminate only offending child",
+    "native integer, all XMM and x87 sentinels survive noncooperative timer context switches",
+    "validated q35 HPET resource uses owned UC mapping and advancing hardware counter; PIT remains scheduler clock",
+    "read-only BSP LAPIC identity and version discovery with owned UC mapping",
+    "actual IOAPIC pin discovery and bounded masked ISA plan before the explicit routing transition",
+    "actual PIT IRQ0 routing transition reports ISR-observed IOAPIC delivery or verified PIC rollback",
+    "independently attenuated worker NETWORK grant blocks socket creation despite signed declaration",
+    "moving a socket to an unprivileged recipient cannot bypass NETWORK authority; denied import preserves ownership until teardown",
+    "ACPI/MADT discovery reports exactly 1 enabled CPU(s); this does not start APs",
+    "COW data store commits file write/rename/delete and remounts without touching ESP",
+    "actual AC97 DMA playback completes 12000 stereo frames at 48 kHz",
+    "actual DHCP Discover/Offer/Request/Ack obtains bounded QEMU lease",
+    "actual virtio Ethernet ARP, ICMP echo and checksummed UDP request/reply with local host peer",
+    "actual local UDP A/AAAA lookups validate framed replies, TTL cache hits, real monotonic expiry and wire refresh",
+    "actual TCP handshake, bounded HTTP response and connection teardown with local host peer",
+    "PS/2 auxiliary mouse initialized",
+    "dedicated data-sector write/read/flush and original contents restored",
+    "native child fault terminates offender while supervisor survives",
+    "timer preempts non-yielding child and supervisor kills it",
+    "process results survive repeated and duplicated waits; signed exit -7 is distinct from WouldBlock and bad copyout cannot consume result",
+    "native process exit, wait, stale handles and slot reuse",
+    "isolated native privileged VFS fixture checks independent/shared offsets, rename replacement, open unlink lifetime and recreate isolation",
+    "native PID1 executes real isolated-worker crash restart and heartbeat timeout recovery with bounded policy",
+    "live native nextd supervisor signals readiness",
+    "kernel completes bounded native startup",
+    "AP trampoline and scratch remain reserved with APs stopped; scheduler workload ran only on the BSP",
+    "actual masked LAPIC countdown calibrated against two bounded HPET windows; masked firmware timer adopted/stopped, LVT/divider restored and PIT retained",
+    "actual q35 CMOS UTC anchor agrees with host UTC at QEMU launch",
+    "framebuffer shell ready",
+    "distinct worker PIDs and exit statuses prove crash restart and watchdog recovery ordering",
+    "recovered isolated service remains live alongside PID1 after desktop readiness",
+    "serial command: status",
+    "serial command: about",
+    "serial command: help",
+    "serial command: cat /NEXT.TXT",
+    "serial command: write /smoke hello world",
+    "serial command: cat /smoke",
+    "serial command: mv /smoke /renamed",
+    "serial command: ls",
+    "serial command: rm /renamed",
+    "serial command: cat /renamed",
+    "serial command: ps",
+    "serial command: kill 1",
+    "serial command: run /system/missing.elf",
+    "serial command: run /system/untrusted.elf",
+    "serial command: trace",
+    "serial command: calc (2 + 3) * 4",
+    "serial command: calc 1 / 0",
+    "serial command: nextunknown",
+    "signed application authentication rejects tampered archive member before process creation",
+    "structured trace captures actual numeric process and namespace outcomes",
+    "interactive spawn and kill of non-yielding native child; supervisor protected",
+    "same static Linux ELF executes Linux SYSCALL subset and exits 37",
+    "original Linux getpid fixture returns one stable positive process identity: /compat/linux/getpid.elf",
+    "original Linux uname fixture checks six 65-byte fields, zero padding and EFAULT: /compat/linux/uname.elf",
+    "original Linux lseek fixture checks read positions, invalid whence/fd, signed underflow and cursor preservation: /compat/linux/lseek.elf",
+    "original Linux fstat fixture checks x86-64 stat identity/type/size, descriptor errors and copyout bounds: /compat/linux/fstat.elf",
+    "original Linux getdents64 fixture checks records, shared directory cookies, EOF, descriptor errors and copyout bounds: /compat/linux/getdents.elf",
+    "Linux profile cannot invoke native readiness capability syscall",
+    "original Linux clock fixture: /compat/linux/clock.elf",
+    "original Linux clock fixture: /compat/linux/clock-gate.elf",
+    "native realtime clock normalizes UTC and rejects null, readonly and guard-crossing copyout",
+    "native clock utility uses actual monotonic time",
+    "console-owned program output reaches Prism terminal through bounded queue",
+    "original Linux brk/mmap/munmap fixture: /compat/linux/memory.elf",
+    "original Linux brk/mmap/munmap fixture: /compat/linux/memory-gate.elf",
+    "original Linux shared-open, rename/unlink lifetime fixture: /compat/linux/namespace.elf",
+    "original Linux shared-open, rename/unlink lifetime fixture: /compat/linux/namespace-gate.elf",
+    "Linux FS/GS bases survive gate, yield, preemption and bounds checks: /compat/linux/tls.elf",
+    "Linux FS/GS bases survive gate, yield, preemption and bounds checks: /compat/linux/tls-gate.elf",
+    "two overlapping Linux TLS instances preserve PID-specific private FS/GS contents across timer switches",
+    "original Linux common file-object fixture: /compat/linux/file.elf",
+    "original Linux common file-object fixture: /compat/linux/file-gate.elf",
+    "original Linux gettimeofday/ftruncate fixture validates sequential timeval-before-timezone fault side effects, timezone/null pointers, shared and independent file offsets, size/zero-fill, error ordering, unlink lifetime and Helix's bounded 4 KiB profile",
+    "original NT PE32+ Win64 import fixture: /compat/nt/hello.exe",
+    "original NT PE32+ Win64 import fixture: /compat/nt/hello-gate.exe",
+    "native connected UDP capability sends actual nonce/empty datagrams through retained virtio device with copyout-safe receive, level wait, rights and stale-handle checks",
+    "native timer capability fixture run 1 passes expiry, zero and absolute deadlines, cancellation, transfer, rights, stale handles and quota cleanup: exit 58",
+    "native timer capability fixture run 2 passes expiry, zero and absolute deadlines, cancellation, transfer, rights, stale handles and quota cleanup: exit 58",
+    "console date reports normalized UTC from the same RTC/PIT clock",
+    "Home search matches actual file metadata and opens its authoritative content in Editor",
+    "trusted PS/2 file chooser grants scoped readonly authority to the authenticated caller; write denial, UI rejection, unattended deadline, cancellation and stale requests pass",
+    "actual PS/2 Super-arrow snap selects a quadrant, captures it, cancels, maximizes and restores original floating geometry",
+    "Editor actual load, PS/2 editing, Ctrl-S journal save, external-change conflict and unsaved-text preservation",
+    "monotonic PIT clock advances while serial console remains responsive",
+    "PS/2 keyboard command through QMP",
+    "PS/2 backspace corrects statuz to status",
+    "keyboard Home menu opens actual Files window without executing terminal input",
+    "actual PS/2 mouse motion and left-button event reaches desktop hit testing",
+    "serial console restores Terminal focus from Files panel",
+    "dismissed transient process toast before Files screenshot captures",
+    "Files creates /native/alpha, opens a second /native tab, navigates it, switches both tabs and captures root/nested views",
+    "Files address renders a guest I-beam cursor with a dark stem and white surround",
+    "Files left and right panes navigate independently, preserve inactive paths, and capture a distinct root/nested view",
+    "Files copies a selected regular file from the left pane into the right pane's current folder through the trusted Inspect/Commit flow and refreshes both panes",
+    "seeded /native/sample for the Linux cwd/openat fixture",
+    "original Linux getcwd/chdir/openat fixture validates exact cwd bytes, page-boundary copyout, low32/high32 dirfd handling, absolute paths with invalid dirfds, confinement and directory-relative reads",
+    "removed the Linux cwd fixture sample to keep the bounded guest store available for later persistence checks",
+    "bounded UART transmit FIFO preserves queued output across stalls and reports zero rejected/absent bytes",
+    "screenshot taken after completed software back-buffer presentation",
+    "nonblank framebuffer screenshot",
+    "dismissed transient process toast before Prism gallery screenshots",
+    "Home search evaluates 2+3*4 as 14, selects the accessible result, and Enter opens Calculator",
+    "actual QMP keyboard launched and captured guest framebuffer states for Home and launcher/Settings search results, six first-party panels including a clean Terminal, populated Editor and evaluated Calculator, saved Accessibility focus and 125% Settings text size, shortcut guide and notifications",
+    "captured AC97 PCM contains matching stereo channels and a 1 kHz waveform"
+  ],
+  "image_sha256": "6b245fa85c2c49ad1da63cf7d6fdfb813e3d351c3275217c736d7b1c43b1da15",
+  "qemu_profile": "q35,accel=tcg; cpu=qemu64; 256M; smp=1; vga=std",
+  "qmp_cpus": [
+    {
+      "cpu_index": 0,
+      "thread_id": 656521,
+      "apic_id": null
+    }
+  ],
+  "guarded_emergency_stack_verified": false,
+  "acpi_topology": {
+    "enabled_cpus": 1,
+    "io_apics": 1,
+    "overrides": 5,
+    "validated_tables": 7,
+    "bootstrap_apic_id": 0
+  },
+  "ioapic_delivery": {
+    "gsi": 2,
+    "apic_interrupts": 3,
+    "pic_interrupts": 1
+  },
+  "ap_status": {
+    "startup_enabled": false,
+    "scheduler_cpu_scope": "bootstrap CPU only",
+    "ap_reservation_retained": true,
+    "ap_scratch_retained": true,
+    "ap_online_markers": []
+  },
+  "lapic_calibration": {
+    "calibration_verified": true,
+    "reason": null,
+    "divider": 16,
+    "divided_hz": 62718457,
+    "pit_retained": true,
+    "continuation": {
+      "pit_timer_verified": true,
+      "ioapic_interrupts": 3,
+      "preemption_verified": true
+    }
+  },
+  "rtc_anchor": {
+    "guest_utc_seconds": 1791815543,
+    "host_qemu_launch_utc_seconds": 1791815541,
+    "difference_seconds": 2
+  },
+  "service_instance_pids": [
+    21,
+    22,
+    23
+  ],
+  "concurrent_tls_pids": [
+    41,
+    42
+  ],
+  "portal_probe_pid": 51,
+  "snap_preview_screenshot": {
+    "path": "build/runtime-prism-clock-notification-r12/prism-quadrant-snap.ppm",
+    "width": 1280,
+    "height": 800,
+    "applied_zone": "BottomLeft"
+  },
+  "clock_samples": [
+    [
+      8216,
+      82154353652
+    ],
+    [
+      8246,
+      82454333035
+    ]
+  ],
+  "files_tabs": {
+    "captures": {
+      "root": {
+        "path": "build/runtime-prism-clock-notification-r12/files-tabs-root.ppm",
+        "sha256": "1ff5e1db9b0d8bba5a56c7317ae007c57d66f385ea8df4c7b88377bfea7ce299",
+        "width": 1280,
+        "height": 800
+      },
+      "nested": {
+        "path": "build/runtime-prism-clock-notification-r12/files-tabs-nested.ppm",
+        "sha256": "99c9d12483716bb0550c9361a06bda2e1007991be521248f1cb1dda18fe9ca8a",
+        "width": 1280,
+        "height": 800
+      }
+    },
+    "actions": [
+      {
+        "request": 281474976710657,
+        "kind": "CreateFolder { parent: FolderSnapshot { path: Path { bytes: [47, 110, 97, 116, 105, 118, 101, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], len: 7 }, revision: 65, id: 0 }, path: Path { bytes: [47, 110, 97, 116, 105, 118, 101, 47, 97, 108, 112, 104, 97, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], len: 13 } }",
+        "paths": [
+          "/native",
+          "/native/alpha"
+        ],
+        "result": "Ok(66)"
+      },
+      {
+        "request": 562949953421313,
+        "kind": "Navigate { path: Path { bytes: [47, 110, 97, 116, 105, 118, 101, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], len: 7 } }",
+        "paths": [
+          "/native"
+        ],
+        "result": "Ok(66)"
+      },
+      {
+        "request": 562949953421314,
+        "kind": "Navigate { path: Path { bytes: [47, 110, 97, 116, 105, 118, 101, 47, 97, 108, 112, 104, 97, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], len: 13 } }",
+        "paths": [
+          "/native/alpha"
+        ],
+        "result": "Ok(66)"
+      },
+      {
+        "request": 562949953421315,
+        "kind": "Navigate { path: Path { bytes: [47, 110, 97, 116, 105, 118, 101, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], len: 7 } }",
+        "paths": [
+          "/native"
+        ],
+        "result": "Ok(66)"
+      }
+    ],
+    "action_presentations": [
+      {
+        "request": 281474976710657,
+        "kind": "accessibility",
+        "path": "/native/alpha",
+        "frame": 1588,
+        "generation": 1543
+      },
+      {
+        "request": 562949953421313,
+        "kind": "accessibility",
+        "path": "/native",
+        "frame": 1592,
+        "generation": 1544
+      },
+      {
+        "request": 562949953421314,
+        "kind": "accessibility",
+        "path": "/native/alpha",
+        "frame": 1608,
+        "generation": 1545
+      },
+      {
+        "request": 562949953421315,
+        "kind": "accessibility",
+        "path": "/native",
+        "frame": 1621,
+        "generation": 1548
+      },
+      {
+        "request": 562949953421316,
+        "kind": "accessibility",
+        "path": "/native/alpha",
+        "frame": 1647,
+        "generation": 1550
+      },
+      {
+        "request": 281474976710658,
+        "kind": "accessibility",
+        "path": "/native/alpha",
+        "frame": 1670,
+        "generation": 1552
+      },
+      {
+        "request": 562949953421317,
+        "kind": "accessibility",
+        "path": "/native",
+        "frame": 1679,
+        "generation": 1554
+      },
+      {
+        "request": 281474976710659,
+        "kind": "accessibility",
+        "path": "/native",
+        "frame": 1688,
+        "generation": 1556
+      },
+      {
+        "request": 562949953421318,
+        "kind": "accessibility",
+        "path": "/native/alpha",
+        "frame": 1711,
+        "generation": 1558
+      }
+    ],
+    "ibeam_capture": {
+      "path": "build/runtime-prism-clock-notification-r12/files-tabs-ibeam-address.ppm",
+      "sha256": "1b20cbe6a04c2bc17f8f8f6d46eeb71b8884d376e0227b49e324d2ed637c8e94",
+      "width": 1280,
+      "height": 800
+    },
+    "switch_events": [
+      {
+        "tab": "root",
+        "click_position": [
+          203,
+          222
+        ],
+        "path_check": "Backspace at /native caused no navigation"
+      },
+      {
+        "tab": "nested",
+        "click_position": [
+          413,
+          222
+        ],
+        "path_check": "Backspace from /native/alpha navigated to /native",
+        "action": {
+          "request": 562949953421315,
+          "kind": "Navigate { path: Path { bytes: [47, 110, 97, 116, 105, 118, 101, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], len: 7 } }",
+          "paths": [
+            "/native"
+          ],
+          "result": "Ok(66)",
+          "presentation": {
+            "kind": "accessibility",
+            "frame": 1621,
+            "generation": 1548
+          }
+        }
+      }
+    ]
+  },
+  "files_dual_pane": {
+    "capture": {
+      "path": "build/runtime-prism-clock-notification-r12/files-tabs-dual-pane-left-root-right-nested.ppm",
+      "sha256": "9c1ffdf0284a91af87f530755826bcb7ae4cf4806bb4616494878014a6a04772",
+      "width": 1280,
+      "height": 800
+    },
+    "actions": {
+      "left_nested": {
+        "request": 562949953421316,
+        "kind": "Navigate { path: Path { bytes: [47, 110, 97, 116, 105, 118, 101, 47, 97, 108, 112, 104, 97, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], len: 13 } }",
+        "paths": [
+          "/native/alpha"
+        ],
+        "result": "Ok(66)",
+        "presentation": {
+          "kind": "accessibility",
+          "frame": 1647,
+          "generation": 1550
+        }
+      },
+      "right_nested": {
+        "request": 281474976710658,
+        "kind": "Navigate { path: Path { bytes: [47, 110, 97, 116, 105, 118, 101, 47, 97, 108, 112, 104, 97, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], len: 13 } }",
+        "paths": [
+          "/native/alpha"
+        ],
+        "result": "Ok(66)",
+        "presentation": {
+          "kind": "accessibility",
+          "frame": 1670,
+          "generation": 1552
+        }
+      },
+      "left_parent": {
+        "request": 562949953421317,
+        "kind": "Navigate { path: Path { bytes: [47, 110, 97, 116, 105, 118, 101, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], len: 7 } }",
+        "paths": [
+          "/native"
+        ],
+        "result": "Ok(66)",
+        "presentation": {
+          "kind": "accessibility",
+          "frame": 1679,
+          "generation": 1554
+        }
+      },
+      "right_parent": {
+        "request": 281474976710659,
+        "kind": "Navigate { path: Path { bytes: [47, 110, 97, 116, 105, 118, 101, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], len: 7 } }",
+        "paths": [
+          "/native"
+        ],
+        "result": "Ok(66)",
+        "presentation": {
+          "kind": "accessibility",
+          "frame": 1688,
+          "generation": 1556
+        }
+      }
+    },
+    "check": "left and right panes navigate independently and retain the inactive pane location"
+  },
+  "files_copy_to_other_pane": {
+    "source": "/native/alpha/copy-047f",
+    "destination": "/native/copy-047f",
+    "commit": {
+      "request": 4,
+      "source": "/native/alpha/copy-047f",
+      "destination": "/native/copy-047f",
+      "result": "Ok(())"
+    },
+    "fixture_refreshes": [
+      {
+        "request": 562949953421319,
+        "kind": "Navigate { path: Path { bytes: [47, 110, 97, 116, 105, 118, 101, 47, 97, 108, 112, 104, 97, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], len: 13 } }",
+        "paths": [
+          "/native/alpha"
+        ],
+        "result": "Ok(67)"
+      },
+      {
+        "request": 2,
+        "kind": "Navigate { path: Path { bytes: [47, 110, 97, 116, 105, 118, 101, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], len: 7 } }",
+        "paths": [
+          "/native"
+        ],
+        "result": "Ok(67)"
+      }
+    ],
+    "copy_refreshes": [
+      {
+        "request": 562949953421320,
+        "kind": "Navigate { path: Path { bytes: [47, 110, 97, 116, 105, 118, 101, 47, 97, 108, 112, 104, 97, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], len: 13 } }",
+        "paths": [
+          "/native/alpha"
+        ],
+        "result": "Ok(68)"
+      },
+      {
+        "request": 3,
+        "kind": "Navigate { path: Path { bytes: [47, 110, 97, 116, 105, 118, 101, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], len: 7 } }",
+        "paths": [
+          "/native"
+        ],
+        "result": "Ok(68)"
+      }
+    ],
+    "capture": {
+      "path": "build/runtime-prism-clock-notification-r12/files-tabs-copy-to-other-pane.ppm",
+      "sha256": "92e3bcdbb96f9eb6ebd6aae3805d4b52208a0b65a2cc9f154e83218754c2f60f",
+      "width": 1280,
+      "height": 800
+    }
+  },
+  "uart_metrics": {
+    "accepted": 262686,
+    "transmitted": 262686,
+    "dropped": 0,
+    "stalled": 4892,
+    "absent": 0,
+    "pending": 0
+  },
+  "screenshot": {
+    "path": "build/runtime-prism-clock-notification-r12/screenshot.ppm",
+    "width": 1280,
+    "height": 800,
+    "distinct_colors": 2987,
+    "validation": "PPM dimensions and at least four colors; no visual layout or accessibility verification"
+  },
+  "visual_gallery": {
+    "home": {
+      "path": "build/runtime-prism-clock-notification-r12/prism-gallery/home.ppm",
+      "width": 1280,
+      "height": 800,
+      "sha256": "2dd32f39a46a19b887c3c6481e55c88ee1b7ecef2d1c0211dbdb539064109918"
+    },
+    "home-search-terminal": {
+      "path": "build/runtime-prism-clock-notification-r12/prism-gallery/home-search-terminal.ppm",
+      "width": 1280,
+      "height": 800,
+      "sha256": "0ba9e19b49b486fb8e26a5061fd63cf69b85dbba1ce088d9b4409822e20eadf5"
+    },
+    "home-search-calculation": {
+      "path": "build/runtime-prism-clock-notification-r12/prism-gallery/home-search-calculation.ppm",
+      "width": 1280,
+      "height": 800,
+      "sha256": "60f6db04126c223dace23b9d24e29ef22e6f769c787f15724b7a94b5055fa55a"
+    },
+    "terminal": {
+      "path": "build/runtime-prism-clock-notification-r12/prism-gallery/terminal.ppm",
+      "width": 1280,
+      "height": 800,
+      "sha256": "05da5d3f1935bb6699211c083ae5f28a58d3c461c5b028778a84a0426502347d"
+    },
+    "files": {
+      "path": "build/runtime-prism-clock-notification-r12/prism-gallery/files.ppm",
+      "width": 1280,
+      "height": 800,
+      "sha256": "18972b71c5074eb9604bf73634efd2797b7c21de7988e31c522dbceb00d183bd"
+    },
+    "monitor": {
+      "path": "build/runtime-prism-clock-notification-r12/prism-gallery/monitor.ppm",
+      "width": 1280,
+      "height": 800,
+      "sha256": "4f1d5e3634cf520392b000362fda13362f89b7c720829dea81c32acd34772cde"
+    },
+    "settings": {
+      "path": "build/runtime-prism-clock-notification-r12/prism-gallery/settings.ppm",
+      "width": 1280,
+      "height": 800,
+      "sha256": "37cfbe0a38a9df4d1b198718c5f0d4c1a4d66e23af0e96ab970634a98337b40c"
+    },
+    "settings-search-keyboard": {
+      "path": "build/runtime-prism-clock-notification-r12/prism-gallery/settings-search-keyboard.ppm",
+      "width": 1280,
+      "height": 800,
+      "sha256": "008dcc5df25bfc6d0adc7c23888da52693143f2a6598511ef01cae46d3c60e4f"
+    },
+    "settings-accessibility": {
+      "path": "build/runtime-prism-clock-notification-r12/prism-gallery/settings-accessibility.ppm",
+      "width": 1280,
+      "height": 800,
+      "sha256": "bae194425abbe467cea64f700db6af6a59476516d7f9ae8c6978283827b4c015"
+    },
+    "settings-text-scale": {
+      "path": "build/runtime-prism-clock-notification-r12/prism-gallery/settings-text-scale.ppm",
+      "width": 1280,
+      "height": 800,
+      "sha256": "2c027241097b57787b220424d0cc0d075a2838ed60d536658edc658ace412c71"
+    },
+    "editor": {
+      "path": "build/runtime-prism-clock-notification-r12/prism-gallery/editor.ppm",
+      "width": 1280,
+      "height": 800,
+      "sha256": "6643ab0590f3878ead4b0a4c55b61e7fce2566afb00ea2ac1c0772f7e38e886d"
+    },
+    "calculator": {
+      "path": "build/runtime-prism-clock-notification-r12/prism-gallery/calculator.ppm",
+      "width": 1280,
+      "height": 800,
+      "sha256": "1b9d975135cc075c0ae18cfcd2918d9e703bb6b9442d5bb2b1bc7207a3828ff6"
+    },
+    "shortcuts": {
+      "path": "build/runtime-prism-clock-notification-r12/prism-gallery/shortcuts.ppm",
+      "width": 1280,
+      "height": 800,
+      "sha256": "0c9d3218f937180c61ee76ab1b39b15c77d781d55e7b528abadba15756c2429a"
+    },
+    "notifications": {
+      "path": "build/runtime-prism-clock-notification-r12/prism-gallery/notifications.ppm",
+      "width": 1280,
+      "height": 800,
+      "sha256": "ad4fc45ef70dcdc23cd1ed7156936d49ec3915f14ca5780e7bef453ad84c5935"
+    }
+  },
+  "dns_peer": {
+    "dropped": 1,
+    "answers": 3,
+    "requests": 4
+  },
+  "dns_boot_flow": {
+    "dropped": 1,
+    "answers": 3,
+    "validation": "First valid bootstrap UDP source flow, independently scoped from native lookup source ports"
+  },
+  "audio": {
+    "path": "build/runtime-prism-clock-notification-r12/audio.wav",
+    "sample_rate": 48000,
+    "channels": 2,
+    "active_frames": 11128
+  },
+  "finished_utc": "2026-10-12T14:34:35.322702+00:00"
+}

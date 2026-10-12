@@ -1,0 +1,27 @@
+{
+  "branch_at_build": "main",
+  "build_artifact": "signed Next development ESP image; not a Next 1.0 installer",
+  "build_manifest_sha256": "0688993a0abb239721593a3459b7ce75d23ccd5f4b515ca90635c22cdd5aeec9",
+  "parent_commit_before_this_wave": "9849e74bf11375c04fa8e8855c801cf3a712adb4",
+  "repository": "AstroQuantumphysicist/Next",
+  "schema": 2,
+  "signed_image_sha256": "6b245fa85c2c49ad1da63cf7d6fdfb813e3d351c3275217c736d7b1c43b1da15",
+  "source_files_sha256": {
+    "crates/helix-kernel/src/acpi.rs": "8f0017dff6323cbd058764b4e7cbcd402ee0c978e8f09942c2848798a4a40dc8",
+    "crates/helix-kernel/src/clock.rs": "1e5372c72848937664064b0d64a48c38776c49250c5dfaaab8ad8ee3811e31b1",
+    "crates/helix-kernel/src/hpet.rs": "4cb59967a8bd3b58a81ffb6ea942bd27538a4b1f9a2d3e4236b6c7f46f2c8235",
+    "crates/helix-kernel/src/linux.rs": "b0cabb4861f2b2bc12e8f3329c6671b0a40271b005081c786fe4796a9ac32456",
+    "crates/helix-kernel/src/linux_path.rs": "3db7d98825e8558601381e61e71b8ad759aec520f6af1dfc277605e908ad56bc",
+    "crates/helix-kernel/src/native.rs": "9929ad25e3b07174a43c0cc01f8c65269bbb58edcfe2ae52f8d1559e42963c82",
+    "crates/linux-fixtures/clock.S": "e7a05bbd2a13d52e441a51a4366efedf548b5e31929e6df8a5dd2096484a501e",
+    "crates/next-package/src/installer.rs": "03df66cf0259fff010a4f52b134ee519a2b1b64ffc19bb0ddfac9c3fab38e1d3",
+    "crates/prism/src/accessibility_shell.rs": "2718a9caaccad69c88c4d1900a6125379607f1730dfcb0e44c8b6d4e6c54fcbb",
+    "crates/prism/src/lib.rs": "9b157e5b18d5357776b1f6cdb3ce9da126f6c3a0c97e678c4ff1a2e53f30e541",
+    "crates/prism/src/notifications.rs": "de87869d1b092f79500c8b7e8bb99c290a41bcb131971360e9ffa674885e9fdd",
+    "tools/boot_smoke.py": "7d3585a52a3c21891c0e0c4eb2df13b4f298e1a9b1a34290da189b9644716ea8",
+    "tools/build-linux.sh": "25f09de84d3732e20c8d990a0ead4092cf2511ef54d7f0cf0350abaae400c27a"
+  },
+  "source_set_hash_algorithm": "SHA-256 of canonical UTF-8 JSON object with sorted keys and compact separators",
+  "source_set_scope": "Changed kernel, Prism, Linux fixtures, package installer, and host-test/build inputs captured alongside this image; user-facing behavior and limitations are described in the adjacent docs.",
+  "source_set_sha256": "d7ee4795059d7a0100bd0d8f09511a9a86e9c8c3ef9462f07e58004918a8faee"
+}

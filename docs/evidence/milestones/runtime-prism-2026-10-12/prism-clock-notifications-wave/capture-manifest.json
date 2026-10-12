@@ -1,0 +1,290 @@
+{
+  "check_count": 138,
+  "passed": true,
+  "qemu_report": "boot-smoke.json",
+  "scope": "QEMU q35/TCG/OVMF, qemu64, one configured vCPU, 1280x800, signed development image.",
+  "screenshots": [
+    {
+      "bundle_png": "images/prism-home.png",
+      "bundle_png_sha256": "de9013a2eb0fd1af98fa30d6e016ad1d2c44fd2198fd35d6a0068794736282a8",
+      "dimensions": [
+        1280,
+        800
+      ],
+      "docs_png": "docs/images/prism-home.png",
+      "docs_png_sha256": "de9013a2eb0fd1af98fa30d6e016ad1d2c44fd2198fd35d6a0068794736282a8",
+      "guest_ppm": "build/runtime-prism-clock-notification-r12/prism-gallery/home.ppm",
+      "guest_ppm_sha256": "2dd32f39a46a19b887c3c6481e55c88ee1b7ecef2d1c0211dbdb539064109918",
+      "name": "prism-home",
+      "title": "Home"
+    },
+    {
+      "bundle_png": "images/prism-home-search-terminal.png",
+      "bundle_png_sha256": "743361400b57fda88fa378b540aa2191dcb9ff2247ecaa47fd64fc2a795c5d30",
+      "dimensions": [
+        1280,
+        800
+      ],
+      "docs_png": "docs/images/prism-home-search-terminal.png",
+      "docs_png_sha256": "743361400b57fda88fa378b540aa2191dcb9ff2247ecaa47fd64fc2a795c5d30",
+      "guest_ppm": "build/runtime-prism-clock-notification-r12/prism-gallery/home-search-terminal.ppm",
+      "guest_ppm_sha256": "0ba9e19b49b486fb8e26a5061fd63cf69b85dbba1ce088d9b4409822e20eadf5",
+      "name": "prism-home-search-terminal",
+      "title": "Home search selecting Next Terminal"
+    },
+    {
+      "bundle_png": "images/prism-home-search-calculation.png",
+      "bundle_png_sha256": "28bc5d0317c89cd6000b0e3106ef22c7f15aa575de8274e8ff4d84103746b6eb",
+      "dimensions": [
+        1280,
+        800
+      ],
+      "docs_png": "docs/images/prism-home-search-calculation.png",
+      "docs_png_sha256": "28bc5d0317c89cd6000b0e3106ef22c7f15aa575de8274e8ff4d84103746b6eb",
+      "guest_ppm": "build/runtime-prism-clock-notification-r12/prism-gallery/home-search-calculation.ppm",
+      "guest_ppm_sha256": "60f6db04126c223dace23b9d24e29ef22e6f769c787f15724b7a94b5055fa55a",
+      "name": "prism-home-search-calculation",
+      "title": "Home search arithmetic result"
+    },
+    {
+      "bundle_png": "images/prism-terminal.png",
+      "bundle_png_sha256": "24c5d3781a530058975f369225d0fd2680f897b75138aa89743a8b4df553c481",
+      "dimensions": [
+        1280,
+        800
+      ],
+      "docs_png": "docs/images/prism-terminal.png",
+      "docs_png_sha256": "24c5d3781a530058975f369225d0fd2680f897b75138aa89743a8b4df553c481",
+      "guest_ppm": "build/runtime-prism-clock-notification-r12/prism-gallery/terminal.ppm",
+      "guest_ppm_sha256": "05da5d3f1935bb6699211c083ae5f28a58d3c461c5b028778a84a0426502347d",
+      "name": "prism-terminal",
+      "title": "Terminal"
+    },
+    {
+      "bundle_png": "images/prism-files.png",
+      "bundle_png_sha256": "18bb240b6892b28132301bdaade7cb6d165471f165123f59cee4bbb040e1acb1",
+      "dimensions": [
+        1280,
+        800
+      ],
+      "docs_png": "docs/images/prism-files.png",
+      "docs_png_sha256": "18bb240b6892b28132301bdaade7cb6d165471f165123f59cee4bbb040e1acb1",
+      "guest_ppm": "build/runtime-prism-clock-notification-r12/prism-gallery/files.ppm",
+      "guest_ppm_sha256": "18972b71c5074eb9604bf73634efd2797b7c21de7988e31c522dbceb00d183bd",
+      "name": "prism-files",
+      "title": "Files workspace"
+    },
+    {
+      "bundle_png": "images/prism-monitor.png",
+      "bundle_png_sha256": "2d550aaa4ac8592b9ac73e9d5d3d662c4b179737efc077032073f6d6e2192fb5",
+      "dimensions": [
+        1280,
+        800
+      ],
+      "docs_png": "docs/images/prism-monitor.png",
+      "docs_png_sha256": "2d550aaa4ac8592b9ac73e9d5d3d662c4b179737efc077032073f6d6e2192fb5",
+      "guest_ppm": "build/runtime-prism-clock-notification-r12/prism-gallery/monitor.ppm",
+      "guest_ppm_sha256": "4f1d5e3634cf520392b000362fda13362f89b7c720829dea81c32acd34772cde",
+      "name": "prism-monitor",
+      "title": "System Monitor"
+    },
+    {
+      "bundle_png": "images/prism-settings.png",
+      "bundle_png_sha256": "15c4c480c432f9fea6ddf2399e5e9704b45edef339bf60a65ce0bd998e7d4802",
+      "dimensions": [
+        1280,
+        800
+      ],
+      "docs_png": "docs/images/prism-settings.png",
+      "docs_png_sha256": "15c4c480c432f9fea6ddf2399e5e9704b45edef339bf60a65ce0bd998e7d4802",
+      "guest_ppm": "build/runtime-prism-clock-notification-r12/prism-gallery/settings.ppm",
+      "guest_ppm_sha256": "37cfbe0a38a9df4d1b198718c5f0d4c1a4d66e23af0e96ab970634a98337b40c",
+      "name": "prism-settings",
+      "title": "Settings Appearance"
+    },
+    {
+      "bundle_png": "images/prism-settings-search-keyboard.png",
+      "bundle_png_sha256": "738053ae56fd535bc8175bf5c285258af95684352717c83fd543072814e70036",
+      "dimensions": [
+        1280,
+        800
+      ],
+      "docs_png": "docs/images/prism-settings-search-keyboard.png",
+      "docs_png_sha256": "738053ae56fd535bc8175bf5c285258af95684352717c83fd543072814e70036",
+      "guest_ppm": "build/runtime-prism-clock-notification-r12/prism-gallery/settings-search-keyboard.ppm",
+      "guest_ppm_sha256": "008dcc5df25bfc6d0adc7c23888da52693143f2a6598511ef01cae46d3c60e4f",
+      "name": "prism-settings-search-keyboard",
+      "title": "Settings keyboard search"
+    },
+    {
+      "bundle_png": "images/prism-settings-accessibility.png",
+      "bundle_png_sha256": "f52d97aa699d3ca5e1ee3ec3ad18256791ec872bd6e50efb7ada7787b42da905",
+      "dimensions": [
+        1280,
+        800
+      ],
+      "docs_png": "docs/images/prism-settings-accessibility.png",
+      "docs_png_sha256": "f52d97aa699d3ca5e1ee3ec3ad18256791ec872bd6e50efb7ada7787b42da905",
+      "guest_ppm": "build/runtime-prism-clock-notification-r12/prism-gallery/settings-accessibility.ppm",
+      "guest_ppm_sha256": "bae194425abbe467cea64f700db6af6a59476516d7f9ae8c6978283827b4c015",
+      "name": "prism-settings-accessibility",
+      "title": "Settings Accessibility preferences"
+    },
+    {
+      "bundle_png": "images/prism-settings-text-scale.png",
+      "bundle_png_sha256": "095d74a40259c560b3988e76ca717be4bed0104c565668e557eee94b99e823b6",
+      "dimensions": [
+        1280,
+        800
+      ],
+      "docs_png": "docs/images/prism-settings-text-scale.png",
+      "docs_png_sha256": "095d74a40259c560b3988e76ca717be4bed0104c565668e557eee94b99e823b6",
+      "guest_ppm": "build/runtime-prism-clock-notification-r12/prism-gallery/settings-text-scale.ppm",
+      "guest_ppm_sha256": "2c027241097b57787b220424d0cc0d075a2838ed60d536658edc658ace412c71",
+      "name": "prism-settings-text-scale",
+      "title": "Settings 125 percent text size"
+    },
+    {
+      "bundle_png": "images/prism-editor.png",
+      "bundle_png_sha256": "80002d07467560a8bf66147ac468d7491790a52f33d636422f04aac5c45a8856",
+      "dimensions": [
+        1280,
+        800
+      ],
+      "docs_png": "docs/images/prism-editor.png",
+      "docs_png_sha256": "80002d07467560a8bf66147ac468d7491790a52f33d636422f04aac5c45a8856",
+      "guest_ppm": "build/runtime-prism-clock-notification-r12/prism-gallery/editor.ppm",
+      "guest_ppm_sha256": "6643ab0590f3878ead4b0a4c55b61e7fce2566afb00ea2ac1c0772f7e38e886d",
+      "name": "prism-editor",
+      "title": "Editor"
+    },
+    {
+      "bundle_png": "images/prism-calculator.png",
+      "bundle_png_sha256": "07c26f34727c3c6ccbc057d7eb14b2a4e71a065ae17354658d11699c3ee3af7f",
+      "dimensions": [
+        1280,
+        800
+      ],
+      "docs_png": "docs/images/prism-calculator.png",
+      "docs_png_sha256": "07c26f34727c3c6ccbc057d7eb14b2a4e71a065ae17354658d11699c3ee3af7f",
+      "guest_ppm": "build/runtime-prism-clock-notification-r12/prism-gallery/calculator.ppm",
+      "guest_ppm_sha256": "1b9d975135cc075c0ae18cfcd2918d9e703bb6b9442d5bb2b1bc7207a3828ff6",
+      "name": "prism-calculator",
+      "title": "Calculator"
+    },
+    {
+      "bundle_png": "images/prism-shortcuts.png",
+      "bundle_png_sha256": "9b42ca587d972dccfddf818320da3e6d465555e5e2c7673f8baba424a742cde5",
+      "dimensions": [
+        1280,
+        800
+      ],
+      "docs_png": "docs/images/prism-shortcuts.png",
+      "docs_png_sha256": "9b42ca587d972dccfddf818320da3e6d465555e5e2c7673f8baba424a742cde5",
+      "guest_ppm": "build/runtime-prism-clock-notification-r12/prism-gallery/shortcuts.ppm",
+      "guest_ppm_sha256": "0c9d3218f937180c61ee76ab1b39b15c77d781d55e7b528abadba15756c2429a",
+      "name": "prism-shortcuts",
+      "title": "Keyboard shortcuts guide"
+    },
+    {
+      "bundle_png": "images/prism-notifications.png",
+      "bundle_png_sha256": "2da60a30d2abdc66c4f06be70ff79aa921b8bf2ee73137a47f002cdb56b01469",
+      "dimensions": [
+        1280,
+        800
+      ],
+      "docs_png": "docs/images/prism-notifications.png",
+      "docs_png_sha256": "2da60a30d2abdc66c4f06be70ff79aa921b8bf2ee73137a47f002cdb56b01469",
+      "guest_ppm": "build/runtime-prism-clock-notification-r12/prism-gallery/notifications.ppm",
+      "guest_ppm_sha256": "ad4fc45ef70dcdc23cd1ed7156936d49ec3915f14ca5780e7bef453ad84c5935",
+      "name": "prism-notifications",
+      "title": "Notifications"
+    },
+    {
+      "bundle_png": "images/prism-files-tabs-root.png",
+      "bundle_png_sha256": "4fa46889eacf1690102aed3904989c04df85e88943dbec03ce6e95af81a0a497",
+      "dimensions": [
+        1280,
+        800
+      ],
+      "docs_png": "docs/images/prism-files-tabs-root.png",
+      "docs_png_sha256": "4fa46889eacf1690102aed3904989c04df85e88943dbec03ce6e95af81a0a497",
+      "guest_ppm": "build/runtime-prism-clock-notification-r12/files-tabs-root.ppm",
+      "guest_ppm_sha256": "1ff5e1db9b0d8bba5a56c7317ae007c57d66f385ea8df4c7b88377bfea7ce299",
+      "name": "prism-files-tabs-root",
+      "title": "Files root tab"
+    },
+    {
+      "bundle_png": "images/prism-files-tabs-nested.png",
+      "bundle_png_sha256": "d984b4adb57fb807f6ce804fda78a36ccd2d63db1f396debbe22ff3b4e6fbcf4",
+      "dimensions": [
+        1280,
+        800
+      ],
+      "docs_png": "docs/images/prism-files-tabs-nested.png",
+      "docs_png_sha256": "d984b4adb57fb807f6ce804fda78a36ccd2d63db1f396debbe22ff3b4e6fbcf4",
+      "guest_ppm": "build/runtime-prism-clock-notification-r12/files-tabs-nested.ppm",
+      "guest_ppm_sha256": "99c9d12483716bb0550c9361a06bda2e1007991be521248f1cb1dda18fe9ca8a",
+      "name": "prism-files-tabs-nested",
+      "title": "Files nested tab"
+    },
+    {
+      "bundle_png": "images/prism-files-tabs-ibeam.png",
+      "bundle_png_sha256": "81a2e9b1ebabcff676cb011602c764082a117efa18e9af60da217b3172507a0d",
+      "dimensions": [
+        1280,
+        800
+      ],
+      "docs_png": "docs/images/prism-files-tabs-ibeam.png",
+      "docs_png_sha256": "81a2e9b1ebabcff676cb011602c764082a117efa18e9af60da217b3172507a0d",
+      "guest_ppm": "build/runtime-prism-clock-notification-r12/files-tabs-ibeam-address.ppm",
+      "guest_ppm_sha256": "1b20cbe6a04c2bc17f8f8f6d46eeb71b8884d376e0227b49e324d2ed637c8e94",
+      "name": "prism-files-tabs-ibeam",
+      "title": "Files location I-beam cursor"
+    },
+    {
+      "bundle_png": "images/prism-files-dual-pane.png",
+      "bundle_png_sha256": "c251225ab44b960b6c227110380387e44c51f0c3cbf7e60b05490223a97baff2",
+      "dimensions": [
+        1280,
+        800
+      ],
+      "docs_png": "docs/images/prism-files-dual-pane.png",
+      "docs_png_sha256": "c251225ab44b960b6c227110380387e44c51f0c3cbf7e60b05490223a97baff2",
+      "guest_ppm": "build/runtime-prism-clock-notification-r12/files-tabs-dual-pane-left-root-right-nested.ppm",
+      "guest_ppm_sha256": "9c1ffdf0284a91af87f530755826bcb7ae4cf4806bb4616494878014a6a04772",
+      "name": "prism-files-dual-pane",
+      "title": "Independent Files panes"
+    },
+    {
+      "bundle_png": "images/prism-files-copy-to-other-pane.png",
+      "bundle_png_sha256": "fd30c0655955a291b082775f0853d1becf64402aa8ffd4716332a1218a92d218",
+      "dimensions": [
+        1280,
+        800
+      ],
+      "docs_png": "docs/images/prism-files-copy-to-other-pane.png",
+      "docs_png_sha256": "fd30c0655955a291b082775f0853d1becf64402aa8ffd4716332a1218a92d218",
+      "guest_ppm": "build/runtime-prism-clock-notification-r12/files-tabs-copy-to-other-pane.ppm",
+      "guest_ppm_sha256": "92e3bcdbb96f9eb6ebd6aae3805d4b52208a0b65a2cc9f154e83218754c2f60f",
+      "name": "prism-files-copy-to-other-pane",
+      "title": "Files cross-pane copy"
+    },
+    {
+      "bundle_png": "images/prism-snap-quadrant.png",
+      "bundle_png_sha256": "d2b3f401ac0765fa6264100f04330f13065b9d446565f40fac69bf7c7ff03323",
+      "dimensions": [
+        1280,
+        800
+      ],
+      "docs_png": "docs/images/prism-snap-quadrant.png",
+      "docs_png_sha256": "d2b3f401ac0765fa6264100f04330f13065b9d446565f40fac69bf7c7ff03323",
+      "guest_ppm": "build/runtime-prism-clock-notification-r12/prism-quadrant-snap.ppm",
+      "guest_ppm_sha256": "5996a73b2d695337f171e271266ca24cacccc8239bd1a12188d98596e9b8f945",
+      "name": "prism-snap-quadrant",
+      "title": "Terminal quadrant snap"
+    }
+  ],
+  "signed_image_sha256": "6b245fa85c2c49ad1da63cf7d6fdfb813e3d351c3275217c736d7b1c43b1da15",
+  "source_image": "next-dev.img (recorded by hash; not copied into this evidence directory)"
+}

@@ -43,7 +43,7 @@ if result.returncode != 37 or result.stdout != expected or result.stderr:
 print('Independent Linux static ELF host execution PASS (exit 37)')
 binary = Path('build/compat/linux/clock.elf')
 result = subprocess.run([str(binary.resolve())], capture_output=True, timeout=3)
-expected = b'LINUX CLOCK ELF: monotonic/sleep/bounds compatibility PASS\n'
+expected = b'LINUX CLOCK ELF: gettime/getres/monotonic/sleep/bounds compatibility PASS\n'
 if result.returncode != 43 or result.stdout != expected or result.stderr:
     raise SystemExit(f'Host Linux clock fixture failed: status={result.returncode}, stdout={result.stdout!r}, stderr={result.stderr!r}')
 print('Independent Linux clock ELF host execution PASS (exit 43)')

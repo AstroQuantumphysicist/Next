@@ -1,16 +1,16 @@
 # Prism visual tour
 
-These twenty current captures come from the signed qemu64 guest image, SHA256
-`64d07c2ff4b53c3e14dafdb23ed28b655bafc98eab9543fe099229910f302d10`. Its QEMU
-smoke passed 138 checks. The [report](evidence/milestones/runtime-prism-2026-10-12/prism-linux-search-wave/boot-smoke.json)
-and [capture manifest](evidence/milestones/runtime-prism-2026-10-12/prism-linux-search-wave/capture-manifest.json)
-record the evidence. The smoke checked Home and Settings search through the
-guest's accessible tree, saved Settings states, Files tab and pane navigation,
-cross-pane copy, the I-beam cursor pixels, Home arithmetic selection of
-`2+3*4 = 14`, Linux cwd/openat and the ordered gettimeofday copyout fixture. These are development-build captures tied to that
-image; later source changes need a fresh capture before the pictures can
-represent them. They do not imply Next 1.0 completion, hardware validation,
-full accessibility services, or that every Settings category is functional.
+These twenty current captures come from the signed qemu64 guest image, SHA-256
+`6b245fa85c2c49ad1da63cf7d6fdfb813e3d351c3275217c736d7b1c43b1da15`. Its QEMU
+smoke passed 138 checks. The [report](evidence/milestones/runtime-prism-2026-10-12/prism-clock-notifications-wave/boot-smoke.json)
+and [capture manifest](evidence/milestones/runtime-prism-2026-10-12/prism-clock-notifications-wave/capture-manifest.json)
+record the run. It checked Home and Settings search through the guest's
+accessible tree, saved Settings states, Files tab and pane navigation,
+cross-pane copy, Home arithmetic selection of `2+3*4 = 14`, and Linux
+`clock_gettime`/`clock_getres` fixture runs. These are development-build
+captures tied to that image. They do not imply Next 1.0 completion, hardware
+validation, full accessibility services, or that every Settings category is
+functional.
 
 ## Capture index
 

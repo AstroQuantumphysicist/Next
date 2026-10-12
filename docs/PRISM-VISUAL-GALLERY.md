@@ -1,6 +1,6 @@
 # Prism visual gallery
 
-These twenty screenshots are current captures from completed framebuffer presentations in a running q35/TCG/OVMF guest. The QMP smoke checked Home search selections through the guest accessibility snapshot and validated each captured frame. The signed qemu64 development image passed 138 checks with SHA256 `64d07c2ff4b53c3e14dafdb23ed28b655bafc98eab9543fe099229910f302d10`. The [report](evidence/milestones/runtime-prism-2026-10-12/prism-linux-search-wave/boot-smoke.json) and [capture manifest](evidence/milestones/runtime-prism-2026-10-12/prism-linux-search-wave/capture-manifest.json) record this run. Later source changes need fresh captures before these pictures can represent them. They do not certify hardware display behavior, complex-script shaping, full accessibility services, or Next 1.0 completion.
+These twenty screenshots are current captures from completed framebuffer presentations in a running q35/TCG/OVMF guest. The QMP smoke checked Home search selections through the guest accessibility snapshot and validated each captured frame. The signed qemu64 development image passed 138 checks with SHA-256 `6b245fa85c2c49ad1da63cf7d6fdfb813e3d351c3275217c736d7b1c43b1da15`. The [report](evidence/milestones/runtime-prism-2026-10-12/prism-clock-notifications-wave/boot-smoke.json) and [capture manifest](evidence/milestones/runtime-prism-2026-10-12/prism-clock-notifications-wave/capture-manifest.json) record this run. The Linux clock fixtures passed `clock_gettime`, `clock_getres`, monotonic sleep and bounds checks twice. The notification capture shows the selected publisher's session-only Block app control. These captures do not certify hardware display behavior, complex-script shaping, full accessibility services, or Next 1.0 completion.
 
 Prism uses Microsoft Selawik, an open-source metric-compatible replacement for Segoe UI; it is not Segoe UI Variable. The raster atlas, provenance, and unsupported shaping limits are listed in the [font notices](third-party/README.md#font-assets).
 
@@ -12,7 +12,7 @@ Regenerate the source captures with:
 source tools/env.sh
 bash tools/build.sh
 python3 tools/boot_smoke.py --cpu qemu64 --timeout 360 --capture-prism-gallery \
-  --image build/next-dev.img --output-dir build/runtime-linux-search-timer-zero-qemu64-r10
+  --image build/next-dev.img --output-dir build/runtime-prism-clock-notification-r12
 ```
 
 The gallery includes six kernel-hosted first-party panels, Home and Settings search, saved Accessibility preferences, Settings-only 125% text size, the shortcut guide and Notifications. Settings has 12 categories: Appearance has active theme/accent controls and Save/Revert, Accessibility exposes two saved preferences, System offers read-only diagnostics, and nine categories remain informational with unavailable settings rows. Search result selection and shortcut-guide activation are checked through the guest's accessible tree. Text scaling applies only within Settings and does not establish screen reader, speech, magnification or other unavailable services. The four-way snap frame shows Terminal in the BottomLeft work-area quadrant with Editor behind it; snapping remains limited to the single current work area. Files captures cover root and nested tabs, the I-beam location cursor, independent panes and a verified cross-pane copy. The Linux `cwd.elf` fixture exits 56 after checking `getcwd`, `chdir` and relative `openat`; the Linux timefile fixture exits 57 after checking `gettimeofday` sequential copyout and `ftruncate` descriptor semantics. The Calculator is an expression utility, not a scientific calculator. These captures and checks do not imply that every Settings category or planned Prism feature is complete.
@@ -133,6 +133,13 @@ The guest flow checks exact source and destination paths and confirms that both 
 ## Notifications
 
 ![Prism notification center](images/prism-notifications.png)
+
+The current source adds a fourth notification control for the selected process
+publisher: Block app or Allow app. The policy is bounded, session-only, and keyed
+to the publisher's exact displayed package label. A denied process notification
+is rejected before a history ID is allocated; system and service notifications
+are unaffected. The choice is not persisted, and there is no general publisher
+permission service.
 
 ## Quarter snapping
 

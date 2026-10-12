@@ -421,6 +421,7 @@ pub struct Shell {
     notification_selected: Option<u64>,
     notification_control: usize,
     notification_toast: Option<(u64, u64)>,
+    notification_policy_error: bool,
     shortcuts: shortcuts::Model,
 }
 impl Default for Shell {
@@ -496,6 +497,7 @@ impl Shell {
             notification_selected: None,
             notification_control: 0,
             notification_toast: None,
+            notification_policy_error: false,
             shortcuts: shortcuts::Model::new(),
         }
     }
@@ -3298,6 +3300,24 @@ impl Shell {
     pub fn notifications(&self) -> &notifications::Center {
         &self.notifications
     }
+    /// Policy access for the trusted notification/settings adapter. The label
+    /// must be the authenticated package identity supplied to the shell.
+    pub fn notification_app_permission(&self, label: &str) -> Option<notifications::AppPermission> {
+        self.notifications.app_permission(label)
+    }
+    pub fn set_notification_app_permission(
+        &mut self,
+        label: &str,
+        permission: notifications::AppPermission,
+    ) -> Result<(), notifications::Error> {
+        self.notifications.set_app_permission(label, permission)
+    }
+    pub fn reset_notification_app_permission(
+        &mut self,
+        label: &str,
+    ) -> Result<bool, notifications::Error> {
+        self.notifications.reset_app_permission(label)
+    }
     pub fn notifications_open(&self) -> bool {
         self.notification_open
     }
@@ -3336,6 +3356,7 @@ impl Shell {
         }
         self.notification_open = !self.notification_open;
         self.notification_control = 0;
+        self.notification_policy_error = false;
         self.notification_toast = None;
         if self.notification_selected().is_none() {
             self.notification_selected = self.notifications.at(0).map(|n| n.id);
@@ -3368,8 +3389,20 @@ impl Shell {
     fn notification_key(&mut self, key: Key) {
         match key {
             Key::Escape | Key::Notifications => self.notification_open = false,
-            Key::Tab => self.notification_control = (self.notification_control + 1) % 4,
-            Key::BackTab => self.notification_control = (self.notification_control + 3) % 4,
+            Key::Tab => {
+                let count =
+                    4 + usize::from(self.notification_selected().is_some_and(|n| {
+                        matches!(n.source, notifications::Source::Process { .. })
+                    }));
+                self.notification_control = (self.notification_control + 1) % count;
+            }
+            Key::BackTab => {
+                let count =
+                    4 + usize::from(self.notification_selected().is_some_and(|n| {
+                        matches!(n.source, notifications::Source::Process { .. })
+                    }));
+                self.notification_control = (self.notification_control + count - 1) % count;
+            }
             Key::Up | Key::Down => {
                 let n = self.notifications.len();
                 if n != 0 {
@@ -3381,6 +3414,7 @@ impl Shell {
                     };
                     self.notification_selected = self.notifications.at(next).map(|n| n.id);
                     self.notification_control = 0;
+                    self.notification_policy_error = false;
                 }
             }
             Key::Delete => self.dismiss_selected_notification(),
@@ -3395,13 +3429,14 @@ impl Shell {
                     self.notifications.clear_read();
                     self.select_remaining_notification();
                 }
-                _ => {
+                3 => {
                     self.notifications
                         .set_do_not_disturb(!self.notifications.do_not_disturb());
                     if self.notifications.do_not_disturb() {
                         self.notification_toast = None;
                     }
                 }
+                _ => self.toggle_selected_app_notifications(),
             },
             _ => {}
         }
@@ -3416,6 +3451,27 @@ impl Shell {
             self.notifications.dismiss(id);
         }
         self.select_remaining_notification();
+    }
+    fn toggle_selected_app_notifications(&mut self) {
+        let Some(notification) = self.notification_selected().copied() else {
+            return;
+        };
+        if !matches!(notification.source, notifications::Source::Process { .. }) {
+            return;
+        }
+        let permission = if self
+            .notifications
+            .app_permission(notification.label.as_str())
+            == Some(notifications::AppPermission::Denied)
+        {
+            notifications::AppPermission::Allowed
+        } else {
+            notifications::AppPermission::Denied
+        };
+        self.notification_policy_error = self
+            .notifications
+            .set_app_permission(notification.label.as_str(), permission)
+            .is_err();
     }
     fn notification_pointer(&mut self, x: i32, y: i32) {
         let b = self.notification_bounds();
@@ -3432,6 +3488,7 @@ impl Shell {
             if let Some(n) = self.notifications.at(index) {
                 self.notification_selected = Some(n.id);
                 self.notification_control = 0;
+                self.notification_policy_error = false;
                 self.notification_key(Key::Enter);
             }
         } else if y >= b.y + b.height - 48
@@ -3439,8 +3496,11 @@ impl Shell {
             && x >= b.x + 12
             && x < b.x + b.width - 12
         {
-            let slot = (x - b.x - 12) / ((b.width - 24) / 3).max(1);
-            if slot < 3 {
+            let slot = (x - b.x - 12) / ((b.width - 24) / 4).max(1);
+            let app_selected = self
+                .notification_selected()
+                .is_some_and(|n| matches!(n.source, notifications::Source::Process { .. }));
+            if slot < 4 && (slot != 3 || app_selected) {
                 self.notification_control = slot as usize + 1;
                 self.notification_key(Key::Enter);
             }
@@ -5534,25 +5594,36 @@ impl Shell {
         };
         let b = self.notification_bounds();
         canvas.rect(b.x, b.y + b.height - 100, b.width, 100, theme::BACKGROUND);
-        let cols = ((b.width - 24).max(0) / (6 * ui_scale(canvas))) as usize;
-        draw_limited(
+        let label_width = (b.width - 24).max(0);
+        draw_fit(
             canvas,
             b.x + 12,
             b.y + b.height - 88,
             n.title.as_str(),
-            cols,
+            label_width,
             theme::TEXT,
+            theme::Font::Body,
         );
-        for (i, part) in n.label.as_str().as_bytes().chunks(cols.max(1)).enumerate() {
-            draw_limited(
-                canvas,
-                b.x + 12,
-                b.y + b.height - 62 + i as i32 * 20,
-                core::str::from_utf8(part).unwrap_or(""),
-                cols,
-                theme::MUTED,
-            );
-        }
+        let mut row = 0;
+        wrap_text_width(
+            n.label.as_str(),
+            label_width,
+            self.active_appearance().text_scale,
+            |part| {
+                if row < 2 {
+                    draw_fit(
+                        canvas,
+                        b.x + 12,
+                        b.y + b.height - 62 + row * 20,
+                        part,
+                        label_width,
+                        theme::MUTED,
+                        theme::Font::Body,
+                    );
+                }
+                row += 1;
+            },
+        );
     }
     fn render_notifications(&self, canvas: &mut Canvas<'_>) {
         let b = self.notification_bounds();
@@ -5624,23 +5695,26 @@ impl Shell {
                 notifications::Priority::Critical => 0xb42338,
             };
             draw_limited(canvas, b.x + 12, y + 4, title.as_str(), cols, color);
-            for (i, part) in n
-                .label
-                .as_str()
-                .as_bytes()
-                .chunks(cols.max(1))
-                .take(2)
-                .enumerate()
-            {
-                draw_limited(
-                    canvas,
-                    b.x + 12,
-                    y + 24 + i as i32 * 18,
-                    core::str::from_utf8(part).unwrap_or(""),
-                    cols,
-                    theme::MUTED,
-                );
-            }
+            let mut label_row = 0;
+            wrap_text_width(
+                n.label.as_str(),
+                (b.width - 24).max(0),
+                self.active_appearance().text_scale,
+                |part| {
+                    if label_row < 2 {
+                        draw_fit(
+                            canvas,
+                            b.x + 12,
+                            y + 24 + label_row * 18,
+                            part,
+                            b.width - 24,
+                            theme::MUTED,
+                            theme::Font::Body,
+                        );
+                    }
+                    label_row += 1;
+                },
+            );
         }
         let detail_y = b.y + 80 + rows as i32 * 64;
         if let Some(n) = self.notification_selected() {
@@ -5680,15 +5754,40 @@ impl Shell {
                 theme::MUTED,
             );
         }
-        let width = ((b.width - 24) / 3).max(1);
-        for (i, label) in ["Dismiss", "Clear read", "DND"].into_iter().enumerate() {
+        if self.notification_policy_error {
+            draw_limited(
+                canvas,
+                b.x + 12,
+                b.y + b.height - 70,
+                "Could not save this app notification choice",
+                cols,
+                palette::Palette::new(self.active_appearance()).warning,
+            );
+        }
+        let width = ((b.width - 24) / 4).max(1);
+        let selected_app = self
+            .notification_selected()
+            .filter(|n| matches!(n.source, notifications::Source::Process { .. }));
+        let app_label = selected_app.map_or("App only", |n| {
+            if self.notifications.app_permission(n.label.as_str())
+                == Some(notifications::AppPermission::Denied)
+            {
+                "Allow app"
+            } else {
+                "Block app"
+            }
+        });
+        for (i, label) in ["Dismiss", "Clear read", "DND", app_label]
+            .into_iter()
+            .enumerate()
+        {
             let x = b.x + 12 + i as i32 * width;
             canvas.rect(
                 x,
                 b.y + b.height - 48,
                 width - 4,
                 32,
-                if self.notification_control == i + 1 {
+                if self.notification_control == i + 1 && (i != 3 || selected_app.is_some()) {
                     theme::ACCENT
                 } else {
                     theme::BACKGROUND
@@ -5699,8 +5798,10 @@ impl Shell {
                 x + 8,
                 b.y + b.height - 42,
                 label,
-                if self.notification_control == i + 1 {
+                if self.notification_control == i + 1 && (i != 3 || selected_app.is_some()) {
                     self.accent_foreground()
+                } else if i == 3 && selected_app.is_none() {
+                    theme::MUTED
                 } else {
                     theme::TEXT
                 },
@@ -6331,34 +6432,19 @@ impl Shell {
             theme::TEXT,
             theme::Font::Title,
         );
-        let mut summary_row = 0;
         let summary_y = if text_scale == appearance::TextScale::Percent125 {
             y + 80
         } else {
             y + 73
         };
-        wrap_text_width(
-            "Theme and accent are available; wallpaper, desktop fonts, density, desktop scaling and layout are unavailable.",
-            (content_width - 20).max(0),
-            text_scale,
-            |part| {
-                draw_fit(
-                    canvas,
-                    x + 10,
-                    summary_y
-                        + summary_row
-                            * if text_scale == appearance::TextScale::Percent125 {
-                                18
-                            } else {
-                                12
-                            },
-                    part,
-                    content_width - 20,
-                    theme::MUTED,
-                    theme::Font::Body,
-                );
-                summary_row += 1;
-            },
+        draw_fit(
+            canvas,
+            x + 10,
+            summary_y,
+            "Theme and accent settings are available.",
+            content_width - 20,
+            theme::MUTED,
+            theme::Font::Body,
         );
 
         let labels = ["Theme", "Accent color", "Changes"];
@@ -9564,6 +9650,54 @@ mod tests {
         shell.on_key(Key::Escape);
         assert!(!shell.notifications_open());
         assert_eq!(shell.desktop().focused(), Some(App::Files));
+    }
+    #[test]
+    fn notification_center_can_block_and_restore_an_authenticated_app() {
+        let mut shell = Shell::new();
+        let id = actual_notification(&mut shell, 44);
+        shell.on_key(Key::Notifications);
+        for _ in 0..4 {
+            shell.on_key(Key::Tab);
+        }
+        shell.on_key(Key::Enter);
+        assert_eq!(shell.notification_selected().unwrap().id, id);
+        assert_eq!(
+            shell.notification_app_permission("org.next.original"),
+            Some(notifications::AppPermission::Denied)
+        );
+        assert_eq!(
+            shell.publish_notification(
+                notifications::Source::Process { pid: 45 },
+                "org.next.original",
+                "Should be blocked",
+                "The per-app choice is active",
+                notifications::Priority::Info,
+                2,
+            ),
+            Err(notifications::Error::PermissionDenied)
+        );
+        let mut snapshot = accessibility::Snapshot::empty();
+        shell.write_accessibility_snapshot(&mut snapshot).unwrap();
+        assert!(snapshot.nodes().iter().any(|node| {
+            node.name() == "Block app notifications"
+                && node.role == accessibility::Role::CheckBox
+                && node.state.checked == Some(true)
+        }));
+        shell.on_key(Key::Enter);
+        assert_eq!(
+            shell.notification_app_permission("org.next.original"),
+            Some(notifications::AppPermission::Allowed)
+        );
+        assert!(shell
+            .publish_notification(
+                notifications::Source::Process { pid: 46 },
+                "org.next.original",
+                "Allowed again",
+                "The choice can be reversed",
+                notifications::Priority::Info,
+                3,
+            )
+            .is_ok());
     }
     #[test]
     fn notification_overlay_preserves_terminal_and_trusted_modal_priority() {

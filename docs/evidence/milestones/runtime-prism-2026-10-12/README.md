@@ -1,12 +1,14 @@
 # Runtime and Prism evidence — 2026-10-12
 
 The latest signed development image SHA-256 is
-`64d07c2ff4b53c3e14dafdb23ed28b655bafc98eab9543fe099229910f302d10`. Its qemu64
-desktop smoke passed 138 checks, including Linux `gettimeofday` sequential
-copyout and `ftruncate`, the cwd fixture, Home arithmetic search, Files tab,
-pane and copy workflows, and two one-shot timer probe runs. The [Prism and Linux bundle](prism-linux-search-wave/README.md)
-contains the report, source hashes, capture manifest, serial trace, and 20 current Prism
-screenshots. The earlier [cwd and Prism bundle](cwd-copy-wave/README.md) and
+`6b245fa85c2c49ad1da63cf7d6fdfb813e3d351c3275217c736d7b1c43b1da15`. Its qemu64
+desktop smoke passed 138 checks, including two Linux clock fixture runs for
+`clock_gettime`, `clock_getres`, monotonic sleep and copyout bounds, Home
+arithmetic search, Files tabs/panes/copy, and notification controls. The
+[clock and notification bundle](prism-clock-notifications-wave/README.md)
+contains the report, source hashes, capture manifest, serial trace, and 20
+current Prism screenshots. The previous [Prism and Linux bundle](prism-linux-search-wave/README.md)
+retains the earlier image's source-bound evidence. The earlier [cwd and Prism bundle](cwd-copy-wave/README.md) and
 [fstat/getdents Files bundle](fstat-getdents-files-r3/README.md) retain their
 source-bound reports for their own images. The [feature-wave bundle](feature-wave-final/README.md)
 records the separate DHCPv6 peer exchange on its own image. APs remain stopped

@@ -55,12 +55,9 @@ pub struct Installer {
     root: File,
 }
 struct Lock {
-    path: PathBuf,
-}
-impl Drop for Lock {
-    fn drop(&mut self) {
-        let _ = fs::remove_file(&self.path);
-    }
+    // Keep the descriptor open for the full transaction. The OS releases the
+    // advisory lock when the process exits, so a crash cannot strand it.
+    _file: File,
 }
 fn hex(bytes: &[u8; 32]) -> String {
     bytes.iter().map(|b| std::format!("{b:02x}")).collect()
@@ -190,13 +187,18 @@ impl Installer {
             return Err(Error::UnsafeRoot);
         }
         let path = self.root_path().join(".install.lock");
-        OpenOptions::new()
+        let file = OpenOptions::new()
+            .read(true)
             .write(true)
-            .create_new(true)
+            .create(true)
             .mode(0o600)
             .custom_flags(libc::O_NOFOLLOW | libc::O_CLOEXEC)
             .open(&path)?;
-        Ok(Lock { path })
+        if !file.metadata()?.is_file() {
+            return Err(Error::UnsafeRoot);
+        }
+        file.lock()?;
+        Ok(Lock { _file: file })
     }
     fn load(&self) -> Result<Registry, Error> {
         let path = self.root_path().join("registry");
@@ -618,6 +620,62 @@ mod tests {
             Err(Error::Verify(VerifyError::UnknownSigner))
         ));
         assert_eq!(fs::read_dir(&root.0).unwrap().count(), 0);
+    }
+    #[test]
+    fn installer_recovers_a_crash_left_lock_file_and_serializes_live_writers() {
+        use std::{sync::mpsc, thread, time::Duration};
+
+        let root = Temporary::new();
+        let installer = root.installer();
+        let lock_path = root.0.join(".install.lock");
+        let mut stale_lock = OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .mode(0o600)
+            .open(&lock_path)
+            .unwrap();
+        stale_lock
+            .write_all(b"left by a terminated installer")
+            .unwrap();
+        drop(stale_lock);
+
+        let anchors = [crate::tests::anchor()];
+        let old = bundle("org.next.test", b"old!", 0);
+        let new = bundle("org.next.test", b"new!", 1);
+        installer.install(&old, &anchors).unwrap();
+        assert!(lock_path.is_file(), "the reusable lock inode is retained");
+
+        let held = installer.lock().unwrap();
+        let writer_root = root.0.clone();
+        let (waiting_tx, waiting_rx) = mpsc::channel();
+        let (locked_tx, locked_rx) = mpsc::channel();
+        let writer = thread::spawn(move || {
+            let second = Installer::open(&writer_root).unwrap();
+            waiting_tx.send(()).unwrap();
+            let _second_lock = second.lock().unwrap();
+            locked_tx.send(()).unwrap();
+        });
+        waiting_rx.recv_timeout(Duration::from_secs(2)).unwrap();
+        assert!(locked_rx.recv_timeout(Duration::from_millis(50)).is_err());
+        drop(held);
+        locked_rx.recv_timeout(Duration::from_secs(2)).unwrap();
+        writer.join().unwrap();
+
+        let updater_root = root.0.clone();
+        let updater_anchors = anchors;
+        let updater = thread::spawn(move || {
+            Installer::open(&updater_root)
+                .unwrap()
+                .update(&new, &updater_anchors)
+                .unwrap();
+        });
+        updater.join().unwrap();
+        assert_eq!(
+            installer
+                .file("org.next.test", "assets/help.txt", &anchors)
+                .unwrap(),
+            b"new!"
+        );
     }
     #[test]
     fn interrupted_staging_or_commit_keeps_previous_active_package() {
