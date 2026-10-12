@@ -19,6 +19,7 @@ pub mod udp;
 
 pub const MAX_FRAME: usize = 1514;
 pub const QUEUE_BYTES: usize = 32_768;
+pub const BUFFER_BYTES: usize = 10 + MAX_FRAME;
 static HOST_CLOCK_NS: AtomicU64 = AtomicU64::new(0);
 static RX_FRAME: Mutex<Option<Vec<u8>>> = Mutex::new(None);
 static TX_FRAME: Mutex<Vec<u8>> = Mutex::new(Vec::new());
@@ -71,6 +72,11 @@ pub struct NetworkInfo {
     pub lease: dhcp::Lease,
 }
 pub struct Dma<T>(pub UnsafeCell<T>);
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct DeviceBuffer {
+    pub address: usize,
+    pub length: usize,
+}
 pub struct Queue {
     pub memory: *mut u8,
     pub count: usize,
@@ -78,6 +84,7 @@ pub struct Queue {
     pub used: usize,
     pub submitted: u16,
     pub completed: u16,
+    pub device_buffer: Option<DeviceBuffer>,
 }
 impl Queue {
     pub unsafe fn poll(&mut self) -> Result<Option<usize>, NetworkError> {
@@ -96,10 +103,11 @@ impl Queue {
             .add(self.used + 4 + (self.completed as usize % self.count) * 8);
         let id = ptr::read_volatile(entry.cast::<u32>());
         let length = ptr::read_volatile(entry.add(4).cast::<u32>()) as usize;
-        if id != 0 {
+        if id != 0 || self.device_buffer.is_none() {
             return Err(NetworkError::InvalidCompletion);
         }
         self.completed = index;
+        self.device_buffer = None;
         Ok(Some(length))
     }
 }
@@ -129,11 +137,13 @@ impl Device {
         if frame.len() > MAX_FRAME {
             return Err(NetworkError::FrameSize);
         }
-        *TX_FRAME.lock().unwrap() = frame.to_vec();
         if !self.tx.memory.is_null() {
-            if self.tx.submitted != self.tx.completed {
+            if self.tx.device_buffer.is_some() || self.tx.submitted != self.tx.completed {
                 return Err(NetworkError::QueueActive);
             }
+        }
+        *TX_FRAME.lock().unwrap() = frame.to_vec();
+        if !self.tx.memory.is_null() {
             let index = self.tx.submitted.wrapping_add(1);
             let entry = self
                 .tx
@@ -143,6 +153,10 @@ impl Device {
             ptr::write_volatile(entry.add(4).cast::<u32>(), 0);
             ptr::write_volatile(self.tx.memory.add(self.tx.used + 2).cast::<u16>(), index);
             self.tx.submitted = index;
+            self.tx.device_buffer = Some(DeviceBuffer {
+                address: 0x1000,
+                length: frame.len(),
+            });
         }
         Ok(())
     }

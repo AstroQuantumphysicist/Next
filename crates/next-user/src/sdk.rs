@@ -142,6 +142,35 @@ impl Handle {
         ))?;
         Ok(output)
     }
+    /// Atomically wait for any event in `handles` and return its input index.
+    /// The kernel validates every handle and output buffer before consuming a
+    /// signal; at most `OBJECT_WAIT_MANY_MAX` unique event objects are allowed.
+    pub fn wait_many(handles: &[Self], mode: Wait) -> Result<usize> {
+        if handles.is_empty() || handles.len() > next_abi::OBJECT_WAIT_MANY_MAX {
+            return invalid();
+        }
+        let mut raw = [0u64; next_abi::OBJECT_WAIT_MANY_MAX];
+        for (slot, handle) in handles.iter().enumerate() {
+            raw[slot] = handle.raw();
+        }
+        let mut selected = u64::MAX;
+        let (flags, deadline) = wait_arguments(mode, false);
+        unit(call(
+            Syscall::ObjectWaitMany,
+            [
+                raw.as_ptr() as u64,
+                handles.len() as u64,
+                &mut selected as *mut u64 as u64,
+                flags,
+                deadline,
+                0,
+            ],
+        ))?;
+        if selected >= handles.len() as u64 {
+            return Err(Error::InvalidResult);
+        }
+        Ok(selected as usize)
+    }
     pub fn log(self, text: &str) -> Result<usize> {
         count(crate::log(self.0, text), text.len())
     }
@@ -407,6 +436,19 @@ mod tests {
         assert_eq!(decode(i64::MAX), Ok(i64::MAX as u64));
         assert_eq!(unit(7), Err(Error::InvalidResult));
         assert_eq!(count(9, 8), Err(Error::InvalidResult));
+    }
+    #[test]
+    fn wait_many_rejects_empty_and_overlong_slices_before_syscall() {
+        let handle = Handle::from_raw(1).unwrap();
+        assert_eq!(
+            Handle::wait_many(&[], Wait::Poll),
+            Err(Error::Status(Status::InvalidArgument))
+        );
+        let handles = [handle; next_abi::OBJECT_WAIT_MANY_MAX + 1];
+        assert_eq!(
+            Handle::wait_many(&handles, Wait::Poll),
+            Err(Error::Status(Status::InvalidArgument))
+        );
     }
     #[test]
     fn file_namespace_rejects_unknown_rights_without_entering_the_gate() {

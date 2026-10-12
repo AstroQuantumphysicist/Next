@@ -2,7 +2,7 @@
   "schema": 1,
   "spec_sha256": "248a4f8c44f6c54e91dcf548ffeb0fb1e83c72dc2e378870f6315e6ca1592a22",
   "product_ready": false,
-  "note": "2026-10-12 feature wave: scheduler-backed event waits and Linux positional file I/O pass cpu=max QEMU; nine Prism guest screens are captured under qemu64. DHCP renewal/rebind, NextFS directory mutation serialization, channel benchmark and panic-header formatting have scoped host evidence. 81 pending, 114 partial, 0 verified; product_ready=false. No physical hardware certification.",
+  "note": "2026-10-12 feature wave: scheduler-backed event waits, including event-only wait-any, and Linux positional file I/O pass QEMU; Prism has nine guest-captured screens and 12 Settings categories. DHCP guest T1/T2 renewal/rebind, NAK recovery, and expiry recovery have controlled-peer QEMU evidence. Static virtio-net DMA ownership, CPU topology parsing, NextFS directory serialization, channel benchmarking, panic-header formatting, and the full workspace suite have scoped host evidence. 78 pending, 117 partial, 0 verified; product_ready=false. No physical hardware certification.",
   "requirements": [
     {
       "id": "NEXT-BOOT-001",
@@ -239,7 +239,7 @@
           "command": "source tools/env.sh && rustc --edition=2021 --test crates/helix-kernel/src/panic_report.rs -o build/panic-report-tests && build/panic-report-tests",
           "scope": "One host unit test checks stable panic ID, CPU/thread fields, source location, and the explicit unavailable-backtrace marker. It does not inject a panic in the guest.",
           "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/panic-header-tests.txt",
-          "sha256": "33bd119129c92f0e99f51932ed1cadb7bf3c677eff587b28773214f972f72cf9"
+          "sha256": "adf860e309e14fa84b5f55de0d391e96d2fe7b788b6b5df26f0ba0e8c7a636dc"
         }
       ],
       "remaining": "The allocation-free header formatter and BSP panic serial path are implemented. CPU/thread are currently BSP placeholders, the backtrace is unavailable, and no guest panic-injection or durable reboot record is validated."
@@ -308,9 +308,17 @@
       "id": "NEXT-KRN-006",
       "kind": "explicit",
       "text": "per-core state and interrupt priority are explicit. Lock ordering is written down; hard IRQ contexts must not block.",
-      "status": "pending",
-      "evidence": [],
-      "remaining": "Implement and validate the complete specification contract."
+      "status": "partial",
+      "evidence": [
+        {
+          "level": "host_tested",
+          "command": "source tools/env.sh && cargo test -p next-fs",
+          "scope": "41 host tests include immediate Busy on same-context and concurrent MutationLock contention, guard release, and concurrent directory-operation stress. docs/KERNEL-LOCKS.md records observed nesting order and audits the current non-waiting timer/try-only guard paths. This is bounded host/source evidence, not guest IRQ or SMP validation.",
+          "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/nextfs-tests.txt",
+          "sha256": "5091b69d93ad9ea5da1efca8863917154b5e081900ed693a2f0013e3182b2333"
+        }
+      ],
+      "remaining": "Per-core state and an interrupt-priority policy are not explicit; the current kernel services are serialized by a one-CPU entry model. The lock note covers only observed nesting and present IRQ paths, with no global rank checker, complete IRQ call-graph audit, AP/SMP lock discipline, or guest/hardware validation."
     },
     {
       "id": "NEXT-KRN-007",
@@ -452,9 +460,24 @@
       "id": "NEXT-MEM-005",
       "kind": "explicit",
       "text": "validate pin/unpin while asynchronous I/O is in flight; prevent DMA-to-freed-page and mapping lifetime use-after-free.",
-      "status": "pending",
-      "evidence": [],
-      "remaining": "Implement and validate the complete specification contract."
+      "status": "partial",
+      "evidence": [
+        {
+          "level": "host_tested",
+          "command": "source tools/env.sh && cargo test -p helix-core memory::tests",
+          "scope": "Eight host allocator tests cover delayed completion, multiple outstanding pins, blocked free/retain/reserve and reuse, unmatched completion, and bounded pin-count overflow. They exercise the PageAllocator contract only; no device I/O is submitted.",
+          "artifact": "crates/helix-core/src/memory.rs",
+          "sha256": "cf274f1ae80a8828bb7bf334cc516ff7d1d52b34611b1d4d07d10a7494b3d8f4"
+        },
+        {
+          "level": "host_tested",
+          "command": "source tools/env.sh && python3 tools/test-network-dma.py",
+          "scope": "45 host tests compile and exercise the production virtio-net queue, retaining static TX-buffer ownership through publication, timeout and malformed completion, and returning it only after a validated used-ring completion. Host-modeled queue behavior only; this does not integrate PageAllocator pins or test guest/hardware DMA.",
+          "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/network-dma-host.json",
+          "sha256": "924bf60fbb9e7bba51e0b9721baa8dda8bed2242c5c8455704f9d649d0e7ec81"
+        }
+      ],
+      "remaining": "PageAllocator pinning and static virtio-net queue ownership each have scoped host tests, but the pin API is not integrated with kernel allocator ownership/serialization, dynamic mapping references, or actual device I/O. AC97/device DMA and guest/hardware validation remain absent; end-to-end DMA and mapping use-after-free prevention is unvalidated."
     },
     {
       "id": "NEXT-MEM-006",
@@ -514,9 +537,17 @@
       "id": "NEXT-SCH-003",
       "kind": "explicit",
       "text": "CPU hotplug may be omitted in 1.0 but topology discovery must not assume fixed CPU count.",
-      "status": "pending",
-      "evidence": [],
-      "remaining": "Implement and validate the complete specification contract."
+      "status": "partial",
+      "evidence": [
+        {
+          "level": "host_tested",
+          "command": "source tools/env.sh && cargo build --locked --offline -p next-abi && NEXT_ABI_RLIB=\"$(find target/debug/deps -maxdepth 1 -type f -name 'libnext_abi-*.rlib' | head -n 1)\" && rustc --edition=2021 --test crates/helix-kernel/src/acpi.rs --extern next_abi=\"$NEXT_ABI_RLIB\" -L dependency=target/debug/deps -o build/acpi-topology-tests && build/acpi-topology-tests",
+          "scope": "Nine direct ACPI parser tests cover mixed enabled/disabled LAPIC and x2APIC records, duplicate APIC IDs and processor UIDs across formats, the 16-record roster limit, and fail-closed overflow on the next record. Parser coverage only; it does not start APs or validate guest SMP.",
+          "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/acpi-topology-tests.txt",
+          "sha256": "34a0c16510739cc07d957b5dee4d63c371c3415cba212e61a63ca451b8570ddf"
+        }
+      ],
+      "remaining": "The roster remains statically bounded at 16 records, and larger tables fail with Capacity. AP startup, multicore scheduling/synchronization, hotplug, and guest multicore stress remain unimplemented or unvalidated; topology behavior beyond the parser tests is not established."
     },
     {
       "id": "NEXT-OBJ-001",
@@ -611,9 +642,23 @@
           "scope": "The exact signed cpu=max QEMU image exercises manual/auto event timeout, signal/reset completion, manual broadcast, final-close wake, and killed-waiter cleanup. General wait-many and SMP wake protocols remain absent.",
           "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/qemu-max/boot-smoke.json",
           "sha256": "4e9e8d5117aa911618c691cde288a1af18c67e7a21f98217c03d53002e82d268"
+        },
+        {
+          "level": "boot_smoke",
+          "command": "source tools/env.sh && python3 tools/boot_smoke.py --cpu qemu64 --timeout 180",
+          "scope": "Exact signed qemu64 image runs the event-only syscall 45 fixture with two transferred WAIT capabilities: wait-many timeout cleanup, Poll WouldBlock, blocked wake on index 1, reset-stable completion, and no extra signal. No other waitable object types or SMP.",
+          "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/object-wait-many-guest.json",
+          "sha256": "5d3a9e8ae773d8ab7c724e2e69059d03a77705661b8ad1f16d38f43b324fcfa8"
+        },
+        {
+          "level": "host_tested",
+          "command": "source tools/env.sh && cargo test -p helix-core event::tests -- --nocapture",
+          "scope": "18 event unit tests cover wait-any validation and atomic poll, signal/reset winner ordering, timeout cleanup, cancellation, final close, and signal-before-timeout completion precedence.",
+          "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/object-wait-many-guest.json",
+          "sha256": "5d3a9e8ae773d8ab7c724e2e69059d03a77705661b8ad1f16d38f43b324fcfa8"
         }
       ],
-      "remaining": "Process/event and connected UDP read/write waits validate authority/copyout/deadlines, retain direction and recheck lease/backend state across wake/teardown. Wait-many/general cancellation/mutex/semaphore/SMP race semantics remain absent."
+      "remaining": "Single-object process/event and connected UDP waits validate authority/copyout/deadlines and teardown. Event-only syscall 45 supports atomic wait-any for up to 16 unique events, with host-tested signal/reset/timeout/cancel/final-close cleanup and qemu64 guest coverage. Other waitable object types, general cancellation tokens, mutex/semaphore waiters and SMP wake races remain absent."
     },
     {
       "id": "NEXT-IPC-001",
@@ -793,7 +838,7 @@
           "command": "source tools/env.sh && cargo test -p next-fs --lib",
           "scope": "41 host tests pass, including two-thread directory open/rename/unlink progress, stale identity rejection, and mutation-lock reentrancy. No guest SMP claim.",
           "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/nextfs-tests.txt",
-          "sha256": "fe9876d30daa79538c169fe7da026ab9e1cd80e201ea26db2c2c82a92ea4020d"
+          "sha256": "5091b69d93ad9ea5da1efca8863917154b5e081900ed693a2f0013e3182b2333"
         }
       ],
       "remaining": "A nonblocking mutation lock and host directory race tests now cover the bounded journal operations. Guest SMP and power-loss behavior under concurrent mutation remain unvalidated."
@@ -855,7 +900,7 @@
           "command": "source tools/env.sh && bash tools/test.sh",
           "scope": "Host installer failure-injection tests pass, including pre-rename and post-rename directory-sync failures; this does not implement guest dependency resolution or migration.",
           "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/workspace-validation.txt",
-          "sha256": "ebc4a5b70cbc06d4a8050396b5d94bdb2c117d2684a190079a384a860dabcaa2"
+          "sha256": "47f9cf2e3601099fb277d58ae7008431ac67d9cf9aa0ea07bc03643b60da5952"
         }
       ],
       "remaining": "Host registry transactions and injected precommit failures preserve existing active installations. Dependency resolution/version migration hooks, guest package state and complete interrupted migration/recovery coverage remain absent."
@@ -1125,9 +1170,16 @@
           "scope": "Actual tenth60ab surface publication/presentation/teardown and DNS/foundation trace; Source11 interactive input/Trash/namespace grants and Source12 close requests are absent from this image.",
           "artifact": "docs/evidence/milestones/60ab816c97cc/serial.log",
           "sha256": "796424a4d0582983229e2555f7f3ec43c0c4248286b202e8dd3ff15850e4a0bb"
+        },
+        {
+          "level": "boot_smoke",
+          "command": "source tools/env.sh && python3 tools/boot_smoke.py --cpu qemu64 --timeout 180",
+          "scope": "Exact signed qemu64 image runs the event-only syscall 45 fixture with two transferred WAIT capabilities: wait-many timeout cleanup, Poll WouldBlock, blocked wake on index 1, reset-stable completion, and no extra signal. No other waitable object types or SMP.",
+          "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/object-wait-many-guest.json",
+          "sha256": "5d3a9e8ae773d8ab7c724e2e69059d03a77705661b8ad1f16d38f43b324fcfa8"
         }
       ],
-      "remaining": "Experimental native note/startup/handle/syscall and status-versus-result contracts are exercised. The draft table is not frozen; generated Rust/C/C++ schema/header fixtures, full ABI querying/versioning and general calls remain absent."
+      "remaining": "Experimental native note/startup/handle/syscall and status-versus-result contracts are exercised. Syscall 45 is a bounded event-only wait-many extension and does not freeze the draft table; generated Rust/C/C++ schema/header fixtures, full ABI querying/versioning and general calls remain absent."
     },
     {
       "id": "SECTION-4.3",
@@ -1358,9 +1410,23 @@
           "scope": "Actual tenth60ab surface publication/presentation/teardown and DNS/foundation trace; Source11 interactive input/Trash/namespace grants and Source12 close requests are absent from this image.",
           "artifact": "docs/evidence/milestones/60ab816c97cc/serial.log",
           "sha256": "796424a4d0582983229e2555f7f3ec43c0c4248286b202e8dd3ff15850e4a0bb"
+        },
+        {
+          "level": "boot_smoke",
+          "command": "source tools/env.sh && python3 tools/boot_smoke.py --cpu qemu64 --timeout 180",
+          "scope": "Exact signed qemu64 image runs the event-only syscall 45 fixture with two transferred WAIT capabilities: wait-many timeout cleanup, Poll WouldBlock, blocked wake on index 1, reset-stable completion, and no extra signal. No other waitable object types or SMP.",
+          "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/object-wait-many-guest.json",
+          "sha256": "5d3a9e8ae773d8ab7c724e2e69059d03a77705661b8ad1f16d38f43b324fcfa8"
+        },
+        {
+          "level": "host_tested",
+          "command": "source tools/env.sh && cargo test -p helix-core event::tests -- --nocapture",
+          "scope": "18 event unit tests cover wait-any validation and atomic poll, signal/reset winner ordering, timeout cleanup, cancellation, final close, and signal-before-timeout completion precedence.",
+          "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/object-wait-many-guest.json",
+          "sha256": "5d3a9e8ae773d8ab7c724e2e69059d03a77705661b8ad1f16d38f43b324fcfa8"
         }
       ],
-      "remaining": "Single-object process/event polling and blocking waits validate authority/copyout before park and completion; absolute deadlines preserve output on timeout, auto-reset wakes consume one signal, and teardown clears pending state. Atomic wait-many, general cancellation tokens, mutex/semaphore waiters and SMP wake races remain absent."
+      "remaining": "Scheduler-backed event waits include a bounded event-only wait-any syscall and durable completion across reset, timeout, cancellation, close and task teardown. This first slice is single-CPU; process/surface/network wait-many, general cancellation tokens, mutex/semaphore waiters and SMP synchronization remain absent."
     },
     {
       "id": "SECTION-6.3",
@@ -2029,9 +2095,9 @@
         {
           "level": "host_tested",
           "command": "source tools/env.sh && python3 tools/test-network-runtime.py",
-          "scope": "Thirty deterministic host tests exercise the production DHCP runtime through acquisition, renewal/rebind, expiry, and restart with modeled device queues; guest lease renewal is not established.",
+          "scope": "Thirty deterministic host tests exercise the production DHCP runtime through acquisition, renewal/rebind, expiry, and restart with modeled device queues; see the separate guest QEMU evidence for actual guest timer/recovery behavior.",
           "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/network-runtime-host.json",
-          "sha256": "b4cd1647bfcbf90823a6cccf56f406521367da918905ead034c1aecb47b4bad1"
+          "sha256": "a0d178cd148b8929271d6579304cad95c5235b4a6cb4db5b1d8e94e91267ad23"
         },
         {
           "level": "boot_smoke",
@@ -2039,9 +2105,16 @@
           "scope": "The same signed guest image obtains a bounded DHCPv4 lease. It does not exercise renewal/rebind on the guest.",
           "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/qemu-max/boot-smoke.json",
           "sha256": "4e9e8d5117aa911618c691cde288a1af18c67e7a21f98217c03d53002e82d268"
+        },
+        {
+          "level": "boot_smoke",
+          "command": "source tools/env.sh && python3 tools/dhcp_guest_smoke.py --timeout 150",
+          "scope": "Actual q35/TCG qemu64 guest kernel over virtio-net and a deterministic Ethernet peer: 40-second DHCPv4 lease; T1 unicast ACK refresh; T2 broadcast rebind accepted from an alternate server; NAK-triggered discovery restart; and expiry-triggered discovery restart. Single-vCPU QEMU evidence, not broad server interoperability or hardware certification.",
+          "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/dhcp-guest-smoke.json",
+          "sha256": "ae608d67744727e09890cbe9de386af5341af31125f0f74ce7b79f3bfaff32cc"
         }
       ],
-      "remaining": "DHCPv4 plus actual ARP/ICMP/UDP/TCP and local synthetic-zone DNS A/AAAA/retry/cache/TTL expiry run on QEMU. General DNS/upstream handling, DHCP renewal, IPv6 transport, userspace netd/socket APIs, TLS/firewall/settings and interoperability/physical certification remain absent."
+      "remaining": "DHCPv4 acquisition, T1 refresh, T2 rebind, NAK recovery, and expiry recovery are exercised with a controlled QEMU peer; this does not establish broad DHCP interoperability. Actual ARP/ICMP/UDP/TCP and local synthetic-zone DNS A/AAAA/retry/cache/TTL expiry also run on QEMU. General DNS/upstream handling, IPv6 transport, userspace netd/socket APIs, TLS/firewall/settings, and physical certification remain absent."
     },
     {
       "id": "SECTION-12",
@@ -2765,7 +2838,7 @@
           "command": "source tools/env.sh && bash tools/test.sh",
           "scope": "Original static Linux file fixture passes on host Linux with exit status 46; this covers only the documented bounded fixture.",
           "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/workspace-validation.txt",
-          "sha256": "ebc4a5b70cbc06d4a8050396b5d94bdb2c117d2684a190079a384a860dabcaa2"
+          "sha256": "47f9cf2e3601099fb277d58ae7008431ac67d9cf9aa0ea07bc03643b60da5952"
         },
         {
           "level": "boot_smoke",
@@ -3105,9 +3178,16 @@
           "scope": "121 actual qemu64 assertions: authenticated original client refuses first close while visible, advisory WillClose preserves visible saving process, actual file write/readback precedes Exit51 and exact teardown; legacy wire/authority/ticket/replay denials. No Unresponsive/ForceQuit guest proof, isolated compositor or general GUI readiness.",
           "artifact": "docs/evidence/milestones/1dbcad2f1dd4/client-close/boot-smoke.json",
           "sha256": "6a38d5efe2a00cc3a400362d1412b48f5c0817ed3605e5180d89c01afd084d4c"
+        },
+        {
+          "level": "boot_smoke",
+          "command": "source tools/env.sh && python3 tools/boot_smoke.py --cpu qemu64 --timeout 180",
+          "scope": "Exact signed qemu64 image runs the event-only syscall 45 fixture with two transferred WAIT capabilities: wait-many timeout cleanup, Poll WouldBlock, blocked wake on index 1, reset-stable completion, and no extra signal. No other waitable object types or SMP.",
+          "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/object-wait-many-guest.json",
+          "sha256": "5d3a9e8ae773d8ab7c724e2e69059d03a77705661b8ad1f16d38f43b324fcfa8"
         }
       ],
-      "remaining": "Source12 typed Rust SDK supports explicitly negotiated close-v2 events and identity-bound advisory replies, exercised by signed original guest fixture. Deadline/Unresponsive/ForceQuit remains host/scoped pending guest proof. Physical release/modifier state, IME, application accessibility trees/general UI, C headers/libc/C++/Rust std/debugger/installed app experience remain missing. Source14 reconfiguration helper is separate later source."
+      "remaining": "Typed no_std Rust wrappers preserve unknown errors, separate exit copyout from status and document borrowed capability tokens; the SDK now exposes bounded event wait-any. Frozen generated schema/headers, C/libc/C++/Rust std, UI/service SDK, app packaging launch and installed toolchain/debugger remain absent."
     },
     {
       "id": "SECTION-19.3",
@@ -3481,9 +3561,16 @@
           "scope": "Guest frame captures document the current bounded Settings appearance panel only; the full Settings navigation and settings catalog remain absent.",
           "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/qemu64-gallery/boot-smoke.json",
           "sha256": "79174d04d37a2670eea8f762268895eed1d91807c4e64d9f0f6d051979772b12"
+        },
+        {
+          "level": "boot_smoke",
+          "command": "source tools/env.sh && python3 tools/boot_smoke.py --cpu qemu64 --timeout 240 --capture-prism-gallery",
+          "scope": "Final qemu64 gallery run passed 118 checks on image 4cc895e716afda58cf932d0dbebabec9f755e39fb566bbd000741c82301b32bb and captured the 1280x800 Settings view after completed framebuffer presentation. Settings exposes 12 categories; Appearance theme/accent selection and Save/Revert are active, System diagnostics are read-only, and ten pages remain informational with disabled rows. Rendering evidence does not establish complete settings functionality, assistive support, or hardware behavior.",
+          "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/final-qemu64/boot-smoke.json",
+          "sha256": "f09e087a4424fa2a9537ffe7796130d98518cae33bf030da4cded0aa6ed13467"
         }
       ],
-      "remaining": "Tenth has trusted kernel-hosted panels, persistent theme/accent at scale100, real GUI create/edit/rename/permanent-delete/conditional-copy confirmations and actual Super/AltF4 routing. Original signed native surface pixels are immutably copied into trusted previews with readable authenticated origin and lifecycle cleanup. Client input and cooperative close are later source, not this image. User compositor isolation, general tabs/directories/workspaces, Trash, Unicode shaping/screen readers, full apps/settings and capture policy remain incomplete."
+      "remaining": "Settings provides 12 navigable categories. Appearance supports bounded theme and accent selection with Save/Revert through the existing persistence adapter; System exposes read-only diagnostics. Display, Sound, Network & Internet, Bluetooth & Devices, Apps, Accounts, Privacy & Security, Storage & Backup, Accessibility and Developer are informational pages with disabled settings rows. Wallpaper, fonts, density, scale, desktop layout, other hardware/system controls, and full settings persistence and assistive-technology coverage remain unavailable or unvalidated."
     },
     {
       "id": "SECTION-22.4",
@@ -4043,9 +4130,16 @@
           "scope": "Actual tenth60ab surface publication/presentation/teardown and DNS/foundation trace; Source11 interactive input/Trash/namespace grants and Source12 close requests are absent from this image.",
           "artifact": "docs/evidence/milestones/60ab816c97cc/serial.log",
           "sha256": "796424a4d0582983229e2555f7f3ec43c0c4248286b202e8dd3ff15850e4a0bb"
+        },
+        {
+          "level": "boot_smoke",
+          "command": "source tools/env.sh && python3 tools/dhcp_guest_smoke.py --timeout 150",
+          "scope": "Actual q35/TCG qemu64 guest kernel over virtio-net and a deterministic Ethernet peer: 40-second DHCPv4 lease; T1 unicast ACK refresh; T2 broadcast rebind accepted from an alternate server; NAK-triggered discovery restart; and expiry-triggered discovery restart. Single-vCPU QEMU evidence, not broad server interoperability or hardware certification.",
+          "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/dhcp-guest-smoke.json",
+          "sha256": "ae608d67744727e09890cbe9de386af5341af31125f0f74ce7b79f3bfaff32cc"
         }
       ],
-      "remaining": "DHCPv4 plus actual ARP/ICMP/UDP/TCP and local synthetic-zone DNS A/AAAA/retry/cache/TTL expiry run on QEMU. General DNS/upstream handling, DHCP renewal, IPv6 transport, userspace netd/socket APIs, TLS/firewall/settings and interoperability/physical certification remain absent."
+      "remaining": "QEMU evidence covers DHCPv4 acquisition, renewal/rebind, NAK recovery, and expiry recovery with a controlled peer, plus actual ARP/ICMP/UDP/TCP and local synthetic-zone DNS A/AAAA/retry/cache/TTL expiry. General DNS/upstream handling, IPv6 transport, userspace netd/socket APIs, TLS, firewall, usable network settings, broad interoperability, and physical certification remain absent."
     },
     {
       "id": "DELIVERABLE-desktop",

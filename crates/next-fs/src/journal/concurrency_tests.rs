@@ -120,6 +120,9 @@ fn shared_store() -> Arc<SharedStore> {
 fn try_gate_reports_reentrancy_immediately_and_releases_after_scope() {
     let gate = Arc::new(MutationLock::new());
     let held = gate.try_acquire().unwrap();
+    // The same execution context must observe contention as Busy instead of
+    // waiting on a guard it already owns (the shape of IRQ/reentrant access).
+    assert_eq!(gate.try_acquire().err(), Some(Busy));
     let contender = Arc::clone(&gate);
     let (send, receive) = mpsc::channel();
     let thread = thread::spawn(move || send.send(contender.try_acquire().err()).unwrap());
@@ -128,6 +131,8 @@ fn try_gate_reports_reentrancy_immediately_and_releases_after_scope() {
         Some(Busy)
     );
     thread.join().unwrap();
+    // A rejected contender must not release or otherwise alter the owner.
+    assert_eq!(gate.try_acquire().err(), Some(Busy));
     drop(held);
     assert!(gate.try_acquire().is_ok());
 }

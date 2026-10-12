@@ -122,6 +122,15 @@ struct Queue {
     used: usize,
     submitted: u16,
     completed: u16,
+    /// Static staging storage currently published in this queue's descriptor.
+    /// This is a device-ownership lease, not an allocator pin: these kernel
+    /// buffers have static lifetime and never enter PageAllocator.
+    device_buffer: Option<DeviceBuffer>,
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct DeviceBuffer {
+    address: usize,
+    length: usize,
 }
 impl Queue {
     unsafe fn setup(base: u16, index: u16, memory: *mut u8) -> Result<Self, NetworkError> {
@@ -147,7 +156,11 @@ impl Queue {
             used,
             submitted: 0,
             completed: 0,
+            device_buffer: None,
         })
+    }
+    fn can_submit(&self) -> bool {
+        self.device_buffer.is_none() && self.submitted == self.completed
     }
     unsafe fn submit(
         &mut self,
@@ -157,10 +170,23 @@ impl Queue {
         len: usize,
         writable: bool,
     ) -> Result<(), NetworkError> {
-        if self.submitted != self.completed
-            || len > BUFFER_BYTES
-            || buffer as usize + len > u32::MAX as usize
-        {
+        self.publish(buffer, len, writable)?;
+        out16(base + 16, index);
+        Ok(())
+    }
+    /// Write one descriptor and publish it in the avail ring. Device ownership
+    /// is recorded before the avail index becomes visible to a polling device.
+    /// Split out from the port notification so host tests exercise the exact
+    /// ownership transition without executing privileged I/O instructions.
+    unsafe fn publish(
+        &mut self,
+        buffer: *mut u8,
+        len: usize,
+        writable: bool,
+    ) -> Result<(), NetworkError> {
+        let address = buffer as usize;
+        let end = address.checked_add(len).ok_or(NetworkError::DmaAddress)?;
+        if !self.can_submit() || len > BUFFER_BYTES || end > u32::MAX as usize {
             return Err(NetworkError::DmaAddress);
         }
         ptr::write_volatile(self.memory.cast::<u64>(), buffer as u64);
@@ -177,13 +203,16 @@ impl Queue {
             0,
         );
         fence(Ordering::SeqCst);
+        self.device_buffer = Some(DeviceBuffer {
+            address,
+            length: len,
+        });
         self.submitted = self.submitted.wrapping_add(1);
         ptr::write_volatile(
             self.memory.add(self.avail + 2).cast::<u16>(),
             self.submitted,
         );
         fence(Ordering::SeqCst);
-        out16(base + 16, index);
         Ok(())
     }
     unsafe fn poll(&mut self) -> Result<Option<usize>, NetworkError> {
@@ -200,10 +229,22 @@ impl Queue {
             .add(self.used + 4 + (self.completed as usize % self.count) * 8);
         let id = ptr::read_volatile(entry.cast::<u32>());
         let len = ptr::read_volatile(entry.add(4).cast::<u32>()) as usize;
-        if id != 0 {
+        let Some(buffer) = self.device_buffer else {
+            return Err(NetworkError::InvalidCompletion);
+        };
+        let descriptor_address = ptr::read_volatile(self.memory.cast::<u64>()) as usize;
+        let descriptor_len = ptr::read_volatile(self.memory.add(8).cast::<u32>()) as usize;
+        if id != 0
+            || descriptor_address != buffer.address
+            || descriptor_len != buffer.length
+            || len > buffer.length
+        {
             return Err(NetworkError::InvalidCompletion);
         }
         self.completed = index;
+        // A validated used element transfers this descriptor's buffer back to
+        // the driver. Invalid or absent completions leave it device-owned.
+        self.device_buffer = None;
         Ok(Some(len))
     }
 }
@@ -256,7 +297,7 @@ impl Device {
     }
     unsafe fn submit_transmit(&mut self, bytes: &[u8]) -> Result<(), NetworkError> {
         // Reject before touching a buffer still owned by the DMA descriptor.
-        if self.tx.submitted != self.tx.completed {
+        if !self.tx.can_submit() {
             return Err(NetworkError::Busy);
         }
         if !(14..=MAX_FRAME).contains(&bytes.len()) {
@@ -872,6 +913,10 @@ mod tests {
                 used: 0,
                 submitted: 1,
                 completed: 0,
+                device_buffer: Some(DeviceBuffer {
+                    address: 0x1000,
+                    length: BUFFER_BYTES,
+                }),
             }
         }
         let mut device = Device {
@@ -905,8 +950,14 @@ mod tests {
             used: 8192,
             submitted: 1,
             completed: 0,
+            device_buffer: Some(DeviceBuffer {
+                address: 0x1000,
+                length: BUFFER_BYTES,
+            }),
         };
         unsafe {
+            ptr::write_volatile(queue.memory.cast::<u64>(), 0x1000);
+            ptr::write_volatile(queue.memory.add(8).cast::<u32>(), BUFFER_BYTES as u32);
             assert_eq!(queue.poll(), Ok(None));
             ptr::write_volatile(queue.memory.add(queue.used + 2).cast::<u16>(), 2);
             assert_eq!(queue.poll(), Err(NetworkError::InvalidCompletion));
@@ -914,11 +965,76 @@ mod tests {
             ptr::write_volatile(queue.memory.add(queue.used + 4).cast::<u32>(), 1);
             assert_eq!(queue.poll(), Err(NetworkError::InvalidCompletion));
             ptr::write_volatile(queue.memory.add(queue.used + 4).cast::<u32>(), 0);
+            // A descriptor mutation or overlong used entry cannot release the
+            // static buffer lease, even when the used-ring index advances.
+            ptr::write_volatile(queue.memory.cast::<u64>(), 0x2000);
+            ptr::write_volatile(queue.memory.add(queue.used + 8).cast::<u32>(), 42);
+            assert_eq!(queue.poll(), Err(NetworkError::InvalidCompletion));
+            ptr::write_volatile(queue.memory.cast::<u64>(), 0x1000);
+            ptr::write_volatile(
+                queue.memory.add(queue.used + 8).cast::<u32>(),
+                (BUFFER_BYTES + 1) as u32,
+            );
+            assert_eq!(queue.poll(), Err(NetworkError::InvalidCompletion));
+            assert_eq!(
+                queue.device_buffer,
+                Some(DeviceBuffer {
+                    address: 0x1000,
+                    length: BUFFER_BYTES
+                })
+            );
+            assert!(!queue.can_submit());
             ptr::write_volatile(queue.memory.add(queue.used + 8).cast::<u32>(), 42);
             assert_eq!(queue.poll(), Ok(Some(42)));
+            assert_eq!(queue.device_buffer, None);
+            assert!(queue.can_submit());
             assert_eq!(queue.poll(), Ok(None));
             ptr::write_volatile(queue.memory.add(queue.used + 2).cast::<u16>(), 2);
             assert_eq!(queue.poll(), Err(NetworkError::InvalidCompletion));
+        }
+    }
+
+    #[test]
+    fn static_dma_lease_blocks_reuse_until_used_completion() {
+        let memory = Dma(UnsafeCell::new([0u8; QUEUE_BYTES]));
+        let mut queue = Queue {
+            memory: memory.0.get().cast::<u8>(),
+            count: 256,
+            avail: 4096,
+            used: 8192,
+            submitted: 0,
+            completed: 0,
+            device_buffer: None,
+        };
+        unsafe {
+            queue.publish(0x1200usize as *mut u8, 64, false).unwrap();
+            assert_eq!(
+                queue.device_buffer,
+                Some(DeviceBuffer {
+                    address: 0x1200,
+                    length: 64
+                })
+            );
+            // A poll with no used entry is the async in-flight case: the
+            // permanent staging bytes remain device-owned and cannot resubmit.
+            assert_eq!(queue.poll(), Ok(None));
+            assert!(!queue.can_submit());
+            assert_eq!(
+                queue.publish(0x1200usize as *mut u8, 64, false),
+                Err(NetworkError::DmaAddress)
+            );
+
+            ptr::write_volatile(queue.memory.add(queue.used + 4).cast::<u32>(), 0);
+            ptr::write_volatile(queue.memory.add(queue.used + 8).cast::<u32>(), 0);
+            ptr::write_volatile(queue.memory.add(queue.used + 2).cast::<u16>(), 1);
+            assert_eq!(queue.poll(), Ok(Some(0)));
+            assert_eq!(queue.device_buffer, None);
+            assert!(queue.can_submit());
+
+            // Reuse is possible only after the completion transferred the
+            // same static bytes back to the driver.
+            queue.publish(0x1200usize as *mut u8, 32, false).unwrap();
+            assert_eq!(queue.device_buffer.unwrap().length, 32);
         }
     }
 }

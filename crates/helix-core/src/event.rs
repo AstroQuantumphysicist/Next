@@ -8,6 +8,8 @@ use crate::{
 };
 
 pub const MAX_WAITERS: usize = 16;
+/// Maximum number of event handles accepted by one atomic wait-any operation.
+pub const MAX_WAIT_OBJECTS: usize = 16;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum WaitResult {
@@ -18,9 +20,26 @@ pub enum WaitResult {
     Blocked,
 }
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum WaitManyResult {
+    /// The first signaled input event was consumed and its input index returned.
+    Signaled(usize),
+    /// The task was registered on every input event and blocked atomically.
+    Blocked,
+}
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct EventHandle {
     slot: usize,
     generation: u64,
+}
+impl EventHandle {
+    /// Sentinel for bounded caller-owned arrays; it is rejected by all event
+    /// operations and never aliases a live generation.
+    pub const fn invalid() -> Self {
+        Self {
+            slot: usize::MAX,
+            generation: 0,
+        }
+    }
 }
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Error {
@@ -30,6 +49,8 @@ pub enum Error {
     References,
     Waiters,
     WaitersFull,
+    InvalidCount,
+    DuplicateHandle,
     NoCurrentTask,
     NotWaiting,
     Cancelled,
@@ -46,12 +67,16 @@ struct Waiter {
     task: Option<Handle>,
     generation: u64,
     state: WaitState,
+    multi: bool,
+    index: usize,
 }
 impl Waiter {
     const EMPTY: Self = Self {
         task: None,
         generation: 0,
         state: WaitState::Blocked,
+        multi: false,
+        index: 0,
     };
 }
 #[derive(Clone, Copy)]
@@ -231,12 +256,183 @@ impl<const N: usize> Events<N> {
             task: Some(task),
             generation: handle.generation,
             state: WaitState::Blocked,
+            multi: false,
+            index: 0,
         };
         if scheduler.block_current().is_err() {
             Self::remove_waiter(event, slot);
             return Err(Error::NoCurrentTask);
         }
         Ok(WaitResult::Blocked)
+    }
+
+    /// Atomically checks a bounded list of distinct events and registers the
+    /// current task on all of them before blocking. The caller must serialize
+    /// this with event signal/reset/close and scheduler operations. A signal
+    /// delivered to any member resolves the whole group and unregisters its
+    /// other members; the winning input index survives reset/close until the
+    /// syscall resumes and consumes it.
+    pub fn wait_many_current<const TASKS: usize>(
+        &mut self,
+        handles: &[EventHandle],
+        scheduler: &mut Scheduler<TASKS>,
+    ) -> Result<WaitManyResult, Error> {
+        if handles.is_empty() || handles.len() > MAX_WAIT_OBJECTS {
+            return Err(Error::InvalidCount);
+        }
+        let task = scheduler.current().ok_or(Error::NoCurrentTask)?;
+        if let Some(index) = self.take_many_completion(task)? {
+            return Ok(WaitManyResult::Signaled(index));
+        }
+
+        match self.try_wait_many(handles) {
+            Ok(index) => return Ok(WaitManyResult::Signaled(index)),
+            Err(Error::WouldBlock) => {}
+            Err(error) => return Err(error),
+        }
+
+        // Reserve one slot in every event before changing any event. This
+        // makes a full waiter list a side-effect-free error.
+        let mut slots = [0usize; MAX_WAIT_OBJECTS];
+        for (index, handle) in handles.iter().enumerate() {
+            slots[index] = self.events[handle.slot]
+                .waiters
+                .iter()
+                .position(|waiter| waiter.task.is_none())
+                .ok_or(Error::WaitersFull)?;
+            if self.events[handle.slot]
+                .waiters
+                .iter()
+                .any(|waiter| waiter.task == Some(task))
+            {
+                return Err(Error::Waiters);
+            }
+        }
+        for (index, handle) in handles.iter().enumerate() {
+            self.events[handle.slot].waiters[slots[index]] = Waiter {
+                task: Some(task),
+                generation: handle.generation,
+                state: WaitState::Blocked,
+                multi: true,
+                index,
+            };
+        }
+        if scheduler.block_current().is_err() {
+            for handle in handles {
+                self.remove_task_wait(handle.slot, task, true);
+            }
+            return Err(Error::NoCurrentTask);
+        }
+        Ok(WaitManyResult::Blocked)
+    }
+
+    /// Atomically poll a bounded event set without parking the caller. All
+    /// handles are validated before any auto-reset signal is consumed.
+    pub fn try_wait_many(&mut self, handles: &[EventHandle]) -> Result<usize, Error> {
+        Self::validate_wait_set(&self.events, handles)?;
+        let Some(index) = handles
+            .iter()
+            .position(|handle| self.events[handle.slot].signaled)
+        else {
+            return Err(Error::WouldBlock);
+        };
+        let event = self.get(handles[index])?;
+        if !event.manual {
+            event.signaled = false;
+        }
+        Ok(index)
+    }
+
+    fn validate_wait_set(events: &[Event; N], handles: &[EventHandle]) -> Result<(), Error> {
+        if handles.is_empty() || handles.len() > MAX_WAIT_OBJECTS {
+            return Err(Error::InvalidCount);
+        }
+        // Validate the entire set and reject duplicates before consuming any
+        // auto-reset signal or installing a partial registration.
+        for (index, handle) in handles.iter().enumerate() {
+            let event = events.get(handle.slot).ok_or(Error::InvalidHandle)?;
+            if event.references == 0 || event.retired || event.generation != handle.generation {
+                return Err(Error::InvalidHandle);
+            }
+            if handles[..index].contains(handle) {
+                return Err(Error::DuplicateHandle);
+            }
+        }
+        Ok(())
+    }
+
+    /// Consume the durable result for a completed wait-any registration.
+    /// `None` means no group completion has been delivered for this task.
+    pub fn take_many_completion(&mut self, task: Handle) -> Result<Option<usize>, Error> {
+        for event in &mut self.events {
+            if let Some(slot) = event
+                .waiters
+                .iter()
+                .position(|waiter| waiter.task == Some(task) && waiter.multi)
+            {
+                match event.waiters[slot].state {
+                    WaitState::Blocked => continue,
+                    WaitState::Signaled => {
+                        let index = event.waiters[slot].index;
+                        Self::remove_waiter(event, slot);
+                        return Ok(Some(index));
+                    }
+                    WaitState::Cancelled => {
+                        Self::remove_waiter(event, slot);
+                        return Err(Error::Cancelled);
+                    }
+                    WaitState::Closed => {
+                        Self::remove_waiter(event, slot);
+                        return Err(Error::InvalidHandle);
+                    }
+                }
+            }
+        }
+        Ok(None)
+    }
+
+    fn remove_task_wait(&mut self, event_slot: usize, task: Handle, multi: bool) {
+        if let Some(event) = self.events.get_mut(event_slot) {
+            let mut slot = 0;
+            while slot < MAX_WAITERS {
+                if event.waiters[slot].task == Some(task) && (!multi || event.waiters[slot].multi) {
+                    Self::remove_waiter(event, slot);
+                } else {
+                    slot += 1;
+                }
+            }
+        }
+    }
+
+    /// Remove every still-blocked member of a wait-any group after its
+    /// absolute deadline. A previously delivered signal/cancel/close remains
+    /// authoritative and must be consumed with `take_many_completion` first.
+    pub fn abandon_many_wait(&mut self, task: Handle) -> Result<(), Error> {
+        let mut found = false;
+        for event in &self.events {
+            if event.waiters.iter().any(|waiter| {
+                waiter.task == Some(task) && waiter.multi && waiter.state != WaitState::Blocked
+            }) {
+                return Err(Error::NotWaiting);
+            }
+            found |= event.waiters.iter().any(|waiter| {
+                waiter.task == Some(task) && waiter.multi && waiter.state == WaitState::Blocked
+            });
+        }
+        if !found {
+            return Err(Error::NotWaiting);
+        }
+        for event in &mut self.events {
+            let mut slot = 0;
+            while slot < MAX_WAITERS {
+                if event.waiters[slot].task == Some(task) && event.waiters[slot].multi {
+                    Self::remove_waiter(event, slot);
+                } else {
+                    slot += 1;
+                }
+            }
+        }
+        Ok(())
     }
 
     /// Consumes a completed wait for an explicit task. Kernel dispatchers use
@@ -306,55 +502,84 @@ impl<const N: usize> Events<N> {
         handle: EventHandle,
         scheduler: &mut Scheduler<TASKS>,
     ) -> Result<usize, Error> {
-        let event = self.get(handle)?;
-        if event.manual {
-            event.signaled = true;
-            let mut woken = 0;
-            let mut slot = 0;
-            while slot < MAX_WAITERS {
-                if event.waiters[slot].task.is_some()
-                    && event.waiters[slot].state == WaitState::Blocked
-                {
+        let mut winners = [None; MAX_WAITERS];
+        let (woken, winner_count) = {
+            let event = self.get(handle)?;
+            if event.manual {
+                event.signaled = true;
+                let mut woken = 0;
+                let mut winner_count = 0;
+                let mut slot = 0;
+                while slot < MAX_WAITERS {
+                    if event.waiters[slot].task.is_some()
+                        && event.waiters[slot].state == WaitState::Blocked
+                    {
+                        let Some(task) = event.waiters[slot].task else {
+                            Self::remove_waiter(event, slot);
+                            continue;
+                        };
+                        if Self::wake_or_ready(scheduler, task) {
+                            if event.waiters[slot].multi {
+                                winners[winner_count] = Some(task);
+                                winner_count += 1;
+                            }
+                            event.waiters[slot].state = WaitState::Signaled;
+                            woken += 1;
+                            slot += 1;
+                        } else {
+                            Self::remove_waiter(event, slot);
+                        }
+                    } else {
+                        slot += 1;
+                    }
+                }
+                (woken, winner_count)
+            } else {
+                let mut woken = 0;
+                let mut winner_count = 0;
+                let mut slot = 0;
+                while slot < MAX_WAITERS {
+                    if event.waiters[slot].task.is_none()
+                        || event.waiters[slot].state != WaitState::Blocked
+                    {
+                        slot += 1;
+                        continue;
+                    }
                     let Some(task) = event.waiters[slot].task else {
                         Self::remove_waiter(event, slot);
                         continue;
                     };
                     if Self::wake_or_ready(scheduler, task) {
+                        if event.waiters[slot].multi {
+                            winners[winner_count] = Some(task);
+                            winner_count += 1;
+                        }
                         event.waiters[slot].state = WaitState::Signaled;
-                        woken += 1;
-                        slot += 1;
-                    } else {
-                        Self::remove_waiter(event, slot);
+                        woken = 1;
+                        break;
                     }
-                } else {
-                    slot += 1;
-                }
-            }
-            Ok(woken)
-        } else {
-            let mut woken = 0;
-            let mut slot = 0;
-            while slot < MAX_WAITERS {
-                if event.waiters[slot].task.is_none()
-                    || event.waiters[slot].state != WaitState::Blocked
-                {
-                    slot += 1;
-                    continue;
-                }
-                let Some(task) = event.waiters[slot].task else {
                     Self::remove_waiter(event, slot);
-                    continue;
-                };
-                if Self::wake_or_ready(scheduler, task) {
-                    event.waiters[slot].state = WaitState::Signaled;
-                    woken = 1;
-                    break;
                 }
-                Self::remove_waiter(event, slot);
+                event.signaled = woken == 0;
+                (woken, winner_count)
             }
-            event.signaled = woken == 0;
-            Ok(woken)
+        };
+        for task in winners[..winner_count].iter().flatten().copied() {
+            for (slot, event) in self.events.iter_mut().enumerate() {
+                if slot == handle.slot {
+                    continue;
+                }
+                let mut waiter = 0;
+                while waiter < MAX_WAITERS {
+                    if event.waiters[waiter].task == Some(task) && event.waiters[waiter].multi {
+                        Self::remove_waiter(event, waiter);
+                    } else {
+                        waiter += 1;
+                    }
+                }
+            }
         }
+        Ok(woken)
     }
 
     /// Cancels one registered wait and makes its task runnable if it is still
@@ -369,20 +594,40 @@ impl<const N: usize> Events<N> {
         task: Handle,
         scheduler: &mut Scheduler<TASKS>,
     ) -> Result<(), Error> {
-        let event = self.get(handle)?;
-        let slot = event
-            .waiters
-            .iter()
-            .position(|waiter| {
-                waiter.task == Some(task)
-                    && waiter.generation == handle.generation
-                    && waiter.state == WaitState::Blocked
-            })
-            .ok_or(Error::NotWaiting)?;
-        if Self::wake_or_ready(scheduler, task) {
-            event.waiters[slot].state = WaitState::Cancelled;
-        } else {
-            Self::remove_waiter(event, slot);
+        let multi = {
+            let event = self.get(handle)?;
+            let slot = event
+                .waiters
+                .iter()
+                .position(|waiter| {
+                    waiter.task == Some(task)
+                        && waiter.generation == handle.generation
+                        && waiter.state == WaitState::Blocked
+                })
+                .ok_or(Error::NotWaiting)?;
+            let multi = event.waiters[slot].multi;
+            if Self::wake_or_ready(scheduler, task) {
+                event.waiters[slot].state = WaitState::Cancelled;
+                multi
+            } else {
+                Self::remove_waiter(event, slot);
+                return Ok(());
+            }
+        };
+        if multi {
+            for (slot, event) in self.events.iter_mut().enumerate() {
+                if slot == handle.slot {
+                    continue;
+                }
+                let mut waiter = 0;
+                while waiter < MAX_WAITERS {
+                    if event.waiters[waiter].task == Some(task) && event.waiters[waiter].multi {
+                        Self::remove_waiter(event, waiter);
+                    } else {
+                        waiter += 1;
+                    }
+                }
+            }
         }
         Ok(())
     }
@@ -397,29 +642,54 @@ impl<const N: usize> Events<N> {
         handle: EventHandle,
         scheduler: &mut Scheduler<TASKS>,
     ) -> Result<usize, Error> {
-        let event = self.get(handle)?;
-        if event.references > 1 {
-            event.references -= 1;
-            return Ok(0);
-        }
-        let mut woken = 0;
-        let mut slot = 0;
-        while slot < MAX_WAITERS {
-            if event.waiters[slot].task.is_some() && event.waiters[slot].state == WaitState::Blocked
-            {
-                let Some(task) = event.waiters[slot].task else {
-                    Self::remove_waiter(event, slot);
-                    continue;
-                };
-                if Self::wake_or_ready(scheduler, task) {
-                    event.waiters[slot].state = WaitState::Closed;
-                    woken += 1;
-                    slot += 1;
+        let mut winners = [None; MAX_WAITERS];
+        let (woken, winner_count) = {
+            let event = self.get(handle)?;
+            if event.references > 1 {
+                event.references -= 1;
+                return Ok(0);
+            }
+            let mut woken = 0;
+            let mut winner_count = 0;
+            let mut slot = 0;
+            while slot < MAX_WAITERS {
+                if event.waiters[slot].task.is_some()
+                    && event.waiters[slot].state == WaitState::Blocked
+                {
+                    let Some(task) = event.waiters[slot].task else {
+                        Self::remove_waiter(event, slot);
+                        continue;
+                    };
+                    if Self::wake_or_ready(scheduler, task) {
+                        if event.waiters[slot].multi {
+                            winners[winner_count] = Some(task);
+                            winner_count += 1;
+                        }
+                        event.waiters[slot].state = WaitState::Closed;
+                        woken += 1;
+                        slot += 1;
+                    } else {
+                        Self::remove_waiter(event, slot);
+                    }
                 } else {
-                    Self::remove_waiter(event, slot);
+                    slot += 1;
                 }
-            } else {
-                slot += 1;
+            }
+            (woken, winner_count)
+        };
+        for task in winners[..winner_count].iter().flatten().copied() {
+            for (slot, event) in self.events.iter_mut().enumerate() {
+                if slot == handle.slot {
+                    continue;
+                }
+                let mut waiter = 0;
+                while waiter < MAX_WAITERS {
+                    if event.waiters[waiter].task == Some(task) && event.waiters[waiter].multi {
+                        Self::remove_waiter(event, waiter);
+                    } else {
+                        waiter += 1;
+                    }
+                }
             }
         }
         self.close(handle)?;
@@ -827,5 +1097,170 @@ mod tests {
             events.wait_current(event, &mut scheduler),
             Ok(WaitResult::Signaled)
         );
+    }
+
+    #[test]
+    fn wait_many_validates_full_set_before_consuming_or_registering() {
+        use crate::scheduler::Scheduler;
+        let mut events = Events::<3>::new();
+        let first = events.create(false, false).unwrap();
+        let second = events.create(false, true).unwrap();
+        let mut scheduler = Scheduler::<1>::new();
+        let task = scheduler.spawn().unwrap();
+        assert_eq!(scheduler.schedule(), Some(task));
+
+        assert_eq!(
+            events.wait_many_current(&[first, second, EventHandle::invalid()], &mut scheduler),
+            Err(Error::InvalidHandle)
+        );
+        assert_eq!(events.try_wait(second), Ok(()));
+        events.signal(second).unwrap();
+        assert_eq!(
+            events.wait_many_current(&[first, second, second], &mut scheduler),
+            Err(Error::DuplicateHandle)
+        );
+        assert_eq!(events.try_wait(second), Ok(()));
+        assert_eq!(
+            events.wait_many_current(&[], &mut scheduler),
+            Err(Error::InvalidCount)
+        );
+        assert_eq!(
+            events.wait_many_current(&[first; MAX_WAIT_OBJECTS + 1], &mut scheduler),
+            Err(Error::InvalidCount)
+        );
+        events.signal(second).unwrap();
+        // The first signaled input wins after complete validation. Auto-reset
+        // signals on later inputs remain pending for the next wait.
+        assert_eq!(
+            events.wait_many_current(&[first, second], &mut scheduler),
+            Ok(WaitManyResult::Signaled(1))
+        );
+        assert_eq!(events.try_wait(second), Err(Error::WouldBlock));
+    }
+
+    #[test]
+    fn wait_many_poll_is_nonblocking_and_consumes_only_first_ready_auto_event() {
+        let mut events = Events::<2>::new();
+        let first = events.create(false, false).unwrap();
+        let second = events.create(false, false).unwrap();
+        assert_eq!(
+            events.try_wait_many(&[first, second]),
+            Err(Error::WouldBlock)
+        );
+        events.signal(second).unwrap();
+        assert_eq!(events.try_wait_many(&[first, second]), Ok(1));
+        assert_eq!(events.try_wait(second), Err(Error::WouldBlock));
+        assert_eq!(
+            events.try_wait_many(&[first, second]),
+            Err(Error::WouldBlock)
+        );
+    }
+
+    #[test]
+    fn wait_many_signal_reset_and_other_signal_races_keep_one_winner() {
+        use crate::scheduler::{Scheduler, TaskState};
+        let mut events = Events::<3>::new();
+        let first = events.create(false, false).unwrap();
+        let second = events.create(true, false).unwrap();
+        let third = events.create(false, false).unwrap();
+        let mut scheduler = Scheduler::<1>::new();
+        let task = scheduler.spawn().unwrap();
+        assert_eq!(scheduler.schedule(), Some(task));
+        assert_eq!(
+            events.wait_many_current(&[first, second, third], &mut scheduler),
+            Ok(WaitManyResult::Blocked)
+        );
+        assert_eq!(scheduler.state(task), Ok(TaskState::Blocked));
+
+        // The manual event wins the wait-any group. A reset before resumption
+        // changes its level but cannot erase the completed wait.
+        assert_eq!(events.signal_and_wake(second, &mut scheduler), Ok(1));
+        assert_eq!(scheduler.state(task), Ok(TaskState::Ready));
+        events.reset(second).unwrap();
+        assert_eq!(events.try_wait(second), Err(Error::WouldBlock));
+
+        // A later signal to a removed group member is retained for a later
+        // wait; it neither wakes the already-ready task twice nor replaces the
+        // original winner's index.
+        assert_eq!(events.signal_and_wake(first, &mut scheduler), Ok(0));
+        assert_eq!(scheduler.schedule(), Some(task));
+        assert_eq!(events.take_many_completion(task), Ok(Some(1)));
+        assert_eq!(events.try_wait(first), Ok(()));
+        assert_eq!(events.try_wait(third), Err(Error::WouldBlock));
+        events.signal(first).unwrap();
+        assert_eq!(
+            events.wait_many_current(&[first, third], &mut scheduler),
+            Ok(WaitManyResult::Signaled(0))
+        );
+    }
+
+    #[test]
+    fn wait_many_timeout_cleans_all_members_but_signal_before_timeout_wins() {
+        use crate::scheduler::{Scheduler, TaskState};
+        let mut events = Events::<2>::new();
+        let first = events.create(false, false).unwrap();
+        let second = events.create(false, false).unwrap();
+        let mut scheduler = Scheduler::<1>::new();
+        let task = scheduler.spawn().unwrap();
+        assert_eq!(scheduler.schedule(), Some(task));
+        assert_eq!(
+            events.wait_many_current(&[first, second], &mut scheduler),
+            Ok(WaitManyResult::Blocked)
+        );
+        assert_eq!(events.signal_and_wake(second, &mut scheduler), Ok(1));
+        // A deadline processor checks completion first, so a signal already
+        // delivered under the event lock remains authoritative.
+        assert_eq!(events.abandon_many_wait(task), Err(Error::NotWaiting));
+        assert_eq!(scheduler.schedule(), Some(task));
+        assert_eq!(events.take_many_completion(task), Ok(Some(1)));
+
+        assert_eq!(
+            events.wait_many_current(&[first, second], &mut scheduler),
+            Ok(WaitManyResult::Blocked)
+        );
+        assert_eq!(scheduler.state(task), Ok(TaskState::Blocked));
+        assert_eq!(events.abandon_many_wait(task), Ok(()));
+        assert_eq!(events.abandon_many_wait(task), Err(Error::NotWaiting));
+        assert_eq!(events.signal_and_wake(first, &mut scheduler), Ok(0));
+        assert_eq!(events.signal_and_wake(second, &mut scheduler), Ok(0));
+        scheduler.wake(task).unwrap();
+        assert_eq!(scheduler.schedule(), Some(task));
+        assert_eq!(events.take_many_completion(task), Ok(None));
+        assert_eq!(events.try_wait(first), Ok(()));
+        assert_eq!(events.try_wait(second), Ok(()));
+    }
+
+    #[test]
+    fn wait_many_cancel_and_close_resolve_group_and_release_other_registrations() {
+        use crate::scheduler::{Scheduler, TaskState};
+        let mut events = Events::<2>::new();
+        let first = events.create(false, false).unwrap();
+        let second = events.create(false, false).unwrap();
+        let mut scheduler = Scheduler::<1>::new();
+        let task = scheduler.spawn().unwrap();
+        assert_eq!(scheduler.schedule(), Some(task));
+        assert_eq!(
+            events.wait_many_current(&[first, second], &mut scheduler),
+            Ok(WaitManyResult::Blocked)
+        );
+        assert_eq!(events.cancel_wait(second, task, &mut scheduler), Ok(()));
+        assert_eq!(scheduler.state(task), Ok(TaskState::Ready));
+        assert_eq!(events.signal_and_wake(first, &mut scheduler), Ok(0));
+        assert_eq!(scheduler.schedule(), Some(task));
+        assert_eq!(events.take_many_completion(task), Err(Error::Cancelled));
+        assert_eq!(events.try_wait(first), Ok(()));
+
+        assert_eq!(
+            events.wait_many_current(&[first, second], &mut scheduler),
+            Ok(WaitManyResult::Blocked)
+        );
+        assert_eq!(events.close_and_wake(first, &mut scheduler), Ok(1));
+        assert_eq!(scheduler.state(task), Ok(TaskState::Ready));
+        assert_eq!(events.signal_and_wake(second, &mut scheduler), Ok(0));
+        assert_eq!(scheduler.schedule(), Some(task));
+        assert_eq!(events.take_many_completion(task), Err(Error::InvalidHandle));
+        assert_eq!(events.try_wait(second), Ok(()));
+        let replacement = events.create(false, false).unwrap();
+        assert_ne!(replacement, first);
     }
 }

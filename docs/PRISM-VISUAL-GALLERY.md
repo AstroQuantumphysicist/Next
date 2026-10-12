@@ -19,8 +19,12 @@ python3 tools/boot_smoke.py --timeout 240 --capture-prism-gallery
 ```
 
 The gallery includes the current six kernel-hosted first-party panels. Settings
-is still a bounded development panel, and the Calculator is an expression
-utility rather than a complete scientific calculator.
+shows 12 navigable categories: Appearance has active theme/accent controls and
+Save/Revert, System offers read-only diagnostics, and the other ten pages are
+informational with disabled settings rows. The capture shows the rendered
+Appearance page; it does not establish controls that remain unavailable. The
+Calculator is an expression utility rather than a complete scientific
+calculator.
 
 ## Home
 
@@ -40,7 +44,7 @@ utility rather than a complete scientific calculator.
 
 ## Settings
 
-![Prism Settings panel](images/prism-settings.png)
+![Prism Settings with 12 categories, active Appearance controls, and read-only or informational sections](images/prism-settings.png)
 
 ## Editor
 

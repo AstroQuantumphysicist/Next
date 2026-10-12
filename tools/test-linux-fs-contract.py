@@ -7,8 +7,8 @@ import subprocess
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def library(crate):
-    candidates = list((ROOT / "target/debug/deps").glob(f"lib{crate}-*.rlib"))
+def library(crate, dependencies):
+    candidates = list(dependencies.glob(f"lib{crate}-*.rlib"))
     if not candidates:
         raise RuntimeError(f"cargo did not produce the {crate} host library")
     return max(candidates, key=lambda path: path.stat().st_mtime_ns)
@@ -17,7 +17,13 @@ def library(crate):
 def main():
     environment = os.environ.copy()
     environment["CARGO_PROFILE_DEV_PANIC"] = "unwind"
-    subprocess.run(["cargo", "build", "--locked", "--offline", "-p", "helix-core", "-p", "next-abi"],
+    # Keep the unwind libraries isolated from the workspace's ordinary dev
+    # artifacts. Other test/build commands can leave newer panic=abort rlibs in
+    # target/debug/deps, and selecting the newest there can link the wrong ABI.
+    target_dir = ROOT / "work/linux-fs-contract-target"
+    dependencies = target_dir / "debug/deps"
+    subprocess.run(["cargo", "build", "--locked", "--offline", "-p", "helix-core", "-p", "next-abi",
+                    "--target-dir", str(target_dir)],
                    cwd=ROOT, env=environment, check=True)
     output = ROOT / "build/linux-fs-contract-tests"
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -25,9 +31,9 @@ def main():
     subprocess.run([
         "rustc", "--edition=2021", "--test", "-A", "dead_code", "-D", "warnings",
         str(ROOT / "tools/linux_fs_contract_tests.rs"),
-        "-L", f"dependency={ROOT / 'target/debug/deps'}",
-        "--extern", f"helix_core={library('helix_core')}",
-        "--extern", f"next_abi={library('next_abi')}",
+        "-L", f"dependency={dependencies}",
+        "--extern", f"helix_core={library('helix_core', dependencies)}",
+        "--extern", f"next_abi={library('next_abi', dependencies)}",
         "-o", str(output),
     ], cwd=ROOT, env=environment, check=True)
     subprocess.run([str(output)], cwd=ROOT, check=True)

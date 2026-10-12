@@ -90,11 +90,23 @@ struct Transfer {
     rights: Rights,
 }
 #[derive(Clone, Copy)]
+enum PendingWaitKind {
+    Single { handle: Handle, writable: bool },
+    EventMany,
+}
+#[derive(Clone, Copy)]
 struct PendingWait {
-    handle: Handle,
+    kind: PendingWaitKind,
     output: u64,
     deadline: u64,
-    writable: bool,
+}
+#[derive(Clone, Copy)]
+struct WaitManyArgs {
+    input: u64,
+    count: u64,
+    output: u64,
+    flags: u64,
+    deadline: u64,
 }
 struct Process {
     declared_permissions: u64,
@@ -768,12 +780,87 @@ impl Runtime {
         frame: &CpuFrame,
     ) {
         self.processes[owner].pending_wait = Some(PendingWait {
-            handle,
+            kind: PendingWaitKind::Single { handle, writable },
             output,
             deadline,
-            writable,
         });
         self.processes[owner].frame = *frame;
+    }
+    fn record_pending_many_wait(
+        &mut self,
+        owner: usize,
+        output: u64,
+        deadline: u64,
+        frame: &CpuFrame,
+    ) {
+        self.processes[owner].pending_wait = Some(PendingWait {
+            kind: PendingWaitKind::EventMany,
+            output,
+            deadline,
+        });
+        self.processes[owner].frame = *frame;
+    }
+    fn wait_many_events(
+        &mut self,
+        owner: usize,
+        args: WaitManyArgs,
+        frame: &CpuFrame,
+    ) -> Result<u64, Status> {
+        use crate::event::{EventHandle, WaitManyResult, MAX_WAIT_OBJECTS};
+        if args.flags & !1 != 0 || args.count == 0 || args.count > MAX_WAIT_OBJECTS as u64 {
+            return Err(Status::InvalidArgument);
+        }
+        let count = args.count as usize;
+        let bytes = count.checked_mul(8).ok_or(Status::InvalidArgument)?;
+        if !user_range(&self.processes[owner], args.input, bytes, false)
+            || !user_range(&self.processes[owner], args.output, 8, true)
+        {
+            return Err(Status::InvalidArgument);
+        }
+        if args.flags & 1 != 0 && args.deadline != 0 && timer::nanoseconds() >= args.deadline {
+            return Err(Status::TimedOut);
+        }
+
+        // Copy and validate the complete input set before the event layer can
+        // consume a signal or block the task. Event objects only are supported
+        // by this bounded first ABI slice.
+        let mut raw = [0u8; MAX_WAIT_OBJECTS * 8];
+        unsafe {
+            copy_nonoverlapping(physical_pointer(owner, args.input), raw.as_mut_ptr(), bytes);
+        }
+        let mut handles = [EventHandle::invalid(); MAX_WAIT_OBJECTS];
+        for (index, slot) in handles.iter_mut().take(count).enumerate() {
+            let start = index * 8;
+            let raw_handle = u64::from_le_bytes(
+                raw[start..start + 8]
+                    .try_into()
+                    .map_err(|_| Status::InvalidArgument)?,
+            );
+            let handle = Handle::from_raw(raw_handle);
+            match self.processes[owner]
+                .handles
+                .get(handle, Rights::WAIT)
+                .map_err(handle_error)?
+            {
+                Object::Event(event) => *slot = *event,
+                _ => return Err(Status::InvalidHandle),
+            }
+        }
+        if args.flags & 1 == 0 {
+            let index = crate::event::try_wait_many(&handles[..count])?;
+            self.write_wait_result(owner, args.output, index as i64)?;
+            return Ok(0);
+        }
+        match crate::event::wait_many_current(&handles[..count], &mut self.scheduler)? {
+            WaitManyResult::Signaled(index) => {
+                self.write_wait_result(owner, args.output, index as i64)?;
+                Ok(0)
+            }
+            WaitManyResult::Blocked => {
+                self.record_pending_many_wait(owner, args.output, args.deadline, frame);
+                Ok(1)
+            }
+        }
     }
     fn wake_waiters(&mut self) {
         let now = timer::nanoseconds();
@@ -781,30 +868,44 @@ impl Runtime {
             let Some(wait) = self.processes[owner].pending_wait else {
                 continue;
             };
-            let object = self.processes[owner]
-                .handles
-                .get(wait.handle, Rights::WAIT)
-                .ok()
-                .copied();
             let task = self.processes[owner].task;
             let timed_out = wait.deadline != 0 && now >= wait.deadline;
-            let result = match object {
-                Some(Object::Event(event)) if timed_out => {
-                    if let Some(task) = task {
-                        let _ = crate::event::abandon_wait(event, task);
-                    }
-                    Err(Status::TimedOut)
-                }
-                Some(Object::Event(event)) => match task {
-                    Some(task) => match crate::event::take_completion(event, task) {
-                        Ok(true) => self.write_wait_result(owner, wait.output, 0),
-                        Ok(false) => Err(Status::WouldBlock),
+            let result = match (wait.kind, task) {
+                (PendingWaitKind::EventMany, Some(task)) => {
+                    match crate::event::take_many_completion(task) {
+                        Ok(Some(index)) => self.write_wait_result(owner, wait.output, index as i64),
+                        Ok(None) if timed_out => {
+                            let _ = crate::event::abandon_many_wait(task);
+                            Err(Status::TimedOut)
+                        }
+                        Ok(None) => Err(Status::WouldBlock),
                         Err(error) => Err(error),
-                    },
-                    None => Err(Status::InvalidHandle),
-                },
-                _ if timed_out => Err(Status::TimedOut),
-                _ => self.poll_wait(owner, wait.handle, wait.output, wait.writable),
+                    }
+                }
+                (PendingWaitKind::EventMany, None) => Err(Status::InvalidHandle),
+                (PendingWaitKind::Single { handle, writable }, _) => {
+                    let object = self.processes[owner]
+                        .handles
+                        .get(handle, Rights::WAIT)
+                        .ok()
+                        .copied();
+                    match (object, task) {
+                        (Some(Object::Event(event)), Some(task)) => {
+                            match crate::event::take_completion(event, task) {
+                                Ok(true) => self.write_wait_result(owner, wait.output, 0),
+                                Ok(false) if timed_out => {
+                                    let _ = crate::event::abandon_wait(event, task);
+                                    Err(Status::TimedOut)
+                                }
+                                Ok(false) => Err(Status::WouldBlock),
+                                Err(error) => Err(error),
+                            }
+                        }
+                        (_, _) if timed_out => Err(Status::TimedOut),
+                        (Some(_), _) => self.poll_wait(owner, handle, wait.output, writable),
+                        (None, _) => Err(Status::InvalidHandle),
+                    }
+                }
             };
             if result == Err(Status::WouldBlock) {
                 continue;
@@ -2510,9 +2611,20 @@ pub extern "sysv64" fn native_dispatch(frame: *mut CpuFrame) -> u64 {
                 Object::Event(event) => crate::event::reset(event).map(|()| 0),
                 _ => Err(Status::InvalidHandle),
             }),
+        45 => rt.wait_many_events(
+            slot,
+            WaitManyArgs {
+                input: f.rdi,
+                count: f.rsi,
+                output: f.rdx,
+                flags: f.r10,
+                deadline: f.r8,
+            },
+            f,
+        ),
         _ => Err(Status::NotSupported),
     };
-    if number == 4 && rt.processes[slot].pending_wait.is_some() {
+    if matches!(number, 4 | 45) && rt.processes[slot].pending_wait.is_some() {
         return 1;
     }
     if number == 2 || number == 22 {

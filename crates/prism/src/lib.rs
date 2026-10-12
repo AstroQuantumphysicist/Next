@@ -22,6 +22,7 @@ mod native_window_shell;
 pub mod native_windows;
 pub mod notifications;
 pub mod palette;
+pub mod settings_catalog;
 pub mod shortcuts;
 pub mod snap;
 pub mod surface_state;
@@ -364,11 +365,12 @@ pub struct Shell {
     trash_undo: trash_undo_ui::Undo,
     trash_page: bool,
     trash_control: usize,
-    file_focus: keyboard_focus::Focus<'static, 10, 2>,
+    file_focus: keyboard_focus::Focus<'static, 32, 2>,
     file_status: Line,
     file_outcome: Option<files_actions::Outcome>,
     file_pending_selection: Option<files_actions::Path>,
     appearance: appearance_ui::AppearanceUi,
+    settings_category: usize,
     settings_diagnostics: bool,
     monitor: [Line; 8],
     system: [Line; 8],
@@ -441,6 +443,7 @@ impl Shell {
             file_outcome: None,
             file_pending_selection: None,
             appearance: appearance_ui::AppearanceUi::new(),
+            settings_category: settings_catalog::Category::Appearance as usize,
             settings_diagnostics: false,
             monitor: [Line::new(); 8],
             system: [Line::new(); 8],
@@ -602,6 +605,11 @@ impl Shell {
     pub fn appearance_state(&self) -> &appearance_ui::AppearanceUi {
         &self.appearance
     }
+    pub fn settings_category(&self) -> settings_catalog::Category {
+        settings_catalog::section(self.settings_category)
+            .map(|section| section.category)
+            .unwrap_or(settings_catalog::Category::Appearance)
+    }
     pub fn take_appearance_request(&mut self) -> Option<appearance_ui::SaveRequest> {
         self.appearance.take_request()
     }
@@ -616,17 +624,89 @@ impl Shell {
         let _ = self.file_focus.replace_scope(3, &[]);
         let _ = self.file_focus.replace_scope(6, &[]);
         let _ = self.file_focus.replace_scope(7, &[]);
-        if self.file_focus.active_scope() != 5 {
+        let activate = self.file_focus.active_scope() != 5;
+        if activate {
             let _ = self.file_focus.set_base_scope(5);
         }
-        let enabled = self.appearance.loaded()
+        let editing_appearance =
+            self.settings_category == settings_catalog::Category::Appearance as usize;
+        let show_diagnostics =
+            self.settings_category == settings_catalog::Category::System as usize;
+        let enabled = editing_appearance
+            && self.appearance.loaded()
             && !matches!(
                 self.appearance.status(),
                 appearance_ui::Status::Saving
                     | appearance_ui::Status::Corrupt
                     | appearance_ui::Status::UnsupportedScale
             );
-        let controls = [
+        let mut controls = [
+            Self::file_control(5, 10, "System settings", keyboard_focus::Role::Button, true),
+            Self::file_control(
+                5,
+                11,
+                "Display settings",
+                keyboard_focus::Role::Button,
+                true,
+            ),
+            Self::file_control(
+                5,
+                12,
+                "Appearance settings",
+                keyboard_focus::Role::Button,
+                true,
+            ),
+            Self::file_control(5, 13, "Sound settings", keyboard_focus::Role::Button, true),
+            Self::file_control(
+                5,
+                14,
+                "Network and Internet settings",
+                keyboard_focus::Role::Button,
+                true,
+            ),
+            Self::file_control(
+                5,
+                15,
+                "Bluetooth and Devices settings",
+                keyboard_focus::Role::Button,
+                true,
+            ),
+            Self::file_control(5, 16, "Apps settings", keyboard_focus::Role::Button, true),
+            Self::file_control(
+                5,
+                17,
+                "Accounts settings",
+                keyboard_focus::Role::Button,
+                true,
+            ),
+            Self::file_control(
+                5,
+                18,
+                "Privacy and Security settings",
+                keyboard_focus::Role::Button,
+                true,
+            ),
+            Self::file_control(
+                5,
+                19,
+                "Storage and Backup settings",
+                keyboard_focus::Role::Button,
+                true,
+            ),
+            Self::file_control(
+                5,
+                20,
+                "Accessibility settings",
+                keyboard_focus::Role::Button,
+                true,
+            ),
+            Self::file_control(
+                5,
+                21,
+                "Developer settings",
+                keyboard_focus::Role::Button,
+                true,
+            ),
             Self::file_control(5, 1, "Theme", keyboard_focus::Role::ListItem, enabled),
             Self::file_control(
                 5,
@@ -654,10 +734,19 @@ impl Shell {
                 5,
                 "System diagnostics",
                 keyboard_focus::Role::Button,
-                true,
+                show_diagnostics,
             ),
         ];
+        controls[16].visible = show_diagnostics;
+        controls[16].tab_stop = show_diagnostics;
         let _ = self.file_focus.replace_scope(5, &controls);
+        if activate {
+            let local = 10 + self.settings_category as u32;
+            let _ = self.file_focus.select(
+                keyboard_focus::ControlId { scope: 5, local },
+                keyboard_focus::Input::Keyboard,
+            );
+        }
     }
     fn settings_key(&mut self, key: Key) {
         self.sync_settings_focus();
@@ -671,14 +760,53 @@ impl Shell {
             return;
         }
         if matches!(key, Key::Tab | Key::BackTab) {
-            self.file_focus.traverse(if key == Key::Tab {
+            let focused = self.file_focus.traverse(if key == Key::Tab {
                 keyboard_focus::Direction::Forward
             } else {
                 keyboard_focus::Direction::Reverse
             });
+            if let Some(id) = focused.filter(|id| (10..22).contains(&id.local)) {
+                self.settings_category = (id.local - 10) as usize;
+            }
             return;
         }
         let local = self.file_focus.focused().map_or(5, |id| id.local);
+        if (10..22).contains(&local) {
+            let index = (local - 10) as usize;
+            self.settings_category = index;
+            if matches!(key, Key::Up | Key::Down) {
+                let offset = if key == Key::Up { -1isize } else { 1 };
+                self.settings_category =
+                    (index as isize + offset + settings_catalog::SECTIONS.len() as isize)
+                        .rem_euclid(settings_catalog::SECTIONS.len() as isize)
+                        as usize;
+                self.sync_settings_focus();
+                let _ = self.file_focus.select(
+                    keyboard_focus::ControlId {
+                        scope: 5,
+                        local: 10 + self.settings_category as u32,
+                    },
+                    keyboard_focus::Input::Keyboard,
+                );
+            } else if key == Key::Enter {
+                match self.settings_category() {
+                    settings_catalog::Category::Appearance => {
+                        let _ = self.file_focus.select(
+                            keyboard_focus::ControlId { scope: 5, local: 1 },
+                            keyboard_focus::Input::Keyboard,
+                        );
+                    }
+                    settings_catalog::Category::System => {
+                        let _ = self.file_focus.select(
+                            keyboard_focus::ControlId { scope: 5, local: 5 },
+                            keyboard_focus::Input::Keyboard,
+                        );
+                    }
+                    _ => {}
+                }
+            }
+            return;
+        }
         let offset = if matches!(key, Key::Left | Key::Up) {
             -1
         } else {
@@ -723,21 +851,60 @@ impl Shell {
             }
         }
     }
+    pub fn settings_category_bounds(&self, index: usize) -> Option<Bounds> {
+        if index >= settings_catalog::SECTIONS.len() {
+            return None;
+        }
+        let b = self.desktop.window(App::Settings).bounds;
+        Some(Bounds {
+            x: b.x + 12,
+            y: b.y + 58 + index as i32 * 28,
+            width: 164,
+            height: 24,
+        })
+    }
+    fn settings_content_x(&self) -> i32 {
+        self.desktop.window(App::Settings).bounds.x + 188
+    }
+    fn settings_content_width(&self) -> i32 {
+        (self.desktop.window(App::Settings).bounds.width - 200).max(0)
+    }
+    fn settings_disabled_control_bounds(&self, index: usize) -> Option<Bounds> {
+        if index >= 3 {
+            return None;
+        }
+        let b = self.desktop.window(App::Settings).bounds;
+        Some(Bounds {
+            x: self.settings_content_x() + 8,
+            y: b.y + 140 + index as i32 * 46,
+            width: (self.settings_content_width() - 16).max(0),
+            height: 36,
+        })
+    }
+    fn settings_diagnostics_bounds(&self) -> Bounds {
+        let b = self.desktop.window(App::Settings).bounds;
+        Bounds {
+            x: self.settings_content_x() + 8,
+            y: b.y + 286,
+            width: (self.settings_content_width() - 24).clamp(0, 240),
+            height: 32,
+        }
+    }
     pub fn appearance_control_bounds(&self, group: usize, index: usize) -> Option<Bounds> {
         let b = self.desktop.window(App::Settings).bounds;
         let (count, y) = match group {
             0 => (3, 72),
-            1 => (4, 136),
-            2 => (3, 196),
+            1 => (4, 132),
+            2 => (2, 192),
             _ => return None,
         };
         if index >= count {
             return None;
         }
-        let width = ((b.width - 32) / count as i32).clamp(0, 132);
+        let width = ((self.settings_content_width() - 24) / count as i32).clamp(0, 132);
         Some(Bounds {
-            x: b.x + 12 + index as i32 * (width + 4),
-            y: b.y + y,
+            x: self.settings_content_x() + 8 + index as i32 * (width + 4),
+            y: b.y + y + 48,
             width,
             height: 32,
         })
@@ -747,8 +914,41 @@ impl Shell {
             return false;
         }
         self.sync_settings_focus();
+        for index in 0..settings_catalog::SECTIONS.len() {
+            if self
+                .settings_category_bounds(index)
+                .is_some_and(|bounds| Self::hit(bounds, x, y))
+            {
+                let _ = self.file_focus.select(
+                    keyboard_focus::ControlId {
+                        scope: 5,
+                        local: 10 + index as u32,
+                    },
+                    keyboard_focus::Input::Pointer,
+                );
+                self.settings_category = index;
+                return true;
+            }
+        }
+        if self.settings_category() == settings_catalog::Category::System
+            && Self::hit(self.settings_diagnostics_bounds(), x, y)
+        {
+            let _ = self.file_focus.select(
+                keyboard_focus::ControlId { scope: 5, local: 5 },
+                keyboard_focus::Input::Pointer,
+            );
+            self.settings_diagnostics = true;
+            return true;
+        }
+        if self.settings_category() != settings_catalog::Category::Appearance {
+            return false;
+        }
         for group in 0..3 {
-            for index in 0..if group == 1 { 4 } else { 3 } {
+            for index in 0..match group {
+                0 => 3,
+                1 => 4,
+                _ => 2,
+            } {
                 if self
                     .appearance_control_bounds(group, index)
                     .is_some_and(|b| Self::hit(b, x, y))
@@ -3557,7 +3757,7 @@ impl Shell {
                     .render_embedded(canvas, self.calculator_bounds()),
                 App::Settings => {
                     if !self.settings_diagnostics {
-                        self.render_appearance(canvas, b.x, b.y, width, height, columns);
+                        self.render_settings(canvas, b.x, b.y, width, height, columns);
                         continue;
                     }
                     self.panel_line(
@@ -4373,6 +4573,238 @@ impl Shell {
         canvas.rect(b.x, b.y + 5, 1, (b.height - 10).max(0), color);
         canvas.rect(b.x + b.width - 1, b.y + 5, 1, (b.height - 10).max(0), color);
     }
+    fn render_settings(
+        &self,
+        canvas: &mut Canvas<'_>,
+        x: i32,
+        y: i32,
+        width: i32,
+        height: i32,
+        _columns: usize,
+    ) {
+        let sidebar = Bounds {
+            x: x + 8,
+            y: y + 48,
+            width: 172,
+            height: height - 56,
+        };
+        let content = Bounds {
+            x: x + 184,
+            y: y + 48,
+            width: width - 192,
+            height: height - 56,
+        };
+        theme::rounded_rect(canvas, sidebar, 10, theme::SURFACE_RAISED);
+        theme::outline(canvas, sidebar, 10, theme::BORDER);
+        theme::rounded_rect(canvas, content, 10, theme::SURFACE);
+        theme::outline(canvas, content, 10, theme::BORDER);
+        theme::text(
+            canvas,
+            sidebar.x + 12,
+            y + 51,
+            "SETTINGS",
+            theme::MUTED,
+            theme::Font::Small,
+        );
+
+        for (index, section) in settings_catalog::SECTIONS.iter().enumerate() {
+            let Some(item) = self.settings_category_bounds(index) else {
+                continue;
+            };
+            if item.y + item.height > y + height - 6 {
+                continue;
+            }
+            let selected = self.settings_category == index;
+            let focused = self.file_focus.focus_visible()
+                && self
+                    .file_focus
+                    .focused()
+                    .is_some_and(|id| id.scope == 5 && id.local == 10 + index as u32);
+            theme::rounded_rect(
+                canvas,
+                item,
+                6,
+                if selected {
+                    theme::ACCENT_SOFT
+                } else {
+                    theme::SURFACE_RAISED
+                },
+            );
+            if selected || focused {
+                Self::control_border(
+                    canvas,
+                    item,
+                    if focused {
+                        theme::ACCENT
+                    } else {
+                        theme::BORDER
+                    },
+                );
+            }
+            if focused {
+                canvas.rect(item.x + 2, item.y + 5, 2, item.height - 10, theme::ACCENT);
+            }
+            draw_limited(
+                canvas,
+                item.x + 9,
+                item.y + 8,
+                section.label,
+                ((item.width - 18).max(0) / 6) as usize,
+                if selected {
+                    self.accent_foreground()
+                } else {
+                    theme::TEXT
+                },
+            );
+        }
+
+        match self.settings_category() {
+            settings_catalog::Category::Appearance => {
+                self.render_appearance(
+                    canvas,
+                    x + 188,
+                    y,
+                    width - 200,
+                    height,
+                    ((width - 224).max(0) / 6) as usize,
+                );
+            }
+            _ => self.render_settings_information(
+                canvas,
+                x,
+                y,
+                content,
+                self.settings_category,
+                height,
+            ),
+        }
+    }
+
+    fn render_settings_information(
+        &self,
+        canvas: &mut Canvas<'_>,
+        x: i32,
+        y: i32,
+        content: Bounds,
+        selected: usize,
+        height: i32,
+    ) {
+        let Some(section) = settings_catalog::section(selected) else {
+            return;
+        };
+        let inner_x = x + 196;
+        let inner_width = (content.width - 24).max(0);
+        let columns = (inner_width / 6) as usize;
+        theme::text(
+            canvas,
+            inner_x,
+            y + 53,
+            section.label,
+            theme::TEXT,
+            theme::Font::Title,
+        );
+        let (badge, badge_color) = match section.state {
+            settings_catalog::State::ReadOnly => (
+                "READ ONLY",
+                palette::Palette::new(self.active_appearance()).warning,
+            ),
+            settings_catalog::State::Available => ("AVAILABLE", theme::ACCENT),
+            settings_catalog::State::Unavailable => ("UNAVAILABLE", theme::MUTED),
+        };
+        draw_limited(
+            canvas,
+            content.x + content.width - 104,
+            y + 57,
+            badge,
+            17,
+            badge_color,
+        );
+        let mut line = 0;
+        wrap_text_width(section.summary, inner_width, |part| {
+            draw_limited(
+                canvas,
+                inner_x,
+                y + 80 + line * 14,
+                part,
+                part.chars().count(),
+                theme::MUTED,
+            );
+            line += 1;
+        });
+
+        for index in 0..3 {
+            let Some(row) = self.settings_disabled_control_bounds(index) else {
+                continue;
+            };
+            theme::rounded_rect(canvas, row, 7, theme::BACKGROUND);
+            theme::outline(canvas, row, 7, theme::BORDER);
+            draw_limited(
+                canvas,
+                row.x + 10,
+                row.y + 11,
+                section.rows[index],
+                ((row.width - 116).max(0) / 6) as usize,
+                theme::MUTED,
+            );
+            draw_limited(
+                canvas,
+                row.x + row.width - 104,
+                row.y + 11,
+                if section.state == settings_catalog::State::ReadOnly {
+                    "NOT CONFIGURED"
+                } else {
+                    "UNAVAILABLE"
+                },
+                17,
+                theme::MUTED,
+            );
+        }
+
+        if section.category == settings_catalog::Category::System {
+            let button = self.settings_diagnostics_bounds();
+            let focused = self.file_focus.focus_visible()
+                && self
+                    .file_focus
+                    .focused()
+                    .is_some_and(|id| id.scope == 5 && id.local == 5);
+            theme::rounded_rect(canvas, button, 7, theme::ACCENT_SOFT);
+            Self::control_border(
+                canvas,
+                button,
+                if focused {
+                    theme::ACCENT
+                } else {
+                    theme::BORDER
+                },
+            );
+            draw_limited(
+                canvas,
+                button.x + 10,
+                button.y + 10,
+                "Open read-only diagnostics",
+                ((button.width - 20).max(0) / 6) as usize,
+                theme::TEXT,
+            );
+            draw_limited(
+                canvas,
+                inner_x,
+                button.y + button.height + 10,
+                "Runtime values only; hardware controls and recovery are unavailable.",
+                columns,
+                theme::MUTED,
+            );
+        } else if height > 340 {
+            draw_limited(
+                canvas,
+                inner_x,
+                y + height - 42,
+                "This page is informational; no settings are being changed.",
+                columns,
+                theme::MUTED,
+            );
+        }
+    }
+
     fn render_appearance(
         &self,
         canvas: &mut Canvas<'_>,
@@ -4383,67 +4815,71 @@ impl Shell {
         columns: usize,
     ) {
         let draft = self.appearance.draft();
+        let content_width = (width - 16).max(0);
+        theme::text(
+            canvas,
+            x + 10,
+            y + 53,
+            "Appearance",
+            theme::TEXT,
+            theme::Font::Title,
+        );
+        let mut summary_row = 0;
+        wrap_text_width(
+            "Theme and accent are available; wallpaper, fonts, density, scaling and desktop layout are unavailable.",
+            (content_width - 20).max(0),
+            |part| {
+                draw_limited(
+                    canvas,
+                    x + 10,
+                    y + 73 + summary_row * 12,
+                    part,
+                    part.chars().count(),
+                    theme::MUTED,
+                );
+                summary_row += 1;
+            },
+        );
 
-        // These soft group surfaces sit behind the existing interactive
-        // controls, so the visual grouping follows the real keyboard and
-        // pointer targets without creating decorative hit areas.
-        for row in [
-            Bounds {
-                x: x + 8,
-                y: y + 68,
-                width: width - 16,
-                height: 40,
-            },
-            Bounds {
-                x: x + 8,
-                y: y + 132,
-                width: width - 16,
-                height: 40,
-            },
-            Bounds {
-                x: x + 8,
-                y: y + 192,
-                width: width - 16,
-                height: 40,
-            },
-        ] {
-            theme::rounded_rect(canvas, row, 8, theme::SURFACE_RAISED);
-            theme::outline(canvas, row, 8, theme::BORDER);
-        }
-
-        theme::text(
-            canvas,
-            x + 12,
-            y + 47,
-            "Theme",
-            theme::TEXT,
-            theme::Font::Small,
-        );
-        theme::text(
-            canvas,
-            x + 12,
-            y + 111,
-            "Accent color",
-            theme::TEXT,
-            theme::Font::Small,
-        );
-        theme::text(
-            canvas,
-            x + 12,
-            y + 171,
-            "Changes",
-            theme::TEXT,
-            theme::Font::Small,
-        );
+        let labels = ["Theme", "Accent color", "Changes"];
+        let actions: [&[&str]; 3] = [
+            &["Light", "Dark", "High contrast"],
+            &["Blue", "Violet", "Teal", "Orange"],
+            &["Save", "Revert"],
+        ];
         let accent_colors = [0x2368df, 0x7256d9, 0x008c87, 0xe17928];
         for group in 0..3 {
-            for index in 0..if group == 1 { 4 } else { 3 } {
+            let count = if group == 0 {
+                3
+            } else if group == 1 {
+                4
+            } else {
+                2
+            };
+            let first = self.appearance_control_bounds(group, 0);
+            let last = self.appearance_control_bounds(group, count - 1);
+            if let (Some(first), Some(last)) = (first, last) {
+                let row = Bounds {
+                    x: first.x - 4,
+                    y: first.y - 5,
+                    width: last.x + last.width - first.x + 8,
+                    height: 42,
+                };
+                theme::rounded_rect(canvas, row, 8, theme::SURFACE_RAISED);
+                theme::outline(canvas, row, 8, theme::BORDER);
+                theme::text(
+                    canvas,
+                    x + 10,
+                    first.y - 18,
+                    labels[group],
+                    theme::TEXT,
+                    theme::Font::Small,
+                );
+            }
+            for index in 0..count {
                 let Some(button) = self.appearance_control_bounds(group, index) else {
                     continue;
                 };
-                if button.y + button.height > y + height - 8 {
-                    continue;
-                }
                 let selected = match group {
                     0 => draft.theme as usize == index,
                     1 => draft.accent as usize == index,
@@ -4468,6 +4904,13 @@ impl Shell {
                     && matches!(
                         self.appearance.status(),
                         appearance_ui::Status::Unsaved | appearance_ui::Status::SaveFailed
+                    );
+                let enabled = self.appearance.loaded()
+                    && !matches!(
+                        self.appearance.status(),
+                        appearance_ui::Status::Saving
+                            | appearance_ui::Status::Corrupt
+                            | appearance_ui::Status::UnsupportedScale
                     );
                 theme::rounded_rect(
                     canvas,
@@ -4503,108 +4946,100 @@ impl Shell {
                         theme::ACCENT,
                     );
                 }
-                let label = match group {
-                    0 => ["Light", "Dark", "High contrast"][index],
-                    1 => ["Blue", "Violet", "Teal", "Orange"][index],
-                    _ => ["Save", "Revert", "Diagnostics"][index],
-                };
                 if group == 1 {
-                    canvas.rect(button.x + 8, button.y + 11, 10, 10, accent_colors[index]);
+                    if let Some(color) = accent_colors.get(index) {
+                        canvas.rect(button.x + 8, button.y + 11, 10, 10, *color);
+                    }
                 }
                 let label_x = button.x + if group == 1 { 24 } else { 8 };
                 theme::text(
                     canvas,
                     label_x,
                     button.y + 5,
-                    label,
-                    if group == 2
-                        && index == 0
-                        && (!self.appearance.loaded()
-                            || matches!(
-                                self.appearance.status(),
-                                appearance_ui::Status::Saving
-                                    | appearance_ui::Status::Corrupt
-                                    | appearance_ui::Status::UnsupportedScale
-                            ))
-                    {
-                        theme::MUTED
-                    } else {
-                        theme::TEXT
-                    },
+                    actions[group][index],
+                    if enabled { theme::TEXT } else { theme::MUTED },
                     theme::Font::Body,
                 );
             }
         }
-        let status = match self.appearance.status() {
+
+        let unavailable = Bounds {
+            x: x + 8,
+            y: y + 274,
+            width: content_width,
+            height: 28,
+        };
+        theme::rounded_rect(canvas, unavailable, 7, theme::BACKGROUND);
+        theme::outline(canvas, unavailable, 7, theme::BORDER);
+        draw_limited(
+            canvas,
+            unavailable.x + 8,
+            unavailable.y + 9,
+            "Unavailable: wallpaper, fonts, scale and layout",
+            ((unavailable.width - 16).max(0) / 6) as usize,
+            theme::MUTED,
+        );
+
+        let (status, color) = match self.appearance.status() {
             appearance_ui::Status::Ready => {
                 if self.appearance.loaded() {
-                    "Saved appearance is active."
+                    ("Saved appearance is active.", theme::TEXT)
                 } else {
-                    "Appearance has not been loaded; editing is disabled."
+                    (
+                        "Appearance is not loaded; editing is disabled.",
+                        theme::MUTED,
+                    )
                 }
             }
-            appearance_ui::Status::Unsaved => "Unsaved choices. Save to activate and persist.",
-            appearance_ui::Status::Saving => "Saving appearance to the real store...",
-            appearance_ui::Status::Saved => "Appearance saved and active.",
-            appearance_ui::Status::SaveFailed => {
-                "Save failed. Active appearance unchanged; retry or Revert."
-            }
-            appearance_ui::Status::Corrupt => {
-                "Preference record is corrupt. No settings were overwritten."
-            }
-            appearance_ui::Status::UnsupportedScale => {
-                "Stored text scale is unsupported. No settings were overwritten."
-            }
+            appearance_ui::Status::Unsaved => (
+                "Unsaved choices. Save to apply.",
+                palette::Palette::new(self.active_appearance()).warning,
+            ),
+            appearance_ui::Status::Saving => ("Saving preferences...", theme::MUTED),
+            appearance_ui::Status::Saved => ("Saved and active.", theme::ACCENT),
+            appearance_ui::Status::SaveFailed => (
+                "Save failed; active values unchanged.",
+                palette::Palette::new(self.active_appearance()).warning,
+            ),
+            appearance_ui::Status::Corrupt => (
+                "Record is corrupt; no settings were overwritten.",
+                palette::Palette::new(self.active_appearance()).warning,
+            ),
+            appearance_ui::Status::UnsupportedScale => (
+                "Stored text size is unsupported; nothing was overwritten.",
+                palette::Palette::new(self.active_appearance()).warning,
+            ),
         };
-
-        let status_top = y + 238;
-        let status_bottom = (y + height - 72).max(status_top + 40);
         let status_box = Bounds {
             x: x + 8,
-            y: status_top,
-            width: width - 16,
-            height: status_bottom - status_top,
+            y: y + 306,
+            width: content_width,
+            height: 28,
         };
-        theme::rounded_rect(canvas, status_box, 8, theme::BACKGROUND);
-        theme::outline(canvas, status_box, 8, theme::BORDER);
+        theme::rounded_rect(canvas, status_box, 7, theme::SURFACE_RAISED);
+        theme::outline(canvas, status_box, 7, theme::BORDER);
         theme::text(
             canvas,
-            x + 16,
-            status_top + 7,
-            "Status",
-            theme::TEXT,
+            status_box.x + 8,
+            status_box.y + 9,
+            "STATUS",
+            theme::MUTED,
             theme::Font::Small,
         );
-        let mut row = 0;
-        wrap_text(status, columns, |part| {
-            if status_top + 27 + row * 20 + 16 < status_bottom {
-                draw_limited(
-                    canvas,
-                    x + 16,
-                    status_top + 25 + row * 20,
-                    part,
-                    columns,
-                    theme::MUTED,
-                );
-            }
-            row += 1;
-        });
-        if height > 340 {
-            let help_y = y + height - 60;
-            canvas.rect(x + 12, help_y - 7, width - 24, 1, theme::BORDER);
+        draw_limited(
+            canvas,
+            status_box.x + 62,
+            status_box.y + 9,
+            status,
+            ((status_box.width - 70).max(0) / 6) as usize,
+            color,
+        );
+        if height > 360 {
             draw_limited(
                 canvas,
-                x + 12,
-                help_y,
-                "Text size: 100%",
-                columns,
-                theme::MUTED,
-            );
-            draw_limited(
-                canvas,
-                x + 12,
-                y + height - 36,
-                "Tab focus  /  Arrows choose  /  Enter applies",
+                x + 10,
+                y + height - 28,
+                "Tab: navigate  /  Enter: open or apply  /  Arrows: choose",
                 columns,
                 theme::MUTED,
             );
@@ -5815,6 +6250,38 @@ fn wrap_text(mut text: &str, columns: usize, mut emit: impl FnMut(&str)) {
                 }
             }
         }
+        emit(&text[..end]);
+        text = text[end..].trim_start_matches(' ');
+    }
+}
+fn wrap_text_width(mut text: &str, max_width: i32, mut emit: impl FnMut(&str)) {
+    let max_width = max_width.max(1);
+    while !text.is_empty() {
+        let mut fitting_end = 0;
+        let mut last_space = None;
+        for (index, character) in text.char_indices() {
+            let end = index + character.len_utf8();
+            if theme::text_width(&text[..end], theme::Font::Body) > max_width {
+                break;
+            }
+            fitting_end = end;
+            if character == ' ' {
+                last_space = Some(index);
+            }
+        }
+        if fitting_end == text.len() {
+            emit(text);
+            break;
+        }
+        let end = last_space.filter(|index| *index != 0).unwrap_or_else(|| {
+            if fitting_end == 0 {
+                text.char_indices()
+                    .nth(1)
+                    .map_or(text.len(), |(index, _)| index)
+            } else {
+                fitting_end
+            }
+        });
         emit(&text[..end]);
         text = text[end..].trim_start_matches(' ');
     }
@@ -7378,6 +7845,7 @@ mod tests {
             })
             .unwrap();
         shell.open_app(App::Settings);
+        shell.on_key(Key::Enter); // Enter the selected Appearance page.
         shell.on_key(Key::Right);
         assert_eq!(
             shell.appearance_state().draft().theme,
@@ -7406,6 +7874,62 @@ mod tests {
         assert!(shell.appearance_save_result(retry.id, true));
         assert_eq!(shell.active_appearance().theme, appearance::Theme::Dark);
         assert_eq!(shell.active_appearance().accent, appearance::Accent::Violet);
+    }
+    #[test]
+    fn settings_navigation_browses_unavailable_sections_without_exposing_fake_controls() {
+        use accessibility::Snapshot;
+        let mut shell = Shell::new();
+        shell
+            .load_appearance(appearance::Loaded {
+                preferences: appearance::Preferences::defaults(),
+                origin: appearance::Origin::Persisted,
+            })
+            .unwrap();
+        shell.open_app(App::Settings);
+        assert_eq!(
+            shell.settings_category(),
+            settings_catalog::Category::Appearance
+        );
+
+        shell.on_key(Key::Down);
+        assert_eq!(shell.settings_category(), settings_catalog::Category::Sound);
+        shell.on_key(Key::Enter); // Informational pages do not create actions.
+        assert_eq!(shell.settings_category(), settings_catalog::Category::Sound);
+        assert_eq!(
+            shell.appearance_state().draft(),
+            appearance::Preferences::defaults()
+        );
+        assert!(shell.take_appearance_request().is_none());
+
+        let theme = shell.appearance_control_bounds(0, 2).unwrap();
+        shell.on_pointer(Pointer::Down(theme.x + 10, theme.y + 10));
+        assert_eq!(
+            shell.appearance_state().draft().theme,
+            appearance::Theme::Light
+        );
+
+        let display = shell.settings_category_bounds(1).unwrap();
+        shell.on_pointer(Pointer::Down(display.x + 12, display.y + 10));
+        assert_eq!(
+            shell.settings_category(),
+            settings_catalog::Category::Display
+        );
+        let mut snapshot = Snapshot::empty();
+        shell.write_accessibility_snapshot(&mut snapshot).unwrap();
+        assert!(snapshot
+            .nodes()
+            .iter()
+            .any(|node| node.name() == "Display settings" && node.state.selected));
+        let resolution = snapshot
+            .nodes()
+            .iter()
+            .find(|node| node.name() == "Resolution and scaling")
+            .unwrap();
+        assert!(!resolution.state.enabled);
+        assert_eq!(
+            resolution.value(),
+            "Unavailable in this build; no action is enabled."
+        );
     }
     #[test]
     fn appearance_pointer_uses_real_controls_and_corrupt_load_cannot_save() {
@@ -7519,6 +8043,7 @@ mod tests {
             })
             .unwrap();
         shell.open_app(App::Settings);
+        shell.on_key(Key::Enter);
         shell.on_key(Key::Right);
         shell.on_key(Key::Left);
         let mut pixels = std::vec![0;1280*800];
@@ -9044,8 +9569,24 @@ mod tests {
                 .find(|n| n.state.focused)
                 .unwrap()
                 .name(),
-            "Theme"
+            "Appearance settings"
         );
+        assert!(
+            snapshot
+                .nodes()
+                .iter()
+                .find(|n| n.name() == "Appearance settings")
+                .unwrap()
+                .state
+                .selected
+        );
+        assert!(snapshot
+            .nodes()
+            .iter()
+            .any(|n| n.name() == "Additional appearance controls" && !n.state.enabled));
+        shell.on_key(Key::Enter);
+        shell.write_accessibility_snapshot(&mut snapshot).unwrap();
+        assert_eq!(snapshot.focused().unwrap().local, 101);
         assert_eq!(
             snapshot
                 .nodes()

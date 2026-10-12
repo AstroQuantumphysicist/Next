@@ -4,6 +4,9 @@
 use next_abi::boot::MemoryRegions;
 const MAX_TABLE: usize = 65536;
 const MAX_ROOT: usize = 64;
+// Keep firmware-controlled topology bounded, and report overflow instead of
+// silently dropping processors or writing past the fixed storage.
+const MAX_CPUS: usize = 16;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Error {
     PhysicalRange,
@@ -65,7 +68,7 @@ pub struct Hpet {
 }
 #[derive(Clone, Copy, Debug)]
 pub struct Topology {
-    pub cpus: [Cpu; 16],
+    pub cpus: [Cpu; MAX_CPUS],
     pub cpu_count: usize,
     pub io_apics: [IoApic; 4],
     pub io_apic_count: usize,
@@ -82,7 +85,7 @@ pub struct Topology {
 impl Topology {
     fn empty() -> Self {
         Self {
-            cpus: [EMPTY_CPU; 16],
+            cpus: [EMPTY_CPU; MAX_CPUS],
             cpu_count: 0,
             io_apics: [EMPTY_IO; 4],
             io_apic_count: 0,
@@ -271,7 +274,7 @@ fn cpu(topology: &mut Topology, id: u32, uid: u32, flags: u32) -> Result<(), Err
     {
         return Err(Error::Duplicate);
     }
-    if topology.cpu_count == topology.cpus.len() {
+    if topology.cpu_count == MAX_CPUS {
         return Err(Error::Capacity);
     }
     topology.cpus[topology.cpu_count] = Cpu {
@@ -504,6 +507,40 @@ mod tests {
         checksum(&mut image.0[512..568], 9);
         image
     }
+    fn cpu_fixture() -> Image {
+        let mut image = fixture();
+        // Keep the CPU-only MADT's backing bytes clear of the HPET table so the
+        // maximum roster test remains inside a valid, checksummed table image.
+        sdt(&mut image, 128, b"XSDT", 44);
+        image.0[164..172].copy_from_slice(&256u64.to_le_bytes());
+        checksum(&mut image.0[128..172], 9);
+        image
+    }
+    fn append_madt_cpu(image: &mut Image, kind: u8, id: u32, uid: u32, flags: u32) {
+        let entry_size = match kind {
+            0 => 8,
+            9 => 16,
+            _ => panic!("unsupported processor entry kind"),
+        };
+        let table_len = le32(&image.0, 260) as usize;
+        let end = table_len + entry_size;
+        let entry = &mut image.0[256 + table_len..256 + end];
+        entry.fill(0);
+        entry[0] = kind;
+        entry[1] = entry_size as u8;
+        if kind == 0 {
+            assert!(id <= u8::MAX as u32 && uid <= u8::MAX as u32);
+            entry[2] = uid as u8;
+            entry[3] = id as u8;
+            entry[4..8].copy_from_slice(&flags.to_le_bytes());
+        } else {
+            entry[4..8].copy_from_slice(&id.to_le_bytes());
+            entry[8..12].copy_from_slice(&flags.to_le_bytes());
+            entry[12..16].copy_from_slice(&uid.to_le_bytes());
+        }
+        image.0[260..264].copy_from_slice(&(end as u32).to_le_bytes());
+        checksum(&mut image.0[256..256 + end], 9);
+    }
     #[test]
     fn valid_xsdt_topology_and_hpet_are_discovered() {
         let i = fixture();
@@ -515,6 +552,101 @@ mod tests {
         assert_eq!(t.io_apics[0].address, 0xfec00000);
         assert_eq!(t.overrides[0].gsi, 2);
         assert_eq!(t.hpet.unwrap().address, 0xfed00000);
+    }
+    #[test]
+    fn discovers_multiple_enabled_and_disabled_cpu_records_without_starting_aps() {
+        let mut i = cpu_fixture();
+        append_madt_cpu(&mut i, 9, 0x1234, 7, 1);
+        append_madt_cpu(&mut i, 0, 2, 8, 0);
+        append_madt_cpu(&mut i, 9, 0x4321, 9, 2);
+
+        // This parser only returns firmware topology. AP startup is a separate,
+        // explicitly gated operation and is never part of ACPI discovery.
+        let t = discover_with(&i, 16).unwrap();
+        assert_eq!(t.cpu_count, 4);
+        assert_eq!(
+            t.cpus[0],
+            Cpu {
+                apic_id: 0,
+                uid: 0,
+                enabled: true,
+                online_capable: false
+            }
+        );
+        assert_eq!(
+            t.cpus[1],
+            Cpu {
+                apic_id: 0x1234,
+                uid: 7,
+                enabled: true,
+                online_capable: false
+            }
+        );
+        assert_eq!(
+            t.cpus[2],
+            Cpu {
+                apic_id: 2,
+                uid: 8,
+                enabled: false,
+                online_capable: false
+            }
+        );
+        assert_eq!(
+            t.cpus[3],
+            Cpu {
+                apic_id: 0x4321,
+                uid: 9,
+                enabled: false,
+                online_capable: true
+            }
+        );
+        assert_eq!(
+            t.cpus[..t.cpu_count]
+                .iter()
+                .filter(|cpu| cpu.enabled)
+                .count(),
+            2
+        );
+    }
+    #[test]
+    fn duplicate_apic_ids_and_processor_uids_are_rejected_across_madt_formats() {
+        let mut duplicate_apic = cpu_fixture();
+        append_madt_cpu(&mut duplicate_apic, 9, 0, 1, 1);
+        assert_eq!(
+            discover_with(&duplicate_apic, 16).err(),
+            Some(Error::Duplicate)
+        );
+
+        let mut duplicate_uid = cpu_fixture();
+        append_madt_cpu(&mut duplicate_uid, 9, 1, 0, 1);
+        assert_eq!(
+            discover_with(&duplicate_uid, 16).err(),
+            Some(Error::Duplicate)
+        );
+
+        // Disabled firmware entries still participate in identity validation.
+        let mut disabled_duplicate = cpu_fixture();
+        append_madt_cpu(&mut disabled_duplicate, 0, 0, 1, 0);
+        assert_eq!(
+            discover_with(&disabled_duplicate, 16).err(),
+            Some(Error::Duplicate)
+        );
+    }
+    #[test]
+    fn cpu_roster_accepts_its_bounded_capacity_and_rejects_the_next_record() {
+        let mut i = cpu_fixture();
+        for index in 1..MAX_CPUS {
+            let id = 0x1000 + index as u32;
+            let uid = 0x2000 + index as u32;
+            append_madt_cpu(&mut i, 9, id, uid, 1);
+        }
+        assert_eq!(le32(&i.0, 260), (74 + 16 * (MAX_CPUS - 1)) as u32);
+        let t = discover_with(&i, 16).unwrap();
+        assert_eq!(t.cpu_count, MAX_CPUS);
+        assert_eq!(t.cpus[MAX_CPUS - 1].apic_id, 0x1000 + (MAX_CPUS - 1) as u32);
+
+        append_madt_cpu(&mut i, 9, 0x3000, 0x4000, 1);
+        assert_eq!(discover_with(&i, 16).err(), Some(Error::Capacity));
     }
     #[test]
     fn wrong_checksums_lengths_and_root_pointers_fail_closed() {

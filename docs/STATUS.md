@@ -21,17 +21,17 @@ Evidence distinguishes host-tested primitives, boot smoke tests, integrated syst
 | NEXT-KRN-003 | kernel panic is reserved for violated kernel invariants; expose panic ID, CPU, thread, backtrace if possible, and serial log. | partial | host_tested |
 | NEXT-KRN-004 | all public kernel structures have opaque handles; users cannot pass raw kernel pointers as authority. | partial | boot_smoke, host_tested, integrated |
 | NEXT-KRN-005 | syscalls consume only validated user buffers; copyin/copyout protects against invalid mappings and integer wraparound. | partial | boot_smoke, host_tested, integrated |
-| NEXT-KRN-006 | per-core state and interrupt priority are explicit. Lock ordering is written down; hard IRQ contexts must not block. | pending | none |
+| NEXT-KRN-006 | per-core state and interrupt priority are explicit. Lock ordering is written down; hard IRQ contexts must not block. | partial | host_tested |
 | NEXT-KRN-007 | monotonic time does not jump with wall clock changes; timers are not executed under locks they may reenter. | partial | boot_smoke, host_tested, integrated |
 | NEXT-MEM-001 | no use of UEFI boot-services memory after `ExitBootServices` unless reclaimed according to UEFI memory type rules. | partial | boot_smoke, host_tested, integrated |
 | NEXT-MEM-002 | reject overlapping/unaligned physical map entries and integer overflow during range normalization. | partial | host_tested |
 | NEXT-MEM-003 | user processes cannot map kernel pages, MMIO, page tables or physical memory without explicit privileged device capabilities. | partial | boot_smoke, host_tested, integrated |
 | NEXT-MEM-004 | all mappings prevent writable-and-executable pages unless a narrowly audited JIT transition is authorized; use temporary permission transitions and flush appropriate caches/TLB. | partial | boot_smoke, host_tested, integrated |
-| NEXT-MEM-005 | validate pin/unpin while asynchronous I/O is in flight; prevent DMA-to-freed-page and mapping lifetime use-after-free. | pending | none |
+| NEXT-MEM-005 | validate pin/unpin while asynchronous I/O is in flight; prevent DMA-to-freed-page and mapping lifetime use-after-free. | partial | host_tested |
 | NEXT-MEM-006 | test COW across `fork()`, exec image replacement, exception delivery, shared pages, page faults under SMP contention, and user/kernel boundary addresses. | pending | none |
 | NEXT-SCH-001 | a focused UI task under CPU load must be measurable and remain responsive within the published reference benchmark. | partial | boot_smoke |
 | NEXT-SCH-002 | 1/2/4/8-core QEMU schedule, exit, wake, signal and preemption stress tests must pass without deadlock/livelock. | partial | boot_smoke, host_tested, integrated |
-| NEXT-SCH-003 | CPU hotplug may be omitted in 1.0 but topology discovery must not assume fixed CPU count. | pending | none |
+| NEXT-SCH-003 | CPU hotplug may be omitted in 1.0 but topology discovery must not assume fixed CPU count. | partial | host_tested |
 | NEXT-OBJ-001 | stale handle generations cannot alias newly allocated privileged objects; handle exhaustion returns a bounded failure. | partial | boot_smoke, host_tested, integrated |
 | NEXT-OBJ-002 | duplicate, inherit and transfer tests must prove no escalation even under cross-process races. | partial | boot_smoke, host_tested, integrated |
 | NEXT-OBJ-003 | object wait logic guarantees no missed wake-ups in signal/reset/close/cancel races. | partial | boot_smoke, host_tested, integrated |

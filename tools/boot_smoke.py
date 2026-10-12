@@ -363,6 +363,7 @@ def main():
                     ("NEXTD: authenticated service configuration and copyout checks passed", "PID1 reads authenticated signed service declarations with no partial writes on short, null, readonly or guard-crossing outputs"),
                     ("NEXTD: manual/auto event lifecycle and rights checks passed", "actual manual/auto events enforce wait/signal rights and copyout-before-consumption"),
                     ("NEXTD: blocking event timeout, signal-reset auto wake, manual broadcast, process wait and kill cancellation passed", "actual blocking waits enforce deadlines, preserve a delivered auto-event completion across reset, broadcast manual events and clean up killed waiters"),
+                    ("EVENT WAITER: atomic wait-many timeout, poll, signal/reset and selected index passed", "signed guest fixture validates ObjectWaitMany timeout cleanup, nonblocking WouldBlock, blocked wake, selected index and reset-stable completion across two transferred event handles"),
                     ("NEXTD: native file read/write/seek/stat and copyout checks passed", "capability-backed COW file streams preserve offsets on denied copyout and enforce attenuated rights"),
                     ("PROBE: transferred readonly file rights enforced", "cross-process file capability transfer grants read and denies write"),
                     ("NEXTD: transferred log authority written", "cross-process capability move produces usable attenuated recipient authority"),

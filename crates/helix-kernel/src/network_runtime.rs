@@ -567,6 +567,10 @@ mod tests {
             used: 8192,
             submitted: 1,
             completed: 0,
+            device_buffer: Some(super::super::DeviceBuffer {
+                address: 0x1000,
+                length: super::super::BUFFER_BYTES,
+            }),
         };
         let rx = super::super::Queue {
             memory: core::ptr::null_mut(),
@@ -575,6 +579,10 @@ mod tests {
             used: 0,
             submitted: 1,
             completed: 0,
+            device_buffer: Some(super::super::DeviceBuffer {
+                address: 0x2000,
+                length: super::super::BUFFER_BYTES,
+            }),
         };
         let (client, lease) = bound_client();
         let mut runtime = Runtime {
@@ -692,6 +700,7 @@ mod tests {
                 used: 0,
                 submitted: 0,
                 completed: 0,
+                device_buffer: None,
             }
         }
         let (client, lease) = bound_client();
@@ -824,6 +833,7 @@ mod tests {
                 used: 0,
                 submitted: 0,
                 completed: 0,
+                device_buffer: None,
             }
         }
         let (client, lease) = bound_client();

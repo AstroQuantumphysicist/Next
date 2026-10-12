@@ -109,7 +109,12 @@ pub enum Syscall {
     SurfacePublish = 42,
     SurfaceInputRead = 43,
     SurfaceCloseReply = 44,
+    /// Bounded atomic wait-any over native event handles (v0 extension).
+    ObjectWaitMany = 45,
 }
+
+/// Maximum input count for the native `ObjectWaitMany` event wait-any call.
+pub const OBJECT_WAIT_MANY_MAX: usize = 16;
 
 #[cfg(test)]
 mod tests {
@@ -119,6 +124,11 @@ mod tests {
         assert!(Rights::READ.union(Rights::WRITE).contains(Rights::READ));
         assert!(!Rights::READ.contains(Rights::ADMIN));
         assert!(!Rights(u64::MAX).is_valid());
+    }
+    #[test]
+    fn wait_many_is_a_distinct_native_extension_number_with_fixed_bound() {
+        assert_eq!(Syscall::ObjectWaitMany as u64, 45);
+        assert_eq!(OBJECT_WAIT_MANY_MAX, 16);
     }
 }
 

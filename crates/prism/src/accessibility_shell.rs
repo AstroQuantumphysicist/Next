@@ -553,12 +553,65 @@ impl Shell {
                 Some(App::Settings) => {
                     self.sync_settings_focus();
                     self.accessible_focus_controls(out, 5)?;
+                    let section = settings_catalog::section(self.settings_category)
+                        .ok_or(Error::InvalidNode)?;
+                    for index in 0..3 {
+                        let (name, bounds) =
+                            if section.category == settings_catalog::Category::Appearance {
+                                if index != 0 {
+                                    continue;
+                                }
+                                (
+                                    "Additional appearance controls",
+                                    Some(Bounds {
+                                        x: self.settings_content_x() + 8,
+                                        y: self.desktop.window(App::Settings).bounds.y + 274,
+                                        width: (self.settings_content_width() - 16).max(0),
+                                        height: 28,
+                                    }),
+                                )
+                            } else {
+                                (
+                                    section.rows[index],
+                                    self.settings_disabled_control_bounds(index),
+                                )
+                            };
+                        out.add(
+                            200 + index as u32,
+                            None,
+                            Role::Status,
+                            name,
+                            if section.category == settings_catalog::Category::Appearance {
+                                "Wallpaper, fonts, density, taskbar and layout are unavailable."
+                            } else {
+                                "Unavailable in this build; no action is enabled."
+                            },
+                            bounds,
+                            State {
+                                enabled: false,
+                                ..state
+                            },
+                        )?;
+                    }
                     out.add(
                         40,
                         None,
                         Role::Status,
+                        "Settings section availability",
+                        match section.state {
+                            settings_catalog::State::Available => "Theme and accent preferences are available.",
+                            settings_catalog::State::ReadOnly => "Read-only system diagnostics are available; configuration is unavailable.",
+                            settings_catalog::State::Unavailable => "This settings provider is not connected.",
+                        },
+                        None,
+                        state,
+                    )?;
+                    out.add(
+                        41,
+                        None,
+                        Role::Status,
                         "Text size",
-                        "100 percent; larger sizes unavailable",
+                        "100 percent; scaling controls are unavailable",
                         None,
                         state,
                     )?;
@@ -625,7 +678,9 @@ impl Shell {
                     ..first
                 })
             }
-            (5, 3..=5) => self.appearance_control_bounds(2, (local - 3) as usize),
+            (5, 3..=4) => self.appearance_control_bounds(2, (local - 3) as usize),
+            (5, 5) => Some(self.settings_diagnostics_bounds()),
+            (5, 10..=21) => self.settings_category_bounds((local - 10) as usize),
             (3 | 7, 1) => {
                 let b = self.file_dialog_bounds();
                 Some(Bounds {
@@ -657,7 +712,7 @@ impl Shell {
         }
     }
     fn accessible_focus_controls(&self, out: &mut Snapshot, scope: u32) -> Result<(), Error> {
-        for local in 1..=10 {
+        for local in 1..=21 {
             if let Some(focus) = self
                 .file_focus
                 .state(keyboard_focus::ControlId { scope, local })
@@ -699,7 +754,7 @@ impl Shell {
                         enabled: c.enabled,
                         visible: c.visible,
                         focused: focus.focused,
-                        selected: false,
+                        selected: (scope, local) == (5, 10 + self.settings_category as u32),
                         checked: c.checked,
                         busy: false,
                     },

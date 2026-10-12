@@ -2,7 +2,7 @@
 //! wait registration, signal/reset/consume and copyout. Scheduler wakeups run in
 //! that runtime; the object store never calls into an IRQ or arbitrary callback.
 use core::cell::UnsafeCell;
-pub use helix_core::event::{EventHandle, WaitResult};
+pub use helix_core::event::{EventHandle, WaitManyResult, WaitResult, MAX_WAIT_OBJECTS};
 use helix_core::{
     event::{Error, Events},
     handle::Handle,
@@ -16,6 +16,7 @@ static EVENTS: Global = Global(UnsafeCell::new(Events::new()));
 fn status(error: Error) -> Status {
     match error {
         Error::InvalidHandle => Status::InvalidHandle,
+        Error::InvalidCount | Error::DuplicateHandle => Status::InvalidArgument,
         Error::Full | Error::References | Error::WaitersFull => Status::NoMemory,
         Error::WouldBlock | Error::Waiters => Status::WouldBlock,
         Error::NoCurrentTask | Error::NotWaiting => Status::InvalidArgument,
@@ -68,6 +69,37 @@ pub fn wait_current<const TASKS: usize>(
     unsafe {
         (&mut *EVENTS.0.get())
             .wait_current(handle, scheduler)
+            .map_err(status)
+    }
+}
+pub fn wait_many_current<const TASKS: usize>(
+    handles: &[EventHandle],
+    scheduler: &mut Scheduler<TASKS>,
+) -> Result<WaitManyResult, Status> {
+    unsafe {
+        (&mut *EVENTS.0.get())
+            .wait_many_current(handles, scheduler)
+            .map_err(status)
+    }
+}
+pub fn try_wait_many(handles: &[EventHandle]) -> Result<usize, Status> {
+    unsafe {
+        (&mut *EVENTS.0.get())
+            .try_wait_many(handles)
+            .map_err(status)
+    }
+}
+pub fn take_many_completion(task: Handle) -> Result<Option<usize>, Status> {
+    unsafe {
+        (&mut *EVENTS.0.get())
+            .take_many_completion(task)
+            .map_err(status)
+    }
+}
+pub fn abandon_many_wait(task: Handle) -> Result<(), Status> {
+    unsafe {
+        (&mut *EVENTS.0.get())
+            .abandon_many_wait(task)
             .map_err(status)
     }
 }

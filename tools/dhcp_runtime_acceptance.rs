@@ -98,6 +98,7 @@ mod dhcp_runtime_acceptance {
             used: 8192,
             submitted: 0,
             completed: 0,
+            device_buffer: None,
         }
     }
 

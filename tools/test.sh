@@ -28,6 +28,7 @@ rustc --edition=2021 --test tools/linux_profile_tests.rs -o build/linux-profile-
 build/linux-profile-tests
 python3 tools/test-linux-fs-contract.py
 python3 tools/test-network-runtime.py
+python3 tools/test-network-dma.py
 python3 tools/channel-benchmark.py
 python3 -m unittest discover -s tools -p 'test_*.py'
 python3 tools/spec_audit.py --self-test

@@ -63,6 +63,35 @@ fn start_event_waiter(info: &rt::StartInfo, event: u64, mode: u8) -> (u64, u64) 
     );
     (child as u64, pair[0])
 }
+fn start_event_waiter_many(info: &rt::StartInfo, events: [u64; 2]) -> (u64, u64) {
+    let mut pair = [0; 2];
+    require(
+        info,
+        rt::channel_pair(&mut pair) == 0,
+        "NEXTD: wait-many channel creation failed\n",
+    );
+    let child = rt::spawn_with_endpoint(info.launcher, "/system/event-wait.elf", pair[1]);
+    require(
+        info,
+        child > 0 && rt::close(pair[1]) == 0,
+        "NEXTD: wait-many child spawn failed\n",
+    );
+    let first = rt::call(rt::Syscall::HandleDuplicate, [events[0], 48, 0, 0, 0, 0]);
+    let second = rt::call(rt::Syscall::HandleDuplicate, [events[1], 48, 0, 0, 0, 0]);
+    require(
+        info,
+        first > 0 && second > 0,
+        "NEXTD: wait-many capability duplication failed\n",
+    );
+    let mut frame = rt::ipc_frame_with_handles(false, [first as u64, second as u64]);
+    frame[40] = b'W';
+    require(
+        info,
+        rt::send_with_rights(pair[0], &frame, &[32, 32]) == 0,
+        "NEXTD: wait-many capability transfer failed\n",
+    );
+    (child as u64, pair[0])
+}
 fn waiter_ready(info: &rt::StartInfo, endpoint: u64) {
     let mut frame = [0; 44];
     let deadline = (rt::clock() as u64).saturating_add(2_000_000_000);
@@ -81,6 +110,43 @@ fn waiter_ready(info: &rt::StartInfo, endpoint: u64) {
     }
 }
 fn blocking_event_checks(info: &rt::StartInfo, rights: next_abi::Rights) {
+    let wait_many_events = [rt::event_create(0, rights), rt::event_create(0, rights)];
+    require(
+        info,
+        wait_many_events.iter().all(|event| *event > 0),
+        "NEXTD: wait-many event creation failed\n",
+    );
+    let (wait_many_child, wait_many_channel) = start_event_waiter_many(
+        info,
+        [wait_many_events[0] as u64, wait_many_events[1] as u64],
+    );
+    waiter_ready(info, wait_many_channel);
+    rt::sleep_until((rt::clock() as u64).saturating_add(20_000_000));
+    require(
+        info,
+        rt::event_signal(wait_many_events[1] as u64) == 0
+            && rt::event_reset(wait_many_events[1] as u64) == 0,
+        "NEXTD: wait-many signal/reset failed\n",
+    );
+    let mut wait_many_code = 99;
+    require(
+        info,
+        blocking_wait(wait_many_child, &mut wait_many_code) == 0 && wait_many_code == 0,
+        "NEXTD: atomic wait-many signal/reset completion failed\n",
+    );
+    require(
+        info,
+        rt::close(wait_many_child) == 0
+            && rt::close(wait_many_channel) == 0
+            && rt::close(wait_many_events[0] as u64) == 0
+            && rt::close(wait_many_events[1] as u64) == 0,
+        "NEXTD: wait-many cleanup failed\n",
+    );
+    rt::log(
+        info.log,
+        "NEXTD: atomic wait-many timeout, signal/reset winner and cleanup passed\n",
+    );
+
     let auto = rt::event_create(0, rights);
     require(
         info,

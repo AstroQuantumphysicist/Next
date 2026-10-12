@@ -1,6 +1,17 @@
-//! Bootstrap physical-page bookkeeping for a bounded contiguous window.
+//! Physical-page bookkeeping for a bounded contiguous window.
 //! Reserved/firmware/absent pages never enter the free pool. The caller must
 //! zero pages before user mapping and exclude live boot/allocator metadata.
+//!
+//! `pin`/`unpin` form the core lifetime contract for asynchronous users such as
+//! DMA: every submitted operation must pin its allocated page before handing it
+//! to a device, then unpin exactly once after completion or cancellation has
+//! stopped device access; a synchronous submission failure must roll its pin
+//! back immediately. Free and permanent-retain operations fail while any pin
+//! remains. A leaked pin therefore withholds a page instead of allowing a
+//! use-after-free. All operations require exclusive allocator access, so the
+//! kernel integration must serialize allocator metadata updates. Existing
+//! virtio and AC97 paths use statically owned DMA storage and do not yet route
+//! their buffers through this allocator contract.
 pub const PAGE_SIZE: u64 = 4096;
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum RegionKind {
@@ -29,6 +40,9 @@ pub enum MemoryError {
     Unavailable,
     Exhausted,
     NotAllocated,
+    Pinned,
+    NotPinned,
+    PinCountOverflow,
 }
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum PageState {
@@ -39,6 +53,9 @@ enum PageState {
 pub struct PageAllocator<const N: usize> {
     base: u64,
     states: [PageState; N],
+    /// References held by submitted asynchronous I/O. The fixed width makes
+    /// both the metadata and the maximum number of simultaneous pins bounded.
+    pins: [u16; N],
 }
 
 fn end(start: u64, pages: u64) -> Result<u64, MemoryError> {
@@ -71,6 +88,7 @@ impl<const N: usize> PageAllocator<N> {
         let mut result = Self {
             base,
             states: [PageState::Reserved; N],
+            pins: [0; N],
         };
         for region in regions {
             if region.kind != RegionKind::Usable {
@@ -119,7 +137,41 @@ impl<const N: usize> PageAllocator<N> {
             .position(|s| *s == PageState::Free)
             .ok_or(MemoryError::Exhausted)?;
         self.states[index] = PageState::Allocated;
+        debug_assert_eq!(self.pins[index], 0);
         Ok(self.base + index as u64 * PAGE_SIZE)
+    }
+    /// Record one in-flight asynchronous user of an allocated page.
+    ///
+    /// Call this before publishing the page address to a device. The caller
+    /// must call `unpin` only once it has established that the device can no
+    /// longer access the page. Pins are counted so independent operations may
+    /// safely share a page until all of them complete.
+    pub fn pin(&mut self, address: u64) -> Result<(), MemoryError> {
+        let index = self.index(address)?;
+        if self.states[index] != PageState::Allocated {
+            return Err(MemoryError::NotAllocated);
+        }
+        self.pins[index] = self.pins[index]
+            .checked_add(1)
+            .ok_or(MemoryError::PinCountOverflow)?;
+        Ok(())
+    }
+    /// Release one completed/cancelled asynchronous use of an allocated page.
+    pub fn unpin(&mut self, address: u64) -> Result<(), MemoryError> {
+        let index = self.index(address)?;
+        if self.states[index] != PageState::Allocated || self.pins[index] == 0 {
+            return Err(MemoryError::NotPinned);
+        }
+        self.pins[index] -= 1;
+        Ok(())
+    }
+    /// Number of outstanding asynchronous users currently recorded for a page.
+    pub fn pin_count(&self, address: u64) -> Result<u16, MemoryError> {
+        let index = self.index(address)?;
+        if self.states[index] != PageState::Allocated {
+            return Err(MemoryError::NotAllocated);
+        }
+        Ok(self.pins[index])
     }
     /// Permanently retain an allocated page. Published page-table/quarantine
     /// ownership cannot be undone with `free`, including by its original owner.
@@ -128,6 +180,9 @@ impl<const N: usize> PageAllocator<N> {
         if self.states[index] != PageState::Allocated {
             return Err(MemoryError::NotAllocated);
         }
+        if self.pins[index] != 0 {
+            return Err(MemoryError::Pinned);
+        }
         self.states[index] = PageState::Reserved;
         Ok(())
     }
@@ -135,6 +190,9 @@ impl<const N: usize> PageAllocator<N> {
         let index = self.index(address)?;
         if self.states[index] != PageState::Allocated {
             return Err(MemoryError::NotAllocated);
+        }
+        if self.pins[index] != 0 {
+            return Err(MemoryError::Pinned);
         }
         self.states[index] = PageState::Free;
         Ok(())
@@ -168,6 +226,76 @@ mod tests {
         assert_eq!(pages.allocate(), Err(MemoryError::Exhausted));
         pages.free(second).unwrap();
         assert_eq!(pages.allocate(), Ok(second));
+    }
+    #[test]
+    fn one_in_flight_pin_blocks_free_and_reuse_until_completion() {
+        let mut pages = PageAllocator::<2>::new(0x100000, &[usable(0x100000, 2)]).unwrap();
+        let submitted = pages.allocate().unwrap();
+
+        // Submission takes ownership before the address is handed to I/O.
+        pages.pin(submitted).unwrap();
+        assert_eq!(pages.pin_count(submitted), Ok(1));
+        assert_eq!(pages.free(submitted), Err(MemoryError::Pinned));
+        assert_eq!(pages.retain(submitted), Err(MemoryError::Pinned));
+        assert_eq!(pages.reserve(submitted, 1), Err(MemoryError::Unavailable));
+        assert_eq!(pages.pin_count(submitted), Ok(1));
+
+        // Delayed completion: allocator pressure must not recycle this page.
+        let other = pages.allocate().unwrap();
+        assert_ne!(other, submitted);
+        assert_eq!(pages.allocate(), Err(MemoryError::Exhausted));
+        pages.free(other).unwrap();
+        assert_eq!(pages.allocate(), Ok(other));
+
+        // The completion path releases ownership, after which ordinary free
+        // and reuse are permitted again.
+        pages.unpin(submitted).unwrap();
+        assert_eq!(pages.pin_count(submitted), Ok(0));
+        pages.free(submitted).unwrap();
+        assert_eq!(pages.allocate(), Ok(submitted));
+    }
+    #[test]
+    fn multiple_in_flight_uses_require_matching_completions() {
+        let mut pages = PageAllocator::<1>::new(0x200000, &[usable(0x200000, 1)]).unwrap();
+        let address = pages.allocate().unwrap();
+        pages.pin(address).unwrap();
+        pages.pin(address).unwrap();
+        assert_eq!(pages.pin_count(address), Ok(2));
+
+        // Completion of one request cannot release a page still owned by the
+        // other request.
+        pages.unpin(address).unwrap();
+        assert_eq!(pages.pin_count(address), Ok(1));
+        assert_eq!(pages.free(address), Err(MemoryError::Pinned));
+        pages.unpin(address).unwrap();
+        assert_eq!(pages.free(address), Ok(()));
+    }
+    #[test]
+    fn unmatched_or_duplicate_completion_cannot_change_page_ownership() {
+        let mut pages = PageAllocator::<1>::new(0x300000, &[usable(0x300000, 1)]).unwrap();
+        let address = pages.allocate().unwrap();
+        assert_eq!(pages.unpin(address), Err(MemoryError::NotPinned));
+        pages.pin(address).unwrap();
+        pages.unpin(address).unwrap();
+        assert_eq!(pages.unpin(address), Err(MemoryError::NotPinned));
+        assert_eq!(pages.pin_count(address), Ok(0));
+        pages.free(address).unwrap();
+        assert_eq!(pages.unpin(address), Err(MemoryError::NotPinned));
+    }
+    #[test]
+    fn pin_counter_is_bounded_and_overflow_does_not_drop_existing_ownership() {
+        let mut pages = PageAllocator::<1>::new(0x400000, &[usable(0x400000, 1)]).unwrap();
+        let address = pages.allocate().unwrap();
+        for _ in 0..u16::MAX {
+            pages.pin(address).unwrap();
+        }
+        assert_eq!(pages.pin(address), Err(MemoryError::PinCountOverflow));
+        assert_eq!(pages.pin_count(address), Ok(u16::MAX));
+        assert_eq!(pages.free(address), Err(MemoryError::Pinned));
+        for _ in 0..u16::MAX {
+            pages.unpin(address).unwrap();
+        }
+        pages.free(address).unwrap();
     }
     #[test]
     fn rejects_hostile_maps() {

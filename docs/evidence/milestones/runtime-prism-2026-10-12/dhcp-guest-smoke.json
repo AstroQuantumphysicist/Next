@@ -1,0 +1,131 @@
+{
+  "passed": true,
+  "command": "source tools/env.sh && python3 tools/dhcp_guest_smoke.py --timeout 150",
+  "scope": "QEMU q35/TCG guest kernel through virtio-net and a deterministic Ethernet peer; no hardware certification",
+  "qemu_profile": "q35/TCG; cpu=qemu64; 256 MiB; one vCPU",
+  "link": "QEMU socket netdev TCP Ethernet frames",
+  "image_sha256": "e69aa9ca8de049c2a12d048e28e56525a0c352992b2385b200daba70de4ab484",
+  "source_sha256": {
+    "crates/helix-kernel/src/network.rs": "6467184dd5bd56c8280538178fd1e15b8f176a6492881fdc59333204caa70dd0",
+    "crates/helix-kernel/src/network_runtime.rs": "37536d8825374dd91a7161e48679316edb78f4f4b6d0acdc1c2a40923e286533",
+    "crates/helix-kernel/src/network_dhcp.rs": "a3109c64f7a046eb092281dec4582a25e8cbcf85b7dbd7b973bb1c90a9d8639a",
+    "tools/dhcp_guest_smoke.py": "09d51bd67a5a7b322f790b54c429e91e80d8f7d88affd712b1dfdb3776e8cc88"
+  },
+  "guest_ready_seconds": 8.906,
+  "lease_policy": {
+    "initial_seconds": 40,
+    "t1_seconds": 12,
+    "t2_seconds": 30,
+    "rebind_ack_server": "10.0.2.3",
+    "post_nak_lease_seconds": 40
+  },
+  "timer_intervals_seconds": {
+    "initial_ack_to_t1_seconds": 12.105,
+    "refreshed_ack_to_next_t1_seconds": 12.008,
+    "refreshed_ack_to_t2_seconds": 30.008,
+    "rebind_ack_to_nak_seconds": 12.018,
+    "nak_to_restart_discover_seconds": 0.011,
+    "reacquire_ack_to_expiry_discover_seconds": 40.017
+  },
+  "transitions": [
+    {
+      "event": "discover",
+      "seconds": 2.145,
+      "grant": 0,
+      "xid": "3873c2ec"
+    },
+    {
+      "event": "initial-ack",
+      "seconds": 2.147,
+      "grant": 1
+    },
+    {
+      "event": "t1-renewal",
+      "seconds": 14.252,
+      "xid": "45e23d9b",
+      "broadcast": false
+    },
+    {
+      "event": "t1-ack-refresh",
+      "seconds": 14.252,
+      "grant": 2
+    },
+    {
+      "event": "t1-renewal-dropped",
+      "seconds": 26.26,
+      "xid": "487acad3",
+      "broadcast": false
+    },
+    {
+      "event": "t1-renewal-dropped",
+      "seconds": 27.27,
+      "xid": "487acad3",
+      "broadcast": false
+    },
+    {
+      "event": "t1-renewal-dropped",
+      "seconds": 29.28,
+      "xid": "487acad3",
+      "broadcast": false
+    },
+    {
+      "event": "t1-renewal-dropped",
+      "seconds": 33.29,
+      "xid": "487acad3",
+      "broadcast": false
+    },
+    {
+      "event": "t1-renewal-dropped",
+      "seconds": 41.3,
+      "xid": "487acad3",
+      "broadcast": false
+    },
+    {
+      "event": "t2-rebind",
+      "seconds": 44.26,
+      "xid": "487acad3",
+      "broadcast": true
+    },
+    {
+      "event": "t2-ack-refresh",
+      "seconds": 44.26,
+      "grant": 3,
+      "server": "0a000203"
+    },
+    {
+      "event": "t1-renewal-nak",
+      "seconds": 56.278,
+      "xid": "3534ea23",
+      "server": "0a000203"
+    },
+    {
+      "event": "discover",
+      "seconds": 56.289,
+      "grant": 3,
+      "xid": "6d5e793a"
+    },
+    {
+      "event": "reacquire-ack",
+      "seconds": 56.289,
+      "grant": 4
+    },
+    {
+      "event": "lease-expiry-discovery",
+      "seconds": 96.306,
+      "xid": "4dca65a1"
+    }
+  ],
+  "checks": [
+    "QEMU guest acquired the peer's short DHCP lease before desktop startup",
+    "retained guest runtime emitted a T1 unicast renewal and accepted an ACK that refreshed its lease",
+    "a later T1 was dropped; the guest emitted a T2 broadcast rebind and accepted an ACK from another server",
+    "the guest emitted another T1 request, received a DHCP NAK, and restarted discovery",
+    "after reacquisition, renewal and rebind were dropped; lease expiry restarted discovery"
+  ],
+  "qemu_guest_verification": "actual kernel guest over virtio-net with a controlled Ethernet peer; slirp not used",
+  "limits": [
+    "QEMU TCG single-CPU development profile only; no hardware certification.",
+    "The peer supplies DHCP, ARP, ICMP, TCP, and DNS responses required during guest initialization.",
+    "This validates the retained guest DHCP path and timer/recovery sequence; it does not establish broad production-server interoperability."
+  ]
+}

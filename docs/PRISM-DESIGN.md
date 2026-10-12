@@ -19,7 +19,9 @@ replace font-layout, scaling, accessibility, or physical-display validation.
 
 See the [guest-captured visual gallery](PRISM-VISUAL-GALLERY.md) for Home,
 Terminal, Files, Monitor, Settings, Editor, Calculator, notifications, and the
-keyboard shortcut guide.
+keyboard shortcut guide. Settings exposes 12 navigable categories: Appearance
+has active theme/accent controls with Save/Revert, System provides read-only
+diagnostics, and the remaining ten pages are informational with disabled rows.
 
 ## Reviewed reference images
 
@@ -34,9 +36,12 @@ This is the bounded kernel-hosted development shell, with software rendering.
 It is not the isolated production compositor. The Latin atlas does not provide
 Unicode shaping; UTF-8 editor storage does not imply complete Unicode display.
 Bounded persisted appearance themes and real GUI file operations have dedicated
-retained-image guest evidence. Newer Trash, client input, cooperative close, and
-session-only Undo have separate source and guest gates; controls must preserve
-backend authority and trusted-dialog priority. Text size remains fixed at 100%. See [PRISM-ACCEPTANCE.md](PRISM-ACCEPTANCE.md) for functional gates.
+retained-image guest evidence. Settings wallpaper, fonts, density, scale, and
+desktop layout remain unavailable; System is read-only and the other ten
+categories are informational. Newer Trash, client input, cooperative close,
+and session-only Undo have separate source and guest gates; controls must
+preserve backend authority and trusted-dialog priority. Text size remains fixed
+at 100%. See [PRISM-ACCEPTANCE.md](PRISM-ACCEPTANCE.md) for functional gates.
 
 Licenses, exact source-font hashes, rasterization parameters, and reproducible
 asset generators are recorded under docs/third-party and crates/prism/assets.
