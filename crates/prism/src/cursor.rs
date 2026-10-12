@@ -4,6 +4,15 @@
 //! A dark outline and white face remain legible over both light and dark UI.
 use crate::Canvas;
 
+/// The small set of pointer forms Prism can paint without allocating.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum Shape {
+    /// The familiar top-left-hotspot arrow used for controls and desktop space.
+    Arrow,
+    /// A centered text insertion marker used over editable text.
+    IBeam,
+}
+
 const POINTS: [(i32, i32); 7] = [
     (0, 0),
     (0, 25),
@@ -38,6 +47,42 @@ pub fn draw(canvas: &mut Canvas<'_>, x: i32, y: i32) {
             }
         }
     }
+}
+
+/// Paint one pointer shape without allocating. `x, y` are the arrow's top-left
+/// hotspot or the I-beam's centered hotspot, matching each shape's usual feel.
+pub fn draw_shape(canvas: &mut Canvas<'_>, x: i32, y: i32, shape: Shape) {
+    match shape {
+        Shape::Arrow => draw(canvas, x, y),
+        Shape::IBeam => draw_ibeam(canvas, x, y),
+    }
+}
+
+/// Paint a one-pixel dark I-beam with a one-pixel white surround. The white
+/// surround preserves the silhouette over dark content; the dark stem and
+/// caps stay visible over light content. The pointer coordinate is the center
+/// of the stem, and clipping is delegated to the canvas just like the arrow.
+fn draw_ibeam(canvas: &mut Canvas<'_>, x: i32, y: i32) {
+    const HALF_WIDTH: i32 = 5;
+    const HALF_HEIGHT: i32 = 11;
+    for dy in -HALF_HEIGHT..=HALF_HEIGHT {
+        for dx in -HALF_WIDTH..=HALF_WIDTH {
+            if (-1..=1).any(|oy| (-1..=1).any(|ox| is_ibeam(dx + ox, dy + oy))) {
+                canvas.pixel_literal(x.saturating_add(dx), y.saturating_add(dy), 0xffffff);
+            }
+        }
+    }
+    for dy in -10..=10 {
+        for dx in -4..=4 {
+            if is_ibeam(dx, dy) {
+                canvas.pixel_literal(x.saturating_add(dx), y.saturating_add(dy), 0x08090c);
+            }
+        }
+    }
+}
+
+fn is_ibeam(dx: i32, dy: i32) -> bool {
+    (dx == 0 && (-9..=9).contains(&dy)) || ((dy == -10 || dy == 10) && (-3..=3).contains(&dx))
 }
 
 fn inside(px: i32, py: i32) -> bool {
@@ -86,6 +131,37 @@ mod tests {
         let mut canvas = Canvas::new(&mut pixels, 12, 12, 12, crate::PixelFormat::Bgr).unwrap();
         for (x, y) in [(-100, -100), (11, 0), (0, 11), (i32::MAX, i32::MAX)] {
             draw(&mut canvas, x, y);
+        }
+        assert_eq!(pixels.len(), 144);
+    }
+
+    #[test]
+    fn i_beam_has_centered_dark_stem_and_high_contrast_caps() {
+        extern crate std;
+        // Check both common surfaces. The same opaque two-tone raster keeps
+        // its foreground and outline legible instead of sampling the backdrop.
+        for background in [0xffffff, 0x101722] {
+            let mut pixels = std::vec![background; 48 * 48];
+            let mut canvas = Canvas::new(&mut pixels, 48, 48, 48, crate::PixelFormat::Bgr).unwrap();
+            draw_shape(&mut canvas, 24, 24, Shape::IBeam);
+            let at = |dx: usize, dy: usize| pixels[dy * 48 + dx];
+            assert_eq!(at(24, 24), 0x08090c, "stem is centered on its hotspot");
+            assert_eq!(at(21, 14), 0x08090c, "top serif is crisp");
+            assert_eq!(at(21, 34), 0x08090c, "bottom serif is crisp");
+            assert_eq!(at(23, 24), 0xffffff, "white surround separates the stem");
+            assert_eq!(at(22, 24), background, "drawing remains tightly bounded");
+        }
+    }
+
+    #[test]
+    fn both_pointer_shapes_clip_at_every_canvas_edge() {
+        extern crate std;
+        let mut pixels = std::vec![0u32; 12 * 12];
+        let mut canvas = Canvas::new(&mut pixels, 12, 12, 12, crate::PixelFormat::Bgr).unwrap();
+        for shape in [Shape::Arrow, Shape::IBeam] {
+            for (x, y) in [(-100, -100), (11, 0), (0, 11), (i32::MAX, i32::MAX)] {
+                draw_shape(&mut canvas, x, y, shape);
+            }
         }
         assert_eq!(pixels.len(), 144);
     }

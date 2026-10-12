@@ -5,19 +5,20 @@ q35/TCG/OVMF guest. The smoke harness launches or opens each view with QMP
 keyboard input, captures the guest screen, and validates the image dimensions.
 They document the current development build; they do not certify accessibility,
 hardware display behavior, text shaping, or Next 1.0 completion. The current
-qemu64 run passed 120 checks on image SHA256
-`f4986796589aa9e5d75ad5eddbaf620a17613ccb35bbdfb66d7e17ca3a40fc0d`. Its report,
+qemu64 run passed 125 checks on image SHA256
+`8902846a7a484186361520c6c626846479710faef2afa8729bdad664e66825f3`. The report,
 source captures, and related test evidence are retained in the [runtime and
 Prism evidence](evidence/milestones/runtime-prism-2026-10-12/).
 
-![Overview contact sheet of all twelve guest captures](images/prism-overview.png)
+![Overview contact sheet of all fifteen guest captures](images/prism-overview.png)
 
 Regenerate the source captures with:
 
 ```sh
 source tools/env.sh
 bash tools/build.sh
-python3 tools/boot_smoke.py --timeout 360 --capture-prism-gallery
+python3 tools/boot_smoke.py --cpu qemu64 --timeout 360 --capture-prism-gallery \
+  --image build/next-dev.img --output-dir build/feature-wave-final-corrected-qemu64
 ```
 
 The gallery includes all six kernel-hosted first-party panels and two additional
@@ -29,8 +30,13 @@ remain informational with unavailable settings rows. The larger text applies
 only within Settings; it does not establish screen reader, speech,
 magnification, or other services that remain unavailable. The quarter-snap
 frame captures Terminal in the BottomLeft work-area quadrant with Editor behind
-it. Snap behavior is limited to the single current work area. The Calculator is
-an expression utility rather than a complete scientific calculator.
+it. Snap behavior is limited to the single current work area. The 15-image set
+also includes a guest-created Files root tab and nested tab retained beside it,
+plus the I-beam rendered over the editable location field. The smoke switches
+between the tabs, checks path isolation, and checks the cursor pixels. The
+Settings gallery flow selects Accessibility preferences, saves them, and
+confirms the accepted save request. The Calculator is an expression utility
+rather than a complete scientific calculator.
 
 ## Home
 
@@ -43,6 +49,21 @@ an expression utility rather than a complete scientific calculator.
 ## Files
 
 ![Prism Files panel](images/prism-files.png)
+
+The following three frames come from the current signed-image guest and document
+the separate Files tab views and cursor state exercised by the smoke.
+
+### Files tabs: root view
+
+![Prism Files with the /native root tab active while a second tab retains /native/alpha](images/prism-files-tabs-root.png)
+
+### Files tabs: nested view
+
+![Prism Files with /native/alpha active while the /native root tab remains open](images/prism-files-tabs-nested.png)
+
+### Files location I-beam cursor
+
+![Prism Files showing the I-beam pointer over its editable location field](images/prism-files-tabs-ibeam.png)
 
 ## System Monitor
 

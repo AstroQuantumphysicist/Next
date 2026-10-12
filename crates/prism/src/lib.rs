@@ -364,7 +364,8 @@ pub struct Shell {
     file_query: files_query::Model,
     file_query_paths: [Option<files_actions::Path>; 8],
     file_query_applied: bool,
-    files_directory: files_directory::Model,
+    files_directory: files_directory::Workspace,
+    files_directory_mode: bool,
     files_directory_address_editing: bool,
     file_query_open: bool,
     file_query_control: usize,
@@ -437,7 +438,8 @@ impl Shell {
             file_query: files_query::Model::new(),
             file_query_paths: [None; 8],
             file_query_applied: false,
-            files_directory: files_directory::Model::new(),
+            files_directory: files_directory::Workspace::new(),
+            files_directory_mode: false,
             files_directory_address_editing: false,
             file_query_open: false,
             file_query_control: 0,
@@ -1097,43 +1099,38 @@ impl Shell {
                     .is_some_and(|bounds| Self::hit(bounds, x, y))
                 {
                     let local = 22 + index as u32;
-                    if self
-                        .file_focus
-                        .select(
-                            keyboard_focus::ControlId { scope: 5, local },
-                            keyboard_focus::Input::Pointer,
-                        )
-                        .is_ok()
-                    {
-                        match index {
-                            0 => {
-                                let _ = self
-                                    .appearance
-                                    .choose_focus_indicator(appearance::FocusIndicator::Standard);
-                            }
-                            1 => {
-                                let _ = self
-                                    .appearance
-                                    .choose_focus_indicator(appearance::FocusIndicator::Strong);
-                            }
-                            2 => {
-                                let _ = self
-                                    .appearance
-                                    .choose_text_scale(appearance::TextScale::Percent100);
-                            }
-                            3 => {
-                                let _ = self
-                                    .appearance
-                                    .choose_text_scale(appearance::TextScale::Percent125);
-                            }
-                            4 => {
-                                let _ = self.appearance.apply();
-                            }
-                            5 => {
-                                let _ = self.appearance.cancel();
-                            }
-                            _ => {}
+                    let _ = self.file_focus.select(
+                        keyboard_focus::ControlId { scope: 5, local },
+                        keyboard_focus::Input::Pointer,
+                    );
+                    match index {
+                        0 => {
+                            let _ = self
+                                .appearance
+                                .choose_focus_indicator(appearance::FocusIndicator::Standard);
                         }
+                        1 => {
+                            let _ = self
+                                .appearance
+                                .choose_focus_indicator(appearance::FocusIndicator::Strong);
+                        }
+                        2 => {
+                            let _ = self
+                                .appearance
+                                .choose_text_scale(appearance::TextScale::Percent100);
+                        }
+                        3 => {
+                            let _ = self
+                                .appearance
+                                .choose_text_scale(appearance::TextScale::Percent125);
+                        }
+                        4 => {
+                            let _ = self.appearance.apply();
+                        }
+                        5 => {
+                            let _ = self.appearance.cancel();
+                        }
+                        _ => {}
                     }
                     return true;
                 }
@@ -1160,35 +1157,35 @@ impl Shell {
                     } else {
                         index as u32 + 3
                     };
-                    if self
-                        .file_focus
-                        .select(
-                            keyboard_focus::ControlId { scope: 5, local },
-                            keyboard_focus::Input::Pointer,
-                        )
-                        .is_ok()
-                    {
-                        match group {
-                            0 => {
-                                let _ = self.appearance.choose_theme(
-                                    [
-                                        appearance::Theme::Light,
-                                        appearance::Theme::Dark,
-                                        appearance::Theme::HighContrast,
-                                    ][index],
-                                );
-                            }
-                            1 => {
-                                let _ = self.appearance.choose_accent(
-                                    [
-                                        appearance::Accent::Blue,
-                                        appearance::Accent::Violet,
-                                        appearance::Accent::Teal,
-                                        appearance::Accent::Orange,
-                                    ][index],
-                                );
-                            }
-                            _ => self.settings_key(Key::Enter),
+                    let _ = self.file_focus.select(
+                        keyboard_focus::ControlId { scope: 5, local },
+                        keyboard_focus::Input::Pointer,
+                    );
+                    match group {
+                        0 => {
+                            let _ = self.appearance.choose_theme(
+                                [
+                                    appearance::Theme::Light,
+                                    appearance::Theme::Dark,
+                                    appearance::Theme::HighContrast,
+                                ][index],
+                            );
+                        }
+                        1 => {
+                            let _ = self.appearance.choose_accent(
+                                [
+                                    appearance::Accent::Blue,
+                                    appearance::Accent::Violet,
+                                    appearance::Accent::Teal,
+                                    appearance::Accent::Orange,
+                                ][index],
+                            );
+                        }
+                        _ if index == 0 => {
+                            let _ = self.appearance.apply();
+                        }
+                        _ => {
+                            let _ = self.appearance.cancel();
                         }
                     }
                     return true;
@@ -1212,7 +1209,7 @@ impl Shell {
     pub fn file_status(&self) -> &str {
         self.file_status.as_str()
     }
-    pub fn files_directory(&self) -> &files_directory::Model {
+    pub fn files_directory(&self) -> &files_directory::Workspace {
         &self.files_directory
     }
     pub fn take_files_directory_action(&mut self) -> Option<files_directory::Action> {
@@ -1239,6 +1236,7 @@ impl Shell {
             self.sync_files_focus();
             return Err(error);
         }
+        self.files_directory_mode = true;
         self.file_status.set("");
         self.sync_selected_directory_file();
         self.sync_files_focus();
@@ -1299,6 +1297,40 @@ impl Shell {
             .focused()
             .and_then(|id| self.file_focus.state(id))
     }
+    /// Return the cursor shape at a framebuffer point. Text-entry regions in
+    /// Files use an I-beam while controls and other surfaces retain the arrow.
+    pub fn cursor_shape_at(&self, x: i32, y: i32) -> cursor::Shape {
+        if self.desktop.focused() == Some(App::Files)
+            && !self.trash_page
+            && (Self::hit(self.files_address_bounds(), x, y)
+                || self.file_query_open
+                    && self
+                        .file_query_control_bounds(0)
+                        .is_some_and(|bounds| Self::hit(bounds, x, y))
+                || self.files_directory.dialog_active() && {
+                    let b = self.files_directory_dialog_bounds();
+                    Self::hit(
+                        Bounds {
+                            x: b.x + 16,
+                            y: b.y + 78,
+                            width: (b.width - 32).max(0),
+                            height: 28,
+                        },
+                        x,
+                        y,
+                    )
+                }
+                || self.file_dialog_active()
+                    && self.file_dialog.phase() == files_actions::Phase::Editing
+                    && {
+                        let b = self.file_dialog_bounds();
+                        x >= b.x + 20 && x < b.x + b.width - 20 && y >= b.y + 88 && y < b.y + 128
+                    })
+        {
+            return cursor::Shape::IBeam;
+        }
+        cursor::Shape::Arrow
+    }
     fn file_list_rows(&self) -> usize {
         ((self.desktop.window(App::Files).bounds.height - 180).max(24) / 24)
             .min(FILE_CAPACITY as i32) as usize
@@ -1321,6 +1353,53 @@ impl Shell {
             width,
             height: 32,
         })
+    }
+    pub fn files_tab_bounds(&self, index: usize) -> Option<Bounds> {
+        if index >= self.files_directory.tab_count() {
+            return None;
+        }
+        let b = self.desktop.window(App::Files).bounds;
+        let inner = (b.width - 16).max(0);
+        let utility = 72.min(inner);
+        let gaps = (self.files_directory.tab_count().saturating_sub(1) as i32) * 4;
+        let tab_width = ((inner - utility - gaps).max(0)
+            / self.files_directory.tab_count().max(1) as i32)
+            .max(24);
+        Some(Bounds {
+            x: b.x + 8 + index as i32 * (tab_width + 4),
+            y: b.y + 96,
+            width: tab_width,
+            height: 28,
+        })
+    }
+    pub fn files_tab_add_bounds(&self) -> Bounds {
+        let b = self.desktop.window(App::Files).bounds;
+        let inner = (b.width - 16).max(0);
+        Bounds {
+            x: b.x + 8 + inner - 64,
+            y: b.y + 96,
+            width: 30,
+            height: 28,
+        }
+    }
+    pub fn files_tab_close_bounds(&self) -> Bounds {
+        let b = self.desktop.window(App::Files).bounds;
+        let inner = (b.width - 16).max(0);
+        Bounds {
+            x: b.x + 8 + inner - 30,
+            y: b.y + 96,
+            width: 30,
+            height: 28,
+        }
+    }
+    pub fn files_address_bounds(&self) -> Bounds {
+        let b = self.desktop.window(App::Files).bounds;
+        Bounds {
+            x: b.x + 8,
+            y: b.y + 130,
+            width: (b.width - 16).max(0),
+            height: 30,
+        }
     }
     fn files_directory_dialog_bounds(&self) -> Bounds {
         let (w, h) = self.desktop.dimensions();
@@ -1374,7 +1453,7 @@ impl Shell {
         if self.file_dialog_active() || self.files_directory.dialog_active() {
             return;
         }
-        if self.files_directory.listing().is_some() {
+        if self.files_directory.listing().is_some() || self.files_directory_mode {
             let _ = self.file_focus.replace_scope(3, &[]);
             let _ = self.file_focus.replace_scope(5, &[]);
             let _ = self.file_focus.replace_scope(6, &[]);
@@ -1404,6 +1483,48 @@ impl Shell {
                 Self::file_control(2, 6, "Open Trash", keyboard_focus::Role::Button, true),
                 Self::file_control(2, 7, "Find files", keyboard_focus::Role::Button, true),
                 Self::file_control(2, 8, "Address path", keyboard_focus::Role::TextBox, true),
+                Self::file_control(
+                    2,
+                    9,
+                    "Files tab 1",
+                    keyboard_focus::Role::Button,
+                    self.files_directory.tab_count() > 0,
+                ),
+                Self::file_control(
+                    2,
+                    10,
+                    "Files tab 2",
+                    keyboard_focus::Role::Button,
+                    self.files_directory.tab_count() > 1,
+                ),
+                Self::file_control(
+                    2,
+                    11,
+                    "Files tab 3",
+                    keyboard_focus::Role::Button,
+                    self.files_directory.tab_count() > 2,
+                ),
+                Self::file_control(
+                    2,
+                    12,
+                    "Files tab 4",
+                    keyboard_focus::Role::Button,
+                    self.files_directory.tab_count() > 3,
+                ),
+                Self::file_control(
+                    2,
+                    13,
+                    "New Files tab",
+                    keyboard_focus::Role::Button,
+                    self.files_directory.tab_count() < files_directory::TAB_CAPACITY,
+                ),
+                Self::file_control(
+                    2,
+                    14,
+                    "Close current Files tab",
+                    keyboard_focus::Role::Button,
+                    self.files_directory.tab_count() > 1 && !self.files_directory.busy(),
+                ),
             ];
             if self.file_focus.active_scope() != 2 {
                 let _ = self.file_focus.set_base_scope(2);
@@ -1568,9 +1689,8 @@ impl Shell {
         match key {
             Key::Escape => self.files_directory.cancel(),
             Key::Tab | Key::BackTab | Key::Left | Key::Right => {
-                let _ = self
-                    .files_directory
-                    .choose_approve(!self.files_directory.approves());
+                let approve = !self.files_directory.approves();
+                let _ = self.files_directory.choose_approve(approve);
             }
             Key::Backspace => {
                 let _ = self.files_directory.backspace_input();
@@ -1668,10 +1788,61 @@ impl Shell {
                 self.sync_selected_directory_file();
                 self.begin_file_operation(2);
             }
+            Key::Character('[') => {
+                if self.files_directory.switch_next(false) {
+                    self.files_directory_address_editing = false;
+                    self.sync_selected_directory_file();
+                    self.sync_files_focus();
+                }
+            }
+            Key::Character(']') => {
+                if self.files_directory.switch_next(true) {
+                    self.files_directory_address_editing = false;
+                    self.sync_selected_directory_file();
+                    self.sync_files_focus();
+                }
+            }
+            Key::Character('+') => {
+                if self.files_directory.new_tab().is_err() {
+                    self.file_status.set("Files supports up to four open tabs.");
+                }
+                self.files_directory_address_editing = false;
+                self.sync_selected_directory_file();
+                self.sync_files_focus();
+            }
+            Key::Character('x') => {
+                if !self.files_directory.close_active() {
+                    self.file_status
+                        .set("Close an idle tab; one Files tab must stay open.");
+                }
+                self.files_directory_address_editing = false;
+                self.sync_selected_directory_file();
+                self.sync_files_focus();
+            }
             Key::Delete => self.begin_files_directory_action(3),
             Key::Enter => {
                 let focused = self.file_focus.focused().map(|id| id.local);
                 match focused {
+                    Some(local @ 9..=12) => {
+                        let _ = self.files_directory.switch_tab(local as usize - 9);
+                        self.files_directory_address_editing = false;
+                        self.sync_selected_directory_file();
+                    }
+                    Some(13) => {
+                        if self.files_directory.new_tab().is_err() {
+                            self.file_status.set("Files supports up to four open tabs.");
+                        }
+                        self.files_directory_address_editing = false;
+                        self.sync_selected_directory_file();
+                    }
+                    Some(14) => {
+                        if !self.files_directory.close_active() {
+                            self.file_status
+                                .set("Close an idle tab; one Files tab must stay open.");
+                        }
+                        self.files_directory_address_editing = false;
+                        self.sync_selected_directory_file();
+                    }
                     Some(local @ 2..=7) => self.begin_files_directory_action(local as usize - 2),
                     Some(8) => self.files_directory_address_editing = true,
                     _ => {
@@ -3171,7 +3342,7 @@ impl Shell {
             }
             if self.desktop.focused() == Some(App::Files) {
                 let b = self.desktop.window(App::Files).bounds;
-                if self.files_directory.listing().is_some() {
+                if self.files_directory.listing().is_some() || self.files_directory_mode {
                     self.files_directory_pointer(x, y);
                     return;
                 }
@@ -3257,8 +3428,60 @@ impl Shell {
             self.begin_files_directory_action(index);
             return;
         }
+        if Self::hit(self.files_tab_add_bounds(), x, y) {
+            let _ = self.file_focus.select(
+                keyboard_focus::ControlId {
+                    scope: 2,
+                    local: 13,
+                },
+                keyboard_focus::Input::Pointer,
+            );
+            if self.files_directory.new_tab().is_err() {
+                self.file_status.set("Files supports up to four open tabs.");
+            }
+            self.files_directory_address_editing = false;
+            self.sync_selected_directory_file();
+            self.sync_files_focus();
+            return;
+        }
+        if Self::hit(self.files_tab_close_bounds(), x, y) {
+            let _ = self.file_focus.select(
+                keyboard_focus::ControlId {
+                    scope: 2,
+                    local: 14,
+                },
+                keyboard_focus::Input::Pointer,
+            );
+            if !self.files_directory.close_active() {
+                self.file_status
+                    .set("Close an idle tab; one Files tab must stay open.");
+            }
+            self.files_directory_address_editing = false;
+            self.sync_selected_directory_file();
+            self.sync_files_focus();
+            return;
+        }
+        for index in 0..self.files_directory.tab_count() {
+            if self
+                .files_tab_bounds(index)
+                .is_some_and(|tab| Self::hit(tab, x, y))
+            {
+                let _ = self.file_focus.select(
+                    keyboard_focus::ControlId {
+                        scope: 2,
+                        local: 9 + index as u32,
+                    },
+                    keyboard_focus::Input::Pointer,
+                );
+                let _ = self.files_directory.switch_tab(index);
+                self.files_directory_address_editing = false;
+                self.sync_selected_directory_file();
+                self.sync_files_focus();
+                return;
+            }
+        }
         let b = self.desktop.window(App::Files).bounds;
-        if x >= b.x + 8 && x < b.x + b.width - 8 && y >= b.y + 98 && y < b.y + 128 {
+        if Self::hit(self.files_address_bounds(), x, y) {
             let _ = self.files_directory.set_address("");
             self.files_directory_address_editing = true;
             let _ = self.file_focus.select(
@@ -3267,10 +3490,10 @@ impl Shell {
             );
             return;
         }
-        if x >= b.x + 8 && x < b.x + b.width - 8 && y >= b.y + 136 && y < b.y + b.height - 8 {
-            let row = ((y - b.y - 136) / 27) as usize;
+        if x >= b.x + 8 && x < b.x + b.width - 8 && y >= b.y + 168 && y < b.y + b.height - 8 {
+            let row = ((y - b.y - 168) / 27) as usize;
             let max_rows =
-                ((b.height - 166).max(0) / 27).min(files_directory::CAPACITY as i32) as usize;
+                ((b.height - 198).max(0) / 27).min(files_directory::CAPACITY as i32) as usize;
             if row >= max_rows {
                 return;
             }
@@ -3691,7 +3914,7 @@ impl Shell {
                 self.calculator.on_key(key);
             }
             Some(App::Files) => {
-                if self.files_directory.listing().is_some() {
+                if self.files_directory.listing().is_some() || self.files_directory_mode {
                     self.files_directory_key(key);
                     return;
                 }
@@ -4062,7 +4285,7 @@ impl Shell {
         }
         if let Some((x, y)) = self.pointer {
             // A software cursor is drawn last, from actual pointer events.
-            cursor::draw(canvas, x, y);
+            cursor::draw_shape(canvas, x, y, self.cursor_shape_at(x, y));
         }
     }
     fn render_taskbar(&self, canvas: &mut Canvas<'_>) {
@@ -6218,12 +6441,97 @@ impl Shell {
                 theme::outline(canvas, button, 8, theme::ACCENT);
             }
         }
-        let address = Bounds {
-            x: x + 8,
-            y: y + 98,
-            width: (width - 16).max(0),
-            height: 30,
-        };
+        for index in 0..self.files_directory.tab_count() {
+            let Some(tab) = self.files_tab_bounds(index) else {
+                continue;
+            };
+            let active = index == self.files_directory.active_index();
+            theme::rounded_rect(
+                canvas,
+                tab,
+                7,
+                if active {
+                    theme::ACCENT_SOFT
+                } else {
+                    theme::SURFACE
+                },
+            );
+            Self::control_border(
+                canvas,
+                tab,
+                if active { theme::ACCENT } else { theme::BORDER },
+            );
+            if self.file_focus.focus_visible()
+                && self
+                    .file_focus
+                    .focused()
+                    .is_some_and(|id| id.scope == 2 && id.local == 9 + index as u32)
+            {
+                theme::outline(canvas, tab, 7, theme::ACCENT);
+            }
+            let path = self
+                .files_directory
+                .tab(index)
+                .map_or("", |model| model.address());
+            let name = path
+                .rsplit('/')
+                .find(|part| !part.is_empty())
+                .unwrap_or("Files");
+            let max_chars = ((tab.width - 18).max(0) / 7) as usize;
+            let shown = if name.len() > max_chars && max_chars > 1 {
+                &name[name.len() - (max_chars - 1)..]
+            } else {
+                name
+            };
+            draw_limited(
+                canvas,
+                tab.x + 8,
+                tab.y + 8,
+                shown,
+                max_chars,
+                if active { theme::TEXT } else { theme::MUTED },
+            );
+        }
+        let add_tab = self.files_tab_add_bounds();
+        theme::rounded_rect(canvas, add_tab, 7, theme::SURFACE);
+        Self::control_border(canvas, add_tab, theme::BORDER);
+        theme::text(
+            canvas,
+            add_tab.x + 10,
+            add_tab.y + 7,
+            "+",
+            theme::TEXT,
+            theme::Font::Body,
+        );
+        let close_tab = self.files_tab_close_bounds();
+        theme::rounded_rect(canvas, close_tab, 7, theme::SURFACE);
+        Self::control_border(canvas, close_tab, theme::BORDER);
+        theme::text(
+            canvas,
+            close_tab.x + 10,
+            close_tab.y + 8,
+            "x",
+            theme::TEXT,
+            theme::Font::Small,
+        );
+        if self.file_focus.focus_visible()
+            && self
+                .file_focus
+                .focused()
+                .is_some_and(|id| id.scope == 2 && matches!(id.local, 13 | 14))
+        {
+            theme::outline(
+                canvas,
+                if self.file_focus.focused().is_some_and(|id| id.local == 13) {
+                    add_tab
+                } else {
+                    close_tab
+                },
+                7,
+                theme::ACCENT,
+            );
+        }
+        let address = self.files_address_bounds();
         theme::rounded_rect(canvas, address, 8, theme::SURFACE_RAISED);
         Self::control_border(
             canvas,
@@ -6285,14 +6593,36 @@ impl Shell {
                 height,
                 theme::MUTED,
             );
+            if let Some(error) = self.files_directory.error() {
+                draw_limited(
+                    canvas,
+                    x + 12,
+                    y + height - 26,
+                    error.message(),
+                    columns,
+                    0xa53b34,
+                );
+            } else if !self.file_status.as_str().is_empty() {
+                draw_limited(
+                    canvas,
+                    x + 12,
+                    y + height - 26,
+                    self.file_status.as_str(),
+                    columns,
+                    theme::MUTED,
+                );
+            }
+            if self.files_directory.dialog_active() {
+                self.render_files_directory_dialog(canvas);
+            }
             return;
         };
         let visible_rows =
-            ((height - 166).max(0) / 27).min(files_directory::CAPACITY as i32) as usize;
+            ((height - 198).max(0) / 27).min(files_directory::CAPACITY as i32) as usize;
         if listing.entries.iter().all(Option::is_none) {
             let empty = Bounds {
                 x: x + 8,
-                y: y + 138,
+                y: y + 170,
                 width: (width - 16).max(0),
                 height: 76,
             };
@@ -6321,7 +6651,7 @@ impl Shell {
             .take(visible_rows)
             .enumerate()
         {
-            let top = y + 136 + row as i32 * 27;
+            let top = y + 168 + row as i32 * 27;
             let row_bounds = Bounds {
                 x: x + 8,
                 y: top,
@@ -6423,7 +6753,7 @@ impl Shell {
                 canvas,
                 x + 12,
                 y + height - 26,
-                "Enter open / Backspace up / g address / n folder / f file / m move / r rename / c copy / t trash",
+                "Enter open / [ ] tabs / + new / x close / g path",
                 columns,
                 theme::MUTED,
             );
@@ -6550,7 +6880,7 @@ impl Shell {
             self.render_trash_page(canvas);
             return;
         }
-        if self.files_directory.listing().is_some() {
+        if self.files_directory.listing().is_some() || self.files_directory_mode {
             self.render_files_directory(canvas, x, y, _width, height, columns);
             return;
         }
@@ -8279,16 +8609,16 @@ mod tests {
             ("/native/readme", files_directory::Kind::File, 0),
         ]);
         let b = shell.desktop().window(App::Files).bounds;
-        shell.on_pointer(Pointer::Down(b.x + 50, b.y + 102));
+        shell.on_pointer(Pointer::Down(b.x + 50, b.y + 145));
         shell.on_key(Key::Character('/'));
         assert!(shell.files_directory_address_editing);
         shell.on_key(Key::Escape);
-        shell.on_pointer(Pointer::Down(b.x + 52, b.y + 136 + 8));
+        shell.on_pointer(Pointer::Down(b.x + 52, b.y + 168 + 8));
         assert_eq!(
             shell.files_directory().selected().unwrap().path.as_str(),
             "/native/docs"
         );
-        shell.on_pointer(Pointer::Down(b.x + 52, b.y + 136 + 8));
+        shell.on_pointer(Pointer::Down(b.x + 52, b.y + 168 + 8));
         assert!(matches!(
             shell.take_files_directory_action(),
             Some(files_directory::Action {
@@ -8296,6 +8626,114 @@ mod tests {
                 ..
             }) if path.as_str() == "/native/docs"
         ));
+    }
+    #[test]
+    fn files_tabs_are_reachable_by_keyboard_pointer_and_keep_each_directory_context() {
+        let mut shell = loaded_directory_shell(&[
+            ("/native/docs", files_directory::Kind::Directory, 7),
+            ("/native/readme", files_directory::Kind::File, 0),
+        ]);
+        shell.on_key(Key::Down);
+        assert_eq!(
+            shell.files_directory().selected().unwrap().path.as_str(),
+            "/native/readme"
+        );
+
+        let add = shell.files_tab_add_bounds();
+        shell.on_pointer(Pointer::Down(add.x + 4, add.y + 4));
+        assert_eq!(shell.files_directory.tab_count(), 2);
+        let load = shell.take_files_directory_action().unwrap();
+        assert!(
+            matches!(load.intent, files_directory::Intent::Navigate { path } if path.as_str() == "/native")
+        );
+        shell
+            .files_directory_action_result(
+                load.request,
+                Ok(directory_listing(
+                    "/native",
+                    0,
+                    1,
+                    &[
+                        ("/native/docs", files_directory::Kind::Directory, 7),
+                        ("/native/readme", files_directory::Kind::File, 0),
+                    ],
+                )),
+            )
+            .unwrap();
+        assert_eq!(shell.files_directory.active_index(), 1);
+        assert_eq!(
+            shell.files_directory().selected().unwrap().path.as_str(),
+            "/native/docs"
+        );
+
+        // Keyboard cycling returns to tab zero without losing its selection.
+        shell.on_key(Key::Character('['));
+        assert_eq!(shell.files_directory.active_index(), 0);
+        assert_eq!(
+            shell.files_directory().selected().unwrap().path.as_str(),
+            "/native/readme"
+        );
+        // A keyboard address edit on tab one updates only that tab's context.
+        shell.on_key(Key::Character(']'));
+        shell.on_key(Key::Character('g'));
+        for ch in "/native/docs".chars() {
+            shell.on_key(Key::Character(ch));
+        }
+        shell.on_key(Key::Enter);
+        let navigate = shell.take_files_directory_action().unwrap();
+        assert!(
+            matches!(navigate.intent, files_directory::Intent::Navigate { path } if path.as_str() == "/native/docs")
+        );
+        shell
+            .files_directory_action_result(
+                navigate.request,
+                Ok(directory_listing(
+                    "/native/docs",
+                    7,
+                    1,
+                    &[("/native/docs/guide", files_directory::Kind::File, 0)],
+                )),
+            )
+            .unwrap();
+        shell.on_key(Key::Character('['));
+        assert_eq!(shell.files_directory.current_path(), Some("/native"));
+        assert_eq!(
+            shell.files_directory().selected().unwrap().path.as_str(),
+            "/native/readme"
+        );
+        shell.on_key(Key::Character(']'));
+        assert_eq!(shell.files_directory.current_path(), Some("/native/docs"));
+        assert_eq!(
+            shell.files_directory().selected().unwrap().path.as_str(),
+            "/native/docs/guide"
+        );
+
+        let close = shell.files_tab_close_bounds();
+        shell.on_pointer(Pointer::Down(close.x + 4, close.y + 4));
+        assert_eq!(shell.files_directory.tab_count(), 1);
+        assert_eq!(shell.files_directory.active_index(), 0);
+        assert_eq!(shell.files_directory.current_path(), Some("/native"));
+    }
+    #[test]
+    fn files_text_fields_use_ibeam_and_controls_keep_arrow_cursor() {
+        let mut shell =
+            loaded_directory_shell(&[("/native/docs", files_directory::Kind::Directory, 7)]);
+        let address = shell.files_address_bounds();
+        assert_eq!(
+            shell.cursor_shape_at(address.x + 20, address.y + 8),
+            cursor::Shape::IBeam
+        );
+        let toolbar = shell.file_action_button_bounds(0).unwrap();
+        assert_eq!(
+            shell.cursor_shape_at(toolbar.x + 4, toolbar.y + 4),
+            cursor::Shape::Arrow
+        );
+        shell.show_file_query();
+        let search = shell.file_query_control_bounds(0).unwrap();
+        assert_eq!(
+            shell.cursor_shape_at(search.x + 10, search.y + 10),
+            cursor::Shape::IBeam
+        );
     }
     fn authoritative_files() -> Shell {
         let mut shell = Shell::new();
@@ -8604,6 +9042,99 @@ mod tests {
         assert_eq!(
             pixels[focused.y as usize * 1280 + focused.x as usize],
             shell.focus_ring_color()
+        );
+    }
+    #[test]
+    fn settings_pointer_save_survives_files_tab_focus_context() {
+        fn click(shell: &mut Shell, x: i32, y: i32) {
+            // Match the guest's PS/2 path: hover, left-button down, then up.
+            shell.on_pointer_packet(x, y, 0);
+            shell.on_pointer_packet(x, y, 1);
+            shell.on_pointer_packet(x, y, 0);
+        }
+
+        let mut shell = loaded_directory_shell(&[
+            ("/native/docs", files_directory::Kind::Directory, 7),
+            ("/native/readme", files_directory::Kind::File, 0),
+        ]);
+        shell.set_viewport(1280, 800);
+        shell
+            .load_appearance(appearance::Loaded {
+                preferences: appearance::Preferences::defaults(),
+                origin: appearance::Origin::Persisted,
+            })
+            .unwrap();
+
+        // Mirror the Files feature-wave flow: create the second tab, let its
+        // guest request complete, then switch between the retained tab scopes.
+        let add_tab = shell.files_tab_add_bounds();
+        click(
+            &mut shell,
+            add_tab.x + add_tab.width / 2,
+            add_tab.y + add_tab.height / 2,
+        );
+        let second_tab_load = shell.take_files_directory_action().unwrap();
+        shell
+            .files_directory_action_result(
+                second_tab_load.request,
+                Ok(directory_listing(
+                    "/native",
+                    0,
+                    1,
+                    &[
+                        ("/native/docs", files_directory::Kind::Directory, 7),
+                        ("/native/readme", files_directory::Kind::File, 0),
+                    ],
+                )),
+            )
+            .unwrap();
+        assert_eq!(shell.files_directory.active_index(), 1);
+        for index in [0, 1] {
+            let tab = shell.files_tab_bounds(index).unwrap();
+            click(&mut shell, tab.x + tab.width / 2, tab.y + tab.height / 2);
+            assert_eq!(shell.files_directory.active_index(), index);
+        }
+
+        // An unrelated stale keyboard modal must not make visible Settings
+        // buttons eat pointer clicks. Real pointer modals are intercepted by
+        // their own Shell state before Settings receives the event.
+        shell.file_focus.push_modal(99).unwrap();
+
+        // Mirror the guest gallery's launcher state transitions: F10 opens
+        // Home, Escape dismisses it, then F10 reopens it for keyboard launch.
+        shell.on_key(Key::Menu); // F10 / Super
+        assert!(shell.launcher_open());
+        shell.on_key(Key::Escape);
+        assert!(!shell.launcher_open());
+        assert_eq!(shell.desktop().focused(), Some(App::Files));
+        shell.on_key(Key::Menu);
+        assert!(shell.launcher_open());
+        // Home's action order is Terminal, Files, Monitor, Settings.
+        for _ in 0..3 {
+            shell.on_key(Key::Tab);
+        }
+        shell.on_key(Key::Enter);
+        assert!(!shell.launcher_open());
+        assert_eq!(shell.desktop().focused(), Some(App::Settings));
+        // These are the fixed QMP coordinates used by the signed-image gallery
+        // smoke at 1280x800: Accessibility, Strong outline, then Save.
+        click(&mut shell, 242, 530);
+        assert_eq!(
+            shell.settings_category(),
+            settings_catalog::Category::Accessibility
+        );
+        click(&mut shell, 584, 331);
+        assert_eq!(
+            shell.appearance_state().draft().focus_indicator,
+            appearance::FocusIndicator::Strong
+        );
+        click(&mut shell, 422, 475);
+        let request = shell
+            .take_appearance_request()
+            .expect("gallery Save click must emit a persistence request");
+        assert_eq!(
+            request.preferences.focus_indicator,
+            appearance::FocusIndicator::Strong
         );
     }
     #[test]

@@ -3,3 +3,10 @@ Digitized data copyright (c) 2010-2011, Google Corporation.
 Licensed under Apache License 2.0; see OpenSans-LICENSE.txt.
 Source: https://www.opensans.com/ ; system Debian fonts-open-sans.
 Rasterized using Pillow/FreeType; glyph coverage and advances transformed into fixed byte arrays for Prism.
+
+The Selawik Regular atlas is derived from the checked-in Selawik source under
+the SIL Open Font License 1.1; see Selawik-OFL.txt. It covers printable ASCII,
+printable Latin-1, and the documented punctuation additions at 14/16/20 px.
+The guest codepoint map is a project-authored little-endian table; missing
+Selawik glyphs use the explicit aliases and visible fallback recorded in
+docs/third-party/selawik-font-provenance.json.

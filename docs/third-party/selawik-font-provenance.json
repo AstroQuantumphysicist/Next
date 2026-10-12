@@ -1,5 +1,5 @@
 {
-  "scope": "Current development Prism typography asset set. The raster atlas is designed for future Prism integration; this record alone is not evidence of a rebuilt image or guest-visible typography.",
+  "scope": "Prism source integrates this Selawik raster atlas. Guest captures remain tied to their documented image hashes; this atlas revision requires a rebuilt image for visual confirmation.",
   "identity": {
     "family": "Selawik",
     "style": "Regular",
@@ -36,8 +36,8 @@
     "requirements": "docs/third-party/selawik-build-requirements.txt",
     "generator": {
       "path": "tools/prism_selawik_assets.py",
-      "sha256": "908d35c4f990293fd8214b42b01bfe309d662340c7bec7194196893fbe80999a",
-      "bytes": 4884
+      "sha256": "96ea7edd6b65180eef24ca1c271099f475d2ba795cf2c30f05d0e1cc04d70769",
+      "bytes": 7801
     },
     "normalization": "OpenType head.created and head.modified are normalized to the Mac epoch; SOURCE_DATE_EPOCH=0.",
     "outputs": [
@@ -60,40 +60,45 @@
       {
         "path": "crates/prism/assets/selawik-regular-atlas.bin",
         "name": "Prism Selawik Regular alpha raster atlas",
-        "version": "14-16-20px-ascii",
-        "bytes": 218880,
-        "sha256": "99ef630e7dd19fd91d798371fe250d818caa9877af8bd82ca68452a6bafb3abe",
+        "version": "14-16-20px-latin1-plus-punctuation",
+        "bytes": 493056,
+        "sha256": "d1bad8bdfcd06457ce4ae0397bbb84a41c3aeb1a9dfd598a9231b655b68ae0e6",
         "license": "SIL-OFL-1.1"
       },
       {
         "path": "crates/prism/assets/selawik-regular-advance.bin",
         "name": "Prism Selawik Regular advance metrics",
-        "version": "14-16-20px-ascii",
-        "bytes": 285,
-        "sha256": "dab46444c1abd6958c782a0103b09039e0a6a4867ddf67d2b2f501c5ec7945fa",
+        "version": "14-16-20px-latin1-plus-punctuation",
+        "bytes": 642,
+        "sha256": "e6a2f5c795cfa8f1b4c6b071c47e4eb5b2805497d513afd6ffface25b2df9f0d",
         "license": "SIL-OFL-1.1"
       },
       {
         "path": "crates/prism/assets/selawik-regular-x-offset.bin",
         "name": "Prism Selawik Regular signed x bearings",
-        "version": "14-16-20px-ascii",
-        "bytes": 285,
-        "sha256": "a1583d42a37d7017cbf28b3a006e21f97094131272ba409b936581496f0770ca",
+        "version": "14-16-20px-latin1-plus-punctuation",
+        "bytes": 642,
+        "sha256": "adaf6fee985a9ca33a33f5c858eaa17ae8f671b5a477a24f8e83423f6b6bf6ac",
         "license": "SIL-OFL-1.1"
+      },
+      {
+        "path": "crates/prism/assets/selawik-regular-codepoints-le.bin",
+        "name": "Prism Selawik extra Unicode codepoint map (little-endian u16)",
+        "version": "latin1-plus-punctuation",
+        "bytes": 238,
+        "sha256": "bc850e0eefb1d5093873b609ad3f270b3b889f282462854db50a8350576d26e5",
+        "license": "Apache-2.0 (project-authored codepoint metadata)"
       }
     ],
-    "replay_verified": "Two isolated builds produced byte-identical built TTF and all raster tables.",
-    "dependency_lock_enforced": true
+    "replay_verified": "Two isolated atlas-only replays from the pinned built TTF produced byte-identical atlas, advance, x-offset, and codepoint-map tables.",
+    "dependency_lock_enforced": true,
+    "atlas_only_command": "python tools/prism_selawik_assets.py --atlas-only"
   },
   "rasterization": {
     "pixel_sizes": [
       14,
       16,
       20
-    ],
-    "glyph_codes_inclusive": [
-      32,
-      126
     ],
     "cell_pixels": [
       24,
@@ -103,9 +108,53 @@
     "draw_origin_y": -1,
     "negative_bearing_policy": "Glyph bitmap is shifted right within its cell to preserve negative side bearings; signed i8 x-offset table restores the original pen-relative position.",
     "advance_quantization": "Python round(font.getlength(character))",
-    "atlas_bytes": 218880,
-    "advance_bytes": 285,
-    "x_offset_bytes": 285,
-    "replay": "Running the pinned generator twice produced byte-identical TTF, atlas, advance, and x-offset outputs."
+    "atlas_bytes": 493056,
+    "advance_bytes": 642,
+    "x_offset_bytes": 642,
+    "replay": "Two atlas-only scratch runs matched all checked-in atlas, advance, x-offset, and codepoint-map tables byte-for-byte.",
+    "ascii_codepoints_inclusive": [
+      32,
+      126
+    ],
+    "extra_latin1_codepoints_inclusive": [
+      160,
+      255
+    ],
+    "additional_punctuation_codepoints": [
+      8208,
+      8209,
+      8210,
+      8211,
+      8212,
+      8213,
+      8216,
+      8217,
+      8218,
+      8219,
+      8220,
+      8221,
+      8222,
+      8223,
+      8224,
+      8225,
+      8226,
+      8230,
+      8240,
+      8249,
+      8250,
+      8364,
+      8482
+    ],
+    "glyph_count_per_size": 214,
+    "codepoint_map_format": "119 sorted extra codepoints, unsigned 16-bit little-endian; ASCII indices remain implicit.",
+    "codepoint_map_bytes": 238,
+    "alias_and_fallback_policy": {
+      "U+00A0": "ordinary space raster/advance",
+      "U+2010,U+2011,U+2012,U+2015": "ASCII hyphen-minus raster/advance",
+      "U+201B": "ASCII apostrophe raster/advance",
+      "U+201F": "ASCII quotation-mark raster/advance",
+      "U+00AA,U+00BA": "visible question-mark raster/advance; absent in pinned Selawik",
+      "outside_map": "visible question-mark raster/advance"
+    }
   }
 }

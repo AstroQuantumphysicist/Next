@@ -25,14 +25,43 @@ impl Font {
         }
     }
 }
-static ATLAS: &[u8; 218880] = include_bytes!("../assets/selawik-regular-atlas.bin");
-static ADVANCE: &[u8; 285] = include_bytes!("../assets/selawik-regular-advance.bin");
-static X_OFFSET: &[u8; 285] = include_bytes!("../assets/selawik-regular-x-offset.bin");
+const ASCII_GLYPH_COUNT: usize = 95;
+const EXTRA_GLYPH_COUNT: usize = 119;
+const GLYPHS_PER_SIZE: usize = ASCII_GLYPH_COUNT + EXTRA_GLYPH_COUNT;
+static ATLAS: &[u8; 493056] = include_bytes!("../assets/selawik-regular-atlas.bin");
+static ADVANCE: &[u8; 642] = include_bytes!("../assets/selawik-regular-advance.bin");
+static X_OFFSET: &[u8; 642] = include_bytes!("../assets/selawik-regular-x-offset.bin");
+static EXTRA_CODEPOINTS_LE: &[u8; EXTRA_GLYPH_COUNT * 2] =
+    include_bytes!("../assets/selawik-regular-codepoints-le.bin");
 fn glyph_index(c: char) -> usize {
     if (' '..='~').contains(&c) {
         c as usize - 32
     } else {
-        b'?' as usize - 32
+        let codepoint = c as u32;
+        let mut low = 0;
+        let mut high = EXTRA_GLYPH_COUNT;
+        while low < high {
+            let middle = low + (high - low) / 2;
+            let offset = middle * 2;
+            let candidate =
+                u16::from_le_bytes([EXTRA_CODEPOINTS_LE[offset], EXTRA_CODEPOINTS_LE[offset + 1]])
+                    as u32;
+            if candidate < codepoint {
+                low = middle + 1;
+            } else {
+                high = middle;
+            }
+        }
+        let offset = low * 2;
+        if low < EXTRA_GLYPH_COUNT
+            && u16::from_le_bytes([EXTRA_CODEPOINTS_LE[offset], EXTRA_CODEPOINTS_LE[offset + 1]])
+                as u32
+                == codepoint
+        {
+            ASCII_GLYPH_COUNT + low
+        } else {
+            b'?' as usize - 32
+        }
     }
 }
 pub fn text_width(s: &str, font: Font) -> i32 {
@@ -40,7 +69,7 @@ pub fn text_width(s: &str, font: Font) -> i32 {
 }
 pub fn text_width_scaled(s: &str, font: Font, scale: crate::appearance::TextScale) -> i32 {
     s.chars().fold(0i32, |sum, c| {
-        let advance = ADVANCE[font.index() * 95 + glyph_index(c)] as i32;
+        let advance = ADVANCE[font.index() * GLYPHS_PER_SIZE + glyph_index(c)] as i32;
         let advance = if scale == crate::appearance::TextScale::Percent125 {
             advance.saturating_mul(5).saturating_add(3) / 4
         } else {
@@ -54,7 +83,7 @@ pub fn text(canvas: &mut Canvas<'_>, x: i32, y: i32, s: &str, color: u32, font: 
     let scaled = canvas.text_scale() == crate::appearance::TextScale::Percent125;
     let mut pen = x;
     for c in s.chars() {
-        let index = font.index() * 95 + glyph_index(c);
+        let index = font.index() * GLYPHS_PER_SIZE + glyph_index(c);
         if pen >= canvas.width() as i32 {
             break;
         }
@@ -508,6 +537,98 @@ mod tests {
         assert!(large_bounds.2 > regular_bounds.2);
         assert!(large_bounds.3 > regular_bounds.3);
     }
+
+    #[test]
+    fn selawik_renders_latin_accents_and_typographic_punctuation() {
+        let latin = [
+            'à', 'é', 'É', 'ñ', 'Ñ', 'ç', 'ß', 'ø', 'Å', 'æ', 'Æ', 'þ', 'ð', '€', '—', '“', '”',
+            '…',
+        ];
+        for character in latin {
+            assert_ne!(
+                glyph_index(character),
+                glyph_index('?'),
+                "U+{:04X}",
+                character as u32
+            );
+        }
+        fn same_raster_metrics(left: char, right: char) -> bool {
+            let base = Font::Body.index() * GLYPHS_PER_SIZE;
+            let left = base + glyph_index(left);
+            let right = base + glyph_index(right);
+            ADVANCE[left] == ADVANCE[right]
+                && X_OFFSET[left] == X_OFFSET[right]
+                && ATLAS[left * 768..(left + 1) * 768] == ATLAS[right * 768..(right + 1) * 768]
+        }
+        assert!(same_raster_metrics('\u{00a0}', ' '));
+        assert!(same_raster_metrics('\u{2011}', '-'));
+        assert!(same_raster_metrics('\u{201f}', '"'));
+
+        assert!(same_raster_metrics('\u{00aa}', '?'));
+        assert!(same_raster_metrics('\u{00ba}', '?'));
+        let unsupported = [('字', "字"), ('🙂', "🙂")];
+        for (character, sample) in unsupported {
+            assert_eq!(glyph_index(character), glyph_index('?'));
+            assert_eq!(
+                text_width(sample, Font::Body),
+                text_width("?", Font::Body),
+                "unsupported U+{:04X} keeps a safe fallback advance",
+                character as u32
+            );
+        }
+    }
+
+    #[test]
+    fn accented_glyph_is_rasterized_and_unsupported_text_uses_visible_question_mark() {
+        fn render(sample: &str) -> std::vec::Vec<u32> {
+            let mut pixels = std::vec![SURFACE; 64 * 40];
+            let mut canvas = Canvas::new(&mut pixels, 64, 40, 64, PixelFormat::Bgr).unwrap();
+            text(&mut canvas, 2, 2, sample, TEXT, Font::Body);
+            pixels
+        }
+
+        let accented = render("é");
+        let question = render("?");
+        let unsupported = render("字");
+        assert_ne!(
+            accented, question,
+            "accented input gets its own Selawik glyph"
+        );
+        assert_eq!(
+            unsupported, question,
+            "unsupported codepoints visibly use '?' raster"
+        );
+        assert_ne!(
+            &ATLAS[(GLYPHS_PER_SIZE + glyph_index('é')) * 768
+                ..(GLYPHS_PER_SIZE + glyph_index('é') + 1) * 768],
+            &ATLAS[(GLYPHS_PER_SIZE + glyph_index('?')) * 768
+                ..(GLYPHS_PER_SIZE + glyph_index('?') + 1) * 768]
+        );
+    }
+
+    #[test]
+    fn generated_unicode_codepoint_table_is_strictly_sorted_and_bounded() {
+        let mut previous = 0;
+        for index in 0..EXTRA_GLYPH_COUNT {
+            let offset = index * 2;
+            let codepoint =
+                u16::from_le_bytes([EXTRA_CODEPOINTS_LE[offset], EXTRA_CODEPOINTS_LE[offset + 1]]);
+            assert!(codepoint >= 0x00a0);
+            assert!(codepoint as u32 <= 0x2122);
+            if index != 0 {
+                assert!(
+                    previous < codepoint,
+                    "codepoint table must be strictly ordered"
+                );
+            }
+            previous = codepoint;
+            assert_eq!(
+                glyph_index(char::from_u32(codepoint as u32).unwrap()),
+                ASCII_GLYPH_COUNT + index
+            );
+        }
+    }
+
     fn raster_bounds(
         pixels: &[u32],
         width: usize,

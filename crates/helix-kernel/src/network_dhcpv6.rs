@@ -1,10 +1,9 @@
 //! Bounded DHCPv6 message parsing and client lease-state primitives.
 //!
-//! This module is compiled with the kernel and exercised by the host network
-//! harness, but it is not wired into the guest network service. It does not
-//! send DHCPv6 messages, assign addresses, perform DAD, or install routes. The
-//! caller must validate the surrounding IPv6/UDP packet and checksum before
-//! passing the DHCP payload here; DHCP parsing itself is checksum-independent.
+//! The guest uses the Solicit/Advertise/Request/Reply slice as a link-local
+//! exchange and retains only a validated address candidate. It does not assign
+//! addresses, perform DAD, or install routes. The caller validates the
+//! surrounding IPv6/UDP packet and checksum before parsing DHCP payloads.
 //! The supported client profile is unrelayed Solicit/Advertise/Request/Renew/
 //! Rebind/Reply with one IA_NA, at most four IAADDR entries, and bounded option
 //! walks. Other message types and relay encapsulation are rejected.
@@ -25,6 +24,8 @@ const ELAPSED_TIME: u16 = 8;
 const STATUS_CODE: u16 = 13;
 const RAPID_COMMIT: u16 = 14;
 const DNS_SERVERS: u16 = 23;
+const INITIAL_RETRY_NS: u64 = NANOSECONDS_PER_SECOND;
+const MAX_RETRANSMISSIONS: u8 = 3;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Error {
@@ -45,6 +46,7 @@ pub enum Error {
     SelectionMismatch,
     RejectedStatus,
     NoLeaseAddress,
+    OutputTooSmall,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -155,7 +157,6 @@ pub fn parse_message(bytes: &[u8]) -> Result<Message<'_>, Error> {
     let mut seen_option_request = false;
     let mut seen_preference = false;
     let mut seen_elapsed = false;
-    let mut seen_rapid_commit = false;
     let mut seen_dns = false;
     let mut options = Options::new(&bytes[4..]);
     while let Some((code, value)) = options.next()? {
@@ -213,15 +214,11 @@ pub fn parse_message(bytes: &[u8]) -> Result<Message<'_>, Error> {
                 }
                 status_code = Some(parse_status(value)?);
             }
-            RAPID_COMMIT => {
-                if seen_rapid_commit {
-                    return Err(Error::DuplicateOption);
-                }
-                seen_rapid_commit = true;
-                if !value.is_empty() {
-                    return Err(Error::InvalidOption);
-                }
-            }
+            // This client does not include Rapid Commit in its Solicit, so a
+            // server cannot validly use it to bypass the Advertise/Request
+            // exchange. Reject it in every message instead of accepting an
+            // unsolicited Reply.
+            RAPID_COMMIT => return Err(Error::InvalidOption),
             DNS_SERVERS => {
                 if seen_dns {
                     return Err(Error::DuplicateOption);
@@ -262,7 +259,6 @@ pub fn parse_message(bytes: &[u8]) -> Result<Message<'_>, Error> {
                     | MessageType::Renew
                     | MessageType::Rebind
             ))
-        || (seen_rapid_commit && !matches!(message_type, MessageType::Solicit | MessageType::Reply))
         || (seen_dns && !matches!(message_type, MessageType::Advertise | MessageType::Reply))
     {
         return Err(Error::InvalidOption);
@@ -276,6 +272,87 @@ pub fn parse_message(bytes: &[u8]) -> Result<Message<'_>, Error> {
         ia_na,
         status_code,
     })
+}
+
+/// Encode the bounded client Solicit used by the guest. It asks for one IA_NA
+/// and contains no relay, rapid-commit, or unbounded options.
+pub fn encode_solicit(
+    client_id: &[u8],
+    iaid: u32,
+    transaction_id: [u8; 3],
+    elapsed_centiseconds: u16,
+    output: &mut [u8],
+) -> Result<usize, Error> {
+    validate_duid(client_id)?;
+    if output.len() < 4 {
+        return Err(Error::OutputTooSmall);
+    }
+    output[..4].copy_from_slice(&[1, transaction_id[0], transaction_id[1], transaction_id[2]]);
+    let mut offset = write_option(output, 4, CLIENT_ID, client_id)?;
+    offset = write_option(
+        output,
+        offset,
+        ELAPSED_TIME,
+        &elapsed_centiseconds.to_be_bytes(),
+    )?;
+    let mut ia = [0u8; 12];
+    ia[..4].copy_from_slice(&iaid.to_be_bytes());
+    offset = write_option(output, offset, IA_NA, &ia)?;
+    Ok(offset)
+}
+
+/// Encode a Request for exactly the selected Advertise server and addresses.
+pub fn encode_request(
+    offer: &Offer,
+    transaction_id: [u8; 3],
+    elapsed_centiseconds: u16,
+    output: &mut [u8],
+) -> Result<usize, Error> {
+    if output.len() < 4 {
+        return Err(Error::OutputTooSmall);
+    }
+    output[..4].copy_from_slice(&[3, transaction_id[0], transaction_id[1], transaction_id[2]]);
+    let mut offset = write_option(output, 4, CLIENT_ID, offer.client_id())?;
+    offset = write_option(output, offset, SERVER_ID, offer.server_id())?;
+    offset = write_option(
+        output,
+        offset,
+        ELAPSED_TIME,
+        &elapsed_centiseconds.to_be_bytes(),
+    )?;
+    let ia_len = 12usize
+        .checked_add(offer.ia.address_count() * 28)
+        .ok_or(Error::OutputTooSmall)?;
+    let mut ia = [0u8; 12 + MAX_ADDRESSES * 28];
+    ia[..4].copy_from_slice(&offer.ia.iaid.to_be_bytes());
+    // T1/T2 and IAADDR lifetimes are server-assigned values. A client Request
+    // identifies the selected address but leaves these fields unspecified.
+    let mut nested = 12;
+    for address in offer.ia.addresses.iter().flatten() {
+        ia[nested..nested + 2].copy_from_slice(&IAADDR.to_be_bytes());
+        ia[nested + 2..nested + 4].copy_from_slice(&24u16.to_be_bytes());
+        ia[nested + 4..nested + 20].copy_from_slice(&address.address);
+        ia[nested + 20..nested + 28].fill(0);
+        nested += 28;
+    }
+    debug_assert_eq!(nested, ia_len);
+    offset = write_option(output, offset, IA_NA, &ia[..ia_len])?;
+    Ok(offset)
+}
+
+fn write_option(output: &mut [u8], offset: usize, code: u16, value: &[u8]) -> Result<usize, Error> {
+    let length = u16::try_from(value.len()).map_err(|_| Error::OutputTooSmall)?;
+    let end = offset
+        .checked_add(4)
+        .and_then(|header_end| header_end.checked_add(value.len()))
+        .ok_or(Error::OutputTooSmall)?;
+    if end > output.len() {
+        return Err(Error::OutputTooSmall);
+    }
+    output[offset..offset + 2].copy_from_slice(&code.to_be_bytes());
+    output[offset + 2..offset + 4].copy_from_slice(&length.to_be_bytes());
+    output[offset + 4..end].copy_from_slice(value);
+    Ok(end)
 }
 
 fn parse_ia_na(value: &[u8]) -> Result<IaNa, Error> {
@@ -678,6 +755,42 @@ impl Lease {
     }
 }
 
+/// Bounded exponential retransmission schedule for a single Solicit or
+/// Request transaction. It yields three retries after 1, 2, and 4 seconds;
+/// after the final retry the caller may wait one last 8-second interval.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Retransmission {
+    next_at_ns: u64,
+    retries: u8,
+}
+
+impl Retransmission {
+    pub fn new(started_at_ns: u64) -> Self {
+        Self {
+            next_at_ns: started_at_ns.saturating_add(INITIAL_RETRY_NS),
+            retries: 0,
+        }
+    }
+
+    pub fn retry_due(&mut self, now_ns: u64) -> bool {
+        if self.retries == MAX_RETRANSMISSIONS || now_ns < self.next_at_ns {
+            return false;
+        }
+        self.retries += 1;
+        let interval = INITIAL_RETRY_NS.saturating_mul(1u64 << self.retries);
+        self.next_at_ns = now_ns.saturating_add(interval);
+        true
+    }
+
+    pub fn exhausted(&self, now_ns: u64) -> bool {
+        self.retries == MAX_RETRANSMISSIONS && now_ns >= self.next_at_ns
+    }
+
+    pub fn retries(&self) -> u8 {
+        self.retries
+    }
+}
+
 /// Current bounded DHCPv6 exchange phase. This state machine validates the
 /// exchange and timers; sending packets and installing addresses remain caller
 /// responsibilities.
@@ -782,6 +895,10 @@ impl Client {
 
     pub fn selected_server_id(&self) -> Option<&[u8]> {
         (self.server_id_len != 0).then_some(&self.server_id[..self.server_id_len as usize])
+    }
+
+    pub fn selected_offer(&self) -> Option<Offer> {
+        self.offer
     }
 
     /// Begin a fresh Solicit exchange. The caller supplies a non-reused
@@ -1319,6 +1436,45 @@ mod tests {
     }
 
     #[test]
+    fn rejects_rapid_commit_in_every_phase_and_preserves_normal_reply_flow() {
+        for (kind, with_server) in [
+            (1, false),
+            (2, true),
+            (3, true),
+            (5, true),
+            (6, false),
+            (7, true),
+        ] {
+            let mut options = Vec::new();
+            duid_options(&mut options, with_server);
+            option(&mut options, RAPID_COMMIT, &[]);
+            assert_eq!(
+                parse_message(&message(kind, [1, 2, 3], &options)),
+                Err(Error::InvalidOption),
+                "Rapid Commit must be rejected for message type {kind}"
+            );
+        }
+
+        let mut client = Client::new(&CLIENT_DUID, 0x1122_3344).unwrap();
+        client.begin_solicit([1, 2, 3]).unwrap();
+        client
+            .accept_advertise(&advertise([1, 2, 3]), [4, 5, 6])
+            .unwrap();
+
+        let mut unsolicited_reply = reply([4, 5, 6]);
+        option(&mut unsolicited_reply, RAPID_COMMIT, &[]);
+        assert_eq!(
+            client.accept_reply(&unsolicited_reply, 1),
+            Err(Error::InvalidOption)
+        );
+
+        assert_eq!(
+            client.accept_reply(&reply([4, 5, 6]), 1).unwrap().kind,
+            ClientEventKind::Bound
+        );
+    }
+
+    #[test]
     fn rejects_duplicate_or_malformed_ia_addresses() {
         let mut duplicate_ia = ia_na(5, ADDRESS, 10, 20);
         let one_iaaddr = duplicate_ia.clone();
@@ -1609,6 +1765,91 @@ mod tests {
             other_request.accept_reply(&offer, &reply([4, 5, 6]), 0),
             Err(Error::SelectionMismatch)
         );
+    }
+
+    #[test]
+    fn guest_solicit_and_request_encoders_bind_the_selected_duids_and_iaid() {
+        let iaid = 0x1122_3344;
+        let mut client = Client::new(&CLIENT_DUID, iaid).unwrap();
+        client.begin_solicit([0x11, 0x22, 0x33]).unwrap();
+        let mut packet = [0u8; 128];
+        let length =
+            encode_solicit(&CLIENT_DUID, iaid, [0x11, 0x22, 0x33], 1234, &mut packet).unwrap();
+        let solicit = parse_message(&packet[..length]).unwrap();
+        assert_eq!(solicit.message_type, MessageType::Solicit);
+        assert_eq!(solicit.client_id(), Some(CLIENT_DUID.as_slice()));
+        assert_eq!(solicit.server_id(), None);
+        assert_eq!(solicit.ia_na.unwrap().iaid, iaid);
+        assert_eq!(solicit.ia_na.unwrap().address_count(), 0);
+        assert_eq!(&packet[22..24], &1234u16.to_be_bytes());
+
+        let advertisement = advertise([0x11, 0x22, 0x33]);
+        let event = client
+            .accept_advertise(&advertisement, [0x44, 0x55, 0x66])
+            .unwrap();
+        assert_eq!(event.kind, ClientEventKind::Request);
+        let offer = client.selected_offer().unwrap();
+        let request_len = encode_request(&offer, [0x44, 0x55, 0x66], 2345, &mut packet).unwrap();
+        let request = parse_message(&packet[..request_len]).unwrap();
+        assert_eq!(request.message_type, MessageType::Request);
+        assert_eq!(request.transaction_id, [0x44, 0x55, 0x66]);
+        assert_eq!(request.client_id(), Some(CLIENT_DUID.as_slice()));
+        assert_eq!(request.server_id(), Some(SERVER_DUID.as_slice()));
+        let requested = request.ia_na.unwrap();
+        assert_eq!(requested.iaid, iaid);
+        assert_eq!(requested.t1_seconds, 0);
+        assert_eq!(requested.t2_seconds, 0);
+        assert_eq!(requested.address_count(), 1);
+        let requested_address = requested.address(0).unwrap();
+        assert_eq!(requested_address.address, ADDRESS);
+        assert_eq!(requested_address.preferred_seconds, 0);
+        assert_eq!(requested_address.valid_seconds, 0);
+        assert_eq!(&packet[36..38], &2345u16.to_be_bytes());
+
+        assert_eq!(
+            client
+                .accept_reply(&reply([0x44, 0x55, 0x66]), 100_000_000_000)
+                .unwrap()
+                .kind,
+            ClientEventKind::Bound
+        );
+        let assigned = client.lease().unwrap();
+        let assigned_address = assigned.address(0).unwrap();
+        assert_eq!(assigned.t1_seconds, 10);
+        assert_eq!(assigned.t2_seconds, 20);
+        assert_eq!(assigned_address.preferred_until_ns, 220_000_000_000);
+        assert_eq!(assigned_address.valid_until_ns, 1_000_000_000_000);
+
+        let mut malformed_duid = CLIENT_DUID;
+        malformed_duid[2..4].fill(0);
+        assert_eq!(
+            encode_solicit(&malformed_duid, iaid, [1, 2, 3], 0, &mut packet),
+            Err(Error::InvalidDuid)
+        );
+        assert_eq!(
+            encode_solicit(&CLIENT_DUID, iaid, [1, 2, 3], 0, &mut [0; 3]),
+            Err(Error::OutputTooSmall)
+        );
+        assert_eq!(
+            encode_request(&offer, [1, 2, 3], 0, &mut [0; 8]),
+            Err(Error::OutputTooSmall)
+        );
+    }
+
+    #[test]
+    fn retransmission_uses_bounded_one_two_four_second_backoff() {
+        let mut timer = Retransmission::new(100);
+        assert!(!timer.retry_due(100 + INITIAL_RETRY_NS - 1));
+        assert!(timer.retry_due(100 + INITIAL_RETRY_NS));
+        assert_eq!(timer.retries(), 1);
+        assert!(!timer.retry_due(3 * INITIAL_RETRY_NS + 99));
+        assert!(timer.retry_due(3 * INITIAL_RETRY_NS + 100));
+        assert_eq!(timer.retries(), 2);
+        assert!(timer.retry_due(7 * INITIAL_RETRY_NS + 100));
+        assert_eq!(timer.retries(), 3);
+        assert!(!timer.retry_due(15 * INITIAL_RETRY_NS + 99));
+        assert!(!timer.exhausted(15 * INITIAL_RETRY_NS + 99));
+        assert!(timer.exhausted(15 * INITIAL_RETRY_NS + 100));
     }
 
     #[test]

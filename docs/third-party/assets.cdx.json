@@ -164,7 +164,7 @@
         },
         {
           "name": "next:scope",
-          "value": "Development Prism asset set; atlas requires kernel theme integration and a later guest visual check."
+          "value": "Prism source integrates this Selawik raster atlas; this revision needs a rebuilt image for updated guest visual confirmation."
         }
       ]
     },
@@ -198,7 +198,7 @@
         },
         {
           "name": "next:scope",
-          "value": "Development Prism asset set; atlas requires kernel theme integration and a later guest visual check."
+          "value": "Prism source integrates this Selawik raster atlas; this revision needs a rebuilt image for updated guest visual confirmation."
         }
       ]
     },
@@ -232,7 +232,7 @@
         },
         {
           "name": "next:scope",
-          "value": "Development Prism asset set; atlas requires kernel theme integration and a later guest visual check."
+          "value": "Prism source integrates this Selawik raster atlas; this revision needs a rebuilt image for updated guest visual confirmation."
         }
       ]
     },
@@ -240,11 +240,11 @@
       "type": "file",
       "bom-ref": "crates/prism/assets/selawik-regular-atlas.bin",
       "name": "Prism Selawik Regular raster atlas",
-      "version": "14-16-20px-ascii",
+      "version": "14-16-20px-latin1-plus-punctuation",
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "99ef630e7dd19fd91d798371fe250d818caa9877af8bd82ca68452a6bafb3abe"
+          "content": "d1bad8bdfcd06457ce4ae0397bbb84a41c3aeb1a9dfd598a9231b655b68ae0e6"
         }
       ],
       "licenses": [
@@ -266,7 +266,11 @@
         },
         {
           "name": "next:scope",
-          "value": "Development Prism asset set; atlas requires kernel theme integration and a later guest visual check."
+          "value": "Prism source integrates this Selawik raster atlas; this revision needs a rebuilt image for updated guest visual confirmation."
+        },
+        {
+          "name": "next:codepoint-coverage",
+          "value": "Printable ASCII, printable Latin-1, plus 23 European typography punctuation codepoints; unsupported/out-of-font glyphs use documented safe aliases/fallback."
         }
       ]
     },
@@ -274,11 +278,11 @@
       "type": "file",
       "bom-ref": "crates/prism/assets/selawik-regular-advance.bin",
       "name": "Prism Selawik Regular advance metrics",
-      "version": "14-16-20px-ascii",
+      "version": "14-16-20px-latin1-plus-punctuation",
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "dab46444c1abd6958c782a0103b09039e0a6a4867ddf67d2b2f501c5ec7945fa"
+          "content": "e6a2f5c795cfa8f1b4c6b071c47e4eb5b2805497d513afd6ffface25b2df9f0d"
         }
       ],
       "licenses": [
@@ -300,7 +304,11 @@
         },
         {
           "name": "next:scope",
-          "value": "Development Prism asset set; atlas requires kernel theme integration and a later guest visual check."
+          "value": "Prism source integrates this Selawik raster atlas; this revision needs a rebuilt image for updated guest visual confirmation."
+        },
+        {
+          "name": "next:codepoint-coverage",
+          "value": "Printable ASCII, printable Latin-1, plus 23 European typography punctuation codepoints; unsupported/out-of-font glyphs use documented safe aliases/fallback."
         }
       ]
     },
@@ -308,11 +316,11 @@
       "type": "file",
       "bom-ref": "crates/prism/assets/selawik-regular-x-offset.bin",
       "name": "Prism Selawik Regular x bearings",
-      "version": "14-16-20px-ascii",
+      "version": "14-16-20px-latin1-plus-punctuation",
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "a1583d42a37d7017cbf28b3a006e21f97094131272ba409b936581496f0770ca"
+          "content": "adaf6fee985a9ca33a33f5c858eaa17ae8f671b5a477a24f8e83423f6b6bf6ac"
         }
       ],
       "licenses": [
@@ -334,7 +342,41 @@
         },
         {
           "name": "next:scope",
-          "value": "Development Prism asset set; atlas requires kernel theme integration and a later guest visual check."
+          "value": "Prism source integrates this Selawik raster atlas; this revision needs a rebuilt image for updated guest visual confirmation."
+        },
+        {
+          "name": "next:codepoint-coverage",
+          "value": "Printable ASCII, printable Latin-1, plus 23 European typography punctuation codepoints; unsupported/out-of-font glyphs use documented safe aliases/fallback."
+        }
+      ]
+    },
+    {
+      "type": "file",
+      "bom-ref": "crates/prism/assets/selawik-regular-codepoints-le.bin",
+      "name": "Prism Selawik extra Unicode codepoint map",
+      "version": "latin1-plus-punctuation",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "bc850e0eefb1d5093873b609ad3f270b3b889f282462854db50a8350576d26e5"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "copyright": "Copyright 2026 Next project contributors.",
+      "properties": [
+        {
+          "name": "next:scope",
+          "value": "Project-authored mapping metadata for the Selawik atlas."
+        },
+        {
+          "name": "next:format",
+          "value": "119 sorted extra Unicode codepoints encoded as unsigned little-endian u16."
         }
       ]
     }
@@ -373,6 +415,12 @@
     },
     {
       "ref": "crates/prism/assets/selawik-regular-x-offset.bin",
+      "dependsOn": [
+        "crates/prism/assets/source/Selawik-Regular.ttf"
+      ]
+    },
+    {
+      "ref": "crates/prism/assets/selawik-regular-codepoints-le.bin",
       "dependsOn": [
         "crates/prism/assets/source/Selawik-Regular.ttf"
       ]

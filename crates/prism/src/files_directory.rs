@@ -1,6 +1,8 @@
-//! Work-only bounded directory navigation candidate; no live Shell integration.
+//! Bounded directory navigation and multi-tab Files workspace.
 use crate::files_actions::Path;
 pub const CAPACITY: usize = 8;
+pub const TAB_CAPACITY: usize = 4;
+const REQUEST_STRIDE: u64 = 1 << 48;
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Kind {
     File,
@@ -155,6 +157,7 @@ pub struct Model {
     pending: Option<Action>,
     taken: bool,
     next: u64,
+    request_limit: u64,
     error: Option<BackendError>,
 }
 fn root() -> Path {
@@ -207,6 +210,9 @@ fn valid_listing(listing: Listing) -> bool {
 }
 impl Model {
     pub const fn new() -> Self {
+        Self::with_request_base(1)
+    }
+    const fn with_request_base(base: u64) -> Self {
         Self {
             listing: None,
             selected: None,
@@ -216,7 +222,8 @@ impl Model {
             approve: false,
             pending: None,
             taken: false,
-            next: 1,
+            next: base,
+            request_limit: base + REQUEST_STRIDE,
             error: None,
         }
     }
@@ -256,6 +263,20 @@ impl Model {
     }
     pub fn address(&self) -> &str {
         self.address.text()
+    }
+    fn requested_path(&self) -> Path {
+        self.pending
+            .and_then(|action| match action.intent {
+                Intent::Navigate { path } => Some(path),
+                _ => None,
+            })
+            .or_else(|| self.listing.map(|listing| listing.folder.path))
+            .or_else(|| {
+                Path::new(self.address.text())
+                    .ok()
+                    .filter(|path| permitted(*path))
+            })
+            .unwrap_or_else(root)
     }
     pub fn input(&self) -> &str {
         self.input.text()
@@ -335,7 +356,7 @@ impl Model {
         if self.busy() {
             return Err(Error::Busy);
         }
-        if self.next == u64::MAX {
+        if self.next >= self.request_limit {
             return Err(Error::Exhausted);
         }
         self.pending = Some(Action {
@@ -652,6 +673,137 @@ impl Model {
 impl Default for Model {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+/// Four isolated, live Files browsing contexts. Requests use disjoint ID
+/// ranges, so switching tabs never loses or misroutes a backend completion.
+pub struct Workspace {
+    tabs: [Option<Model>; TAB_CAPACITY],
+    active: usize,
+    count: usize,
+    next_base: u64,
+}
+impl Workspace {
+    pub const fn new() -> Self {
+        Self {
+            tabs: [Some(Model::with_request_base(1)), None, None, None],
+            active: 0,
+            count: 1,
+            next_base: REQUEST_STRIDE + 1,
+        }
+    }
+    fn active(&self) -> &Model {
+        self.tabs[self.active].as_ref().expect("active Files tab")
+    }
+    fn active_mut(&mut self) -> &mut Model {
+        self.tabs[self.active].as_mut().expect("active Files tab")
+    }
+    pub const fn tab_count(&self) -> usize {
+        self.count
+    }
+    pub const fn active_index(&self) -> usize {
+        self.active
+    }
+    pub fn tab(&self, index: usize) -> Option<&Model> {
+        self.tabs.get(index)?.as_ref()
+    }
+    pub fn switch_tab(&mut self, index: usize) -> bool {
+        if index >= self.count || self.active().dialog_active() {
+            return false;
+        }
+        self.active = index;
+        true
+    }
+    pub fn switch_next(&mut self, forward: bool) -> bool {
+        if self.active().dialog_active() || self.count < 2 {
+            return false;
+        }
+        self.active = if forward {
+            (self.active + 1) % self.count
+        } else {
+            (self.active + self.count - 1) % self.count
+        };
+        true
+    }
+    pub fn new_tab(&mut self) -> Result<usize, Error> {
+        if self.active().dialog_active() {
+            return Err(Error::Busy);
+        }
+        if self.count == TAB_CAPACITY {
+            return Err(Error::Exhausted);
+        }
+        if self.next_base > u64::MAX - REQUEST_STRIDE {
+            return Err(Error::Exhausted);
+        }
+        let path = self.active().requested_path();
+        let slot = self.count;
+        let base = self.next_base;
+        self.next_base += REQUEST_STRIDE;
+        let mut model = Model::with_request_base(base);
+        model.navigate(path)?;
+        self.tabs[slot] = Some(model);
+        self.count += 1;
+        self.active = slot;
+        Ok(slot)
+    }
+    /// Close only idle tabs. A pending backend operation remains attached to
+    /// its originating tab until its completion has been consumed.
+    pub fn close_active(&mut self) -> bool {
+        if self.count <= 1 || self.active().busy() || self.active().dialog_active() {
+            return false;
+        }
+        let removed = self.active;
+        for index in removed..self.count - 1 {
+            self.tabs[index] = self.tabs[index + 1].take();
+        }
+        self.count -= 1;
+        self.tabs[self.count] = None;
+        if self.active == self.count {
+            self.active -= 1;
+        }
+        true
+    }
+    /// Return the next untaken action from any tab, preserving its original
+    /// request ID and ownership for the completion callback.
+    pub fn take(&mut self) -> Option<Action> {
+        for offset in 0..self.count {
+            let index = (self.active + offset) % self.count;
+            if let Some(action) = self.tabs[index].as_mut()?.take() {
+                return Some(action);
+            }
+        }
+        None
+    }
+    pub fn complete(
+        &mut self,
+        request: u64,
+        result: Result<Listing, BackendError>,
+    ) -> Result<(), Error> {
+        let Some(model) = self.tabs[..self.count].iter_mut().flatten().find(|model| {
+            model
+                .pending
+                .is_some_and(|action| action.request == request)
+        }) else {
+            return Err(Error::StaleCompletion);
+        };
+        model.complete(request, result)
+    }
+}
+impl Default for Workspace {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+impl core::ops::Deref for Workspace {
+    type Target = Model;
+    fn deref(&self) -> &Self::Target {
+        self.active()
+    }
+}
+impl core::ops::DerefMut for Workspace {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        self.active_mut()
     }
 }
 #[cfg(test)]
@@ -1037,6 +1189,84 @@ mod tests {
         assert_eq!(m.confirm(), Err(Error::InvalidPath));
         assert!(m.take().is_none());
         assert_eq!(m.selected(), selected);
+    }
+    #[test]
+    fn workspace_keeps_tab_selection_pending_navigation_and_error_isolated() {
+        let mut workspace = Workspace::new();
+        workspace.navigate(path("/native")).unwrap();
+        let root_load = workspace.take().unwrap();
+        workspace
+            .complete(
+                root_load.request,
+                Ok(listing(
+                    "/native",
+                    0,
+                    3,
+                    &[
+                        ("/native/docs", Kind::Directory, 2),
+                        ("/native/readme", Kind::File, 0),
+                    ],
+                )),
+            )
+            .unwrap();
+        assert!(workspace.select(1));
+        workspace.navigate(path("/native/docs")).unwrap();
+        let first_tab_request = workspace.take().unwrap();
+
+        assert_eq!(workspace.new_tab(), Ok(1));
+        let second_tab_request = workspace.take().unwrap();
+        assert_ne!(first_tab_request.request, second_tab_request.request);
+        workspace
+            .complete(second_tab_request.request, Err(BackendError::NotFound))
+            .unwrap();
+        assert_eq!(workspace.error(), Some(BackendError::NotFound));
+        assert_eq!(workspace.listing(), None);
+
+        assert!(workspace.switch_tab(0));
+        assert_eq!(workspace.current_path(), Some("/native"));
+        assert_eq!(workspace.selected().unwrap().path, path("/native/readme"));
+        assert!(workspace.busy());
+        workspace
+            .complete(
+                first_tab_request.request,
+                Ok(listing(
+                    "/native/docs",
+                    2,
+                    3,
+                    &[("/native/docs/guide", Kind::File, 0)],
+                )),
+            )
+            .unwrap();
+        assert_eq!(workspace.current_path(), Some("/native/docs"));
+
+        assert!(workspace.switch_tab(1));
+        assert_eq!(workspace.current_path(), None);
+        assert_eq!(workspace.address(), "/native/docs");
+        assert_eq!(workspace.error(), Some(BackendError::NotFound));
+    }
+    #[test]
+    fn workspace_caps_tabs_and_closes_only_idle_contexts() {
+        let mut workspace = Workspace::new();
+        for expected in 1..TAB_CAPACITY {
+            assert_eq!(workspace.new_tab(), Ok(expected));
+        }
+        assert_eq!(workspace.tab_count(), TAB_CAPACITY);
+        assert_eq!(workspace.new_tab(), Err(Error::Exhausted));
+        assert!(!workspace.close_active());
+
+        for _ in 1..TAB_CAPACITY {
+            let action = workspace.take().unwrap();
+            workspace
+                .complete(action.request, Ok(listing("/native", 0, 1, &[])))
+                .unwrap();
+        }
+        assert!(workspace.close_active());
+        assert_eq!(workspace.tab_count(), TAB_CAPACITY - 1);
+        assert_eq!(workspace.active_index(), TAB_CAPACITY - 2);
+        assert!(workspace.close_active());
+        assert!(workspace.close_active());
+        assert_eq!(workspace.tab_count(), 1);
+        assert!(!workspace.close_active());
     }
 }
 

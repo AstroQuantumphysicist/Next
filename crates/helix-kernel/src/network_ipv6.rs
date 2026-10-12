@@ -1,15 +1,20 @@
 //! Bounded IPv6 ingress validation for the legacy virtio Ethernet path.
 //!
-//! This module validates the IPv6 base header and ICMPv6 checksums. Neighbor
-//! Discovery and Router Advertisement receive bounded RFC field/option checks;
-//! one-router state tracks at most four SLAAC /64 prefix lifetimes. It does not
-//! assign addresses, run DAD, learn neighbors, or install routes.
+//! This module validates the IPv6 base header, ICMPv6 checksums, and one strict
+//! DHCPv6 UDP tuple. Neighbor Discovery and Router Advertisement receive
+//! bounded RFC field/option checks; one-router state tracks at most four SLAAC
+//! /64 prefix lifetimes. It does not assign addresses, run DAD, learn
+//! neighbors, or install routes.
 
 const ETHERNET_HEADER: usize = 14;
 const IPV6_HEADER: usize = 40;
 const ICMPV6_HEADER: usize = 4;
 const ETHERTYPE_IPV6: u16 = 0x86dd;
 const NEXT_HEADER_ICMPV6: u8 = 58;
+const NEXT_HEADER_UDP: u8 = 17;
+const DHCPV6_CLIENT_PORT: u16 = 546;
+const DHCPV6_SERVER_PORT: u16 = 547;
+const MAX_DHCPV6_MESSAGE: usize = 1232;
 const ICMPV6_NEIGHBOR_SOLICITATION: u8 = 135;
 const ICMPV6_NEIGHBOR_ADVERTISEMENT: u8 = 136;
 const ICMPV6_ROUTER_ADVERTISEMENT: u8 = 134;
@@ -24,6 +29,8 @@ pub enum ValidationError {
     InvalidPayloadLength,
     UnsupportedNextHeader,
     InvalidIcmpv6,
+    InvalidDhcpv6,
+    FrameTooLarge,
     InvalidNeighborDiscovery,
     UnsupportedRouterAdvertisement,
     UnsupportedPrefix,
@@ -260,12 +267,6 @@ pub(super) fn validate_received_frame(
     let hop_limit = packet[7];
     let payload = &packet[IPV6_HEADER..IPV6_HEADER + payload_len];
 
-    // This implementation deliberately does not walk extension headers or
-    // expose opaque TCP/UDP payloads. Unsupported chains cannot be mistaken
-    // for a validated Neighbor Discovery message.
-    if next_header != NEXT_HEADER_ICMPV6 {
-        return Err(ValidationError::UnsupportedNextHeader);
-    }
     let ethernet_destination: [u8; 6] = frame[..6].try_into().unwrap();
     if destination[0] == 0xff {
         if ethernet_destination != multicast_mac(destination) {
@@ -274,7 +275,141 @@ pub(super) fn validate_received_frame(
     } else if !unicast_mac(ethernet_destination) {
         return Err(ValidationError::InvalidEthernetDestination);
     }
+    // Extension headers and general TCP/UDP are still outside this bounded
+    // receive profile. The only accepted UDP payload is checksummed DHCPv6.
+    if next_header == NEXT_HEADER_UDP {
+        dhcpv6_payload(frame)?.ok_or(ValidationError::InvalidDhcpv6)?;
+        return Ok(None);
+    }
+    if next_header != NEXT_HEADER_ICMPV6 {
+        return Err(ValidationError::UnsupportedNextHeader);
+    }
     validate_icmpv6(source, destination, hop_limit, ethernet_source, payload)
+}
+
+/// Return a DHCPv6 message from one fully validated server-to-client Ethernet
+/// frame. Only link-local servers replying to the DHCPv6 all-servers-and-relays
+/// multicast group are accepted; extension headers and other UDP traffic fail.
+pub(super) fn dhcpv6_payload(frame: &[u8]) -> Result<Option<&[u8]>, ValidationError> {
+    if frame.len() < ETHERNET_HEADER {
+        return Err(ValidationError::Truncated);
+    }
+    if u16_at(frame, 12) != ETHERTYPE_IPV6 {
+        return Ok(None);
+    }
+    let ethernet_source: [u8; 6] = frame[6..12].try_into().unwrap();
+    let ethernet_destination: [u8; 6] = frame[..6].try_into().unwrap();
+    if !unicast_mac(ethernet_source) {
+        return Err(ValidationError::InvalidSourceMac);
+    }
+    if frame.len() < ETHERNET_HEADER + IPV6_HEADER {
+        return Err(ValidationError::Truncated);
+    }
+    let packet = &frame[ETHERNET_HEADER..];
+    if packet[0] >> 4 != 6 {
+        return Err(ValidationError::InvalidVersion);
+    }
+    let payload_len = u16_at(packet, 4) as usize;
+    if payload_len > packet.len() - IPV6_HEADER {
+        return Err(ValidationError::InvalidPayloadLength);
+    }
+    if packet[6] != NEXT_HEADER_UDP {
+        return Ok(None);
+    }
+    let source: [u8; 16] = packet[8..24].try_into().unwrap();
+    let destination: [u8; 16] = packet[24..40].try_into().unwrap();
+    let udp = &packet[IPV6_HEADER..IPV6_HEADER + payload_len];
+    if packet[7] != 1
+        || !valid_link_local_router(source)
+        || destination != dhcpv6_servers_multicast()
+        || ethernet_destination != multicast_mac(destination)
+        || udp.len() < 8
+        || u16_at(udp, 0) != DHCPV6_SERVER_PORT
+        || u16_at(udp, 2) != DHCPV6_CLIENT_PORT
+        || u16_at(udp, 4) as usize != udp.len()
+        || udp.len() - 8 > MAX_DHCPV6_MESSAGE
+        || u16_at(udp, 6) == 0
+        || !udp_checksum_valid(source, destination, udp)
+    {
+        return Err(ValidationError::InvalidDhcpv6);
+    }
+    Ok(Some(&udp[8..]))
+}
+
+/// Encode one IPv6/UDP DHCPv6 client frame. Discovery uses unspecified source
+/// and ff02::1:2 destination, so it does not imply an address is configured.
+pub(super) fn encode_dhcpv6_frame(
+    mac: [u8; 6],
+    message: &[u8],
+    output: &mut [u8],
+) -> Result<usize, ValidationError> {
+    if !unicast_mac(mac) {
+        return Err(ValidationError::InvalidSourceMac);
+    }
+    if message.len() > MAX_DHCPV6_MESSAGE {
+        return Err(ValidationError::FrameTooLarge);
+    }
+    let udp_len = 8usize
+        .checked_add(message.len())
+        .ok_or(ValidationError::FrameTooLarge)?;
+    let payload_len = u16::try_from(udp_len).map_err(|_| ValidationError::FrameTooLarge)?;
+    let frame_len = ETHERNET_HEADER
+        .checked_add(IPV6_HEADER)
+        .and_then(|length| length.checked_add(udp_len))
+        .ok_or(ValidationError::FrameTooLarge)?;
+    if output.len() < frame_len {
+        return Err(ValidationError::FrameTooLarge);
+    }
+    let destination = dhcpv6_servers_multicast();
+    output[..6].copy_from_slice(&multicast_mac(destination));
+    output[6..12].copy_from_slice(&mac);
+    output[12..14].copy_from_slice(&ETHERTYPE_IPV6.to_be_bytes());
+    let ip = &mut output[ETHERNET_HEADER..ETHERNET_HEADER + IPV6_HEADER];
+    ip.fill(0);
+    ip[0] = 0x60;
+    ip[4..6].copy_from_slice(&payload_len.to_be_bytes());
+    ip[6] = NEXT_HEADER_UDP;
+    ip[7] = 1;
+    ip[24..40].copy_from_slice(&destination);
+    let udp = &mut output[ETHERNET_HEADER + IPV6_HEADER..frame_len];
+    udp[..2].copy_from_slice(&DHCPV6_CLIENT_PORT.to_be_bytes());
+    udp[2..4].copy_from_slice(&DHCPV6_SERVER_PORT.to_be_bytes());
+    udp[4..6].copy_from_slice(&payload_len.to_be_bytes());
+    udp[6..8].fill(0);
+    udp[8..].copy_from_slice(message);
+    let checksum = udp_checksum([0; 16], destination, udp);
+    udp[6..8].copy_from_slice(&(if checksum == 0 { 0xffff } else { checksum }).to_be_bytes());
+    Ok(frame_len)
+}
+
+fn udp_checksum_valid(source: [u8; 16], destination: [u8; 16], udp: &[u8]) -> bool {
+    let mut sum = 0u64;
+    sum = add_words(sum, &source);
+    sum = add_words(sum, &destination);
+    sum = add_words(sum, &(udp.len() as u32).to_be_bytes());
+    sum += NEXT_HEADER_UDP as u64;
+    sum = add_words(sum, udp);
+    while sum >> 16 != 0 {
+        sum = (sum & 0xffff) + (sum >> 16);
+    }
+    sum as u16 == 0xffff
+}
+
+fn udp_checksum(source: [u8; 16], destination: [u8; 16], udp: &[u8]) -> u16 {
+    let mut sum = 0u64;
+    sum = add_words(sum, &source);
+    sum = add_words(sum, &destination);
+    sum = add_words(sum, &(udp.len() as u32).to_be_bytes());
+    sum += NEXT_HEADER_UDP as u64;
+    sum = add_words(sum, udp);
+    while sum >> 16 != 0 {
+        sum = (sum & 0xffff) + (sum >> 16);
+    }
+    !(sum as u16)
+}
+
+fn dhcpv6_servers_multicast() -> [u8; 16] {
+    [0xff, 0x02, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 2]
 }
 
 fn validate_icmpv6(
@@ -1409,5 +1544,122 @@ mod tests {
         packet[21] = 255;
         set_icmpv6_checksum(&mut packet);
         packet
+    }
+
+    fn dhcpv6_server_frame(payload: &[u8]) -> Vec<u8> {
+        let destination = dhcpv6_servers_multicast();
+        let mut udp = vec![0; 8 + payload.len()];
+        let udp_len = udp.len() as u16;
+        udp[..2].copy_from_slice(&DHCPV6_SERVER_PORT.to_be_bytes());
+        udp[2..4].copy_from_slice(&DHCPV6_CLIENT_PORT.to_be_bytes());
+        udp[4..6].copy_from_slice(&udp_len.to_be_bytes());
+        udp[8..].copy_from_slice(payload);
+        let checksum = udp_checksum(SOURCE_IP, destination, &udp);
+        udp[6..8].copy_from_slice(&(if checksum == 0 { 0xffff } else { checksum }).to_be_bytes());
+        let mut packet = frame(NEXT_HEADER_UDP, SOURCE_IP, destination, &udp);
+        packet[21] = 1;
+        packet
+    }
+
+    #[test]
+    fn dhcpv6_frames_require_link_local_multicast_ports_lengths_and_checksum() {
+        let message = [2, 1, 2, 3, 0, 1, 0, 2];
+        let valid = dhcpv6_server_frame(&message);
+        assert_eq!(dhcpv6_payload(&valid).unwrap(), Some(message.as_slice()));
+        assert_eq!(validate_received_frame(&valid).unwrap(), None);
+        for length in 0..valid.len() {
+            assert!(
+                dhcpv6_payload(&valid[..length]).is_err(),
+                "accepted truncation at {length}"
+            );
+        }
+
+        let mut bad_checksum = valid.clone();
+        *bad_checksum.last_mut().unwrap() ^= 1;
+        assert_eq!(
+            dhcpv6_payload(&bad_checksum),
+            Err(ValidationError::InvalidDhcpv6)
+        );
+        assert_eq!(
+            validate_received_frame(&bad_checksum),
+            Err(ValidationError::InvalidDhcpv6)
+        );
+
+        let mut wrong_hop = valid.clone();
+        wrong_hop[21] = 64;
+        assert_eq!(
+            dhcpv6_payload(&wrong_hop),
+            Err(ValidationError::InvalidDhcpv6)
+        );
+
+        let mut wrong_port = valid.clone();
+        wrong_port[54..56].copy_from_slice(&546u16.to_be_bytes());
+        wrong_port[60..62].fill(0);
+        let sum = udp_checksum(SOURCE_IP, dhcpv6_servers_multicast(), &wrong_port[54..]);
+        wrong_port[60..62].copy_from_slice(&sum.to_be_bytes());
+        assert_eq!(
+            dhcpv6_payload(&wrong_port),
+            Err(ValidationError::InvalidDhcpv6)
+        );
+
+        let mut wrong_source = valid.clone();
+        wrong_source[22] = 0x20;
+        assert_eq!(
+            dhcpv6_payload(&wrong_source),
+            Err(ValidationError::InvalidDhcpv6)
+        );
+
+        let mut wrong_destination = valid.clone();
+        wrong_destination[53] = 3;
+        assert_eq!(
+            dhcpv6_payload(&wrong_destination),
+            Err(ValidationError::InvalidDhcpv6)
+        );
+
+        let mut bad_length = valid.clone();
+        bad_length[58..60].copy_from_slice(&7u16.to_be_bytes());
+        assert_eq!(
+            dhcpv6_payload(&bad_length),
+            Err(ValidationError::InvalidDhcpv6)
+        );
+
+        let oversized = dhcpv6_server_frame(&vec![0; MAX_DHCPV6_MESSAGE + 1]);
+        assert_eq!(
+            dhcpv6_payload(&oversized),
+            Err(ValidationError::InvalidDhcpv6)
+        );
+    }
+
+    #[test]
+    fn dhcpv6_client_frame_is_unspecified_source_and_checksums_udp() {
+        let message = [1, 0x12, 0x34, 0x56, 0, 1, 0, 2];
+        let mut frame = [0u8; 128];
+        let length = encode_dhcpv6_frame(SOURCE_MAC, &message, &mut frame).unwrap();
+        assert_eq!(length, ETHERNET_HEADER + IPV6_HEADER + 8 + message.len());
+        assert_eq!(&frame[..6], &[0x33, 0x33, 0, 1, 0, 2]);
+        assert_eq!(&frame[6..12], &SOURCE_MAC);
+        assert_eq!(frame[20], NEXT_HEADER_UDP);
+        assert_eq!(frame[21], 1);
+        assert_eq!(&frame[22..38], &[0; 16]);
+        assert_eq!(&frame[38..54], &dhcpv6_servers_multicast());
+        assert_eq!(&frame[54..56], &DHCPV6_CLIENT_PORT.to_be_bytes());
+        assert_eq!(&frame[56..58], &DHCPV6_SERVER_PORT.to_be_bytes());
+        assert!(udp_checksum_valid(
+            [0; 16],
+            dhcpv6_servers_multicast(),
+            &frame[54..length]
+        ));
+        assert_eq!(
+            encode_dhcpv6_frame(SOURCE_MAC, &message, &mut [0; 10]),
+            Err(ValidationError::FrameTooLarge)
+        );
+        assert_eq!(
+            encode_dhcpv6_frame(SOURCE_MAC, &vec![0; MAX_DHCPV6_MESSAGE + 1], &mut frame),
+            Err(ValidationError::FrameTooLarge)
+        );
+        assert_eq!(
+            encode_dhcpv6_frame([1, 0, 0, 0, 0, 0], &message, &mut frame),
+            Err(ValidationError::InvalidSourceMac)
+        );
     }
 }

@@ -1,13 +1,16 @@
 # Validation evidence
 
-The latest runtime and Prism feature wave is recorded in [runtime-prism-2026-10-12](milestones/runtime-prism-2026-10-12/). It contains the rebuilt image hash, matching `qemu64`/`max` QEMU reports, nine guest captures, host validation, and an explicit evidence scope. The current Prism screens are also shown in the [visual gallery](../PRISM-VISUAL-GALLERY.md).
+The latest runtime and Prism feature wave is recorded in [runtime-prism-2026-10-12](milestones/runtime-prism-2026-10-12/), with its exact current run in [feature-wave-final](milestones/runtime-prism-2026-10-12/feature-wave-final/). The final signed image SHA256 is `8902846a7a484186361520c6c626846479710faef2afa8729bdad664e66825f3`; it passed 125 qemu64 checks and the bounded DHCPv6 peer smoke. The current 15 Prism captures are shown in the [visual gallery](../PRISM-VISUAL-GALLERY.md).
 
 ![Current Prism guest screens](../images/prism-overview.png)
 
-This snapshot records the development image SHA256
+## Historical validation snapshot
+
+The following material records an older development image SHA256
 `03d54128375ad7f167c724ebdf98baca06b5add89f88edce457bf426df326c39`.
-Later working-tree changes require another affected validation run; this evidence
-is not a claim about an unbuilt or untested newer tree.
+Its source-bound artifacts remain useful for their original scope; the latest
+source and guest validation is documented in the feature-wave bundle linked
+above.
 
 `validation.txt` records 174 workspace Rust tests, eight separately exercised
 host installer tests, and additional storage, Linux-profile, input/console,

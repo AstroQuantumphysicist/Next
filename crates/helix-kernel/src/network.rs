@@ -9,8 +9,6 @@ use core::{
 };
 #[path = "network_dhcp.rs"]
 pub mod dhcp;
-// Parsed and host-tested as a bounded protocol primitive; guest DHCPv6 is not
-// enabled yet, so its public API is intentionally unused by the runtime.
 #[allow(dead_code)]
 #[path = "network_dhcpv6.rs"]
 pub mod dhcpv6;
@@ -30,6 +28,7 @@ const MAX_FRAME: usize = 1514;
 const HEADER: usize = 10;
 const BUFFER_BYTES: usize = HEADER + MAX_FRAME;
 const POLLS: usize = 20_000_000;
+const DHCPV6_EXCHANGE_BUFFER: usize = 1232;
 #[cfg(test)]
 const GUEST: [u8; 4] = [10, 0, 2, 15];
 #[cfg(test)]
@@ -79,6 +78,9 @@ pub struct NetworkInfo {
     pub dns_reply: bool,
     pub dns_cache: bool,
     pub lease: dhcp::Lease,
+    /// Validated DHCPv6 address candidate from the link-local exchange. This
+    /// is not installed and has not completed DAD or routing configuration.
+    pub dhcpv6_candidate: Option<dhcpv6::Lease>,
 }
 unsafe fn in8(p: u16) -> u8 {
     let v;
@@ -406,8 +408,110 @@ impl Device {
         }
         Err(NetworkError::Dhcp)
     }
+
+    /// Perform a bounded initial DHCPv6 exchange over the real virtio path.
+    /// The result remains a candidate: the current stack has no IPv6 address
+    /// installation, DAD, or route management.
+    unsafe fn dhcpv6_candidate(&mut self) -> Option<dhcpv6::Lease> {
+        let mut client_id = [0u8; 10];
+        client_id[..4].copy_from_slice(&[0, 3, 0, 1]); // DUID-LL, Ethernet.
+        client_id[4..].copy_from_slice(&self.mac);
+        let mut iaid = u32::from_be_bytes(self.mac[2..6].try_into().ok()?);
+        if iaid == 0 {
+            iaid = 1;
+        }
+        let seed = core::arch::x86_64::_rdtsc() as u32 ^ iaid;
+        let solicit_xid = [(seed >> 16) as u8, (seed >> 8) as u8, seed as u8];
+        let request_xid = [solicit_xid[0] ^ 0x5a, solicit_xid[1], solicit_xid[2] ^ 1];
+        let mut client = dhcpv6::Client::new(&client_id, iaid).ok()?;
+        client.begin_solicit(solicit_xid).ok()?;
+
+        let mut message = [0u8; DHCPV6_EXCHANGE_BUFFER];
+        let mut frame = [0u8; MAX_FRAME];
+        let message_len =
+            dhcpv6::encode_solicit(&client_id, iaid, solicit_xid, 0, &mut message).ok()?;
+        let frame_len =
+            ipv6::encode_dhcpv6_frame(self.mac, &message[..message_len], &mut frame).ok()?;
+        let solicit_started = clock_now();
+        let mut retries = dhcpv6::Retransmission::new(solicit_started);
+        self.transmit(&frame[..frame_len]).ok()?;
+        let mut inbound = [0u8; MAX_FRAME];
+        let offer = loop {
+            let now = clock_now();
+            let received = match self.receive(&mut inbound) {
+                Ok(received) => received,
+                Err(_) => return None,
+            };
+            if let Some(length) = received {
+                if let Ok(Some(payload)) = ipv6::dhcpv6_payload(&inbound[..length]) {
+                    if client.accept_advertise(payload, request_xid).is_ok() {
+                        break client.selected_offer()?;
+                    }
+                }
+            }
+            if retries.exhausted(now) {
+                return None;
+            }
+            if retries.retry_due(now) {
+                let elapsed = dhcpv6_elapsed_centiseconds(solicit_started, now);
+                let message_len =
+                    dhcpv6::encode_solicit(&client_id, iaid, solicit_xid, elapsed, &mut message)
+                        .ok()?;
+                let frame_len =
+                    ipv6::encode_dhcpv6_frame(self.mac, &message[..message_len], &mut frame)
+                        .ok()?;
+                if self.transmit(&frame[..frame_len]).is_err() {
+                    return None;
+                }
+            }
+            core::hint::spin_loop();
+        };
+
+        message.fill(0);
+        let message_len = dhcpv6::encode_request(&offer, request_xid, 0, &mut message).ok()?;
+        let frame_len =
+            ipv6::encode_dhcpv6_frame(self.mac, &message[..message_len], &mut frame).ok()?;
+        let request_started = clock_now();
+        let mut retries = dhcpv6::Retransmission::new(request_started);
+        self.transmit(&frame[..frame_len]).ok()?;
+        loop {
+            let now = clock_now();
+            let received = match self.receive(&mut inbound) {
+                Ok(received) => received,
+                Err(_) => return None,
+            };
+            if let Some(length) = received {
+                if let Ok(Some(payload)) = ipv6::dhcpv6_payload(&inbound[..length]) {
+                    if client.accept_reply(payload, now).is_ok() {
+                        let lease = client.lease()?;
+                        if lease.has_valid_address(now) {
+                            return Some(lease);
+                        }
+                        return None;
+                    }
+                }
+            }
+            if retries.exhausted(now) {
+                return None;
+            }
+            if retries.retry_due(now) {
+                let elapsed = dhcpv6_elapsed_centiseconds(request_started, now);
+                let message_len =
+                    dhcpv6::encode_request(&offer, request_xid, elapsed, &mut message).ok()?;
+                let frame_len =
+                    ipv6::encode_dhcpv6_frame(self.mac, &message[..message_len], &mut frame)
+                        .ok()?;
+                if self.transmit(&frame[..frame_len]).is_err() {
+                    return None;
+                }
+            }
+            core::hint::spin_loop();
+        }
+    }
+
     unsafe fn selftest(&mut self) -> Result<NetworkInfo, NetworkError> {
         let lease = self.acquire_lease()?;
+        let dhcpv6_candidate = self.dhcpv6_candidate();
         self.transmit(&arp_request(self.mac, lease.address, lease.gateway))?;
         let mut frame = [0; MAX_FRAME];
         let mut gateway_mac = None;
@@ -495,6 +599,7 @@ impl Device {
             dns_reply,
             dns_cache,
             lease,
+            dhcpv6_candidate,
         })
     }
     /// A loopback-host synthetic zone only: no configured/upstream DNS server.
@@ -738,6 +843,9 @@ pub unsafe fn init() -> Result<NetworkInfo, NetworkError> {
 }
 fn unicast(mac: [u8; 6]) -> bool {
     mac[0] & 1 == 0 && mac != [0; 6]
+}
+fn dhcpv6_elapsed_centiseconds(started_at_ns: u64, now_ns: u64) -> u16 {
+    (now_ns.saturating_sub(started_at_ns) / 10_000_000).min(u16::MAX as u64) as u16
 }
 fn be16(bytes: &[u8], i: usize) -> u16 {
     u16::from_be_bytes([bytes[i], bytes[i + 1]])

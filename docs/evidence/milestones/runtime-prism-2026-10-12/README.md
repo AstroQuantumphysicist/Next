@@ -1,23 +1,20 @@
 # Runtime and Prism evidence — 2026-10-12
 
 The latest signed development image SHA-256 is
-`f4986796589aa9e5d75ad5eddbaf620a17613ccb35bbdfb66d7e17ca3a40fc0d`. Its current
-QEMU q35/TCG smoke reports passed on 1, 2, 4, and 8 configured vCPUs. The 1-vCPU
-report has 120 checks; each multi-vCPU report has 119. QMP CPU objects and
-ACPI/MADT enabled-CPU counts match in every profile. AP startup remains disabled
-and the scheduler runs on the BSP only. None of these tests establishes SMP
-scheduling or physical-hardware support.
-
-The [feature-wave evidence](feature-wave/README.md) contains the exact current
-reports, logs, guest captures, and host test results. Its Prism gallery includes
-12 lossless PNG captures taken from the current guest image: Home, six panels,
-two saved Accessibility preferences, keyboard shortcuts, notifications, and a
-BottomLeft quarter snap.
+`8902846a7a484186361520c6c626846479710faef2afa8729bdad664e66825f3`. Its qemu64
+desktop smoke passed 125 checks. A second QEMU run on the same image passed the
+bounded DHCPv6 peer exchange. The [final feature-wave bundle](feature-wave-final/README.md)
+contains both reports, host validation, serial traces, and all 15 guest Prism
+captures. APs remain stopped and the scheduler runs only on the BSP; these
+tests do not establish SMP scheduling or physical-hardware support.
 
 ## Earlier source-bound evidence
 
-The remaining bundles in this directory are retained as historical evidence
-for their own image hashes; they do not describe the latest image above.
+The earlier `feature-wave/` and topology profiles are retained as historical
+evidence for their own image hashes; they do not describe the latest image
+above. The previous 1-vCPU report had 120 checks and the earlier 2/4/8-vCPU
+profiles had 119 each on SHA-256
+`f4986796589aa9e5d75ad5eddbaf620a17613ccb35bbdfb66d7e17ca3a40fc0d`.
 
 - `final-qemu64/` and `smp-two-vcpu/` contain earlier 119-check qemu64 and
   two-vCPU reports with separate image hash `b79790f446b5bde892fbde78d63e3a177d558d2d1319556680d9f48f24efb8ce`.

@@ -1131,6 +1131,11 @@ pub unsafe extern "sysv64" fn helix_entry(h: *const BootInfo) -> ! {
         Ok(info) => {
             log!("HELIX DHCP PASS address={:?} mask={:?} gateway={:?} dns={:?} server={:?} lease_seconds={} renew={} rebind={}",info.lease.address,info.lease.subnet_mask,info.lease.gateway,info.lease.dns,info.lease.server,info.lease.lease_seconds,info.lease.renew_after,info.lease.rebind_after);
             log!("HELIX NETWORK PASS MAC={:02x?} gateway={:02x?} ARP={} ICMP={} UDP={}; QEMU development profile",info.mac,info.gateway_mac,info.arp_reply,info.icmp_reply,info.udp_reply);
+            if let Some(candidate) = info.dhcpv6_candidate {
+                log!("HELIX DHCPV6 CANDIDATE PASS addresses={} T1={} T2={}; validated peer exchange only, not installed, no DAD or route",candidate.address_count(),candidate.t1_seconds,candidate.t2_seconds);
+            } else {
+                log!("HELIX DHCPV6 UNAVAILABLE; optional bounded candidate exchange");
+            }
             if info.dns_reply && info.dns_cache {
                 log!("HELIX DNS PASS A/AAAA=true cache=true; local development peer, bounded retry and TTL expiry");
             } else {

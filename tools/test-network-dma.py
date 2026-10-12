@@ -79,8 +79,8 @@ def main():
             "Queue::poll exact descriptor validation and used-ring ownership return",
             "Device::submit_transmit rejection before modifying device-owned static TX storage",
             "network runtime timeout retaining outstanding TX ownership",
-            "network_ipv6::validate_ethernet_frame IPv6 and Neighbor Discovery ingress validation",
-            "network_dhcpv6::parse_message and Transaction option/lease-candidate validation plus the bounded Client transaction/timer state machine (host-tested only; no guest packet, address, DAD, or route integration)",
+            "network_ipv6 IPv6 base/ICMPv6/NDP checks plus checksummed DHCPv6 IPv6/UDP frame encoding and strict multicast receive tuple",
+            "network_dhcpv6 Solicit/Request encoders, parser, identity-bound Client lease candidate, and retransmission schedule (host tests; QEMU exchange acceptance is tools/dhcp_guest_smoke.py)",
         ],
         "qemu_guest_verification": "not performed by this host harness",
         "source_sha256": {

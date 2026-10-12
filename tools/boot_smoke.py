@@ -33,6 +33,95 @@ BOOT_FAILURE_CODES = {
     "firmware-handoff": 0x4E580401,
     "boot-record": 0x4E580501,
 }
+RTC_ANCHOR_TOLERANCE_SECONDS = 20
+FILES_DIRECTORY_ACTION_RE = re.compile(
+    rb"PRISM DIRECTORY ACTION: request=(\d+) kind=(.*?) result=(Ok\(\d+\)|Err\([^)]+\))\r?\n"
+)
+FILES_DEBUG_PATH_RE = re.compile(rb"Path \{ bytes: \[([0-9, ]*)\], len: (\d+) \}")
+
+
+def validate_guest_rtc_anchor(guest_seconds, host_launch_seconds):
+    """Compare the CMOS anchor to QEMU launch time, not delayed boot completion."""
+    guest_seconds = int(guest_seconds)
+    host_launch_seconds = int(host_launch_seconds)
+    difference = guest_seconds - host_launch_seconds
+    if abs(difference) > RTC_ANCHOR_TOLERANCE_SECONDS:
+        raise RuntimeError("guest RTC UTC anchor differs from host UTC at QEMU launch by more than 20 seconds")
+    return {
+        "guest_utc_seconds": guest_seconds,
+        "host_qemu_launch_utc_seconds": host_launch_seconds,
+        "difference_seconds": difference,
+    }
+
+
+def parse_files_directory_actions(serial_data):
+    """Decode authoritative Files backend actions and their debug paths."""
+    records = []
+    for match in FILES_DIRECTORY_ACTION_RE.finditer(bytes(serial_data)):
+        paths = []
+        for path_match in FILES_DEBUG_PATH_RE.finditer(match[2]):
+            raw = [int(value) for value in path_match[1].split(b",") if value.strip()]
+            length = int(path_match[2])
+            if length > len(raw) or any(value > 255 for value in raw):
+                raise RuntimeError("malformed Files action path bytes")
+            try:
+                path = bytes(raw[:length]).decode("ascii")
+            except UnicodeDecodeError as error:
+                raise RuntimeError("Files action path is not ASCII") from error
+            paths.append(path)
+        records.append({
+            "request": int(match[1]),
+            "kind": match[2].decode("ascii", errors="replace"),
+            "paths": paths,
+            "result": match[3].decode("ascii"),
+        })
+    return records
+
+
+def validate_files_tab_action_sequence(serial_data):
+    """Require the actual create, new-tab, address and tab-switch path events."""
+    records = parse_files_directory_actions(serial_data)
+    expected = [
+        ("CreateFolder", "/native/alpha"),
+        ("Navigate", "/native"),
+        ("Navigate", "/native/alpha"),
+        # Backspace after returning to the nested tab must navigate to its
+        # parent. The root-tab Backspace check is intentionally action-free.
+        ("Navigate", "/native"),
+    ]
+    if len(records) != len(expected):
+        raise RuntimeError(f"Files tabs smoke recorded {len(records)} directory actions, expected {len(expected)}")
+    for index, (record, (kind, path)) in enumerate(zip(records, expected), start=1):
+        if kind not in record["kind"]:
+            raise RuntimeError(f"Files tabs action {index} was {record['kind']!r}, expected {kind}")
+        if not record["paths"] or record["paths"][-1] != path:
+            raise RuntimeError(
+                f"Files tabs action {index} path was {record['paths']!r}, expected {path}"
+            )
+        if not record["result"].startswith("Ok("):
+            raise RuntimeError(f"Files tabs action {index} failed: {record['result']}")
+    return records
+
+
+def files_tab_click_targets(width, height):
+    """Return pixel centers for the default Files '+' and two tab controls."""
+    if width <= 0 or height <= 0:
+        raise ValueError("viewport dimensions must be positive")
+    area_x = min(8, max(0, width - 1))
+    area_y = min(68, max(0, height - 81))
+    area_width = max(width - 2 * area_x, 1)
+    area_height = max(height - 80 - area_y - 8, 1)
+    window_width = min(max(640, min(240, area_width)), area_width)
+    window_height = min(max(400, min(144, area_height)), area_height)
+    x = max(area_x, min(92, area_x + area_width - window_width))
+    y = max(area_y, min(124, area_y + area_height - window_height))
+    inner = max(window_width - 16, 0)
+    add = (x + 8 + inner - 64 + 15, y + 96 + 14)
+    tab_width = max((inner - min(72, inner) - 4) // 2, 24)
+    root = (x + 8 + tab_width // 2, y + 96 + 14)
+    nested = (x + 8 + tab_width + 4 + tab_width // 2, y + 96 + 14)
+    address = (x + 8 + 20, y + 130 + 14)
+    return {"add": add, "root": root, "nested": nested, "address": address}
 
 
 def validate_smp_profile_count(cpu_count):
@@ -357,6 +446,7 @@ def main():
                 if (sysroot / data).exists():
                     command.extend(["-L", str(sysroot / data)])
             report["qemu_profile"] = f"q35,accel=tcg; cpu={args.cpu}; 256M; smp={args.smp}; vga=std"
+            host_utc_at_qemu_launch = int(time.time())
             process = subprocess.Popen(command, stdout=qemu_log, stderr=subprocess.STDOUT, env=env)
             serial = connect(temp / "serial.sock")
             qmp = connect(temp / "qmp.sock")
@@ -502,9 +592,10 @@ def main():
                     report["checks"].append("optional LAPIC calibration refused " + lapic_outcome.reason + "; actual PIT timer, owned IOAPIC delivery and noncooperative preemption verified")
                 wait_text("PRISM: READY")
                 utc_boot = wait_regex(rb"HELIX UTC PASS seconds=(\d+) source=q35-CMOS/PIT", 0)
-                if abs(int(utc_boot[1]) - time.time()) > 20:
-                    raise RuntimeError("guest RTC UTC anchor differs from host UTC by more than 20 seconds")
-                report["checks"].append("actual q35 CMOS UTC anchor agrees with host wall clock")
+                report["rtc_anchor"] = validate_guest_rtc_anchor(
+                    utc_boot[1], host_utc_at_qemu_launch
+                )
+                report["checks"].append("actual q35 CMOS UTC anchor agrees with host UTC at QEMU launch")
                 report["checks"].append("framebuffer shell ready")
                 service_spawns = list(re.finditer(rb"HELIX: PROCESS SPAWN pid=(\d+) slot=\d+ path=/system/service-worker\.elf profile=Native", serial_data))
                 if len(service_spawns) < 3:
@@ -581,6 +672,19 @@ def main():
                 wait_text("LINUX STATIC ELF: original syscall compatibility PASS", start)
                 wait_text("status=37", start)
                 report["checks"].append("same static Linux ELF executes Linux SYSCALL subset and exits 37")
+                for path, marker, exit_status, scenario in [
+                    ("/compat/linux/getpid.elf", "LINUX GETPID ELF: stable kernel process identity PASS", 51,
+                     "original Linux getpid fixture returns one stable positive process identity"),
+                    ("/compat/linux/uname.elf", "LINUX UNAME ELF: six fixed fields, zero padding, EFAULT PASS", 52,
+                     "original Linux uname fixture checks six 65-byte fields, zero padding and EFAULT"),
+                    ("/compat/linux/lseek.elf", "LINUX LSEEK ELF: position, signed errors, and cursor preservation PASS", 53,
+                     "original Linux lseek fixture checks read positions, invalid whence/fd, signed underflow and cursor preservation"),
+                ]:
+                    start = len(serial_data)
+                    serial.sendall(("run " + path + "\r").encode())
+                    wait_text(marker, start)
+                    wait_text("status=" + str(exit_status), start)
+                    report["checks"].append(scenario + ": " + path)
                 start=len(serial_data)
                 serial.sendall(b"run /compat/linux/hello-gate.elf\r")
                 wait_text("HELIX: LINUX PROFILE native syscall gate rejected number=15",start)
@@ -835,6 +939,218 @@ def main():
                 report["checks"].append("serial console restores Terminal focus from Files panel")
                 response_end=serial_data.index(commands[0][1].encode(),start)+len(commands[0][1])
                 wait_text("PRISM FRAME:",response_end)
+                # Rebuild the Files tab flow from actual PS/2 input and mouse
+                # clicks. The directory-action records prove each resulting
+                # path came back from the guest Store, not just the address UI.
+                tabs_view = wait_regex(rb"PRISM: READY (\d+)x(\d+);")
+                viewport_width, viewport_height = map(int, tabs_view.groups())
+                tab_targets = files_tab_click_targets(viewport_width, viewport_height)
+                tab_action_presentations = []
+
+                def wait_tab_action(mark, expected_kind, expected_path):
+                    event = wait_regex(FILES_DIRECTORY_ACTION_RE.pattern, mark)
+                    record = parse_files_directory_actions(serial_data[mark:event.end()])
+                    if len(record) != 1 or expected_kind not in record[0]["kind"]:
+                        raise RuntimeError(f"Files tab action was not {expected_kind}: {record!r}")
+                    if not record[0]["paths"] or record[0]["paths"][-1] != expected_path:
+                        raise RuntimeError(
+                            f"Files tab action path was {record[0]['paths']!r}, expected {expected_path}"
+                        )
+                    if not record[0]["result"].startswith("Ok("):
+                        raise RuntimeError(f"Files tab action failed: {record[0]['result']}")
+                    # The authoritative action result can be followed by an
+                    # accessibility snapshot without a PRISM FRAME line. Wait
+                    # briefly for either presentation signal, then continue on
+                    # the already-validated backend completion.
+                    settle_deadline = time.monotonic() + min(0.25, remaining())
+                    presentation = None
+                    while presentation is None:
+                        following = bytes(serial_data[event.end():])
+                        access = re.search(
+                            rb"PRISM ACCESSIBILITY: frame=(\d+) generation=(\d+)", following
+                        )
+                        frame = re.search(rb"PRISM FRAME: generation=(\d+)", following)
+                        if access:
+                            presentation = {"kind": "accessibility", "frame": int(access[1]),
+                                            "generation": int(access[2])}
+                        elif frame:
+                            presentation = {"kind": "frame", "generation": int(frame[1])}
+                        else:
+                            wait_seconds = settle_deadline - time.monotonic()
+                            if wait_seconds <= 0:
+                                presentation = {"kind": "bounded-settle"}
+                                break
+                            ready, _, _ = select.select(
+                                [serial], [], [], min(0.025, wait_seconds, remaining())
+                            )
+                            if ready:
+                                receive_serial()
+                    record[0]["presentation"] = presentation
+                    tab_action_presentations.append({
+                        "request": record[0]["request"], "kind": record[0]["kind"],
+                        "path": record[0]["paths"][-1], **presentation,
+                    })
+                    return record[0]
+
+                # Ensure Files owns focus before operating its folder controls.
+                start = len(serial_data)
+                for key in ("f10", "tab", "ret"):
+                    editor_key(key)
+                wait_text("PRISM DESKTOP: focused=Some(Files) home=false", start)
+
+                # A fresh guest root should accept creation of alpha. Wait for
+                # the authoritative backend action before creating another tab.
+                tab_sequence_start = len(serial_data)
+                editor_key("n")
+                for key in "alpha":
+                    editor_key(key)
+                editor_key("tab")
+                create_mark = len(serial_data)
+                editor_key("ret")
+                wait_tab_action(create_mark, "CreateFolder", "/native/alpha")
+
+                def move_files_pointer(target):
+                    presented = list(re.finditer(
+                        rb"PRISM POINTER PRESENTED: generation=\d+ x=(\d+) y=(\d+) buttons=(\d+)",
+                        serial_data,
+                    ))
+                    if presented:
+                        pointer = [int(presented[-1][1]), int(presented[-1][2])]
+                    else:
+                        current = wait_regex(rb"PRISM POINTER: x=(\d+) y=(\d+)")
+                        pointer = [int(current[1]), int(current[2])]
+                    for _ in range(64):
+                        if pointer == list(target):
+                            break
+                        delta = [max(-90, min(90, target[i] - pointer[i])) for i in range(2)]
+                        mark = len(serial_data)
+                        qmp_command("input-send-event", {"events": [
+                            {"type": "rel", "data": {"axis": "x", "value": delta[0]}},
+                            {"type": "rel", "data": {"axis": "y", "value": delta[1]}},
+                        ]})
+                        moved = wait_regex(
+                            rb"PRISM POINTER PRESENTED: generation=\d+ x=(\d+) y=(\d+) buttons=0",
+                            mark,
+                        )
+                        updated = [int(moved[1]), int(moved[2])]
+                        if updated == pointer:
+                            raise RuntimeError("guest pointer stopped before Files tab target")
+                        pointer = updated
+                    else:
+                        raise RuntimeError("guest pointer did not reach Files tab target")
+                    return pointer
+
+                def click_files_tab(target):
+                    move_files_pointer(target)
+                    mark = len(serial_data)
+                    qmp_command("input-send-event", {"events": [
+                        {"type": "btn", "data": {"down": True, "button": "left"}},
+                    ]})
+                    wait_regex(rb"PRISM POINTER PRESENTED: generation=\d+ x=\d+ y=\d+ buttons=1", mark)
+                    release_mark = len(serial_data)
+                    qmp_command("input-send-event", {"events": [
+                        {"type": "btn", "data": {"down": False, "button": "left"}},
+                    ]})
+                    wait_regex(rb"PRISM POINTER PRESENTED: generation=\d+ x=\d+ y=\d+ buttons=0", release_mark)
+                    wait_text("PRISM FRAME:", release_mark)
+                    return mark
+
+                add_mark = click_files_tab(tab_targets["add"])
+                wait_tab_action(add_mark, "Navigate", "/native")
+
+                def navigate_files_address(path):
+                    editor_key("g")
+                    key_codes = {"/": "slash", ".": "dot", "-": "minus", "_": "shift-minus"}
+                    for character in path:
+                        editor_key(key_codes.get(character, character))
+                    mark = len(serial_data)
+                    editor_key("ret")
+                    return wait_tab_action(mark, "Navigate", path)
+
+                navigate_files_address("/native/alpha")
+
+                def capture_files_tabs(name):
+                    path = build / f"files-tabs-{name}.ppm"
+                    qmp_command("screendump", {"filename": str(path), "format": "ppm"})
+                    ppm_data = path.read_bytes()
+                    header = re.match(rb"P6\s+(\d+)\s+(\d+)\s+255\s", ppm_data)
+                    if not header:
+                        raise RuntimeError(f"invalid Files tabs {name} screenshot")
+                    shot_width, shot_height = int(header[1]), int(header[2])
+                    pixels = ppm_data[header.end():]
+                    if ((shot_width, shot_height) != (viewport_width, viewport_height)
+                            or len(pixels) != shot_width * shot_height * 3
+                            or len({pixels[index:index + 3] for index in range(0, len(pixels), 3)}) < 4):
+                        raise RuntimeError(f"Files tabs {name} screenshot is blank or malformed")
+                    return {"path": str(path.relative_to(ROOT)), "sha256": hashlib.sha256(ppm_data).hexdigest(),
+                            "width": shot_width, "height": shot_height}
+
+                click_files_tab(tab_targets["root"])
+                root_state_mark = len(serial_data)
+                editor_key("backspace")
+                time.sleep(min(0.15, remaining()))
+                if parse_files_directory_actions(serial_data[root_state_mark:]):
+                    raise RuntimeError("root Files tab did not retain /native when switched back")
+                root_capture = capture_files_tabs("root")
+                click_files_tab(tab_targets["nested"])
+                nested_capture = capture_files_tabs("nested")
+                nested_parent_mark = len(serial_data)
+                editor_key("backspace")
+                nested_parent = wait_tab_action(nested_parent_mark, "Navigate", "/native")
+                tab_actions = validate_files_tab_action_sequence(serial_data[tab_sequence_start:])
+                if root_capture["sha256"] == nested_capture["sha256"]:
+                    raise RuntimeError("root and nested Files tab captures are identical")
+                ibeam_pointer_mark = len(serial_data)
+                move_files_pointer(tab_targets["address"])
+                wait_regex(
+                    rb"PRISM POINTER PRESENTED: generation=\d+ x="
+                    + str(tab_targets["address"][0]).encode()
+                    + rb" y=" + str(tab_targets["address"][1]).encode() + rb" buttons=0",
+                    ibeam_pointer_mark,
+                )
+                ibeam_settle_deadline = time.monotonic() + min(0.25, remaining())
+                while (b"PRISM FRAME:" not in serial_data[ibeam_pointer_mark:]
+                       and time.monotonic() < ibeam_settle_deadline):
+                    ready, _, _ = select.select(
+                        [serial], [], [], min(0.025, ibeam_settle_deadline - time.monotonic(), remaining())
+                    )
+                    if ready:
+                        receive_serial()
+                ibeam_capture = capture_files_tabs("ibeam-address")
+                ibeam_data = (build / "files-tabs-ibeam-address.ppm").read_bytes()
+                ibeam_header = re.match(rb"P6\s+(\d+)\s+(\d+)\s+255\s", ibeam_data)
+                if not ibeam_header:
+                    raise RuntimeError("invalid Files address I-beam screenshot")
+                ibeam_width, ibeam_height = int(ibeam_header[1]), int(ibeam_header[2])
+                ibeam_pixels = ibeam_data[ibeam_header.end():]
+                cursor_x, cursor_y = tab_targets["address"]
+                def screenshot_pixel(x, y):
+                    offset = (y * ibeam_width + x) * 3
+                    return tuple(ibeam_pixels[offset:offset + 3])
+                if ((ibeam_width, ibeam_height) != (viewport_width, viewport_height)
+                        or len(ibeam_pixels) != ibeam_width * ibeam_height * 3
+                        or screenshot_pixel(cursor_x, cursor_y) != (8, 9, 12)
+                        or screenshot_pixel(cursor_x + 1, cursor_y) != (255, 255, 255)):
+                    raise RuntimeError("guest address-field cursor did not render the expected high-contrast I-beam")
+                report["files_tabs"] = {
+                    "captures": {"root": root_capture, "nested": nested_capture},
+                    "actions": tab_actions,
+                    "action_presentations": tab_action_presentations,
+                    "ibeam_capture": ibeam_capture,
+                    "switch_events": [
+                        {"tab": "root", "click_position": tab_targets["root"],
+                         "path_check": "Backspace at /native caused no navigation"},
+                        {"tab": "nested", "click_position": tab_targets["nested"],
+                         "path_check": "Backspace from /native/alpha navigated to /native",
+                         "action": nested_parent},
+                    ],
+                }
+                report["checks"].append(
+                    "Files creates /native/alpha, opens a second /native tab, navigates it, switches both tabs and captures root/nested views"
+                )
+                report["checks"].append(
+                    "Files address renders a guest I-beam cursor with a dark stem and white surround"
+                )
                 mark = len(serial_data)
                 serial.sendall(b"uart\r")
                 uart = wait_regex(rb"NEXT UART: accepted=(\d+) transmitted=(\d+) dropped=(\d+) stalled=(\d+) absent=(\d+) pending=(\d+)", mark)
@@ -898,6 +1214,45 @@ def main():
                         gallery[name] = {"path": str(path.relative_to(ROOT)),
                                          "width": shot_width, "height": shot_height}
 
+                    def inspect_accessibility():
+                        mark = len(serial_data)
+                        qmp_command("send-key", {"keys": [{"type": "qcode", "data": "f9"}],
+                                                  "hold-time": 40})
+                        end = wait_regex(
+                            rb"PRISM A11Y END: frame=\d+ generation=\d+ count=\d+", mark
+                        )
+                        block = bytes(serial_data[mark:end.end()])
+                        nodes = {}
+                        pattern = re.compile(
+                            rb"PRISM A11Y NODE: id=(\d+) parent=.*? enabled=(\d) visible=(\d) "
+                            rb"focused=(\d) selected=(\d).*? name_hex=([0-9a-f]*)"
+                        )
+                        for match in pattern.finditer(block):
+                            try:
+                                name = bytes.fromhex(match[6].decode("ascii")).decode("utf-8")
+                            except (ValueError, UnicodeDecodeError) as error:
+                                raise RuntimeError("guest accessibility snapshot contains an invalid name") from error
+                            nodes[name] = {
+                                "id": int(match[1]), "enabled": match[2] == b"1",
+                                "visible": match[3] == b"1", "focused": match[4] == b"1",
+                                "selected": match[5] == b"1",
+                            }
+                        return nodes
+
+                    def require_accessibility_control(nodes, name, *, enabled, selected=None):
+                        node = nodes.get(name)
+                        if node is None:
+                            raise RuntimeError(f"guest accessibility snapshot lacks {name!r}")
+                        if node["enabled"] != enabled or not node["visible"]:
+                            raise RuntimeError(
+                                f"guest accessibility control {name!r} has unexpected state: {node}"
+                            )
+                        if selected is not None and node["selected"] != selected:
+                            raise RuntimeError(
+                                f"guest accessibility control {name!r} selected={node['selected']}, "
+                                f"expected {selected}"
+                            )
+
                     # The main smoke leaves several built-in windows open. Close
                     # them one at a time so each published gallery frame has one
                     # frontmost panel instead of a stack of test windows.
@@ -920,27 +1275,56 @@ def main():
                                                        + rb"\) home=false"))
                         capture_gallery(name)
                         if name == "settings":
-                            # Appearance is the initial category (index 2);
-                            # Accessibility is index 10 in the catalog. Open
-                            # its active focus-outline controls, choose Strong,
-                            # and save through the same keyboard path a user
-                            # takes. This records a real guest frame after the
-                            # atomic preference commit completed.
-                            for _ in range(8):
-                                gallery_key("down")
-                            gallery_key("ret")
-                            gallery_key("right")
-                            for _ in range(3):
-                                gallery_key("tab")
-                            gallery_key("ret", expected=rb"PRISM APPEARANCE SAVE: request=\d+ .* result=Ok\(\(\)\) accepted=true")
+                            # Use the actual visible Controls after selecting
+                            # Accessibility. Pointer activation avoids relying
+                            # on a keyboard-focus traversal order that can
+                            # shift when catalog controls change.
+                            settings_accessibility = (242, 530)
+                            focus_strong = (584, 331)
+                            text_125 = (584, 403)
+                            save_accessibility = (422, 475)
+
+                            def save_accessibility_settings(mark):
+                                saved = wait_regex(
+                                    rb"PRISM APPEARANCE SAVE: request=\d+ .* result=Ok\(\(\)\) accepted=true",
+                                    mark,
+                                )
+                                settle_deadline = time.monotonic() + min(0.25, remaining())
+                                while (b"PRISM FRAME:" not in serial_data[saved.end():]
+                                       and b"PRISM ACCESSIBILITY: frame=" not in serial_data[saved.end():]
+                                       and time.monotonic() < settle_deadline):
+                                    ready, _, _ = select.select(
+                                        [serial], [], [], min(
+                                            0.025, settle_deadline - time.monotonic(), remaining()
+                                        )
+                                    )
+                                    if ready:
+                                        receive_serial()
+                                return saved
+
+                            click_files_tab(settings_accessibility)
+                            require_accessibility_control(
+                                inspect_accessibility(), "Accessibility settings", enabled=True,
+                                selected=True,
+                            )
+                            click_files_tab(focus_strong)
+                            require_accessibility_control(
+                                inspect_accessibility(), "Strong focus indicator", enabled=True,
+                                selected=True,
+                            )
+                            require_accessibility_control(
+                                inspect_accessibility(), "Save accessibility settings", enabled=True,
+                            )
+                            save_mark = click_files_tab(save_accessibility)
+                            save_accessibility_settings(save_mark)
                             capture_gallery("settings-accessibility")
-                            # Select 125% Settings-only text, save it through
-                            # the same control path, and keep a separate
-                            # guest frame showing the persisted preference.
-                            gallery_key("shift", "tab")
-                            gallery_key("right")
-                            gallery_key("tab")
-                            gallery_key("ret", expected=rb"PRISM APPEARANCE SAVE: request=\d+ .* result=Ok\(\(\)\) accepted=true")
+                            click_files_tab(text_125)
+                            require_accessibility_control(
+                                inspect_accessibility(), "Settings text size 125 percent",
+                                enabled=True, selected=True,
+                            )
+                            save_mark = click_files_tab(save_accessibility)
+                            save_accessibility_settings(save_mark)
                             capture_gallery("settings-text-scale")
                         for _ in range(8):
                             closed = gallery_key("alt", "f4", expected=focus_pattern)

@@ -1,0 +1,147 @@
+{
+  "passed": true,
+  "scope": "QEMU q35/TCG guest kernel through virtio-net and a deterministic Ethernet peer; no hardware certification",
+  "started_utc": "2026-10-12T09:54:46.239170+00:00",
+  "image_sha256": "8902846a7a484186361520c6c626846479710faef2afa8729bdad664e66825f3",
+  "source_sha256": {
+    "crates/helix-kernel/src/network.rs": "d3c899ca48cdaea558acf04f1fd673cbce8bc47e353cd20eda5978ea193272b7",
+    "crates/helix-kernel/src/network_ipv6.rs": "04d0e6d8321bad345b1f8f1e2e5a715beb90a6d8bd1d43a26b58915ca594b0cf",
+    "crates/helix-kernel/src/network_dhcpv6.rs": "0052ecfdf499bc471cb04f9fe1e0c0a374913c7c055b10d307ebded508ddf359",
+    "crates/helix-kernel/src/main.rs": "74de455e10631037055892b89771503771dec521f1ce3c3f3eeb56c6dde909d3",
+    "crates/helix-kernel/src/network_runtime.rs": "689d2ab402d4d544c20e0a4f7b06d587053c6c7181b9108b19841fbd3c14758f",
+    "crates/helix-kernel/src/network_dhcp.rs": "a3109c64f7a046eb092281dec4582a25e8cbcf85b7dbd7b973bb1c90a9d8639a",
+    "tools/dhcp_guest_smoke.py": "cd4670d8a05d2ec690dfd8b108d5b23399a63cfd3bcefd0d10ac3678ecbd0fdc"
+  },
+  "qemu_profile": "q35/TCG; cpu=qemu64; 256 MiB; one vCPU",
+  "link": "QEMU socket netdev TCP Ethernet frames",
+  "lease_policy": {
+    "initial_seconds": 40,
+    "t1_seconds": 12,
+    "t2_seconds": 30,
+    "rebind_ack_server": "10.0.2.3",
+    "post_nak_lease_seconds": 40
+  },
+  "dhcpv6_policy": {
+    "exchange": "Solicit/Advertise/Request/Reply over IPv6 link-local multicast",
+    "identity": "DUID-LL(Ethernet) and IAID derived from guest MAC",
+    "peer_retries": "first Solicit and Request dropped; retransmissions answered",
+    "address_installation": false,
+    "dad": false,
+    "routes": false
+  },
+  "dhcpv6_only_smoke": true,
+  "guest_ready_seconds": 11.348,
+  "dhcpv6_retry_delays_seconds": {
+    "solicit": 1.006,
+    "request": 1.008
+  },
+  "dhcpv6_retry_validation": {
+    "solicit_xid_preserved": true,
+    "request_xid_preserved": true,
+    "solicit_elapsed_centiseconds": [
+      0,
+      100
+    ],
+    "request_elapsed_centiseconds": [
+      0,
+      100
+    ],
+    "unexpected_or_rejected_events": [],
+    "request_ia_na": "selected IAADDR with zero T1/T2 and preferred/valid lifetimes; Reply supplies server values"
+  },
+  "events": [
+    {
+      "event": "discover",
+      "seconds": 2.474,
+      "grant": 0,
+      "xid": "6e50f8b7"
+    },
+    {
+      "event": "select",
+      "seconds": 2.476,
+      "grant": 0,
+      "xid": "6e50f8b7"
+    },
+    {
+      "event": "initial-ack",
+      "seconds": 2.476,
+      "grant": 1
+    },
+    {
+      "event": "dhcpv6-solicit-dropped",
+      "seconds": 2.476,
+      "xid": "b1e415",
+      "iaid": 1193046,
+      "elapsed_centiseconds": 0
+    },
+    {
+      "event": "dhcpv6-solicit-retry",
+      "seconds": 3.482,
+      "xid": "b1e415",
+      "iaid": 1193046,
+      "elapsed_centiseconds": 100,
+      "delay_seconds": 1.006
+    },
+    {
+      "event": "dhcpv6-advertise-sent",
+      "seconds": 3.482,
+      "xid": "b1e415",
+      "iaid": 1193046
+    },
+    {
+      "event": "dhcpv6-request-dropped",
+      "seconds": 3.484,
+      "xid": "ebe414",
+      "iaid": 1193046,
+      "elapsed_centiseconds": 0
+    },
+    {
+      "event": "dhcpv6-request-retry",
+      "seconds": 4.492,
+      "xid": "ebe414",
+      "iaid": 1193046,
+      "elapsed_centiseconds": 100,
+      "delay_seconds": 1.008
+    },
+    {
+      "event": "dhcpv6-reply-sent",
+      "seconds": 4.492,
+      "xid": "ebe414",
+      "iaid": 1193046,
+      "address": "20010db8000100000000000000000009"
+    },
+    {
+      "event": "arp-request",
+      "seconds": 4.493,
+      "target": "0a000202"
+    },
+    {
+      "event": "arp-reply",
+      "seconds": 4.493
+    },
+    {
+      "event": "icmp-request",
+      "seconds": 4.493,
+      "length": 35,
+      "source": "0a00020f",
+      "destination": "0a000202",
+      "mac": "525400123456",
+      "icmp": "08005db14e5800014e65787420626f756e6465642045746865726e65742070726f6265"
+    },
+    {
+      "event": "icmp-reply",
+      "seconds": 4.493,
+      "ip_checksum": 8885,
+      "icmp": "000065b14e5800014e65787420626f756e6465642045746865726e65742070726f6265"
+    }
+  ],
+  "checks": [
+    "the guest sent a real IPv6 DHCPv6 Solicit, ignored a dropped response, and retransmitted on timer",
+    "Solicit and Request retries preserved their transaction IDs and advanced Elapsed Time",
+    "the peer validated exact bounded IA_NA/IAADDR shape and selected address/server before replying",
+    "the peer observed no unexpected or rejected DHCPv6 exchange events",
+    "the guest bound Advertise selection to DUID/IAID/server, retried Request, and accepted matching Reply",
+    "the guest logged only a lease candidate; no IPv6 address, DAD result, or route was installed"
+  ],
+  "serial_tail": "mptions=2\r\nHELIX: QUOTA FINISH pid=19 occupied_ns=43440030 debt_ns=0 dispatches=7 overruns=0 throttles=0 resumes=0\r\nNEXT APP pid=1: NEXTD: native lifecycle selftest passed\r\n\r\nHELIX: APPLICATION IDENTITY pid=20 package=org.next.development.native.vfs-probe signer=[5f, 87, 89, 6b] digest=[2a, bb, b5, 24] devgrant=0x3f cap_ceiling=0x7f\r\nHELIX: PROCESS SPAWN pid=20 slot=1 path=/system/vfs-probe.elf profile=Native\r\nNEXT APP pid=20: VFS-PROBE: shared inode regression starting\r\n\r\nHELIX: QUOTA THROTTLE pid=20 occupied_ns=110354150 refill_at=8374410090 count=1\r\nHELIX: QUOTA RESUME pid=20 count=1\r\nNEXT APP pid=20: VFS-PROBE: independent/shared offsets, rename replacement, unlink lifetime and recreate isolation passed\r\n\r\nHELIX: PROCESS EXIT pid=20 status=0 preemptions=7\r\nHELIX: QUOTA FINISH pid=20 occupied_ns=174758660 debt_ns=0 dispatches=8 overruns=6 throttles=1 resumes=1\r\nNEXT APP pid=1: NEXTD: authenticated service configuration and copyout checks passed\r\n\r\nHELIX: APPLICATION IDENTITY pid=21 package=org.next.development.native.service-worker signer=[5f, 87, 89, 6b] digest=[e4, c2, e3, b0] devgrant=0x0 cap_ceiling=0x1b\r\nHELIX: PROCESS SPAWN pid=21 slot=1 path=/system/service-worker.elf profile=Native\r\nNEXT APP pid=1: NEXTD SERVICE: index=0 name=worker-primary phase=started instance=47244640260 dependencies=0 ceiling=0x1b\r\n\r\nNEXT APP pid=1: NEXTD: service start charged against bounded restart budget\r\n\r\nNEXT APP pid=21: SERVICE WORKER: NETWORK declaration without execution grant denied UDP socket\r\n\r\nNEXT APP pid=21: SERVICE WORKER: NETWORK declaration without execution grant denied DNS lookup\r\n\r\nNEXT APP pid=21: SERVICE WORKER: isolated worker ready with scoped channel/log capabilities\r\n\r\nNEXT APP pid=1: NEXTD SERVICE: index=0 name=worker-primary phase=ready instance=47244640260 dependencies=0 ceiling=0x1b\r\n\r\nNEXT APP pid=1: NEXTD: moved NETWORK capability queued for unprivileged recipient\r\n\r\nNEXT APP pid=21: SERVICE WORKER: NETWORK socket capability import denied without execution grant\r\n\r\nNEXT APP pid=1: NEXTD: recipient NETWORK capability import denial acknowledged\r\n\r\nNEXT APP pid=1: NEXTD: intentionally killing ready service to exercise restart backoff\r\n\r\nHELIX: PROCESS EXIT pid=21 status=81 preemptions=0\r\nHELIX: APPLICATION IDENTITY pid=22 package=org.next.development.native.service-worker signer=[5f, 87, 89, 6b] digest=[e4, c2, e3, b0] devgrant=0x0 cap_ceiling=0x1b\r\nHELIX: PROCESS SPAWN pid=22 slot=1 path=/system/service-worker.elf profile=Native\r\nNEXT APP pid=1: NEXTD SERVICE: index=0 name=worker-primary phase=started instance=51539607556 dependencies=0 ceiling=0x1b\r\n\r\nNEXT APP pid=1: NEXTD: service start charged against bounded restart budget\r\n\r\nNEXT APP pid=22: SERVICE WORKER: NETWORK declaration without execution grant denied UDP socket\r\n\r\nNEXT APP pid=22: SERVICE WORKER: NETWORK declaration without execution grant denied DNS lookup\r\n\r\nNEXT APP pid=22: SERVICE WORKER: isolated worker ready with scoped channel/log capabilities\r\n\r\nNEXT APP pid=1: NEXTD SERVICE: index=0 name=worker-primary phase=ready instance=51539607556 dependencies=0 ceiling=0x1b\r\n\r\nNEXT APP pid=22: SERVICE WORKER: intentional heartbeat stall\r\n\r\nNEXT APP pid=1: NEXTD: service heartbeat deadline expired; stopping isolated instance\r\n\r\nNEXT APP pid=1: NEXTD SERVICE: index=0 name=worker-primary phase=watchdog-or-dependency-stop instance=51539607556 dependencies=0 ceiling=0x1b\r\n\r\nHELIX: PROCESS EXIT pid=22 status=81 preemptions=0\r\nHELIX: APPLICATION IDENTITY pid=23 package=org.next.development.native.service-worker signer=[5f, 87, 89, 6b] digest=[e4, c2, e3, b0] devgrant=0x0 cap_ceiling=0x1b\r\nHELIX: PROCESS SPAWN pid=23 slot=1 path=/system/service-worker.elf profile=Native\r\nNEXT APP pid=1: NEXTD SERVICE: index=0 name=worker-primary phase=started instance=55834574852 dependencies=0 ceiling=0x1b\r\n\r\nNEXT APP pid=1: NEXTD: service start charged against bounded restart budget\r\n\r\nNEXT APP pid=23: SERVICE WORKER: NETWORK declaration without execution grant denied UDP socket\r\n\r\nNEXT APP pid=23: SERVICE WORKER: NETWORK declaration without execution grant denied DNS lookup\r\n\r\nNEXT APP pid=23: SERVICE WORKER: isolated worker ready with scoped channel/log capabilities\r\n\r\nNEXT APP pid=1: NEXTD SERVICE: index=0 name=worker-primary phase=ready instance=55834574852 dependencies=0 ceiling=0x1b\r\n\r\nNEXT APP pid=1: NEXTD: service crash restart, heartbeat watchdog recovery and PID1 survival passed\r\n\r\nHELIX: NATIVE SYSTEM READY nextd supervisor alive\r\nHELIX: NATIVE SELFTEST PASS separate processes, IPC, capabilities, contained faults and timer preemption\r\nPRISM APPEARANCE LOAD: origin=MissingDefault accepted=true\r\nPRISM: PS2 MOUSE ready=true\r\nPRISM ACCESSIBILITY: frame=1 generation=1 kind=ContextChanged focused=Some(Id { context: 1, local: 2 })\r\nPRISM ACCESSIBILITY: frame=1 generation=1 kind=FocusChanged focused=Some(Id { context: 1, local: 2 })\r\nPRISM ACCESSIBILITY: frame=1 generation=1 kind=SnapshotChanged focused=Some(Id { context: 1, local: 2 })\r\nPRISM: READY 128"
+}

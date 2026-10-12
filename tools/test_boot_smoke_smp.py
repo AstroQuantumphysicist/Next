@@ -12,6 +12,27 @@ class BootSmokeSmpProfileTests(unittest.TestCase):
             f"HELIX ACPI PASS cpus={count} io_apics=1 overrides=5 tables=7 bsp=0; discovery only\r\n"
         ).encode()
 
+    def debug_path(self, path):
+        raw = [ord(character) for character in path]
+        raw.extend([0] * (260 - len(raw)))
+        return f"Path {{ bytes: [{', '.join(map(str, raw))}], len: {len(path)} }}"
+
+    def files_tab_actions(self):
+        parent = self.debug_path("/native")
+        alpha = self.debug_path("/native/alpha")
+        root = self.debug_path("/native")
+        nested = self.debug_path("/native/alpha")
+        kinds = [
+            ("CreateFolder", f"parent: FolderSnapshot {{ path: {parent}, id: 1, revision: 2 }}, path: {alpha}", "Ok(3)"),
+            ("Navigate", f"path: {root}", "Ok(4)"),
+            ("Navigate", f"path: {nested}", "Ok(5)"),
+            ("Navigate", f"path: {root}", "Ok(6)"),
+        ]
+        return "".join(
+            f"PRISM DIRECTORY ACTION: request={index} kind={kind} {{ {fields} }} result={result}\r\n"
+            for index, (kind, fields, result) in enumerate(kinds, start=1)
+        ).encode()
+
     def test_supported_profiles_require_exact_qmp_objects_and_madt_processors(self):
         for count in boot_smoke.SMP_PROFILE_CPUS:
             with self.subTest(configured_cpus=count):
@@ -64,6 +85,53 @@ class BootSmokeSmpProfileTests(unittest.TestCase):
         ):
             with self.subTest(serial=incomplete), self.assertRaises(RuntimeError):
                 boot_smoke.validate_bsp_only(incomplete)
+
+    def test_rtc_anchor_uses_launch_time_even_after_slow_guest_startup(self):
+        host_at_launch = 1_791_795_241
+        guest_cmos_anchor = host_at_launch + 2
+        host_when_prism_is_ready = host_at_launch + 25
+        self.assertGreater(abs(guest_cmos_anchor - host_when_prism_is_ready), 20)
+        self.assertEqual(
+            boot_smoke.validate_guest_rtc_anchor(guest_cmos_anchor, host_at_launch),
+            {
+                "guest_utc_seconds": guest_cmos_anchor,
+                "host_qemu_launch_utc_seconds": host_at_launch,
+                "difference_seconds": 2,
+            },
+        )
+
+    def test_rtc_anchor_rejects_mismatch_at_launch(self):
+        with self.assertRaisesRegex(RuntimeError, "at QEMU launch"):
+            boot_smoke.validate_guest_rtc_anchor(1_000_021, 1_000_000)
+
+    def test_files_tabs_require_guest_action_paths_in_order(self):
+        records = boot_smoke.validate_files_tab_action_sequence(self.files_tab_actions())
+        self.assertEqual([record["kind"].split()[0] for record in records],
+                         ["CreateFolder", "Navigate", "Navigate", "Navigate"])
+        self.assertEqual([record["paths"][-1] for record in records], [
+            "/native/alpha", "/native", "/native/alpha", "/native",
+        ])
+
+    def test_files_tabs_reject_wrong_path_order_or_failed_guest_action(self):
+        good = self.files_tab_actions()
+        with self.assertRaisesRegex(RuntimeError, "action 2 path"):
+            lines = good.splitlines(keepends=True)
+            lines[1] = lines[1].replace(b"len: 7", b"len: 6")
+            boot_smoke.validate_files_tab_action_sequence(b"".join(lines))
+        with self.assertRaisesRegex(RuntimeError, "failed"):
+            boot_smoke.validate_files_tab_action_sequence(good.replace(b"result=Ok(5)", b"result=Err(NotFound)"))
+        with self.assertRaisesRegex(RuntimeError, "expected 4"):
+            boot_smoke.validate_files_tab_action_sequence(good.rsplit(b"PRISM DIRECTORY ACTION:", 1)[0])
+
+    def test_files_tab_click_geometry_matches_default_guest_window(self):
+        self.assertEqual(
+            boot_smoke.files_tab_click_targets(1280, 800),
+            {"add": (675, 234), "root": (237, 234), "nested": (515, 234), "address": (120, 268)},
+        )
+        small = boot_smoke.files_tab_click_targets(1024, 768)
+        self.assertTrue(all(0 <= x < 1024 and 0 <= y < 768 for x, y in small.values()))
+        with self.assertRaises(ValueError):
+            boot_smoke.files_tab_click_targets(0, 768)
 
 
 if __name__ == "__main__":

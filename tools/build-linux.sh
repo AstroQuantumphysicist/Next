@@ -27,6 +27,11 @@ as --64 -o build/compat/linux/namespace.o crates/linux-fixtures/namespace.S
 ld -static --build-id=none -z max-page-size=4096 -T crates/linux-fixtures/linux.ld -o build/compat/linux/namespace.elf build/compat/linux/namespace.o
 as --64 --defsym NEXT_CROSS=1 -o build/compat/linux/namespace-gate.o crates/linux-fixtures/namespace.S
 ld -static --build-id=none -z max-page-size=4096 -T crates/linux-fixtures/linux.ld -o build/compat/linux/namespace-gate.elf build/compat/linux/namespace-gate.o
+for fixture in getpid uname lseek; do
+    as --64 -o "build/compat/linux/$fixture.o" "crates/linux-fixtures/$fixture.S"
+    ld -static --build-id=none -z max-page-size=4096 -T crates/linux-fixtures/linux.ld \
+        -o "build/compat/linux/$fixture.elf" "build/compat/linux/$fixture.o"
+done
 python3 - <<'PY'
 from pathlib import Path
 import subprocess
@@ -72,4 +77,18 @@ with tempfile.TemporaryDirectory(prefix='next-linux-namespace-') as directory:
     if result.returncode != 48 or result.stdout != expected or result.stderr or old.exists() or new.exists():
         raise SystemExit(f'Host Linux namespace fixture failed: status={result.returncode}, stdout={result.stdout!r}, stderr={result.stderr!r}')
 print('Independent Linux namespace ELF host execution PASS (exit 48)')
+binary = Path('build/compat/linux/getpid.elf')
+result = subprocess.run([str(binary.resolve())], capture_output=True, timeout=3)
+expected = b'LINUX GETPID ELF: stable kernel process identity PASS\n'
+if result.returncode != 51 or result.stdout != expected or result.stderr:
+    raise SystemExit(f'Host Linux getpid fixture failed: status={result.returncode}, stdout={result.stdout!r}, stderr={result.stderr!r}')
+print('Independent Linux getpid ELF host execution PASS (exit 51)')
+binary = Path('build/compat/linux/lseek.elf')
+with tempfile.TemporaryDirectory(prefix='next-linux-lseek-') as directory:
+    scratch = Path(directory) / 'fixture.txt'
+    result = subprocess.run([str(binary.resolve()), str(scratch)], capture_output=True, timeout=3, stdin=subprocess.DEVNULL)
+    expected = b'LINUX LSEEK ELF: position, signed errors, and cursor preservation PASS\n'
+    if result.returncode != 53 or result.stdout != expected or result.stderr or scratch.read_bytes() != b'abcdef':
+        raise SystemExit(f'Host Linux lseek fixture failed: status={result.returncode}, stdout={result.stdout!r}, stderr={result.stderr!r}, file={scratch.read_bytes()!r}')
+print('Independent Linux lseek ELF host execution PASS (exit 53)')
 PY

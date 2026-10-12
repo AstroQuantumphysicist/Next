@@ -29,6 +29,27 @@ ALT_SERVER_IP = bytes((10, 0, 2, 3))
 CLIENT_MAC = bytes.fromhex("525400123456")
 SERVER_MAC = bytes.fromhex("52550a000202")
 ALT_SERVER_MAC = bytes.fromhex("52550a000203")
+DHCPV6_SERVER_IP = bytes.fromhex("fe800000000000000000000000000002")
+DHCPV6_SERVERS = bytes.fromhex("ff020000000000000000000000010002")
+DHCPV6_ADDRESS = bytes.fromhex("20010db8000100000000000000000009")
+DHCPV6_CLIENT_DUID = bytes.fromhex("00030001525400123456")
+DHCPV6_SERVER_DUID = bytes.fromhex("0003000152550a000202")
+DHCPV6_IAID = int.from_bytes(CLIENT_MAC[2:], "big")
+DHCPV6_IA_NA_SOLICIT = struct.pack("!III", DHCPV6_IAID, 0, 0)
+DHCPV6_EXCHANGE_ERRORS = {
+    "dhcpv6-malformed-client-frame",
+    "dhcpv6-client-identity-rejected",
+    "dhcpv6-client-ia-rejected",
+    "dhcpv6-client-xid-rejected",
+    "dhcpv6-client-timing-rejected",
+    "dhcpv6-request-identity-rejected",
+    "dhcpv6-request-ia-rejected",
+    "dhcpv6-request-xid-rejected",
+    "dhcpv6-request-timing-rejected",
+    "dhcpv6-unexpected-message",
+    "dhcpv6-unexpected-solicit",
+    "dhcpv6-unexpected-request",
+}
 NS = 1_000_000_000
 
 
@@ -39,6 +60,118 @@ def checksum(data):
     while total >> 16:
         total = (total & 0xFFFF) + (total >> 16)
     return (~total) & 0xFFFF
+
+
+def ipv6_udp_checksum(source, destination, udp):
+    pseudo = source + destination + struct.pack("!I3xB", len(udp), 17)
+    return checksum(pseudo + udp)
+
+
+def dhcpv6_options(data):
+    options = {}
+    position = 4
+    while position < len(data):
+        if position + 4 > len(data):
+            return None
+        code, length = struct.unpack_from("!HH", data, position)
+        position += 4
+        if position + length > len(data) or code in options:
+            return None
+        options[code] = data[position:position + length]
+        position += length
+    return options
+
+
+def dhcpv6_message(frame, ports=(546, 547)):
+    if len(frame) < 14 + 40 + 8 or frame[12:14] != b"\x86\xdd":
+        return None
+    ip = frame[14:]
+    if ip[0] >> 4 != 6 or ip[6] != 17 or ip[7] != 1:
+        return None
+    length = struct.unpack_from("!H", ip, 4)[0]
+    if 40 + length > len(ip) or length < 12:
+        return None
+    source, destination = ip[8:24], ip[24:40]
+    if (destination[0] != 0xFF or frame[:6] != b"\x33\x33" + destination[-4:]
+            or frame[6] & 1 or frame[6:12] == bytes(6)):
+        return None
+    udp = ip[40:40 + length]
+    source_port, destination_port, udp_length, udp_checksum = struct.unpack_from("!HHHH", udp)
+    if (source_port, destination_port, udp_length) != (*ports, length) or not udp_checksum:
+        return None
+    if ipv6_udp_checksum(source, destination, udp) != 0:
+        return None
+    message = udp[8:]
+    if len(message) < 4:
+        return None
+    options = dhcpv6_options(message)
+    if options is None:
+        return None
+    return {"kind": message[0], "xid": message[1:4], "options": options,
+            "source_mac": frame[6:12], "source_ip": source, "destination_ip": destination}
+
+
+def is_dhcpv6_client_tuple(frame):
+    """Identify DHCPv6 even when later UDP or DHCPv6 validation fails."""
+    if (len(frame) < 14 + 40 + 4 or frame[12:14] != b"\x86\xdd"
+            or frame[14] >> 4 != 6 or frame[20] != 17):
+        return False
+    return struct.unpack_from("!HH", frame, 54) == (546, 547)
+
+
+def make_dhcpv6_message(kind, xid, options):
+    packet = bytearray((kind,)) + bytearray(xid)
+    for code, value in options:
+        packet.extend(struct.pack("!HH", code, len(value)))
+        packet.extend(value)
+    return bytes(packet)
+
+
+def dhcpv6_udp_frame(destination_mac, source_mac, source_ip, destination_ip,
+                     source_port, destination_port, payload):
+    udp = bytearray(struct.pack("!HHHH", source_port, destination_port, 8 + len(payload), 0) + payload)
+    checksum_value = ipv6_udp_checksum(source_ip, destination_ip, udp)
+    struct.pack_into("!H", udp, 6, checksum_value or 0xFFFF)
+    ip = bytearray(40)
+    ip[0] = 0x60
+    struct.pack_into("!HBB", ip, 4, len(udp), 17, 1)
+    ip[8:24] = source_ip
+    ip[24:40] = destination_ip
+    return ethernet(destination_mac, source_mac, 0x86DD, bytes(ip) + bytes(udp))
+
+
+def dhcpv6_ia(iaid, address=DHCPV6_ADDRESS):
+    iaaddr = address + struct.pack("!II", 40, 60)
+    nested = struct.pack("!HH", 5, len(iaaddr)) + iaaddr
+    return struct.pack("!III", iaid, 20, 40) + nested
+
+
+def dhcpv6_request_ia(iaid, address=DHCPV6_ADDRESS):
+    iaaddr = address + struct.pack("!II", 0, 0)
+    nested = struct.pack("!HH", 5, len(iaaddr)) + iaaddr
+    return struct.pack("!III", iaid, 0, 0) + nested
+
+
+def dhcpv6_elapsed(options):
+    value = options.get(8)
+    return int.from_bytes(value, "big") if value is not None and len(value) == 2 else None
+
+
+def valid_dhcpv6_solicit_ia(value, iaid):
+    return len(value) == 12 and struct.unpack("!III", value) == (iaid, 0, 0)
+
+
+def valid_dhcpv6_request_ia(value, iaid):
+    if len(value) != 40 or struct.unpack_from("!III", value) != (iaid, 0, 0):
+        return False
+    if value[12:16] != b"\x00\x05\x00\x18":
+        return False
+    return (value[16:32] == DHCPV6_ADDRESS
+            and struct.unpack_from("!II", value, 32) == (0, 0))
+
+
+def dhcpv6_exchange_errors(events):
+    return [event for event in events if event["event"] in DHCPV6_EXCHANGE_ERRORS]
 
 
 def ipv4_packet(source, destination, protocol, payload, ident=1):
@@ -163,6 +296,14 @@ class EthernetPeer:
         self.events = []
         self.dhcp_grants = 0
         self.dhcp_mode = "initial"
+        self.dhcpv6_solicits = 0
+        self.dhcpv6_requests = 0
+        self.dhcpv6_last_solicit = None
+        self.dhcpv6_last_request = None
+        self.dhcpv6_solicit_xid = None
+        self.dhcpv6_solicit_elapsed = None
+        self.dhcpv6_request_xid = None
+        self.dhcpv6_request_elapsed = None
         self.lock = threading.Lock()
         self.thread = threading.Thread(target=self._serve, name="dhcp-guest-ethernet", daemon=True)
 
@@ -215,6 +356,10 @@ class EthernetPeer:
             self.error = repr(error)
 
     def _handle(self, frame):
+        if len(frame) >= 14 and frame[12:14] == b"\x86\xdd":
+            if is_dhcpv6_client_tuple(frame):
+                self._handle_dhcpv6(frame)
+            return
         if len(frame) >= 42 and frame[12:14] == b"\x08\x06":
             if frame[20:22] == b"\x00\x01" and frame[38:42] == SERVER_IP:
                 self._record("arp-request", target=frame[38:42].hex())
@@ -244,6 +389,126 @@ class EthernetPeer:
             self._handle_udp(frame, ihl, source_ip, destination_ip)
         elif protocol == 6:
             self._handle_tcp(frame, ihl, source_ip, destination_ip)
+
+    def _handle_dhcpv6(self, frame):
+        message = dhcpv6_message(frame)
+        if message is None:
+            self._record("dhcpv6-malformed-client-frame")
+            return
+        options = message["options"]
+        if (message["source_mac"] != CLIENT_MAC or message["source_ip"] != bytes(16)
+                or message["destination_ip"] != DHCPV6_SERVERS
+                or options.get(1) != DHCPV6_CLIENT_DUID):
+            self._record("dhcpv6-client-identity-rejected")
+            return
+        xid = message["xid"]
+        if message["kind"] == 1:
+            if set(options) != {1, 3, 8}:
+                self._record("dhcpv6-client-identity-rejected")
+                return
+            ia = options[3]
+            elapsed = dhcpv6_elapsed(options)
+            if not valid_dhcpv6_solicit_ia(ia, DHCPV6_IAID):
+                self._record("dhcpv6-client-ia-rejected", xid=xid.hex())
+                return
+            if elapsed is None:
+                self._record("dhcpv6-client-timing-rejected", xid=xid.hex())
+                return
+            now = time.monotonic()
+            if self.dhcpv6_solicits == 0:
+                if elapsed != 0:
+                    self._record("dhcpv6-client-timing-rejected", xid=xid.hex(),
+                                 elapsed_centiseconds=elapsed)
+                    return
+                self.dhcpv6_solicits += 1
+                self.dhcpv6_solicit_xid = xid
+                self.dhcpv6_solicit_elapsed = elapsed
+                self.dhcpv6_last_solicit = now
+                self._record("dhcpv6-solicit-dropped", xid=xid.hex(), iaid=DHCPV6_IAID,
+                             elapsed_centiseconds=elapsed)
+                return
+            if self.dhcpv6_solicits == 1:
+                if xid != self.dhcpv6_solicit_xid:
+                    self._record("dhcpv6-client-xid-rejected", xid=xid.hex(),
+                                 expected_xid=self.dhcpv6_solicit_xid.hex())
+                    return
+                if elapsed <= self.dhcpv6_solicit_elapsed:
+                    self._record("dhcpv6-client-timing-rejected", xid=xid.hex(),
+                                 elapsed_centiseconds=elapsed,
+                                 previous_elapsed_centiseconds=self.dhcpv6_solicit_elapsed)
+                    return
+                delay = now - self.dhcpv6_last_solicit
+                self.dhcpv6_solicits += 1
+                self.dhcpv6_solicit_elapsed = elapsed
+                self._record("dhcpv6-solicit-retry", xid=xid.hex(), iaid=DHCPV6_IAID,
+                             elapsed_centiseconds=elapsed, delay_seconds=round(delay, 3))
+                advertise = make_dhcpv6_message(2, xid, [
+                    (1, DHCPV6_CLIENT_DUID), (2, DHCPV6_SERVER_DUID),
+                    (3, dhcpv6_ia(DHCPV6_IAID)),
+                ])
+                self._send(dhcpv6_udp_frame(bytes.fromhex("333300010002"), SERVER_MAC,
+                                            DHCPV6_SERVER_IP, DHCPV6_SERVERS, 547, 546, advertise))
+                self._record("dhcpv6-advertise-sent", xid=xid.hex(), iaid=DHCPV6_IAID)
+                return
+            self._record("dhcpv6-unexpected-solicit", xid=xid.hex(), iaid=DHCPV6_IAID)
+            return
+        if message["kind"] != 3:
+            self._record("dhcpv6-unexpected-message", xid=xid.hex(), kind=message["kind"])
+            return
+        if set(options) != {1, 2, 3, 8} or options.get(2) != DHCPV6_SERVER_DUID:
+            self._record("dhcpv6-request-identity-rejected", xid=xid.hex())
+            return
+        ia = options[3]
+        elapsed = dhcpv6_elapsed(options)
+        if not valid_dhcpv6_request_ia(ia, DHCPV6_IAID):
+            self._record("dhcpv6-request-ia-rejected", xid=xid.hex())
+            return
+        if elapsed is None:
+            self._record("dhcpv6-request-timing-rejected", xid=xid.hex())
+            return
+        now = time.monotonic()
+        if self.dhcpv6_requests == 0:
+            if self.dhcpv6_solicits != 2 or xid == self.dhcpv6_solicit_xid:
+                self._record("dhcpv6-request-xid-rejected", xid=xid.hex(),
+                             solicit_xid=(self.dhcpv6_solicit_xid.hex()
+                                          if self.dhcpv6_solicit_xid else None))
+                return
+            if elapsed != 0:
+                self._record("dhcpv6-request-timing-rejected", xid=xid.hex(),
+                             elapsed_centiseconds=elapsed)
+                return
+            self.dhcpv6_requests += 1
+            self.dhcpv6_request_xid = xid
+            self.dhcpv6_request_elapsed = elapsed
+            self.dhcpv6_last_request = now
+            self._record("dhcpv6-request-dropped", xid=xid.hex(), iaid=DHCPV6_IAID,
+                         elapsed_centiseconds=elapsed)
+            return
+        if self.dhcpv6_requests == 1:
+            if xid != self.dhcpv6_request_xid:
+                self._record("dhcpv6-request-xid-rejected", xid=xid.hex(),
+                             expected_xid=self.dhcpv6_request_xid.hex())
+                return
+            if elapsed <= self.dhcpv6_request_elapsed:
+                self._record("dhcpv6-request-timing-rejected", xid=xid.hex(),
+                             elapsed_centiseconds=elapsed,
+                             previous_elapsed_centiseconds=self.dhcpv6_request_elapsed)
+                return
+            delay = now - self.dhcpv6_last_request
+            self.dhcpv6_requests += 1
+            self.dhcpv6_request_elapsed = elapsed
+            self._record("dhcpv6-request-retry", xid=xid.hex(), iaid=DHCPV6_IAID,
+                         elapsed_centiseconds=elapsed, delay_seconds=round(delay, 3))
+            reply = make_dhcpv6_message(7, xid, [
+                (1, DHCPV6_CLIENT_DUID), (2, DHCPV6_SERVER_DUID),
+                (3, dhcpv6_ia(DHCPV6_IAID)),
+            ])
+            self._send(dhcpv6_udp_frame(bytes.fromhex("333300010002"), SERVER_MAC,
+                                        DHCPV6_SERVER_IP, DHCPV6_SERVERS, 547, 546, reply))
+            self._record("dhcpv6-reply-sent", xid=xid.hex(), iaid=DHCPV6_IAID,
+                         address=DHCPV6_ADDRESS.hex())
+            return
+        self._record("dhcpv6-unexpected-request", xid=xid.hex(), iaid=DHCPV6_IAID)
 
     def _handle_dhcp(self, message):
         options = message["options"]
@@ -492,6 +757,9 @@ def run(args):
     peer = EthernetPeer(listener)
     peer.start()
     source_paths = [ROOT / "crates/helix-kernel/src/network.rs",
+                    ROOT / "crates/helix-kernel/src/network_ipv6.rs",
+                    ROOT / "crates/helix-kernel/src/network_dhcpv6.rs",
+                    ROOT / "crates/helix-kernel/src/main.rs",
                     ROOT / "crates/helix-kernel/src/network_runtime.rs",
                     ROOT / "crates/helix-kernel/src/network_dhcp.rs",
                     ROOT / "tools/dhcp_guest_smoke.py"]
@@ -507,6 +775,13 @@ def run(args):
         "link": "QEMU socket netdev TCP Ethernet frames",
         "lease_policy": {"initial_seconds": 40, "t1_seconds": 12, "t2_seconds": 30,
                          "rebind_ack_server": "10.0.2.3", "post_nak_lease_seconds": 40},
+        "dhcpv6_policy": {
+            "exchange": "Solicit/Advertise/Request/Reply over IPv6 link-local multicast",
+            "identity": "DUID-LL(Ethernet) and IAID derived from guest MAC",
+            "peer_retries": "first Solicit and Request dropped; retransmissions answered",
+            "address_installation": False, "dad": False, "routes": False,
+        },
+        "dhcpv6_only_smoke": args.dhcpv6_only,
     }
     process = None
     serial = bytearray()
@@ -546,12 +821,17 @@ def run(args):
             if not ready:
                 raise TimeoutError("guest did not reach PRISM: READY")
             report["guest_ready_seconds"] = round(time.monotonic() - peer.started, 3)
-            required = ["t1-renewal", "t1-ack-refresh", "t1-renewal-dropped", "t2-rebind",
-                        "t2-ack-refresh", "t1-renewal-nak", "reacquire-ack", "lease-expiry-discovery"]
+            required = ["dhcpv6-solicit-retry", "dhcpv6-request-retry", "dhcpv6-reply-sent"]
+            if not args.dhcpv6_only:
+                required = ["t1-renewal", "t1-ack-refresh", "t1-renewal-dropped", "t2-rebind",
+                            "t2-ack-refresh", "t1-renewal-nak", "reacquire-ack", "lease-expiry-discovery"] + required
             while time.monotonic() < deadline:
                 if peer.error:
                     raise RuntimeError(f"Ethernet peer failed: {peer.error}")
                 events = peer.snapshot()
+                rejected = dhcpv6_exchange_errors(events)
+                if rejected:
+                    raise RuntimeError(f"DHCPv6 peer rejected guest exchange: {rejected}")
                 kinds = [event["event"] for event in events]
                 if all(expected in kinds for expected in required):
                     break
@@ -560,27 +840,74 @@ def run(args):
                 for chunk in read_serial(process, serial, min(deadline, time.monotonic() + 0.25)):
                     qemu_output.extend(chunk)
             events = peer.snapshot()
+            rejected = dhcpv6_exchange_errors(events)
+            if rejected:
+                raise RuntimeError(f"DHCPv6 peer rejected guest exchange: {rejected}")
             kinds = [event["event"] for event in events]
             missing = [event for event in required if event not in kinds]
             if missing:
                 raise TimeoutError(f"missing guest DHCP transitions: {missing}; events={kinds}")
-            report["timer_intervals_seconds"] = validate_timing(events)
+            if not args.dhcpv6_only:
+                report["timer_intervals_seconds"] = validate_timing(events)
+            solicit_retry = next(event for event in events if event["event"] == "dhcpv6-solicit-retry")
+            request_retry = next(event for event in events if event["event"] == "dhcpv6-request-retry")
+            solicit_initial = next(event for event in events if event["event"] == "dhcpv6-solicit-dropped")
+            request_initial = next(event for event in events if event["event"] == "dhcpv6-request-dropped")
+            if (solicit_retry["xid"] != solicit_initial["xid"]
+                    or solicit_retry["elapsed_centiseconds"]
+                    <= solicit_initial["elapsed_centiseconds"]):
+                raise RuntimeError("DHCPv6 Solicit retry changed XID or did not advance Elapsed Time")
+            if (request_retry["xid"] != request_initial["xid"]
+                    or request_retry["elapsed_centiseconds"]
+                    <= request_initial["elapsed_centiseconds"]):
+                raise RuntimeError("DHCPv6 Request retry changed XID or did not advance Elapsed Time")
+            for name, event in (("Solicit", solicit_retry), ("Request", request_retry)):
+                if not 0.5 <= event["delay_seconds"] <= 4.0:
+                    raise RuntimeError(f"DHCPv6 {name} retry delay {event['delay_seconds']}s outside 0.5..4.0s")
+            report["dhcpv6_retry_delays_seconds"] = {
+                "solicit": solicit_retry["delay_seconds"],
+                "request": request_retry["delay_seconds"],
+            }
+            report["dhcpv6_retry_validation"] = {
+                "solicit_xid_preserved": True,
+                "request_xid_preserved": True,
+                "solicit_elapsed_centiseconds": [
+                    solicit_initial["elapsed_centiseconds"],
+                    solicit_retry["elapsed_centiseconds"],
+                ],
+                "request_elapsed_centiseconds": [
+                    request_initial["elapsed_centiseconds"],
+                    request_retry["elapsed_centiseconds"],
+                ],
+                "unexpected_or_rejected_events": [],
+                "request_ia_na": "selected IAADDR with zero T1/T2 and preferred/valid lifetimes; Reply supplies server values",
+            }
             final_source_hashes = {
                 str(path.relative_to(ROOT)): hashlib.sha256(path.read_bytes()).hexdigest()
                 for path in source_paths
             }
             if final_source_hashes != source_hashes:
                 raise RuntimeError("network sources changed during the QEMU guest run")
-            if b"HELIX DHCP PASS" not in serial or b"PRISM: READY" not in serial:
-                raise RuntimeError("guest never logged DHCP acquisition and desktop readiness")
+            if (b"HELIX DHCP PASS" not in serial or b"HELIX DHCPV6 CANDIDATE PASS" not in serial
+                    or b"PRISM: READY" not in serial):
+                raise RuntimeError("guest never logged DHCPv4, DHCPv6 candidate, and desktop readiness")
             report["events"] = events
             report["checks"] = [
-                "QEMU guest acquired the peer's short DHCP lease before desktop startup",
-                "retained guest runtime emitted a T1 unicast renewal and accepted an ACK that refreshed its lease",
-                "a later T1 was dropped; the guest emitted a T2 broadcast rebind and accepted an ACK from another server",
-                "the guest emitted another T1 request, received a DHCP NAK, and restarted discovery",
-                "after reacquisition, renewal and rebind were dropped; lease expiry restarted discovery",
+                "the guest sent a real IPv6 DHCPv6 Solicit, ignored a dropped response, and retransmitted on timer",
+                "Solicit and Request retries preserved their transaction IDs and advanced Elapsed Time",
+                "the peer validated exact bounded IA_NA/IAADDR shape and selected address/server before replying",
+                "the peer observed no unexpected or rejected DHCPv6 exchange events",
+                "the guest bound Advertise selection to DUID/IAID/server, retried Request, and accepted matching Reply",
+                "the guest logged only a lease candidate; no IPv6 address, DAD result, or route was installed",
             ]
+            if not args.dhcpv6_only:
+                report["checks"] = [
+                    "QEMU guest acquired the peer's short DHCP lease before desktop startup",
+                    "retained guest runtime emitted a T1 unicast renewal and accepted an ACK that refreshed its lease",
+                    "a later T1 was dropped; the guest emitted a T2 broadcast rebind and accepted an ACK from another server",
+                    "the guest emitted another T1 request, received a DHCP NAK, and restarted discovery",
+                    "after reacquisition, renewal and rebind were dropped; lease expiry restarted discovery",
+                ] + report["checks"]
             report["serial_tail"] = serial.decode("utf-8", errors="replace")[-5000:]
             report["passed"] = True
     except Exception as error:
@@ -616,6 +943,8 @@ def main():
     parser.add_argument("--timeout", type=float, default=150.0)
     parser.add_argument("--image", type=Path, default=ROOT / "build/next-dev.img")
     parser.add_argument("--output", type=Path, default=ROOT / "build/dhcp-guest-smoke.json")
+    parser.add_argument("--dhcpv6-only", action="store_true",
+                        help="stop at guest readiness after verifying the bounded DHCPv6 exchange and retries")
     args = parser.parse_args()
     if args.timeout < 1:
         parser.error("--timeout must be at least one second")
