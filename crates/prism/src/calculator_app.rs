@@ -130,6 +130,16 @@ impl CalculatorApp {
         self.focus
     }
 
+    /// Replaces the expression and evaluates it through the same bounded
+    /// parser used by keyboard and pointer calculation.
+    pub fn evaluate_expression(&mut self, expression: &str) -> Change {
+        if !self.expression.set(expression) {
+            return Change::Ignored;
+        }
+        self.focus = Control::Expression;
+        self.calculate()
+    }
+
     pub fn on_key(&mut self, key: Key) -> Change {
         match key {
             Key::Tab | Key::Down => {
@@ -744,6 +754,26 @@ mod tests {
                 .value(),
             "81"
         );
+    }
+
+    #[test]
+    fn evaluate_expression_prefills_and_uses_the_regular_result_state() {
+        let mut app = CalculatorApp::new();
+        assert_eq!(
+            app.evaluate_expression("(2 + 3) * 4"),
+            Change::Evaluated(Ok(20))
+        );
+        assert_eq!(app.expression(), "(2 + 3) * 4");
+        assert_eq!(app.result(), Some(Ok(20)));
+        assert_eq!(app.result_text(), "20");
+        assert_eq!(app.focused(), Control::Expression);
+
+        assert_eq!(
+            app.evaluate_expression("1 / 0"),
+            Change::Evaluated(Err(calculator::Error::DivisionByZero))
+        );
+        assert_eq!(app.expression(), "1 / 0");
+        assert_eq!(app.result(), Some(Err(calculator::Error::DivisionByZero)));
     }
 
     #[test]

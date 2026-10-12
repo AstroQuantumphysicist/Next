@@ -128,7 +128,7 @@ impl Handle {
     }
     pub fn wait(self, mode: Wait) -> Result<i64> {
         let mut output = 0i64;
-        let (flags, deadline) = wait_arguments(mode, false);
+        let (flags, deadline) = wait_arguments(mode, false)?;
         unit(call(
             Syscall::ObjectWait,
             [
@@ -146,6 +146,7 @@ impl Handle {
     /// The kernel validates every handle and output buffer before consuming a
     /// signal; at most `OBJECT_WAIT_MANY_MAX` unique event objects are allowed.
     pub fn wait_many(handles: &[Self], mode: Wait) -> Result<usize> {
+        let (flags, deadline) = wait_arguments(mode, false)?;
         if handles.is_empty() || handles.len() > next_abi::OBJECT_WAIT_MANY_MAX {
             return invalid();
         }
@@ -154,7 +155,6 @@ impl Handle {
             raw[slot] = handle.raw();
         }
         let mut selected = u64::MAX;
-        let (flags, deadline) = wait_arguments(mode, false);
         unit(call(
             Syscall::ObjectWaitMany,
             [
@@ -227,15 +227,17 @@ impl Handle {
 pub enum Wait {
     Poll,
     Block,
+    /// Absolute monotonic nanoseconds; zero returns TimedOut locally.
     Until(u64),
 }
-fn wait_arguments(mode: Wait, writable: bool) -> (u64, u64) {
+fn wait_arguments(mode: Wait, writable: bool) -> Result<(u64, u64)> {
     let (flags, deadline) = match mode {
         Wait::Poll => (0, 0),
         Wait::Block => (1, 0),
+        Wait::Until(0) => return Err(Error::Status(Status::TimedOut)),
         Wait::Until(deadline) => (1, deadline),
     };
-    (flags | if writable { 2 } else { 0 }, deadline)
+    Ok((flags | if writable { 2 } else { 0 }, deadline))
 }
 #[repr(u64)]
 #[derive(Clone, Copy, Debug)]
@@ -660,7 +662,7 @@ impl Datagram {
     }
     fn wait_ready(self, mode: Wait, writable: bool) -> Result<()> {
         let mut output = 0i64;
-        let (flags, deadline) = wait_arguments(mode, writable);
+        let (flags, deadline) = wait_arguments(mode, writable)?;
         unit(call(
             Syscall::ObjectWait,
             [
@@ -729,7 +731,7 @@ impl Lookup {
     }
     pub fn wait(self, mode: Wait) -> Result<()> {
         let mut output = 0i64;
-        let (flags, deadline) = wait_arguments(mode, false);
+        let (flags, deadline) = wait_arguments(mode, false)?;
         unit(call(
             Syscall::ObjectWait,
             [
@@ -834,8 +836,8 @@ mod datagram_tests {
             (Wait::Until(7), 1, 3, 7),
             (Wait::Until(u64::MAX), 1, 3, u64::MAX),
         ] {
-            assert_eq!(wait_arguments(mode, false), (read, deadline));
-            assert_eq!(wait_arguments(mode, true), (write, deadline));
+            assert_eq!(wait_arguments(mode, false), Ok((read, deadline)));
+            assert_eq!(wait_arguments(mode, true), Ok((write, deadline)));
         }
     }
     #[test]
@@ -987,7 +989,7 @@ impl Surface {
     /// activate a surface or grant keyboard focus. Independent WAIT required.
     pub fn wait_input(self, mode: Wait) -> Result<()> {
         let mut output = 0i64;
-        let (flags, deadline) = wait_arguments(mode, false);
+        let (flags, deadline) = wait_arguments(mode, false)?;
         unit(call(
             Syscall::ObjectWait,
             [
@@ -1253,3 +1255,93 @@ mod close_sdk_tests {
 #[path = "surface_session.rs"]
 mod surface_session;
 pub use surface_session::{SurfaceLayout, SurfaceSession};
+
+/// Borrowed one-shot monotonic timer token. Expiry remains level-ready; copying
+/// this wrapper never duplicates ownership. Cancellation is terminal.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Timer(Handle);
+impl Timer {
+    pub fn create(deadline: u64, rights: Rights) -> Result<Self> {
+        rights_valid(rights)?;
+        if rights.0 & !next_abi::TIMER_RIGHTS != 0 {
+            return invalid();
+        }
+        Handle::returned(call(Syscall::TimerCreate, [deadline, rights.0, 0, 0, 0, 0])).map(Self)
+    }
+    pub fn handle(self) -> Handle {
+        self.0
+    }
+    pub fn from_handle(handle: Handle) -> Self {
+        Self(handle)
+    }
+    pub fn cancel(self) -> Result<()> {
+        unit(call(Syscall::TimerCancel, [self.0.raw(), 0, 0, 0, 0, 0]))
+    }
+    pub fn wait(self, mode: Wait) -> Result<()> {
+        if self.0.wait(mode)? == 0 {
+            Ok(())
+        } else {
+            Err(Error::InvalidResult)
+        }
+    }
+    pub fn duplicate(self, rights: Rights) -> Result<Self> {
+        rights_valid(rights)?;
+        if rights.0 & !next_abi::TIMER_RIGHTS != 0 {
+            return invalid();
+        }
+        self.0.duplicate(rights).map(Self)
+    }
+    pub fn close(self) -> Result<()> {
+        self.0.close()
+    }
+}
+
+#[cfg(test)]
+mod timer_tests {
+    use super::*;
+    #[test]
+    fn timer_only_rights_fail_locally_before_any_syscall() {
+        for rights in [
+            Rights::READ,
+            Rights::WRITE,
+            Rights::EXECUTE,
+            Rights::ADMIN,
+            Rights(u64::MAX),
+        ] {
+            assert_eq!(
+                Timer::create(100, rights),
+                Err(Error::Status(Status::InvalidArgument))
+            );
+            let timer = Timer::from_handle(Handle::from_raw(1).unwrap());
+            assert_eq!(
+                timer.duplicate(rights),
+                Err(Error::Status(Status::InvalidArgument))
+            );
+        }
+    }
+}
+
+#[cfg(test)]
+mod zero_wait_deadline_tests {
+    use super::*;
+    #[test]
+    fn every_public_wait_rejects_zero_without_entering_native_gate() {
+        // Host tests cannot safely enter the native gate: reaching it fails this test.
+        let h = Handle::from_raw(1).unwrap();
+        let timed_out = Error::Status(Status::TimedOut);
+        assert_eq!(h.wait(Wait::Until(0)), Err(timed_out));
+        assert_eq!(Handle::wait_many(&[h], Wait::Until(0)), Err(timed_out));
+        assert_eq!(Handle::wait_many(&[], Wait::Until(0)), Err(timed_out));
+        assert_eq!(Timer::from_handle(h).wait(Wait::Until(0)), Err(timed_out));
+        assert_eq!(Lookup::from_handle(h).wait(Wait::Until(0)), Err(timed_out));
+        let d = Datagram::from_handle(h);
+        assert_eq!(d.wait_readable(Wait::Until(0)), Err(timed_out));
+        assert_eq!(d.wait_writable(Wait::Until(0)), Err(timed_out));
+        assert_eq!(
+            Surface::from_handle(h).wait_input(Wait::Until(0)),
+            Err(timed_out)
+        );
+        assert_eq!(wait_arguments(Wait::Until(0), false), Err(timed_out));
+        assert_eq!(wait_arguments(Wait::Until(0), true), Err(timed_out));
+    }
+}

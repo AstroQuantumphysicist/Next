@@ -173,6 +173,58 @@ pub const fn section(index: usize) -> Option<&'static Section> {
     }
 }
 
+/// Returns whether a section matches a Settings search. Search covers the
+/// category name, its description, and each of its setting rows so users can
+/// find a category by the feature they are looking for.
+pub fn matches_query(index: usize, query: &str) -> bool {
+    let Some(section) = section(index) else {
+        return false;
+    };
+    query.is_empty()
+        || contains_ascii_case_insensitive(section.label, query)
+        || contains_ascii_case_insensitive(section.summary, query)
+        || section
+            .rows
+            .iter()
+            .any(|row| contains_ascii_case_insensitive(row, query))
+}
+
+/// Finds the section at a zero-based position in the filtered catalog.
+pub fn matching_index(query: &str, position: usize) -> Option<usize> {
+    let mut found = 0;
+    for index in 0..SECTIONS.len() {
+        if matches_query(index, query) {
+            if found == position {
+                return Some(index);
+            }
+            found += 1;
+        }
+    }
+    None
+}
+
+/// Counts sections matching a Settings search.
+pub fn matching_count(query: &str) -> usize {
+    (0..SECTIONS.len())
+        .filter(|index| matches_query(*index, query))
+        .count()
+}
+
+fn contains_ascii_case_insensitive(haystack: &str, needle: &str) -> bool {
+    if needle.is_empty() {
+        return true;
+    }
+    if !haystack.is_ascii() || !needle.is_ascii() || needle.len() > haystack.len() {
+        return false;
+    }
+    haystack.as_bytes().windows(needle.len()).any(|window| {
+        window
+            .iter()
+            .zip(needle.as_bytes())
+            .all(|(left, right)| left.eq_ignore_ascii_case(right))
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -199,5 +251,20 @@ mod tests {
             .all(|section| section.state == State::Unavailable));
         assert_eq!(SECTIONS[10].state, State::Available);
         assert!(section(SECTIONS.len()).is_none());
+    }
+
+    #[test]
+    fn search_matches_category_and_setting_rows_without_allocating_or_changing_order() {
+        assert_eq!(matching_count(""), SECTIONS.len());
+        assert_eq!(matching_index("", 0), Some(0));
+        assert_eq!(matching_index("", 11), Some(11));
+        assert_eq!(matching_index("", 12), None);
+
+        assert_eq!(matching_count("bluetooth"), 1);
+        assert_eq!(matching_index("BLUETOOTH", 0), Some(5));
+        assert_eq!(matching_index("pairing", 0), Some(5));
+        assert_eq!(matching_index("secure boot", 0), Some(8));
+        assert_eq!(matching_index("no matching setting", 0), None);
+        assert!(!matches_query(SECTIONS.len(), "system"));
     }
 }

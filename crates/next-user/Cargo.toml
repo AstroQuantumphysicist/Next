@@ -170,3 +170,9 @@ name = "client-reconfigure-probe"
 path = "src/bin/client-reconfigure-probe.rs"
 test = false
 bench = false
+
+[[bin]]
+name = "timer-probe"
+path = "src/bin/timer-probe.rs"
+test = false
+bench = false

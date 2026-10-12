@@ -18,6 +18,11 @@ pub enum Status {
     PeerClosed = -12,
     Cancelled = -13,
 }
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct Timespec {
+    pub seconds: i64,
+    pub nanoseconds: i64,
+}
 #[path = "../crates/next-abi/src/elf.rs"]
 pub mod elf;
 #[allow(dead_code)]

@@ -310,6 +310,29 @@ impl<const N: usize> Files<N> {
         e.offset = end;
         Ok(data.len())
     }
+    /// Resize shared inode contents without moving any open-description offset.
+    /// Linked data is published only after the namespace backend commits. An
+    /// unlinked open inode stays anonymous and cannot recreate its old name.
+    pub fn resize(
+        &mut self,
+        backend: &mut impl Backend,
+        h: FileHandle,
+        length: usize,
+    ) -> Result<(), Error> {
+        let (_, inode) = self.get(h)?;
+        if length > FILE_BYTES {
+            return Err(Error::TooLarge);
+        }
+        let mut next = inode.bytes;
+        // Clear removed bytes too, so shrink/regrow cannot reveal old contents.
+        next[length.min(inode.len)..].fill(0);
+        if inode.path_len != 0 {
+            backend.put(inode.path(), &next[..length])?;
+        }
+        inode.bytes = next;
+        inode.len = length;
+        Ok(())
+    }
     pub fn seek(&mut self, h: FileHandle, offset: i64, origin: u64) -> Result<u64, Error> {
         let (e, inode) = self.get(h)?;
         let base = match origin {
@@ -709,6 +732,96 @@ mod tests {
             self.mutations += 1;
             Ok(())
         }
+    }
+    #[test]
+    fn resize_shrink_regrow_shared_inode_and_description_offsets() {
+        let mut files = Files::<4>::new();
+        let mut backend = Namespace::default();
+        let a = files.open(&mut backend, "/resize", true, false).unwrap();
+        files.write(&mut backend, a, b"abcdef").unwrap();
+        let b = files.open(&mut backend, "/resize", false, false).unwrap();
+        files.seek(b, 2, 0).unwrap();
+        files.retain(a).unwrap(); // duplicate aliases this open description
+        let identity = files.inode(a).unwrap();
+        files.resize(&mut backend, b, 3).unwrap();
+        assert_eq!(files.info(a), Ok((3, 6)));
+        assert_eq!(files.info(b), Ok((3, 2)));
+        assert_eq!(&backend.files["/resize"], b"abc");
+        files.resize(&mut backend, a, 8).unwrap();
+        assert_eq!(files.info(a), Ok((8, 6)));
+        assert_eq!(files.info(b), Ok((8, 2)));
+        assert_eq!(files.inode(b), Ok(identity));
+        assert_eq!(&backend.files["/resize"], b"abc\0\0\0\0\0");
+        let c = files.open(&mut backend, "/resize", false, false).unwrap();
+        let mut bytes = [0xff; 8];
+        assert_eq!(files.read(c, &mut bytes), Ok(8));
+        assert_eq!(&bytes, b"abc\0\0\0\0\0");
+        files.close(a).unwrap(); // surviving duplicate remains live
+        assert_eq!(files.info(a), Ok((8, 6)));
+        files.resize(&mut backend, a, 0).unwrap();
+        assert_eq!(files.info(a), Ok((0, 6)));
+        assert_eq!(files.info(b), Ok((0, 2)));
+        files.close(a).unwrap();
+        assert_eq!(files.resize(&mut backend, a, 1), Err(Error::InvalidHandle));
+    }
+    #[test]
+    fn resize_detached_inode_never_changes_recreated_name() {
+        let mut files = Files::<3>::new();
+        let mut backend = Namespace::default();
+        let old = files.open(&mut backend, "/detached", true, false).unwrap();
+        files.write(&mut backend, old, b"secret").unwrap();
+        files.remove(&mut backend, "/detached").unwrap();
+        let current = files.open(&mut backend, "/detached", true, false).unwrap();
+        files.write(&mut backend, current, b"new").unwrap();
+        let mutations = backend.mutations;
+        backend.fail = true; // anonymous resize requires no namespace commit
+        files.resize(&mut backend, old, 2).unwrap();
+        files.resize(&mut backend, old, 6).unwrap();
+        assert_eq!(files.info(old), Ok((6, 6)));
+        assert_eq!(files.link_count(old), Ok(0));
+        assert_eq!(files.info(current), Ok((3, 3)));
+        assert_eq!(&backend.files["/detached"], b"new");
+        assert_eq!(backend.mutations, mutations);
+        files.seek(old, 0, 0).unwrap();
+        let mut bytes = [0xff; 6];
+        assert_eq!(files.read(old, &mut bytes), Ok(6));
+        assert_eq!(&bytes, b"se\0\0\0\0");
+    }
+    #[test]
+    fn resize_rejected_length_or_commit_preserves_all_cached_state() {
+        let mut files = Files::<2>::new();
+        let mut backend = Namespace::default();
+        let a = files.open(&mut backend, "/atomic", true, false).unwrap();
+        files.write(&mut backend, a, b"original").unwrap();
+        let b = files.open(&mut backend, "/atomic", false, false).unwrap();
+        files.seek(b, 3, 0).unwrap();
+        let identity = files.inode(a);
+        let mutations = backend.mutations;
+        assert_eq!(
+            files.resize(&mut backend, a, usize::MAX),
+            Err(Error::TooLarge)
+        );
+        assert_eq!(
+            files.resize(&mut backend, a, FILE_BYTES + 1),
+            Err(Error::TooLarge)
+        );
+        backend.fail = true;
+        for length in [0, 4, 8, FILE_BYTES] {
+            assert_eq!(files.resize(&mut backend, a, length), Err(Error::Io));
+            assert_eq!(files.info(a), Ok((8, 8)));
+            assert_eq!(files.info(b), Ok((8, 3)));
+            assert_eq!(files.inode(a), identity);
+            assert_eq!(&backend.files["/atomic"], b"original");
+            assert_eq!(backend.mutations, mutations);
+            let inode = files.get(a).unwrap().1;
+            assert_eq!(&inode.bytes[..8], b"original");
+            assert!(inode.bytes[8..].iter().all(|byte| *byte == 0));
+        }
+        backend.fail = false;
+        files.resize(&mut backend, a, FILE_BYTES).unwrap();
+        assert_eq!(files.info(a), Ok((FILE_BYTES, 8)));
+        assert_eq!(files.info(b), Ok((FILE_BYTES, 3)));
+        assert!(backend.files["/atomic"][8..].iter().all(|byte| *byte == 0));
     }
     #[test]
     fn independent_opens_share_inode_and_live_contents_but_not_offsets() {

@@ -818,6 +818,13 @@ def main():
                     wait_text("LINUX FILE ELF: open/read/write/seek/stat/dup/close compatibility PASS",start)
                     wait_text("status=46",start)
                     report["checks"].append("original Linux common file-object fixture: " + path)
+                start = len(serial_data)
+                serial.sendall(b"run /compat/linux/timefile.elf\r")
+                wait_text("LINUX TIMEFILE ELF: gettimeofday and ftruncate descriptor semantics PASS", start)
+                wait_text("status=57", start)
+                report["checks"].append(
+                    "original Linux gettimeofday/ftruncate fixture validates sequential timeval-before-timezone fault side effects, timezone/null pointers, shared and independent file offsets, size/zero-fill, error ordering, unlink lifetime and Helix's bounded 4 KiB profile"
+                )
                 for path in ["/compat/nt/hello.exe", "/compat/nt/hello-gate.exe"]:
                     start = len(serial_data)
                     serial.sendall(("run " + path + "\r").encode())
@@ -830,6 +837,22 @@ def main():
                 wait_text("UDP PROBE: actual nonce echo fixed trusted peer 10.0.2.2:39097, authority/copyout/nonconsume/stale/reuse passed", start)
                 wait_exit(int(udp_spawn[1]), 47, start)
                 report["checks"].append("native connected UDP capability sends actual nonce/empty datagrams through retained virtio device with copyout-safe receive, level wait, rights and stale-handle checks")
+                for timer_run in range(2):
+                    start = len(serial_data)
+                    serial.sendall(b"run /system/timer-probe.elf\r")
+                    timer_spawn = wait_regex(
+                        rb"HELIX: PROCESS SPAWN pid=(\d+) slot=\d+ path=/system/timer-probe\.elf profile=Native",
+                        start,
+                    )
+                    timer_pid = int(timer_spawn[1])
+                    wait_text(
+                        "TIMER PROBE: monotonic expiry, zero/absolute deadlines, cancellation, rights, queued transfer, stale handles and quotas passed",
+                        start,
+                    )
+                    timer_exit = wait_exit(timer_pid, 58, start)
+                    report["checks"].append(
+                        f"native timer capability fixture run {timer_run + 1} passes expiry, zero and absolute deadlines, cancellation, transfer, rights, stale handles and quota cleanup: exit 58"
+                    )
                 # Exercise authoritative Editor load/save through real PS/2 input
                 # and journal I/O, including preservation after an external edit.
                 def editor_key(*keys):
@@ -1364,7 +1387,7 @@ def main():
                 wait_text("LINUX CWD ELF: getcwd, chdir, and relative openat PASS", cwd_mark)
                 wait_text("status=56", cwd_mark)
                 report["checks"].append(
-                    "original Linux getcwd/chdir/relative-openat fixture validates cwd bytes, error atomicity, confinement and directory-relative reads"
+                    "original Linux getcwd/chdir/openat fixture validates exact cwd bytes, page-boundary copyout, low32/high32 dirfd handling, absolute paths with invalid dirfds, confinement and directory-relative reads"
                 )
                 editor_command("rm /native/sample", "NEXT DATA: Removed /native/sample")
                 report["checks"].append(
@@ -1399,6 +1422,32 @@ def main():
                     gallery_dir = build / "prism-gallery"
                     gallery_dir.mkdir(parents=True, exist_ok=True)
                     gallery = {}
+                    presentation_pattern = re.compile(
+                        rb"(?:PRISM FRAME: generation=\d+|PRISM OUTPUT FRAME: generation=\d+|"
+                        rb"PRISM ACCESSIBILITY: frame=\d+ generation=\d+ kind=SnapshotChanged)"
+                    )
+
+                    def wait_gallery_presentation(mark, *, authoritative=False):
+                        # Keyboard-only updates may publish a changed semantic
+                        # snapshot without a generic framebuffer marker. When
+                        # an expected model-state record already established
+                        # the transition, allow a short bounded settle if this
+                        # particular update has no presentation record.
+                        settle_deadline = time.monotonic() + min(0.25, remaining())
+                        while True:
+                            presentation = presentation_pattern.search(serial_data, mark)
+                            if presentation:
+                                time.sleep(min(0.2, remaining()))
+                                return presentation
+                            if authoritative and time.monotonic() >= settle_deadline:
+                                time.sleep(min(0.2, remaining()))
+                                return None
+                            wait_seconds = remaining()
+                            if authoritative:
+                                wait_seconds = min(wait_seconds, settle_deadline - time.monotonic())
+                            ready, _, _ = select.select([serial], [], [], min(0.1, wait_seconds))
+                            if ready:
+                                receive_serial()
 
                     def gallery_key(*keys, expected=None):
                         mark = len(serial_data)
@@ -1414,10 +1463,10 @@ def main():
                             for key in reversed(keys)
                         ]})
                         if expected is None:
-                            transition = wait_regex(rb"PRISM FRAME: generation=\d+", mark)
+                            transition = wait_gallery_presentation(mark)
                         else:
                             transition = wait_regex(expected, mark)
-                            wait_text("PRISM FRAME:", transition.end())
+                            wait_gallery_presentation(transition.end(), authoritative=True)
                         return transition
 
                     def capture_gallery(name):
@@ -1431,7 +1480,20 @@ def main():
                         if (shot_width, shot_height) != (width, height) or len(data[match.end():]) != shot_width * shot_height * 3:
                             raise RuntimeError(f"Prism gallery screenshot dimensions differ: {name}")
                         gallery[name] = {"path": str(path.relative_to(ROOT)),
-                                         "width": shot_width, "height": shot_height}
+                                         "width": shot_width, "height": shot_height,
+                                         "sha256": hashlib.sha256(data).hexdigest()}
+
+                    def gallery_type_text(text):
+                        key_codes = {
+                            " ": ("spc",), "\n": ("ret",),
+                            "+": ("shift", "equal"), "*": ("shift", "8"),
+                        }
+                        for character in text:
+                            editor_key(*key_codes.get(character, (character,)))
+
+                    def drain_gallery_serial():
+                        while select.select([serial], [], [], 0)[0]:
+                            receive_serial()
 
                     def inspect_accessibility():
                         mark = len(serial_data)
@@ -1443,25 +1505,31 @@ def main():
                         block = bytes(serial_data[mark:end.end()])
                         nodes = {}
                         pattern = re.compile(
-                            rb"PRISM A11Y NODE: id=(\d+) parent=.*? enabled=(\d) visible=(\d) "
-                            rb"focused=(\d) selected=(\d).*? name_hex=([0-9a-f]*)"
+                            rb"PRISM A11Y NODE: id=(\d+) parent=.*? role=([A-Za-z]+) "
+                            rb"enabled=(\d) visible=(\d) focused=(\d) selected=(\d).*? "
+                            rb"name_hex=([0-9a-f]*)"
                         )
                         for match in pattern.finditer(block):
                             try:
-                                name = bytes.fromhex(match[6].decode("ascii")).decode("utf-8")
+                                name = bytes.fromhex(match[7].decode("ascii")).decode("utf-8")
                             except (ValueError, UnicodeDecodeError) as error:
                                 raise RuntimeError("guest accessibility snapshot contains an invalid name") from error
                             nodes[name] = {
-                                "id": int(match[1]), "enabled": match[2] == b"1",
-                                "visible": match[3] == b"1", "focused": match[4] == b"1",
-                                "selected": match[5] == b"1",
+                                "id": int(match[1]), "role": match[2].decode("ascii"),
+                                "enabled": match[3] == b"1", "visible": match[4] == b"1",
+                                "focused": match[5] == b"1", "selected": match[6] == b"1",
                             }
                         return nodes
 
-                    def require_accessibility_control(nodes, name, *, enabled, selected=None):
+                    def require_accessibility_control(nodes, name, *, enabled, selected=None, role=None):
                         node = nodes.get(name)
                         if node is None:
                             raise RuntimeError(f"guest accessibility snapshot lacks {name!r}")
+                        if role is not None and node["role"] != role:
+                            raise RuntimeError(
+                                f"guest accessibility control {name!r} role={node['role']!r}, "
+                                f"expected {role!r}"
+                            )
                         if node["enabled"] != enabled or not node["visible"]:
                             raise RuntimeError(
                                 f"guest accessibility control {name!r} has unexpected state: {node}"
@@ -1488,9 +1556,50 @@ def main():
                     gallery_key("esc", expected=rb"PRISM DESKTOP: focused=None home=true")
                     report["checks"].append("dismissed transient process toast before Prism gallery screenshots")
                     capture_gallery("home")
+                    gallery_type_text("termina")
+                    home_search_mark = len(serial_data)
+                    editor_key("l")
+                    wait_gallery_presentation(home_search_mark)
+                    require_accessibility_control(
+                        inspect_accessibility(), "Next Terminal", enabled=True, selected=True,
+                    )
+                    capture_gallery("home-search-terminal")
+                    if gallery["home-search-terminal"]["sha256"] == gallery["home"]["sha256"]:
+                        raise RuntimeError("Home search screenshot did not differ from the unfiltered launcher")
+                    gallery_key("esc", expected=rb"PRISM DESKTOP: focused=None home=true")
+                    # A valid arithmetic query is exposed as a selectable
+                    # Calculator result in the same Home search surface.
+                    calculation_search_mark = len(serial_data)
+                    gallery_type_text("2+3*4")
+                    wait_gallery_presentation(calculation_search_mark)
+                    require_accessibility_control(
+                        inspect_accessibility(), "2+3*4 = 14", enabled=True, selected=True,
+                        role="ListItem",
+                    )
+                    capture_gallery("home-search-calculation")
+                    if gallery["home-search-calculation"]["sha256"] == gallery["home"]["sha256"]:
+                        raise RuntimeError("Home arithmetic search screenshot did not differ from Home")
+                    gallery_key(
+                        "ret",
+                        expected=rb"PRISM DESKTOP: focused=Some\(Calculator\) home=false",
+                    )
+                    calculator_accessibility = inspect_accessibility()
+                    require_accessibility_control(
+                        calculator_accessibility, "Next Calculator", enabled=True,
+                    )
+                    if calculator_accessibility["Next Calculator"]["id"] != 1:
+                        raise RuntimeError("Home arithmetic result did not open Calculator")
+                    report["checks"].append(
+                        "Home search evaluates 2+3*4 as 14, selects the accessible result, and Enter opens Calculator"
+                    )
+                    closed_calculator = gallery_key("alt", "f4", expected=focus_pattern)
+                    if closed_calculator[1] != b"None":
+                        raise RuntimeError("Home arithmetic Calculator did not close cleanly")
+                    gallery_key("f10", expected=rb"PRISM DESKTOP: focused=None home=true")
                     gallery_key("esc", expected=rb"PRISM DESKTOP: focused=None home=false")
                     apps = ("terminal", "files", "monitor", "settings", "editor", "calculator")
                     for index, name in enumerate(apps):
+                        editor_closed_for_gallery = False
                         gallery_key("f10", expected=rb"PRISM DESKTOP: focused=None home=true")
                         for _ in range(index):
                             gallery_key("tab", expected=rb"PRISM DESKTOP: focused=None home=true")
@@ -1498,12 +1607,86 @@ def main():
                                      "settings": "Settings", "editor": "Editor", "calculator": "Calculator"}[name]
                         gallery_key("ret", expected=(rb"PRISM DESKTOP: focused=Some\(" + app_title.encode()
                                                        + rb"\) home=false"))
-                        capture_gallery(name)
+                        if name == "terminal":
+                            # Replace the integration-test transcript and UART
+                            # counters with a short, useful shell introduction.
+                            gallery_type_text("clear")
+                            drain_gallery_serial()
+                            clear_mark = len(serial_data)
+                            editor_key("ret")
+                            wait_text("PRISM FRAME:", clear_mark)
+                            gallery_type_text("about")
+                            drain_gallery_serial()
+                            about_mark = len(serial_data)
+                            editor_key("ret")
+                            wait_text("PRISM FRAME:", about_mark)
+                            capture_gallery(name)
+                        elif name == "editor":
+                            # The Home-search smoke above loads this known
+                            # 14-byte file before deleting its fixture. Reuse
+                            # the loaded document as the editing surface, then
+                            # discard the gallery-only edits after capture.
+                            if b"PRISM EDITOR OPEN: path=/native/search-demo bytes=14 exists=true" not in serial_data:
+                                raise RuntimeError("Editor gallery seed document was not loaded")
+                            editor_key("end")
+                            for _ in range(len("search-content")):
+                                editor_key("backspace")
+                            drain_gallery_serial()
+                            editor_mark = len(serial_data)
+                            gallery_type_text("prism notes\na small idea takes shape here")
+                            # The document is already dirty from clearing the
+                            # seed text, so further edits need not change its
+                            # accessibility fingerprint. Enter produces the
+                            # generic frame marker that proves the final text
+                            # has been presented.
+                            editor_key("ret")
+                            wait_gallery_presentation(editor_mark)
+                            capture_gallery(name)
+                            prompt = gallery_key("alt", "f4", expected=focus_pattern)
+                            if prompt[1] != b"Some(Editor)":
+                                raise RuntimeError("Editor gallery edits did not open the unsaved-changes prompt")
+                            gallery_key("tab", expected=focus_pattern)
+                            closed = gallery_key("ret", expected=focus_pattern)
+                            if closed[1] != b"None":
+                                raise RuntimeError("Editor gallery document was not discarded cleanly")
+                            editor_closed_for_gallery = True
+                        elif name == "calculator":
+                            # QMP key chords produce the same shifted symbols
+                            # as a physical keyboard: 2 + 3 * 4 = 14.
+                            editor_key("2")
+                            editor_key("shift", "equal")
+                            editor_key("3")
+                            editor_key("shift", "8")
+                            editor_key("4")
+                            drain_gallery_serial()
+                            calculation_mark = len(serial_data)
+                            editor_key("ret")
+                            wait_text("PRISM FRAME:", calculation_mark)
+                            capture_gallery(name)
+                        else:
+                            capture_gallery(name)
                         if name == "settings":
                             # Use the actual visible Controls after selecting
                             # Accessibility. Pointer activation avoids relying
                             # on a keyboard-focus traversal order that can
                             # shift when catalog controls change.
+                            # Capture an in-app query before selecting the
+                            # existing Accessibility controls below.
+                            # Use Settings' documented slash shortcut so the
+                            # keyboard is unambiguously routed to its search
+                            # box before typing. The following screenshot hash
+                            # check verifies that filtering became visible.
+                            editor_key("slash")
+                            gallery_type_text("keyboard")
+                            settings_search_mark = len(serial_data)
+                            editor_key("down")
+                            wait_gallery_presentation(settings_search_mark)
+                            capture_gallery("settings-search-keyboard")
+                            if gallery["settings-search-keyboard"]["sha256"] == gallery["settings"]["sha256"]:
+                                raise RuntimeError("Settings search screenshot did not differ from the unfiltered page")
+                            settings_clear_mark = len(serial_data)
+                            editor_key("esc")
+                            wait_gallery_presentation(settings_clear_mark)
                             settings_accessibility = (242, 530)
                             focus_strong = (584, 331)
                             text_125 = (584, 403)
@@ -1551,22 +1734,33 @@ def main():
                             save_mark = click_files_tab(save_accessibility)
                             save_accessibility_settings(save_mark)
                             capture_gallery("settings-text-scale")
-                        for _ in range(8):
-                            closed = gallery_key("alt", "f4", expected=focus_pattern)
-                            if closed[1] == b"None":
-                                break
+                        if not editor_closed_for_gallery:
+                            for _ in range(8):
+                                closed = gallery_key("alt", "f4", expected=focus_pattern)
+                                if closed[1] == b"None":
+                                    break
                     gallery_key("f10", expected=rb"PRISM DESKTOP: focused=None home=true")
-                    for _ in range(12):
-                        gallery_key("tab", expected=rb"PRISM DESKTOP: focused=None home=true")
-                    gallery_key("ret", expected=rb"PRISM DESKTOP: focused=None home=true")
+                    # Home's app/action layout is responsive, so select the
+                    # guide by its stable search label instead of a tab index.
+                    gallery_type_text("keyboard shortcuts")
+                    shortcut_result = inspect_accessibility()
+                    require_accessibility_control(
+                        shortcut_result, "Keyboard shortcuts", enabled=True, selected=True,
+                    )
+                    gallery_key("ret")
+                    shortcut_dialog = inspect_accessibility()
+                    require_accessibility_control(
+                        shortcut_dialog, "Keyboard shortcuts", enabled=True,
+                    )
+                    if shortcut_dialog["Keyboard shortcuts"]["id"] != 1:
+                        raise RuntimeError("shortcut selection did not open the guide dialog")
                     capture_gallery("shortcuts")
                     gallery_key("esc")
-                    gallery_key("esc", expected=rb"PRISM DESKTOP: focused=None home=false")
                     gallery_key("f8", expected=rb"PRISM DESKTOP: focused=None home=false")
                     capture_gallery("notifications")
                     gallery_key("f8", expected=rb"PRISM DESKTOP: focused=None home=false")
                     report["visual_gallery"] = gallery
-                    report["checks"].append("actual QMP keyboard launched and captured completed guest frames for Home, six first-party panels, saved Accessibility focus and 125% Settings text size, shortcut guide and notifications")
+                    report["checks"].append("actual QMP keyboard launched and captured guest framebuffer states for Home and launcher/Settings search results, six first-party panels including a clean Terminal, populated Editor and evaluated Calculator, saved Accessibility focus and 125% Settings text size, shortcut guide and notifications")
             if dns_peer is not None and not args.expect_boot_failure:
                 boot_dropped = dns_peer.stats.get("boot_dropped", dns_peer.stats["dropped"])
                 boot_answers = dns_peer.stats.get("boot_answers", dns_peer.stats["answers"])

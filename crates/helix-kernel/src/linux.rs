@@ -37,6 +37,61 @@ pub const fn status_errno(error: Status) -> u64 {
         _ => EIO,
     }
 }
+/// Linux x86-64 timeval: two signed 64-bit fields (seconds, microseconds).
+pub const TIMEVAL_BYTES: usize = 16;
+/// Deprecated timezone: two signed 32-bit fields. This UTC profile reports zero.
+pub const TIMEZONE_BYTES: usize = 8;
+pub struct GettimeofdayRecords {
+    pub timeval: Option<[u8; TIMEVAL_BYTES]>,
+    pub timezone: Option<[u8; TIMEZONE_BYTES]>,
+}
+/// Pure record preparation; null timeval must not read an unavailable RTC.
+/// Nanoseconds are truncated, never rounded. Callers copy timeval before
+/// validating/copying timezone: a later fault preserves the earlier write.
+pub fn gettimeofday_records(
+    time_requested: bool,
+    timezone_requested: bool,
+    read_clock: impl FnOnce() -> Result<next_abi::Timespec, u64>,
+) -> Result<GettimeofdayRecords, u64> {
+    let timeval = if time_requested {
+        let time = read_clock()?;
+        if !(0..1_000_000_000).contains(&time.nanoseconds) {
+            return Err(EINVAL);
+        }
+        let mut bytes = [0; TIMEVAL_BYTES];
+        bytes[..8].copy_from_slice(&time.seconds.to_le_bytes());
+        bytes[8..].copy_from_slice(&(time.nanoseconds / 1000).to_le_bytes());
+        Some(bytes)
+    } else {
+        None
+    };
+    Ok(GettimeofdayRecords {
+        timeval,
+        timezone: timezone_requested.then_some([0; TIMEZONE_BYTES]),
+    })
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum GettimeofdayOutput {
+    Timeval,
+    Timezone,
+}
+/// Raw Linux order: prepare time, copy timeval, then copy the optional timezone.
+/// An invalid later destination must not undo a successful earlier copy.
+pub fn gettimeofday_copyout(
+    time_requested: bool,
+    timezone_requested: bool,
+    read_clock: impl FnOnce() -> Result<next_abi::Timespec, u64>,
+    mut copyout: impl FnMut(GettimeofdayOutput, &[u8]) -> Result<(), u64>,
+) -> Result<(), u64> {
+    let records = gettimeofday_records(time_requested, timezone_requested, read_clock)?;
+    if let Some(bytes) = records.timeval {
+        copyout(GettimeofdayOutput::Timeval, &bytes)?;
+    }
+    if let Some(bytes) = records.timezone {
+        copyout(GettimeofdayOutput::Timezone, &bytes)?;
+    }
+    Ok(())
+}
 pub const ANON_BASE: u64 = IMAGE_BASE + 0x8_0000;
 pub const ANON_PAGES: usize = 64;
 pub const ANON_END: u64 = ANON_BASE + ANON_PAGES as u64 * 4096;
@@ -317,5 +372,115 @@ mod mapping_tests {
         assert_eq!(first_fit(&flags, 4, 0), None);
         assert_eq!(first_fit(&flags, 0, 0), None);
         assert_eq!(first_fit(&flags, ANON_PAGES + 1, 0), None);
+    }
+}
+
+#[cfg(test)]
+mod gettimeofday_tests {
+    use super::*;
+    #[test]
+    fn exact_signed_long_layout_and_truncation() {
+        for (seconds, nanoseconds, microseconds) in [
+            (0, 0, 0),
+            (1, 999, 0),
+            (42, 123456789, 123456),
+            (i64::MAX, 999999999, 999999),
+            (i64::MIN, 1000, 1),
+        ] {
+            let result = gettimeofday_records(true, true, || {
+                Ok(next_abi::Timespec {
+                    seconds,
+                    nanoseconds,
+                })
+            })
+            .unwrap();
+            let timeval = result.timeval.unwrap();
+            assert_eq!(
+                i64::from_le_bytes(timeval[..8].try_into().unwrap()),
+                seconds
+            );
+            assert_eq!(
+                i64::from_le_bytes(timeval[8..].try_into().unwrap()),
+                microseconds
+            );
+            assert_eq!(result.timezone, Some([0; 8]));
+        }
+    }
+    #[test]
+    fn null_timeval_skips_clock_for_timezone_only_and_both_null() {
+        for timezone_requested in [false, true] {
+            let result = gettimeofday_records(false, timezone_requested, || {
+                panic!("null timeval read clock")
+            })
+            .unwrap();
+            assert!(result.timeval.is_none());
+            assert_eq!(result.timezone, timezone_requested.then_some([0; 8]));
+        }
+        let result = gettimeofday_records(true, false, || {
+            Ok(next_abi::Timespec {
+                seconds: 1,
+                nanoseconds: 0,
+            })
+        })
+        .unwrap();
+        assert!(result.timezone.is_none());
+    }
+    #[test]
+    fn timezone_fault_keeps_written_timeval_and_timeval_fault_stops_timezone() {
+        let mut timeval = [0xa5; TIMEVAL_BYTES];
+        let mut called = 0;
+        let result = gettimeofday_copyout(
+            true,
+            true,
+            || {
+                Ok(next_abi::Timespec {
+                    seconds: 123,
+                    nanoseconds: 456789,
+                })
+            },
+            |field, bytes| {
+                called += 1;
+                match field {
+                    GettimeofdayOutput::Timeval => {
+                        timeval.copy_from_slice(bytes);
+                        Ok(())
+                    }
+                    GettimeofdayOutput::Timezone => Err(EFAULT),
+                }
+            },
+        );
+        assert_eq!(result, Err(EFAULT));
+        assert_eq!(called, 2);
+        assert_eq!(i64::from_le_bytes(timeval[..8].try_into().unwrap()), 123);
+        assert_eq!(i64::from_le_bytes(timeval[8..].try_into().unwrap()), 456);
+        called = 0;
+        assert_eq!(
+            gettimeofday_copyout(
+                true,
+                true,
+                || Ok(next_abi::Timespec {
+                    seconds: 1,
+                    nanoseconds: 0
+                }),
+                |field, _| {
+                    called += 1;
+                    assert_eq!(field, GettimeofdayOutput::Timeval);
+                    Err(EFAULT)
+                }
+            ),
+            Err(EFAULT)
+        );
+        assert_eq!(called, 1);
+    }
+    #[test]
+    fn clock_errors_and_invalid_fraction_propagate_before_records_exist() {
+        for error in [ENODEV, EOVERFLOW] {
+            assert!(matches!(gettimeofday_records(true,true,||Err(error)),Err(e) if e==error));
+        }
+        for nanoseconds in [-1, 1_000_000_000, i64::MAX] {
+            assert!(
+                matches!(gettimeofday_records(true,true,||Ok(next_abi::Timespec{seconds:1,nanoseconds})),Err(e) if e==EINVAL)
+            );
+        }
     }
 }

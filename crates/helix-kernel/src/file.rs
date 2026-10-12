@@ -146,6 +146,12 @@ pub fn write(h: FileHandle, bytes: &[u8]) -> Result<usize, Status> {
             .map_err(status)
     }
 }
+/// Resize an owned open inode without changing any description offset.
+/// Linux callers independently enforce descriptor write rights and bounds.
+pub fn resize(h: FileHandle, length: usize) -> Result<(), Error> {
+    // Keep storage errors distinct for Linux errno mapping at its boundary.
+    unsafe { (&mut *FILES.0.get()).resize(&mut Disk, h, length) }
+}
 pub fn seek(h: FileHandle, offset: i64, origin: u64) -> Result<u64, Status> {
     unsafe {
         (&mut *FILES.0.get())

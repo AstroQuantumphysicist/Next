@@ -28,7 +28,12 @@ def source_snapshots(tracker, root):
                 parent = parent.parent
     results = []
     for path in sorted(snapshots):
-        manifest = json.loads(path.read_text())
+        recorded = json.loads(path.read_text())
+        # Current runtime bundles keep provenance metadata beside the source
+        # map. Older manifests remain plain path-to-hash objects.
+        manifest = recorded.get('source_files_sha256', recorded)
+        if not isinstance(manifest, dict):
+            raise ValueError(f'invalid source manifest: {path}')
         changed, missing = [], []
         for relative, expected in manifest.items():
             source = (root / relative).resolve()
@@ -131,6 +136,29 @@ class CoverageTests(unittest.TestCase):
             self.assertEqual(tracker['requirements'][0]['status'], 'partial')
             (root / 'source.rs').unlink()
             self.assertEqual(source_snapshots(tracker, root)[0]['missing_files'], ['source.rs'])
+
+    def test_source_manifest_metadata_does_not_look_like_missing_source_files(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            source = root / 'source.rs'
+            source.write_text('validated source')
+            evidence = root / 'evidence'
+            evidence.mkdir()
+            manifest = {
+                'schema': 2,
+                'repository': 'example/repo',
+                'source_files_sha256': {
+                    'source.rs': hashlib.sha256(b'validated source').hexdigest(),
+                },
+            }
+            (evidence / 'source-manifest.json').write_text(json.dumps(manifest))
+            tracker = {'requirements': [{'status': 'partial', 'evidence': [
+                {'artifact': 'evidence/run.log'}]}]}
+            result = source_snapshots(tracker, root)[0]
+            self.assertEqual(result['recorded_files'], 1)
+            self.assertTrue(result['matches_current_working_tree'])
+            self.assertEqual(result['changed_files'], [])
+            self.assertEqual(result['missing_files'], [])
 
     def test_historical_vm_evidence_cannot_verify_a_new_feature(self):
         self.tracker['requirements'][0]['status'] = 'verified'

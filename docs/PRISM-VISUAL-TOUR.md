@@ -1,16 +1,16 @@
 # Prism visual tour
 
-These seventeen captures come from the signed qemu64 guest image,
-SHA256 `63374568a17fcd592fdabe24008abba36975ab48732a2b044b0f3efa1a6c36a6`.
-Its QEMU smoke passed 134 checks; the [report](evidence/milestones/runtime-prism-2026-10-12/cwd-copy-wave/boot-smoke.json)
-and [capture manifest](evidence/milestones/runtime-prism-2026-10-12/cwd-copy-wave/capture-manifest.json)
-record the evidence. The smoke checks completed screen frames, saved Settings
-states, Files tab and pane navigation, cross-pane copy, and the I-beam cursor
-pixels. It also ran the original Linux `cwd.elf` fixture to status 56. These are
-development-build captures tied to that image; later source changes need a new
-capture before the images can represent them. They do not imply Next 1.0
-completion, hardware validation, full accessibility, or that every Settings
-category is functional.
+These twenty current captures come from the signed qemu64 guest image, SHA256
+`64d07c2ff4b53c3e14dafdb23ed28b655bafc98eab9543fe099229910f302d10`. Its QEMU
+smoke passed 138 checks. The [report](evidence/milestones/runtime-prism-2026-10-12/prism-linux-search-wave/boot-smoke.json)
+and [capture manifest](evidence/milestones/runtime-prism-2026-10-12/prism-linux-search-wave/capture-manifest.json)
+record the evidence. The smoke checked Home and Settings search through the
+guest's accessible tree, saved Settings states, Files tab and pane navigation,
+cross-pane copy, the I-beam cursor pixels, Home arithmetic selection of
+`2+3*4 = 14`, Linux cwd/openat and the ordered gettimeofday copyout fixture. These are development-build captures tied to that
+image; later source changes need a fresh capture before the pictures can
+represent them. They do not imply Next 1.0 completion, hardware validation,
+full accessibility services, or that every Settings category is functional.
 
 ## Capture index
 
@@ -18,33 +18,42 @@ Each thumbnail links to its full-size QEMU capture.
 
 <table>
   <tr>
-    <td align="center"><a href="images/prism-home.png"><img src="images/prism-home.png" alt="Prism Home with pinned applications and taskbar" width="180"></a><br><sub>Home: pinned applications and taskbar</sub></td>
-    <td align="center"><a href="images/prism-files.png"><img src="images/prism-files.png" alt="Prism Files browsing the native store" width="180"></a><br><sub>Files: native store listing</sub></td>
-    <td align="center"><a href="images/prism-files-tabs-root.png"><img src="images/prism-files-tabs-root.png" alt="Files root tab active beside a nested tab" width="180"></a><br><sub>Files: root tab active</sub></td>
-    <td align="center"><a href="images/prism-files-tabs-nested.png"><img src="images/prism-files-tabs-nested.png" alt="Files nested tab active with the root tab retained" width="180"></a><br><sub>Files: nested tab active</sub></td>
-  </tr>
-  <tr>
-    <td align="center"><a href="images/prism-files-tabs-ibeam.png"><img src="images/prism-files-tabs-ibeam.png" alt="I-beam cursor over the Files location field" width="180"></a><br><sub>Files: editable location cursor</sub></td>
-    <td align="center"><a href="images/prism-files-dual-pane.png"><img src="images/prism-files-dual-pane.png" alt="Files panes showing independent paths" width="180"></a><br><sub>Files: independent panes</sub></td>
-    <td align="center"><a href="images/prism-settings.png"><img src="images/prism-settings.png" alt="Settings Appearance page" width="180"></a><br><sub>Settings: Appearance</sub></td>
-    <td align="center"><a href="images/prism-settings-accessibility.png"><img src="images/prism-settings-accessibility.png" alt="Settings with saved Strong focus outline" width="180"></a><br><sub>Settings: saved focus outline</sub></td>
-  </tr>
-  <tr>
-    <td align="center"><a href="images/prism-settings-text-scale.png"><img src="images/prism-settings-text-scale.png" alt="Settings with saved 125 percent text size" width="180"></a><br><sub>Settings: 125% text size</sub></td>
+    <td align="center"><a href="images/prism-home.png"><img src="images/prism-home.png" alt="Prism Home with pinned applications and taskbar" width="180"></a><br><sub>Home</sub></td>
+    <td align="center"><a href="images/prism-home-search-terminal.png"><img src="images/prism-home-search-terminal.png" alt="Home search with Next Terminal selected" width="180"></a><br><sub>Home search</sub></td>
     <td align="center"><a href="images/prism-terminal.png"><img src="images/prism-terminal.png" alt="Prism Terminal" width="180"></a><br><sub>Terminal</sub></td>
+    <td align="center"><a href="images/prism-files.png"><img src="images/prism-files.png" alt="Prism Files browsing the native store" width="180"></a><br><sub>Files</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><a href="images/prism-files-tabs-root.png"><img src="images/prism-files-tabs-root.png" alt="Files root tab active beside a nested tab" width="180"></a><br><sub>Files root tab</sub></td>
+    <td align="center"><a href="images/prism-files-tabs-nested.png"><img src="images/prism-files-tabs-nested.png" alt="Files nested tab active with the root retained" width="180"></a><br><sub>Files nested tab</sub></td>
+    <td align="center"><a href="images/prism-files-tabs-ibeam.png"><img src="images/prism-files-tabs-ibeam.png" alt="I-beam cursor over the Files location field" width="180"></a><br><sub>Files location cursor</sub></td>
+    <td align="center"><a href="images/prism-files-dual-pane.png"><img src="images/prism-files-dual-pane.png" alt="Files panes with independent paths" width="180"></a><br><sub>Files dual pane</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><a href="images/prism-files-copy-to-other-pane.png"><img src="images/prism-files-copy-to-other-pane.png" alt="Files copying a selected file into the other pane" width="180"></a><br><sub>Files cross-pane copy</sub></td>
+    <td align="center"><a href="images/prism-settings.png"><img src="images/prism-settings.png" alt="Settings Appearance page" width="180"></a><br><sub>Settings Appearance</sub></td>
+    <td align="center"><a href="images/prism-settings-search-keyboard.png"><img src="images/prism-settings-search-keyboard.png" alt="Settings search filtered for keyboard preferences" width="180"></a><br><sub>Settings search</sub></td>
+    <td align="center"><a href="images/prism-settings-accessibility.png"><img src="images/prism-settings-accessibility.png" alt="Settings with saved Strong focus outline" width="180"></a><br><sub>Accessibility preferences</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><a href="images/prism-settings-text-scale.png"><img src="images/prism-settings-text-scale.png" alt="Settings with saved 125 percent text size" width="180"></a><br><sub>Settings text size</sub></td>
+    <td align="center"><a href="images/prism-monitor.png"><img src="images/prism-monitor.png" alt="Prism System Monitor" width="180"></a><br><sub>System Monitor</sub></td>
     <td align="center"><a href="images/prism-editor.png"><img src="images/prism-editor.png" alt="Prism Editor" width="180"></a><br><sub>Editor</sub></td>
     <td align="center"><a href="images/prism-calculator.png"><img src="images/prism-calculator.png" alt="Prism Calculator expression view" width="180"></a><br><sub>Calculator</sub></td>
   </tr>
   <tr>
-    <td align="center"><a href="images/prism-monitor.png"><img src="images/prism-monitor.png" alt="Prism System Monitor" width="180"></a><br><sub>System Monitor</sub></td>
     <td align="center"><a href="images/prism-snap-quadrant.png"><img src="images/prism-snap-quadrant.png" alt="Terminal snapped to the lower-left quadrant" width="180"></a><br><sub>Quarter snap</sub></td>
     <td align="center"><a href="images/prism-shortcuts.png"><img src="images/prism-shortcuts.png" alt="Prism keyboard shortcut guide" width="180"></a><br><sub>Keyboard shortcuts</sub></td>
     <td align="center"><a href="images/prism-notifications.png"><img src="images/prism-notifications.png" alt="Prism notification center" width="180"></a><br><sub>Notifications</sub></td>
-  </tr>
-  <tr>
-    <td align="center" colspan="4"><a href="images/prism-files-copy-to-other-pane.png"><img src="images/prism-files-copy-to-other-pane.png" alt="Files copying a selected file into the other pane" width="180"></a><br><sub>Files: copy to other pane</sub></td>
+    <td align="center"><a href="images/prism-home-search-calculation.png"><img src="images/prism-home-search-calculation.png" alt="Home search with the arithmetic result 2+3*4 = 14 selected" width="180"></a><br><sub>Home arithmetic search</sub></td>
   </tr>
 </table>
+
+## Home search arithmetic
+
+![Prism Home search with the evaluated arithmetic result 2+3*4 = 14 selected](images/prism-home-search-calculation.png)
+
+The guest selects the accessible `2+3*4 = 14` result. Enter opens Calculator with the expression evaluated; the gallery run checks the result selection and launch.
 
 ## Architecture schematics
 

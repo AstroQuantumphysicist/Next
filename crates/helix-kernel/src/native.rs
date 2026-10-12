@@ -83,6 +83,7 @@ enum Object {
     Channel(Endpoint),
     File(crate::file::FileHandle),
     Event(crate::event::EventHandle),
+    Timer(helix_core::timer::TimerHandle),
 }
 #[derive(Clone, Copy)]
 struct Transfer {
@@ -333,6 +334,7 @@ struct Runtime {
     processes: [Process; PROCESSES],
     scheduler: Scheduler<PROCESSES>,
     channels: Channels<Transfer>,
+    timers: helix_core::timer::Timers<8>,
     active: Option<usize>,
     next_pid: u64,
     ready: bool,
@@ -350,6 +352,16 @@ fn native_mapping_error(error: u64) -> Status {
         linux::ENOMEM => Status::NoMemory,
         linux::EPERM => Status::AccessDenied,
         _ => Status::InvalidArgument,
+    }
+}
+fn timer_error(error: helix_core::timer::Error) -> Status {
+    match error {
+        helix_core::timer::Error::InvalidHandle => Status::InvalidHandle,
+        helix_core::timer::Error::InvalidOwner => Status::InvalidArgument,
+        helix_core::timer::Error::Full | helix_core::timer::Error::References => Status::NoMemory,
+        helix_core::timer::Error::WouldBlock => Status::WouldBlock,
+        helix_core::timer::Error::Cancelled => Status::Cancelled,
+        helix_core::timer::Error::TimedOut => Status::TimedOut,
     }
 }
 fn handle_error(e: HandleError) -> Status {
@@ -487,6 +499,7 @@ impl Runtime {
             Object::Channel(ep) => self.channels.retain(ep),
             Object::File(handle) => crate::file::retain(handle),
             Object::Event(handle) => crate::event::retain(handle),
+            Object::Timer(handle) => self.timers.retain(handle).map_err(timer_error),
             Object::Process { slot, generation } => {
                 let process = &mut self.processes[slot];
                 if process.generation != generation || process.task.is_none() {
@@ -512,6 +525,7 @@ impl Runtime {
                 Ok(())
             }
             Object::File(handle) => crate::file::close(handle),
+            Object::Timer(handle) => self.timers.close(handle).map_err(timer_error),
             Object::Event(handle) => {
                 crate::event::close_and_wake(handle, &mut self.scheduler).map(|_| ())
             }
@@ -708,6 +722,7 @@ impl Runtime {
         handle: Handle,
         output: u64,
         writable: bool,
+        deadline: u64,
     ) -> Result<(), Status> {
         let object = *self.processes[owner]
             .handles
@@ -743,6 +758,12 @@ impl Runtime {
                 if !ready {
                     return Err(Status::WouldBlock);
                 }
+                0
+            }
+            Object::Timer(timer) => {
+                self.timers
+                    .wait(timer, timer::nanoseconds(), deadline)
+                    .map_err(timer_error)?;
                 0
             }
             Object::Event(event) => {
@@ -901,8 +922,22 @@ impl Runtime {
                                 Err(error) => Err(error),
                             }
                         }
+                        (Some(Object::Timer(_)), _) => {
+                            match self.poll_wait(
+                                owner,
+                                handle,
+                                wait.output,
+                                writable,
+                                wait.deadline,
+                            ) {
+                                Err(Status::WouldBlock) if timed_out => Err(Status::TimedOut),
+                                result => result,
+                            }
+                        }
                         (_, _) if timed_out => Err(Status::TimedOut),
-                        (Some(_), _) => self.poll_wait(owner, handle, wait.output, writable),
+                        (Some(_), _) => {
+                            self.poll_wait(owner, handle, wait.output, writable, wait.deadline)
+                        }
                         (None, _) => Err(Status::InvalidHandle),
                     }
                 }
@@ -1321,6 +1356,7 @@ unsafe fn initialize_storage(image: InitImage<'static>) {
     }
     addr_of_mut!((*rt).scheduler).write(Scheduler::new());
     addr_of_mut!((*rt).channels).write(Channels::new());
+    addr_of_mut!((*rt).timers).write(helix_core::timer::Timers::new());
     addr_of_mut!((*rt).active).write(None);
     addr_of_mut!((*rt).next_pid).write(1);
     addr_of_mut!((*rt).ready).write(false);
@@ -1363,6 +1399,7 @@ pub fn step() -> bool {
     let selection = unsafe {
         crate::network_socket::pump();
         let rt = runtime();
+        rt.timers.expire(timer::nanoseconds());
         rt.wake_waiters();
         rt.collect_exited();
         let now = timer::nanoseconds();
@@ -1583,8 +1620,14 @@ pub extern "sysv64" fn native_dispatch(frame: *mut CpuFrame) -> u64 {
                         Object::Dns(_) => Err(Status::InvalidArgument),
                         Object::Surface(_) if f.rdx & 2 == 0 => Ok(()),
                         Object::Surface(_) => Err(Status::InvalidArgument),
-                        Object::Event(_) | Object::Process { .. } if f.rdx & 2 == 0 => Ok(()),
-                        Object::Event(_) | Object::Process { .. } => Err(Status::InvalidArgument),
+                        Object::Event(_) | Object::Process { .. } | Object::Timer(_)
+                            if f.rdx & 2 == 0 =>
+                        {
+                            Ok(())
+                        }
+                        Object::Event(_) | Object::Process { .. } | Object::Timer(_) => {
+                            Err(Status::InvalidArgument)
+                        }
                         _ => Err(Status::InvalidHandle),
                     })
                     .and_then(|()| {
@@ -1596,7 +1639,11 @@ pub extern "sysv64" fn native_dispatch(frame: *mut CpuFrame) -> u64 {
                     });
                 validation
                     .and_then(|()| {
-                        if f.rdx & 1 != 0 && f.r10 != 0 && timer::nanoseconds() >= f.r10 {
+                        if !matches!(object, Ok(Object::Timer(_)))
+                            && f.rdx & 1 != 0
+                            && f.r10 != 0
+                            && timer::nanoseconds() >= f.r10
+                        {
                             return Err(Status::TimedOut);
                         }
                         match object {
@@ -1614,8 +1661,21 @@ pub extern "sysv64" fn native_dispatch(frame: *mut CpuFrame) -> u64 {
                                     }
                                 }
                             }
-                            _ => match rt.poll_wait(slot, handle, f.rsi, f.rdx & 2 != 0) {
+                            _ => match rt.poll_wait(
+                                slot,
+                                handle,
+                                f.rsi,
+                                f.rdx & 2 != 0,
+                                if f.rdx & 1 != 0 { f.r10 } else { 0 },
+                            ) {
                                 Ok(()) => Ok(0),
+                                Err(Status::WouldBlock)
+                                    if f.rdx & 1 != 0
+                                        && f.r10 != 0
+                                        && timer::nanoseconds() >= f.r10 =>
+                                {
+                                    Err(Status::TimedOut)
+                                }
                                 Err(Status::WouldBlock) if f.rdx & 1 != 0 => {
                                     rt.scheduler
                                         .block_current()
@@ -2611,6 +2671,56 @@ pub extern "sysv64" fn native_dispatch(frame: *mut CpuFrame) -> u64 {
                 Object::Event(event) => crate::event::reset(event).map(|()| 0),
                 _ => Err(Status::InvalidHandle),
             }),
+        46 => {
+            if f.rsi & !next_abi::TIMER_RIGHTS != 0 || f.rdx | f.r10 | f.r8 | f.r9 != 0 {
+                Err(Status::InvalidArgument)
+            } else {
+                wire_rights(f.rsi).and_then(|rights| {
+                    let reserved = rt.processes[slot].insert(Object::Reserved, rights)?;
+                    let timer =
+                        match rt
+                            .timers
+                            .create(rt.processes[slot].pid, f.rdi, timer::nanoseconds())
+                        {
+                            Ok(timer) => timer,
+                            Err(error) => {
+                                let _ = rt.close(slot, reserved);
+                                return Err(timer_error(error));
+                            }
+                        };
+                    match rt.processes[slot].handles.get_mut(reserved, Rights(0)) {
+                        Ok(object) => {
+                            *object = Object::Timer(timer);
+                            Ok(reserved.raw())
+                        }
+                        Err(error) => {
+                            let _ = rt.timers.close(timer);
+                            let _ = rt.close(slot, reserved);
+                            Err(handle_error(error))
+                        }
+                    }
+                })
+            }
+        }
+        47 => {
+            if f.rsi | f.rdx | f.r10 | f.r8 | f.r9 != 0 {
+                Err(Status::InvalidArgument)
+            } else {
+                rt.processes[slot]
+                    .handles
+                    .get(Handle::from_raw(f.rdi), Rights::SIGNAL)
+                    .copied()
+                    .map_err(handle_error)
+                    .and_then(|object| match object {
+                        Object::Timer(timer) => rt
+                            .timers
+                            .cancel(timer, timer::nanoseconds())
+                            .map_err(timer_error)
+                            .map(|()| 0),
+                        _ => Err(Status::InvalidHandle),
+                    })
+            }
+        }
         45 => rt.wait_many_events(
             slot,
             WaitManyArgs {
@@ -2627,7 +2737,7 @@ pub extern "sysv64" fn native_dispatch(frame: *mut CpuFrame) -> u64 {
     if matches!(number, 4 | 45) && rt.processes[slot].pending_wait.is_some() {
         return 1;
     }
-    if number == 2 || number == 22 {
+    if number == 2 || number == 22 || number == 47 {
         rt.wake_waiters();
     }
     f.rax = result.unwrap_or_else(status);
@@ -3146,6 +3256,11 @@ pub extern "sysv64" fn linux_dispatch(frame: *mut CpuFrame) -> u64 {
             }
             frame.rax = 0;
         }
+        77 => {
+            frame.rax = crate::linux_fs::ftruncate(slot, generation, frame.rdi, frame.rsi as i64)
+                .map(|()| 0)
+                .unwrap_or_else(|error| error);
+        }
         79 => {
             frame.rax = crate::linux_fs::getcwd(slot, generation, frame.rsi, |bytes| {
                 if !user_range(&rt.processes[slot], frame.rdi, bytes.len(), true) {
@@ -3370,6 +3485,53 @@ pub extern "sysv64" fn linux_dispatch(frame: *mut CpuFrame) -> u64 {
         32 => {
             frame.rax = crate::linux_fs::duplicate(slot, generation, frame.rdi)
                 .unwrap_or_else(|error| error)
+        }
+        96 => {
+            // An invalid timeval always faults before the optional RTC read;
+            // timezone validation remains deferred until after timeval copyout.
+            if frame.rdi != 0
+                && !user_range(&rt.processes[slot], frame.rdi, linux::TIMEVAL_BYTES, true)
+            {
+                frame.rax = linux::EFAULT;
+                return 0;
+            }
+            frame.rax = linux::gettimeofday_copyout(
+                frame.rdi != 0,
+                frame.rsi != 0,
+                || {
+                    crate::clock::realtime().map_err(|error| {
+                        if matches!(
+                            error,
+                            crate::clock::Error::Overflow | crate::clock::Error::Regression
+                        ) {
+                            linux::EOVERFLOW
+                        } else {
+                            linux::ENODEV
+                        }
+                    })
+                },
+                |field, bytes| {
+                    let address = match field {
+                        linux::GettimeofdayOutput::Timeval => frame.rdi,
+                        linux::GettimeofdayOutput::Timezone => frame.rsi,
+                    };
+                    // Validate this destination immediately before its own copy.
+                    // Linux leaves a valid timeval written if timezone later faults.
+                    if !user_range(&rt.processes[slot], address, bytes.len(), true) {
+                        return Err(linux::EFAULT);
+                    }
+                    unsafe {
+                        copy_nonoverlapping(
+                            bytes.as_ptr(),
+                            physical_pointer(slot, address),
+                            bytes.len(),
+                        );
+                    }
+                    Ok(())
+                },
+            )
+            .map(|()| 0)
+            .unwrap_or_else(|error| error);
         }
         228 => {
             if frame.rdi > 1 {

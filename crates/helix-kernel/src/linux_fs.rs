@@ -533,6 +533,47 @@ pub fn close(slot: usize, generation: u64, fd: u64) -> Result<(), u64> {
         }
     })
 }
+/// Linux syscall77 argument/order semantics. Raw fd uses unsigned low32 bits;
+/// negative signed length precedes descriptor lookup, including invalid fds.
+pub fn ftruncate(slot: usize, generation: u64, fd: u64, length: i64) -> Result<(), u64> {
+    if length < 0 {
+        return Err(errno(22));
+    }
+    let fd = u64::from(fd as u32);
+    with_owner(slot, generation, |owner| {
+        if fd < 3 {
+            let live = match fd {
+                0 => owner.stdin,
+                1 => owner.stdout,
+                2 => owner.stderr,
+                _ => false,
+            };
+            return Err(errno(if live { 22 } else { 9 }));
+        }
+        let (stream, rights) = owner.fds.get(fd).map_err(fd_error)?;
+        if !rights.contains(Rights::WRITE) {
+            return Err(errno(22));
+        }
+        let StreamObject::File(handle) = stream.object else {
+            return Err(errno(22));
+        };
+        if length as u64 > FILE_BYTES as u64 {
+            return Err(linux::EFBIG);
+        }
+        file::resize(handle, length as usize).map_err(|error| {
+            errno(match error {
+                FileError::InvalidHandle => 9,
+                FileError::TooLarge => 27,
+                FileError::Full => 28,
+                FileError::ReadOnly => 30,
+                FileError::Busy => 11,
+                FileError::NotFound => 2,
+                FileError::InvalidPath => 22,
+                FileError::Exists | FileError::Io => 5,
+            })
+        })
+    })
+}
 pub fn stdout_open(slot: usize, generation: u64, fd: u64) -> bool {
     with_owner(slot, generation, |owner| {
         Ok(match fd {

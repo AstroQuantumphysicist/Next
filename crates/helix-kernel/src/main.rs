@@ -1169,7 +1169,11 @@ pub unsafe extern "sysv64" fn helix_entry(h: *const BootInfo) -> ! {
             halt();
         }
         if !native::step() {
-            asm!("hlt", options(nomem, nostack));
+            // `step` returns with interrupts enabled. Keep the enable and
+            // halt adjacent so an IRQ cannot be fully handled between the
+            // idle decision and HLT, where it would otherwise be missed until
+            // the next periodic timer tick.
+            asm!("sti; hlt", options(nomem, nostack));
         }
     }
     trace::record(
@@ -1591,8 +1595,9 @@ pub unsafe extern "sysv64" fn helix_entry(h: *const BootInfo) -> ! {
         } else if !ran_native {
             // Timer IRQ wakes this polling development console within one PIT
             // period only when no native quantum ran. Drain available input
-            // before sleeping to avoid UART loss.
-            asm!("hlt", options(nomem, nostack));
+            // before sleeping to avoid UART loss. The adjacent STI/HLT closes
+            // the lost-wakeup window between the empty event poll and sleep.
+            asm!("sti; hlt", options(nomem, nostack));
         }
     }
 }

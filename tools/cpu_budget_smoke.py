@@ -13,7 +13,11 @@ import surface_capability_smoke as surface
 
 PROFILE = 'HELIX: QUOTA PROFILE HPET64 dispatch occupancy ordinary=100ms/200ms slice<=20ms; PIT delivery overshoot debited; authenticated supervisor/services protected; no RT/SMP/group quotas'
 SOURCES = ('crates/helix-core/src/budget.rs', 'crates/helix-kernel/src/native.rs',
-           'crates/helix-kernel/src/hpet.rs', 'crates/next-user/src/bin/spin.rs')
+           'crates/helix-kernel/src/hpet.rs', 'crates/next-user/src/bin/spin.rs',
+           # The failed Source15 guest check exposed an unconditional desktop
+           # HLT after every short dispatch. Bind the kernel event/idle loop as
+           # well as quota producers so a passing CPU gate names that behavior.
+           'crates/helix-kernel/src/main.rs')
 
 
 def bounded(values):

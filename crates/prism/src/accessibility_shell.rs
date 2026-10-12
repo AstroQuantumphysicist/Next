@@ -311,27 +311,32 @@ impl Shell {
                     2,
                     None,
                     Role::TextBox,
-                    "Search apps and files",
+                    HOME_SEARCH_LABEL,
                     self.search_input.as_str(),
                     None,
-                    state,
+                    State {
+                        focused: true,
+                        ..state
+                    },
                 )?;
                 for i in 0..self.search_count() {
                     if let Some(result) = self.search_result(i) {
-                        let name = match result {
-                            SearchResult::App(app) => app.title(),
-                            SearchResult::File(index) => self.files[index].path.as_str(),
-                            SearchResult::Shortcuts => "Keyboard shortcuts",
+                        let mut calculation_label = Line::new();
+                        let (name, _, source) =
+                            Self::search_result_presentation(self, result, &mut calculation_label);
+                        let value = if matches!(result, SearchResult::Calculation(_)) {
+                            source
+                        } else {
+                            ""
                         };
                         out.add(
                             10 + i as u32,
                             None,
                             Role::ListItem,
                             name,
-                            "",
+                            value,
                             None,
                             State {
-                                focused: i == self.selection,
                                 selected: i == self.selection,
                                 ..state
                             },
@@ -553,6 +558,17 @@ impl Shell {
                 Some(App::Settings) => {
                     self.sync_settings_focus();
                     self.accessible_focus_controls(out, 5)?;
+                    if settings_catalog::matching_count(self.settings_search.as_str()) == 0 {
+                        out.add(
+                            150,
+                            None,
+                            Role::Status,
+                            "Settings search results",
+                            "No matching settings. Clear the search to view the selected category.",
+                            None,
+                            state,
+                        )?;
+                    }
                     let section = settings_catalog::section(self.settings_category)
                         .ok_or(Error::InvalidNode)?;
                     for index in 0..3 {
@@ -696,6 +712,8 @@ impl Shell {
             (5, 5) => Some(self.settings_diagnostics_bounds()),
             (5, 10..=21) => self.settings_category_bounds((local - 10) as usize),
             (5, 22..=27) => self.accessibility_control_bounds((local - 22) as usize),
+            (5, 28) => Some(self.settings_search_bounds()),
+            (5, 29) => Some(self.settings_clear_search_bounds()),
             (3 | 7, 1) => {
                 let b = self.file_dialog_bounds();
                 Some(Bounds {
@@ -727,7 +745,7 @@ impl Shell {
         }
     }
     fn accessible_focus_controls(&self, out: &mut Snapshot, scope: u32) -> Result<(), Error> {
-        for local in 1..=27 {
+        for local in 1..=29 {
             if let Some(focus) = self
                 .file_focus
                 .state(keyboard_focus::ControlId { scope, local })
@@ -764,6 +782,7 @@ impl Shell {
                         (5, 23) => "Strong",
                         (5, 24) => "100 percent",
                         (5, 25) => "125 percent",
+                        (5, 28) => self.settings_search.as_str(),
                         (3, 1) => self.file_dialog.input(),
                         (7, 1) => self.trash.input(),
                         _ => "",

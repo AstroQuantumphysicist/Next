@@ -1,12 +1,14 @@
 # Runtime and Prism evidence — 2026-10-12
 
 The latest signed development image SHA-256 is
-`63374568a17fcd592fdabe24008abba36975ab48732a2b044b0f3efa1a6c36a6`. Its qemu64
-desktop smoke passed 134 checks, including the Linux cwd fixture and Files tab,
-pane, and copy workflows. The [cwd and Prism bundle](cwd-copy-wave/README.md)
-contains the report, capture hashes, serial trace, and the 17 current Prism
-screenshots. The earlier [fstat/getdents Files bundle](fstat-getdents-files-r3/README.md)
-retains its source-bound report for those two fixtures. The [feature-wave bundle](feature-wave-final/README.md)
+`64d07c2ff4b53c3e14dafdb23ed28b655bafc98eab9543fe099229910f302d10`. Its qemu64
+desktop smoke passed 138 checks, including Linux `gettimeofday` sequential
+copyout and `ftruncate`, the cwd fixture, Home arithmetic search, Files tab,
+pane and copy workflows, and two one-shot timer probe runs. The [Prism and Linux bundle](prism-linux-search-wave/README.md)
+contains the report, source hashes, capture manifest, serial trace, and 20 current Prism
+screenshots. The earlier [cwd and Prism bundle](cwd-copy-wave/README.md) and
+[fstat/getdents Files bundle](fstat-getdents-files-r3/README.md) retain their
+source-bound reports for their own images. The [feature-wave bundle](feature-wave-final/README.md)
 records the separate DHCPv6 peer exchange on its own image. APs remain stopped
 and the scheduler runs only on the BSP; these tests do not establish SMP
 scheduling or physical-hardware support.
@@ -34,7 +36,8 @@ profiles had 119 each on SHA-256
 Earlier host bundles are likewise preserved under their original scope:
 
 - `workspace-validation.txt` is the previous source snapshot's workspace test
-  run. The latest full `bash tools/test.sh` log is under `feature-wave/`.
+  run. The current wave's `validation.md` records the latest full
+  `bash tools/test.sh` result; older logs remain tied to their own source snapshots.
 - `nextfs-tests.txt` records its earlier 42 NextFS tests. The current 53-test
   host-backup run is in the feature-wave validation bundle.
 - `package-host-tests.txt` records its earlier 42 package tests. Current pinned

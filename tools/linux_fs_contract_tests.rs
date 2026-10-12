@@ -50,10 +50,12 @@ mod file {
     struct Mock {
         files: Vec<MockFile>,
         handles: Vec<Option<MockHandle>>,
+        fail_resize: Option<helix_core::file::Error>,
     }
     static MOCK: Mutex<Mock> = Mutex::new(Mock {
         files: Vec::new(),
         handles: Vec::new(),
+        fail_resize: None,
     });
 
     pub fn open_for_linux(path: &str, _: u64) -> Result<FileHandle, helix_core::file::Error> {
@@ -97,7 +99,7 @@ mod file {
     }
     pub fn read(handle: FileHandle, out: &mut [u8]) -> Result<usize, Status> {
         let mut mock = MOCK.lock().unwrap();
-        let Mock { files, handles } = &mut *mock;
+        let Mock { files, handles, .. } = &mut *mock;
         let entry = handles
             .get_mut(handle.0 as usize)
             .and_then(Option::as_mut)
@@ -111,7 +113,7 @@ mod file {
     }
     pub fn write(handle: FileHandle, bytes: &[u8]) -> Result<usize, Status> {
         let mut mock = MOCK.lock().unwrap();
-        let Mock { files, handles } = &mut *mock;
+        let Mock { files, handles, .. } = &mut *mock;
         let entry = handles
             .get_mut(handle.0 as usize)
             .and_then(Option::as_mut)
@@ -133,7 +135,7 @@ mod file {
     }
     pub fn seek(handle: FileHandle, offset: i64, origin: u64) -> Result<u64, Status> {
         let mut mock = MOCK.lock().unwrap();
-        let Mock { files, handles } = &mut *mock;
+        let Mock { files, handles, .. } = &mut *mock;
         let entry = handles
             .get_mut(handle.0 as usize)
             .and_then(Option::as_mut)
@@ -186,6 +188,31 @@ mod file {
             .unwrap()
             .path
             .clear();
+    }
+    pub fn fail_resize(value: bool) {
+        MOCK.lock().unwrap().fail_resize = value.then_some(helix_core::file::Error::Io);
+    }
+    pub fn resize(handle: FileHandle, length: usize) -> Result<(), helix_core::file::Error> {
+        let mut mock = MOCK.lock().unwrap();
+        let inode = mock
+            .handles
+            .get(handle.0 as usize)
+            .and_then(Option::as_ref)
+            .ok_or(helix_core::file::Error::InvalidHandle)?
+            .inode;
+        if length > helix_core::file::FILE_BYTES {
+            return Err(helix_core::file::Error::TooLarge);
+        }
+        if !mock.files[inode].path.is_empty() {
+            if let Some(error) = mock.fail_resize {
+                return Err(error);
+            }
+        }
+        mock.files[inode].bytes.resize(length, 0);
+        Ok(())
+    }
+    pub fn resize_error_for_test(error: Option<helix_core::file::Error>) {
+        MOCK.lock().unwrap().fail_resize = error;
     }
     pub fn exists_for_test(path: &str) -> bool {
         MOCK.lock()
@@ -951,5 +978,100 @@ fn openat_live_stdio_is_not_a_directory_and_absolute_paths_ignore_dirfd() {
     );
     let absolute = linux_fs::openat(SLOT, G, true, 0, "/native/absolute", 0, 0).unwrap();
     linux_fs::close(SLOT, G, absolute).unwrap();
+    linux_fs::close_all(SLOT, G);
+}
+
+#[test]
+fn ftruncate_error_precedence_low32_fd_and_signed_length() {
+    let _serial = SERIAL.lock().unwrap();
+    const SLOT: usize = 3;
+    const G: u64 = 220;
+    filesystem::DIR_ID.store(10, std::sync::atomic::Ordering::Relaxed);
+    assert_eq!(cwd_string(SLOT, G), "/native");
+    let read = linux_fs::open(SLOT, G, true, "/native/trunc-read", 0, 0).unwrap();
+    let write = linux_fs::open(SLOT, G, true, "/native/trunc-write", 1, 0).unwrap();
+    let directory = linux_fs::open(SLOT, G, true, "/native", 65536, 0).unwrap();
+    for fd in [0, 1, 2, read, write, directory, 999] {
+        assert_eq!(linux_fs::ftruncate(SLOT, G, fd, -1), Err((-22i64) as u64));
+    }
+    for fd in [0, 1, 2, read, directory] {
+        assert_eq!(linux_fs::ftruncate(SLOT, G, fd, 0), Err((-22i64) as u64));
+        assert_eq!(
+            linux_fs::ftruncate(SLOT, G, fd, i64::MAX),
+            Err((-22i64) as u64)
+        );
+    }
+    assert_eq!(linux_fs::ftruncate(SLOT, G, 999, 0), Err((-9i64) as u64));
+    assert_eq!(
+        linux_fs::ftruncate(SLOT, G, 999, i64::MAX),
+        Err((-9i64) as u64)
+    );
+    assert_eq!(
+        linux_fs::ftruncate(SLOT, G, write, 4097),
+        Err((-27i64) as u64)
+    );
+    assert_eq!(
+        linux_fs::ftruncate(SLOT, G, write, i64::MAX),
+        Err((-27i64) as u64)
+    );
+    assert_eq!(linux_fs::ftruncate(SLOT, G, write | (1 << 32), 4), Ok(()));
+    let mut stat = [0; 144];
+    linux_fs::stat(SLOT, G, write, &mut stat).unwrap();
+    assert_eq!(stat_i64(&stat, 48), 4);
+    linux_fs::close(SLOT, G, write).unwrap();
+    assert_eq!(linux_fs::ftruncate(SLOT, G, write, 0), Err((-9i64) as u64));
+    linux_fs::close(SLOT, G, 0).unwrap();
+    assert_eq!(linux_fs::ftruncate(SLOT, G, 0, 0), Err((-9i64) as u64));
+    linux_fs::close_all(SLOT, G);
+}
+#[test]
+fn ftruncate_shrink_growth_dup_append_and_backend_failure_preserve_offsets() {
+    let _serial = SERIAL.lock().unwrap();
+    const SLOT: usize = 3;
+    const G: u64 = 221;
+    linux_fs::close_all(SLOT, G);
+    file::fail_resize(false);
+    let fd = linux_fs::open(SLOT, G, true, "/native/trunc-data", 2 | 1024, 0).unwrap();
+    linux_fs::ftruncate(SLOT, G, fd, 0).unwrap();
+    assert_eq!(linux_fs::write(SLOT, G, fd, b"abcdef"), Ok(6));
+    assert_eq!(linux_fs::lseek(SLOT, G, fd, 5, 0), Ok(5));
+    let dup = linux_fs::duplicate(SLOT, G, fd).unwrap();
+    assert_eq!(linux_fs::ftruncate(SLOT, G, dup, 2), Ok(()));
+    assert_eq!(linux_fs::lseek(SLOT, G, fd, 0, 1), Ok(5));
+    let mut bytes = [0xa5; 8];
+    assert_eq!(linux_fs::pread(SLOT, G, fd, 0, &mut bytes), Ok(2));
+    assert_eq!(&bytes[..2], b"ab");
+    assert_eq!(linux_fs::ftruncate(SLOT, G, fd, 8), Ok(()));
+    assert_eq!(linux_fs::pread(SLOT, G, dup, 0, &mut bytes), Ok(8));
+    assert_eq!(&bytes, b"ab\0\0\0\0\0\0");
+    assert_eq!(linux_fs::lseek(SLOT, G, dup, 0, 1), Ok(5));
+    file::fail_resize(true);
+    assert_eq!(linux_fs::ftruncate(SLOT, G, fd, 1), Err((-5i64) as u64));
+    assert_eq!(linux_fs::ftruncate(SLOT, G, fd, 8), Err((-5i64) as u64)); // same-length still persists
+    assert_eq!(linux_fs::lseek(SLOT, G, fd, 0, 1), Ok(5));
+    let mut stat = [0; 144];
+    linux_fs::stat(SLOT, G, fd, &mut stat).unwrap();
+    assert_eq!(stat_i64(&stat, 48), 8);
+    assert_eq!(linux_fs::pread(SLOT, G, fd, 0, &mut bytes), Ok(8));
+    assert_eq!(&bytes, b"ab\0\0\0\0\0\0");
+    for (error, code) in [
+        (helix_core::file::Error::ReadOnly, 30),
+        (helix_core::file::Error::Full, 28),
+        (helix_core::file::Error::TooLarge, 27),
+        (helix_core::file::Error::Busy, 11),
+    ] {
+        file::resize_error_for_test(Some(error));
+        assert_eq!(
+            linux_fs::ftruncate(SLOT, G, fd, 4),
+            Err((-(code as i64)) as u64)
+        );
+        assert_eq!(linux_fs::lseek(SLOT, G, fd, 0, 1), Ok(5));
+        linux_fs::stat(SLOT, G, fd, &mut stat).unwrap();
+        assert_eq!(stat_i64(&stat, 48), 8);
+    }
+    file::detach_for_test("/native/trunc-data");
+    assert_eq!(linux_fs::ftruncate(SLOT, G, dup, 1), Ok(())); // detached resize bypasses failed backing namespace
+    assert_eq!(linux_fs::lseek(SLOT, G, dup, 0, 1), Ok(5));
+    file::fail_resize(false);
     linux_fs::close_all(SLOT, G);
 }

@@ -22,6 +22,10 @@ def main():
     # target/debug/deps, and selecting the newest there can link the wrong ABI.
     target_dir = ROOT / "work/linux-fs-contract-target"
     dependencies = target_dir / "debug/deps"
+    # Cargo fingerprints can otherwise keep a stale panic=abort library after
+    # the isolated target has previously been built with a different profile.
+    subprocess.run(["cargo", "clean", "--target-dir", str(target_dir)],
+                   cwd=ROOT, env=environment, check=True)
     subprocess.run(["cargo", "build", "--locked", "--offline", "-p", "helix-core", "-p", "next-abi",
                     "--target-dir", str(target_dir)],
                    cwd=ROOT, env=environment, check=True)

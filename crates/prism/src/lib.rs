@@ -228,6 +228,7 @@ pub enum Key {
 const LINE_CAPACITY: usize = 96;
 const HISTORY_CAPACITY: usize = 20;
 const FILE_CAPACITY: usize = 9;
+const HOME_SEARCH_LABEL: &str = "Search apps, files, and calculations";
 const HOME_ACTION_COUNT: usize = desktop::ACTIONS.len() + 1;
 const TASKBAR_ITEM_COUNT: usize = App::ALL.len() + 2;
 const TASKBAR_NOTIFICATIONS_INDEX: usize = App::ALL.len() + 1;
@@ -251,6 +252,22 @@ impl Line {
                 self.len += 1;
             }
         }
+    }
+    fn push_ascii(&mut self, character: char) -> bool {
+        if !character.is_ascii_graphic() && character != ' ' || self.len == LINE_CAPACITY {
+            return false;
+        }
+        self.bytes[self.len] = character as u8;
+        self.len += 1;
+        true
+    }
+    fn pop(&mut self) -> bool {
+        if self.len == 0 {
+            return false;
+        }
+        self.len -= 1;
+        self.bytes[self.len] = 0;
+        true
     }
     fn as_str(&self) -> &str {
         core::str::from_utf8(&self.bytes[..self.len]).unwrap_or("")
@@ -294,6 +311,7 @@ enum SearchResult {
     App(App),
     File(usize),
     Shortcuts,
+    Calculation(i64),
 }
 fn search_matches(candidate: &str, query: &str) -> bool {
     query.is_empty()
@@ -381,6 +399,7 @@ pub struct Shell {
     file_pending_selection: Option<files_actions::Path>,
     appearance: appearance_ui::AppearanceUi,
     settings_category: usize,
+    settings_search: Line,
     settings_diagnostics: bool,
     monitor: [Line; 8],
     system: [Line; 8],
@@ -455,6 +474,7 @@ impl Shell {
             file_pending_selection: None,
             appearance: appearance_ui::AppearanceUi::new(),
             settings_category: settings_catalog::Category::Appearance as usize,
+            settings_search: Line::new(),
             settings_diagnostics: false,
             monitor: [Line::new(); 8],
             system: [Line::new(); 8],
@@ -620,6 +640,50 @@ impl Shell {
         settings_catalog::section(self.settings_category)
             .map(|section| section.category)
             .unwrap_or(settings_catalog::Category::Appearance)
+    }
+    fn settings_category_matches_search(&self, index: usize) -> bool {
+        settings_catalog::matches_query(index, self.settings_search.as_str())
+    }
+    fn settings_category_position(&self, index: usize) -> Option<usize> {
+        if !self.settings_category_matches_search(index) {
+            return None;
+        }
+        Some(
+            (0..index)
+                .filter(|candidate| self.settings_category_matches_search(*candidate))
+                .count(),
+        )
+    }
+    fn settings_matching_category_at(&self, position: usize) -> Option<usize> {
+        settings_catalog::matching_index(self.settings_search.as_str(), position)
+    }
+    fn settings_search_changed(&mut self) {
+        let first = self.settings_matching_category_at(0);
+        if let Some(first) = first {
+            if !self.settings_category_matches_search(self.settings_category) {
+                self.settings_category = first;
+            }
+        } else {
+            let _ = self.file_focus.select(
+                keyboard_focus::ControlId {
+                    scope: 5,
+                    local: 28,
+                },
+                keyboard_focus::Input::Keyboard,
+            );
+        }
+        self.sync_settings_focus();
+    }
+    fn settings_clear_search(&mut self) {
+        self.settings_search = Line::new();
+        self.settings_search_changed();
+        let _ = self.file_focus.select(
+            keyboard_focus::ControlId {
+                scope: 5,
+                local: 28,
+            },
+            keyboard_focus::Input::Keyboard,
+        );
     }
     pub fn take_appearance_request(&mut self) -> Option<appearance_ui::SaveRequest> {
         self.appearance.take_request()
@@ -797,9 +861,44 @@ impl Shell {
                 keyboard_focus::Role::Button,
                 editing_accessibility && can_edit_preferences,
             ),
+            Self::file_control(
+                5,
+                28,
+                "Search settings",
+                keyboard_focus::Role::TextBox,
+                true,
+            ),
+            Self::file_control(
+                5,
+                29,
+                "Clear settings search",
+                keyboard_focus::Role::Button,
+                !self.settings_search.as_str().is_empty(),
+            ),
         ];
-        controls[16].visible = show_diagnostics;
-        controls[16].tab_stop = show_diagnostics;
+        let has_matches = settings_catalog::matching_count(self.settings_search.as_str()) != 0;
+        for (index, control) in controls
+            .iter_mut()
+            .enumerate()
+            .take(settings_catalog::SECTIONS.len())
+        {
+            let visible = has_matches && self.settings_category_matches_search(index);
+            control.visible = visible;
+            control.tab_stop = visible;
+        }
+        for control in controls
+            .iter_mut()
+            .skip(settings_catalog::SECTIONS.len())
+            .take(11)
+        {
+            control.visible = has_matches;
+        }
+        controls[16].visible = has_matches && show_diagnostics;
+        controls[16].tab_stop = has_matches && show_diagnostics;
+        controls[23].visible = true;
+        controls[23].tab_stop = true;
+        controls[24].visible = true;
+        controls[24].tab_stop = !self.settings_search.as_str().is_empty();
         let _ = self.file_focus.replace_scope(5, &controls);
         if activate {
             let local = 10 + self.settings_category as u32;
@@ -808,6 +907,84 @@ impl Shell {
                 keyboard_focus::Input::Keyboard,
             );
         }
+    }
+    fn settings_search_key(&mut self, key: Key) -> bool {
+        let local = self.file_focus.focused().map_or(0, |id| id.local);
+        if key == Key::Character('/') && local != 28 {
+            let _ = self.file_focus.select(
+                keyboard_focus::ControlId {
+                    scope: 5,
+                    local: 28,
+                },
+                keyboard_focus::Input::Keyboard,
+            );
+            return true;
+        }
+        if local != 28 {
+            return false;
+        }
+        match key {
+            Key::Character(character) => {
+                if character.is_ascii()
+                    && !character.is_ascii_control()
+                    && self.settings_search.push_ascii(character)
+                {
+                    self.settings_search_changed();
+                }
+            }
+            Key::Backspace => {
+                if self.settings_search.pop() {
+                    self.settings_search_changed();
+                }
+            }
+            Key::Escape => {
+                if !self.settings_search.as_str().is_empty() {
+                    self.settings_clear_search();
+                } else {
+                    let _ = self.file_focus.select(
+                        keyboard_focus::ControlId {
+                            scope: 5,
+                            local: 10 + self.settings_category as u32,
+                        },
+                        keyboard_focus::Input::Keyboard,
+                    );
+                }
+            }
+            Key::Up | Key::Down => {
+                let count = settings_catalog::matching_count(self.settings_search.as_str());
+                if count != 0 {
+                    let current = self
+                        .settings_category_position(self.settings_category)
+                        .unwrap_or(0);
+                    let offset = if key == Key::Up { -1isize } else { 1 };
+                    let position = (current as isize + offset + count as isize)
+                        .rem_euclid(count as isize) as usize;
+                    if let Some(index) = self.settings_matching_category_at(position) {
+                        self.settings_category = index;
+                        self.sync_settings_focus();
+                    }
+                }
+            }
+            Key::Enter => {
+                if !self.settings_category_matches_search(self.settings_category) {
+                    if let Some(index) = self.settings_matching_category_at(0) {
+                        self.settings_category = index;
+                    }
+                }
+                if self.settings_category_matches_search(self.settings_category) {
+                    self.sync_settings_focus();
+                    let _ = self.file_focus.select(
+                        keyboard_focus::ControlId {
+                            scope: 5,
+                            local: 10 + self.settings_category as u32,
+                        },
+                        keyboard_focus::Input::Keyboard,
+                    );
+                }
+            }
+            _ => return false,
+        }
+        true
     }
     fn settings_key(&mut self, key: Key) {
         self.sync_settings_focus();
@@ -818,6 +995,13 @@ impl Shell {
             if key == Key::Escape {
                 self.settings_diagnostics = false;
             }
+            return;
+        }
+        if self.settings_search_key(key) {
+            return;
+        }
+        if self.file_focus.focused().is_some_and(|id| id.local == 29) && key == Key::Enter {
+            self.settings_clear_search();
             return;
         }
         if matches!(key, Key::Tab | Key::BackTab) {
@@ -836,19 +1020,24 @@ impl Shell {
             let index = (local - 10) as usize;
             self.settings_category = index;
             if matches!(key, Key::Up | Key::Down) {
-                let offset = if key == Key::Up { -1isize } else { 1 };
-                self.settings_category =
-                    (index as isize + offset + settings_catalog::SECTIONS.len() as isize)
-                        .rem_euclid(settings_catalog::SECTIONS.len() as isize)
-                        as usize;
-                self.sync_settings_focus();
-                let _ = self.file_focus.select(
-                    keyboard_focus::ControlId {
-                        scope: 5,
-                        local: 10 + self.settings_category as u32,
-                    },
-                    keyboard_focus::Input::Keyboard,
-                );
+                let count = settings_catalog::matching_count(self.settings_search.as_str());
+                if count != 0 {
+                    let current = self.settings_category_position(index).unwrap_or(0);
+                    let offset = if key == Key::Up { -1isize } else { 1 };
+                    let position = (current as isize + offset + count as isize)
+                        .rem_euclid(count as isize) as usize;
+                    if let Some(target) = self.settings_matching_category_at(position) {
+                        self.settings_category = target;
+                        self.sync_settings_focus();
+                        let _ = self.file_focus.select(
+                            keyboard_focus::ControlId {
+                                scope: 5,
+                                local: 10 + self.settings_category as u32,
+                            },
+                            keyboard_focus::Input::Keyboard,
+                        );
+                    }
+                }
             } else if key == Key::Enter {
                 match self.settings_category() {
                     settings_catalog::Category::Appearance => {
@@ -978,16 +1167,32 @@ impl Shell {
         }
     }
     pub fn settings_category_bounds(&self, index: usize) -> Option<Bounds> {
-        if index >= settings_catalog::SECTIONS.len() {
-            return None;
-        }
+        let position = self.settings_category_position(index)?;
         let b = self.desktop.window(App::Settings).bounds;
         Some(Bounds {
             x: b.x + 12,
-            y: b.y + 58 + index as i32 * 28,
+            y: b.y + 82 + position as i32 * 25,
             width: 164,
-            height: 24,
+            height: 22,
         })
+    }
+    pub fn settings_search_bounds(&self) -> Bounds {
+        let b = self.desktop.window(App::Settings).bounds;
+        Bounds {
+            x: b.x + 12,
+            y: b.y + 50,
+            width: 164,
+            height: 28,
+        }
+    }
+    pub(crate) fn settings_clear_search_bounds(&self) -> Bounds {
+        let search = self.settings_search_bounds();
+        Bounds {
+            x: search.x + search.width - 24,
+            y: search.y + 5,
+            width: 18,
+            height: 18,
+        }
     }
     fn settings_content_x(&self) -> i32 {
         self.desktop.window(App::Settings).bounds.x + 188
@@ -1066,6 +1271,32 @@ impl Shell {
             return false;
         }
         self.sync_settings_focus();
+        if Self::hit(self.settings_clear_search_bounds(), x, y)
+            && !self.settings_search.as_str().is_empty()
+        {
+            self.settings_clear_search();
+            let _ = self.file_focus.select(
+                keyboard_focus::ControlId {
+                    scope: 5,
+                    local: 28,
+                },
+                keyboard_focus::Input::Pointer,
+            );
+            return true;
+        }
+        if Self::hit(self.settings_search_bounds(), x, y) {
+            let _ = self.file_focus.select(
+                keyboard_focus::ControlId {
+                    scope: 5,
+                    local: 28,
+                },
+                keyboard_focus::Input::Pointer,
+            );
+            return true;
+        }
+        if settings_catalog::matching_count(self.settings_search.as_str()) == 0 {
+            return false;
+        }
         for index in 0..settings_catalog::SECTIONS.len() {
             if self
                 .settings_category_bounds(index)
@@ -1233,13 +1464,15 @@ impl Shell {
                     "This folder action is no longer current."
                 }
             });
-            self.sync_files_focus();
+            self.sync_files_directory_dialog_focus();
             return Err(error);
         }
         self.files_directory_mode = true;
         self.file_status.set("");
         self.sync_selected_directory_file();
-        self.sync_files_focus();
+        // A successful directory mutation closes its modal in the model. Keep
+        // the shared focus manager in step before another app receives input.
+        self.sync_files_directory_dialog_focus();
         Ok(())
     }
     pub fn take_file_action(&mut self) -> Option<files_actions::Action> {
@@ -1293,7 +1526,7 @@ impl Shell {
             .and_then(|id| self.file_focus.state(id))
     }
     /// Return the cursor shape at a framebuffer point. Text-entry regions in
-    /// Files use an I-beam while controls and other surfaces retain the arrow.
+    /// Files and the Settings search use an I-beam while controls retain arrow.
     pub fn cursor_shape_at(&self, x: i32, y: i32) -> cursor::Shape {
         if self.desktop.focused() == Some(App::Files)
             && !self.trash_page
@@ -1326,6 +1559,13 @@ impl Shell {
                         let b = self.file_dialog_bounds();
                         x >= b.x + 20 && x < b.x + b.width - 20 && y >= b.y + 88 && y < b.y + 128
                     })
+        {
+            return cursor::Shape::IBeam;
+        }
+        if self.desktop.focused() == Some(App::Settings)
+            && !self.settings_diagnostics
+            && Self::hit(self.settings_search_bounds(), x, y)
+            && !Self::hit(self.settings_clear_search_bounds(), x, y)
         {
             return cursor::Shape::IBeam;
         }
@@ -2958,12 +3198,42 @@ impl Shell {
         {
             return Some(SearchResult::Shortcuts);
         }
+        if !self.search_input.as_str().is_empty() {
+            if let Ok(value) = calculator::evaluate(self.search_input.as_str()) {
+                if index == 0 {
+                    return Some(SearchResult::Calculation(value));
+                }
+            }
+        }
         None
     }
     fn search_count(&self) -> usize {
-        (0..App::ALL.len() + FILE_CAPACITY + 1)
+        (0..App::ALL.len() + FILE_CAPACITY + 2)
             .take_while(|i| self.search_result(*i).is_some())
             .count()
+    }
+    fn search_result_presentation<'a>(
+        &'a self,
+        result: SearchResult,
+        calculation_label: &'a mut Line,
+    ) -> (&'a str, theme::Icon, &'static str) {
+        match result {
+            SearchResult::App(app) => (app.title(), app_icon(app), "APP"),
+            SearchResult::File(index) => {
+                (self.files[index].path.as_str(), theme::Icon::Files, "FILE")
+            }
+            SearchResult::Shortcuts => ("Keyboard shortcuts", theme::Icon::Notices, "GUIDE"),
+            SearchResult::Calculation(value) => {
+                use core::fmt::Write;
+                let _ = write!(
+                    calculation_label,
+                    "{} = {}",
+                    self.search_input.as_str(),
+                    value
+                );
+                (calculation_label.as_str(), theme::Icon::Calculator, "CALC")
+            }
+        }
     }
     fn activate_search(&mut self) {
         if let Some(result) = self.search_result(self.selection) {
@@ -2980,6 +3250,11 @@ impl Shell {
                     self.launcher = false;
                     self.search_mode = false;
                     return;
+                }
+                SearchResult::Calculation(_) => {
+                    let expression = self.search_input;
+                    let _ = self.calculator.evaluate_expression(expression.as_str());
+                    self.apply_window_action(Action::Open(App::Calculator));
                 }
             }
             self.launcher = false;
@@ -3242,7 +3517,7 @@ impl Shell {
     }
     pub fn home_bounds(&self) -> Bounds {
         let (w, h) = self.desktop.dimensions();
-        let width = (w - 24).clamp(0, 620);
+        let width = (w - 24).clamp(0, 760);
         let height = (h - 96).clamp(0, 450);
         Bounds {
             x: (w - width) / 2,
@@ -3251,29 +3526,57 @@ impl Shell {
             height,
         }
     }
+    fn home_search_bounds(&self) -> Bounds {
+        let b = self.home_bounds();
+        Bounds {
+            x: b.x + 24,
+            y: b.y + 56,
+            width: (b.width - 48).max(0),
+            height: 38,
+        }
+    }
     pub fn home_action_bounds(&self, index: usize) -> Option<Bounds> {
         if index >= HOME_ACTION_COUNT {
             return None;
         }
         let b = self.home_bounds();
-        let inner = (b.width - 56).max(0);
+        let content_x = b.x + 20;
+        let content_width = (b.width - 40).max(0);
+        let narrow = b.width < 520;
+        let tight = b.height < 420;
         if index < App::ALL.len() {
-            let column = (inner / App::ALL.len() as i32).max(1);
+            let columns = if narrow { 2 } else { 3 };
+            let gap = 8;
+            let slot = ((content_width - gap * (columns - 1)) / columns).max(0);
+            let (top, row_step, height) = match (narrow, tight) {
+                (true, true) => (112, 35, 32),
+                (true, false) => (120, 46, 42),
+                (false, _) => (120, 66, 54),
+            };
+            let row = index as i32 / columns;
+            let column = index as i32 % columns;
             Some(Bounds {
-                x: b.x + 28 + index as i32 * column,
-                y: b.y + 126,
-                width: (column - 8).max(0),
-                height: 88,
+                x: content_x + column * (slot + gap),
+                y: b.y + top + row * row_step,
+                width: slot,
+                height,
             })
         } else {
             let item = index - App::ALL.len();
-            let column = (inner / 2).max(1);
-            let row_step = if b.height < 420 { 34 } else { 40 };
+            let columns = if narrow { 2 } else { 4 };
+            let gap = if narrow { 6 } else { 8 };
+            let slot = ((content_width - gap * (columns - 1)) / columns).max(0);
+            let (top, row_step, height) = match (narrow, tight) {
+                (true, true) => (238, 25, 22),
+                (true, false) => (280, 28, 24),
+                (false, true) => (270, 35, 30),
+                (false, false) => (302, 36, 32),
+            };
             Some(Bounds {
-                x: b.x + 28 + (item % 2) as i32 * column,
-                y: b.y + 244 + (item / 2) as i32 * row_step,
-                width: (column - 12).max(0),
-                height: 32,
+                x: content_x + (item as i32 % columns) * (slot + gap),
+                y: b.y + top + (item as i32 / columns) * row_step,
+                width: slot,
+                height,
             })
         }
     }
@@ -3496,14 +3799,14 @@ impl Shell {
             }
             if self.launcher {
                 let b = self.home_bounds();
-                if x >= b.x + 28 && x < b.x + b.width - 28 && y >= b.y + 54 && y < b.y + 96 {
+                if Self::hit(self.home_search_bounds(), x, y) {
                     self.search_mode = true;
                     self.search_input = Line::new();
                     self.selection = 0;
                     return;
                 }
                 if self.search_mode {
-                    if x >= b.x + 28 && x < b.x + b.width - 28 && y >= b.y + 116 && y < b.y + 404 {
+                    if x >= b.x + 24 && x < b.x + b.width - 24 && y >= b.y + 116 && y < b.y + 404 {
                         let row = ((y - b.y - 116) / 32) as usize;
                         let index = self.selection.saturating_sub(8) + row;
                         if self.search_result(index).is_some() {
@@ -4139,25 +4442,20 @@ impl Shell {
             self.file_detail = false;
             return;
         }
-        if self.desktop.focused() == Some(App::Calculator)
-            && matches!(
-                key,
-                Key::Tab
-                    | Key::BackTab
-                    | Key::Up
-                    | Key::Down
-                    | Key::Enter
-                    | Key::Escape
-                    | Key::Delete
-                    | Key::Backspace
-                    | Key::Character(_)
-            )
+        if key == Key::Escape
+            && !self.launcher
+            && self.desktop.focused() == Some(App::Settings)
+            && self.file_focus.focused().is_some_and(|id| id.local == 28)
         {
-            self.calculator.on_key(key);
+            self.settings_key(key);
             return;
         }
         if self.launcher && self.search_mode && key != Key::Menu {
             self.search_key(key);
+            return;
+        }
+        if key == Key::Escape && !self.launcher && self.desktop.focused() == Some(App::Calculator) {
+            self.calculator.on_key(key);
             return;
         }
         if key == Key::Escape || key == Key::Menu {
@@ -4190,6 +4488,23 @@ impl Shell {
                 }
                 _ => {}
             }
+            return;
+        }
+        if self.desktop.focused() == Some(App::Calculator)
+            && matches!(
+                key,
+                Key::Tab
+                    | Key::BackTab
+                    | Key::Up
+                    | Key::Down
+                    | Key::Enter
+                    | Key::Escape
+                    | Key::Delete
+                    | Key::Backspace
+                    | Key::Character(_)
+            )
+        {
+            self.calculator.on_key(key);
             return;
         }
         if self.desktop.focused() == Some(App::Files) && matches!(key, Key::Tab | Key::BackTab) {
@@ -4717,31 +5032,32 @@ impl Shell {
         theme::shadow(canvas, b, 14);
         theme::rounded_rect(canvas, b, 14, theme::SURFACE);
         theme::outline(canvas, b, 14, theme::BORDER);
-        // A slim accent at the top gives this transient launcher a clear
-        // identity without adding a second title bar.
         canvas.rect(b.x + 18, b.y + 1, (b.width - 36).max(0), 2, theme::ACCENT);
         theme::icon(
             canvas,
             theme::Icon::Next,
             b.x + 26,
             b.y + 17,
-            20,
+            22,
             theme::ACCENT,
         );
         theme::text(
             canvas,
             b.x + 56,
-            b.y + 18,
-            "Your workspace",
+            b.y + 16,
+            "Next",
             theme::TEXT,
             theme::Font::Title,
         );
-        let field = Bounds {
-            x: b.x + 28,
-            y: b.y + 54,
-            width: (b.width - 56).max(0),
-            height: 40,
-        };
+        theme::text(
+            canvas,
+            b.x + 24,
+            b.y + 40,
+            "Apps, files, and window tools",
+            theme::MUTED,
+            theme::Font::Small,
+        );
+        let field = self.home_search_bounds();
         theme::rounded_rect(canvas, field, 8, theme::SURFACE_RAISED);
         theme::outline(
             canvas,
@@ -4757,19 +5073,20 @@ impl Shell {
             canvas,
             theme::Icon::Search,
             field.x + 12,
-            field.y + 12,
+            field.y + 10,
             18,
             theme::MUTED,
         );
-        theme::text(
+        draw_ellipsized(
             canvas,
             field.x + 40,
-            field.y + 10,
+            field.y + 9,
             if self.search_mode && !self.search_input.as_str().is_empty() {
                 self.search_input.as_str()
             } else {
-                "Search apps and files"
+                HOME_SEARCH_LABEL
             },
+            (field.width - 52).max(0),
             if self.search_mode && !self.search_input.as_str().is_empty() {
                 theme::TEXT
             } else {
@@ -4819,27 +5136,56 @@ impl Shell {
                         theme::ACCENT_SOFT,
                     );
                 }
-                let (label, icon) = match result {
-                    SearchResult::App(app) => (app.title(), app_icon(app)),
-                    SearchResult::File(i) => (self.files[i].path.as_str(), theme::Icon::Files),
-                    SearchResult::Shortcuts => ("Keyboard shortcuts", theme::Icon::Notices),
-                };
+                let mut calculation_label = Line::new();
+                let (label, icon, source) =
+                    Self::search_result_presentation(self, result, &mut calculation_label);
                 theme::icon(canvas, icon, b.x + 34, y + 7, 16, theme::ACCENT);
+                let source_width = theme::text_width(source, theme::Font::Small);
+                let source_x = b.x + b.width - 32 - source_width;
                 theme::text(
                     canvas,
-                    b.x + 62,
-                    y + 4,
-                    label,
-                    theme::TEXT,
-                    theme::Font::Body,
+                    source_x,
+                    y + 8,
+                    source,
+                    theme::MUTED,
+                    theme::Font::Small,
                 );
+                let label_width = (source_x - b.x - 70).max(0);
+                if let SearchResult::Calculation(value) = result {
+                    let visible_label = calculation_label_for_width(
+                        self.search_input.as_str(),
+                        value,
+                        label_width,
+                        canvas.text_scale(),
+                        theme::Font::Body,
+                    );
+                    draw_ellipsized(
+                        canvas,
+                        b.x + 62,
+                        y + 4,
+                        visible_label.as_str(),
+                        label_width,
+                        theme::TEXT,
+                        theme::Font::Body,
+                    );
+                } else {
+                    draw_ellipsized(
+                        canvas,
+                        b.x + 62,
+                        y + 4,
+                        label,
+                        label_width,
+                        theme::TEXT,
+                        theme::Font::Body,
+                    );
+                }
             }
             if self.search_count() == 0 {
                 theme::text(
                     canvas,
                     b.x + 28,
                     b.y + 126,
-                    "No matching apps or files",
+                    "No matching apps, files, or calculations",
                     theme::MUTED,
                     theme::Font::Body,
                 );
@@ -4847,21 +5193,20 @@ impl Shell {
         } else {
             theme::text(
                 canvas,
-                b.x + 28,
-                b.y + 105,
-                "Pinned",
+                b.x + 20,
+                b.y + 102,
+                "Pinned apps",
                 theme::TEXT,
                 theme::Font::Small,
             );
-            let app_count = App::ALL.len();
             let mut count = Line::new();
             use core::fmt::Write;
-            let _ = write!(count, "{} apps", app_count);
+            let _ = write!(count, "{} apps", App::ALL.len());
             let count_width = theme::text_width(count.as_str(), theme::Font::Small);
             theme::text(
                 canvas,
-                b.x + b.width - 28 - count_width,
-                b.y + 105,
+                b.x + b.width - 20 - count_width,
+                b.y + 102,
                 count.as_str(),
                 theme::MUTED,
                 theme::Font::Small,
@@ -4870,17 +5215,17 @@ impl Shell {
                 let Some(item) = self.home_action_bounds(index) else {
                     continue;
                 };
-                let fill = if index == self.selection {
-                    theme::ACCENT_SOFT
-                } else {
-                    theme::SURFACE_RAISED
-                };
-                let border = if index == self.selection {
-                    theme::ACCENT
-                } else {
-                    theme::BORDER
-                };
-                theme::rounded_rect(canvas, item, 8, border);
+                let selected = index == self.selection;
+                theme::rounded_rect(
+                    canvas,
+                    item,
+                    9,
+                    if selected {
+                        theme::ACCENT
+                    } else {
+                        theme::BORDER
+                    },
+                );
                 theme::rounded_rect(
                     canvas,
                     Bounds {
@@ -4889,57 +5234,105 @@ impl Shell {
                         width: (item.width - 2).max(0),
                         height: (item.height - 2).max(0),
                     },
-                    7,
-                    fill,
+                    8,
+                    if selected {
+                        theme::ACCENT_SOFT
+                    } else {
+                        theme::SURFACE_RAISED
+                    },
                 );
+                let narrow = b.width < 520;
+                let icon_size = if narrow { 18 } else { 22 };
+                let tile_size = if narrow { 28 } else { 36 };
                 let icon_tile = Bounds {
-                    x: item.x + (item.width - 42).max(0) / 2,
-                    y: item.y + 8,
-                    width: item.width.min(42),
-                    height: 42,
+                    x: item.x + if narrow { 5 } else { 10 },
+                    y: item.y + (item.height - tile_size) / 2,
+                    width: tile_size,
+                    height: tile_size,
                 };
-                theme::rounded_rect(canvas, icon_tile, 12, theme::ACCENT_SOFT);
+                theme::rounded_rect(canvas, icon_tile, 10, theme::ACCENT_SOFT);
                 theme::icon(
                     canvas,
                     app_icon(app),
-                    icon_tile.x + (icon_tile.width - 26) / 2,
-                    icon_tile.y + 8,
-                    26,
+                    icon_tile.x + (icon_tile.width - icon_size) / 2,
+                    icon_tile.y + (icon_tile.height - icon_size) / 2,
+                    icon_size,
                     theme::ACCENT,
                 );
-                let label = app.title();
-                theme::text(
+                let label_x = icon_tile.x + icon_tile.width + if narrow { 7 } else { 10 };
+                let label_width =
+                    (item.x + item.width - label_x - if narrow { 6 } else { 12 }).max(0);
+                let label = app_short_title(app);
+                draw_ellipsized(
                     canvas,
-                    item.x + (item.width - theme::text_width(label, theme::Font::Small)) / 2,
-                    item.y + 58,
+                    label_x,
+                    if narrow {
+                        item.y + (item.height - 10) / 2
+                    } else {
+                        item.y + 9
+                    },
                     label,
+                    label_width,
                     theme::TEXT,
-                    theme::Font::Small,
+                    if narrow {
+                        theme::Font::Small
+                    } else {
+                        theme::Font::Body
+                    },
                 );
+                if !narrow {
+                    theme::text(
+                        canvas,
+                        label_x,
+                        item.y + 31,
+                        if self.desktop.window(app).state == WindowState::Closed {
+                            "Launch"
+                        } else {
+                            "Open"
+                        },
+                        theme::MUTED,
+                        theme::Font::Small,
+                    );
+                }
             }
+            let tools = self.home_action_bounds(App::ALL.len()).unwrap();
             theme::text(
                 canvas,
-                b.x + 28,
-                b.y + 224,
+                b.x + 20,
+                tools.y - 20,
                 "Window tools",
                 theme::TEXT,
+                theme::Font::Small,
+            );
+            let focused = self
+                .desktop
+                .focused()
+                .map(app_short_title)
+                .unwrap_or("No focused window");
+            let focused_width = theme::text_width(focused, theme::Font::Small);
+            theme::text(
+                canvas,
+                b.x + b.width - 20 - focused_width,
+                tools.y - 20,
+                focused,
+                theme::MUTED,
                 theme::Font::Small,
             );
             for index in App::ALL.len()..HOME_ACTION_COUNT {
                 let Some(item) = self.home_action_bounds(index) else {
                     continue;
                 };
-                let fill = if self.selection == index {
-                    theme::ACCENT_SOFT
-                } else {
-                    theme::SURFACE_RAISED
-                };
-                let border = if self.selection == index {
-                    theme::ACCENT
-                } else {
-                    theme::BORDER
-                };
-                theme::rounded_rect(canvas, item, 8, border);
+                let selected = self.selection == index;
+                theme::rounded_rect(
+                    canvas,
+                    item,
+                    8,
+                    if selected {
+                        theme::ACCENT
+                    } else {
+                        theme::BORDER
+                    },
+                );
                 theme::rounded_rect(
                     canvas,
                     Bounds {
@@ -4949,19 +5342,19 @@ impl Shell {
                         height: (item.height - 2).max(0),
                     },
                     7,
-                    fill,
+                    if selected {
+                        theme::ACCENT_SOFT
+                    } else {
+                        theme::SURFACE_RAISED
+                    },
                 );
-                canvas.rect(item.x + 12, item.y + 12, 8, 8, theme::ACCENT);
-                let label = if index == desktop::ACTIONS.len() {
-                    "Keyboard shortcuts"
-                } else {
-                    desktop::ACTIONS[index].label()
-                };
-                theme::text(
+                draw_home_tool_icon(canvas, index - App::ALL.len(), item);
+                draw_ellipsized(
                     canvas,
-                    item.x + 30,
-                    item.y + 7,
-                    label,
+                    item.x + 31,
+                    item.y + (item.height - 10) / 2,
+                    home_tool_label(index - App::ALL.len()),
+                    (item.width - 39).max(0),
                     theme::TEXT,
                     theme::Font::Small,
                 );
@@ -4970,16 +5363,17 @@ impl Shell {
         let footer_y = b.y + b.height - 22;
         canvas.rect(
             b.x + 24,
-            footer_y - 8,
+            footer_y - 9,
             (b.width - 48).max(0),
             1,
             theme::BORDER,
         );
-        theme::text(
+        draw_ellipsized(
             canvas,
-            b.x + 28,
+            b.x + 24,
             footer_y,
-            "Arrows choose    Enter opens    Esc closes",
+            "Arrows / Tab Move    Enter Select    Esc Back",
+            (b.width - 48).max(0),
             theme::MUTED,
             theme::Font::Small,
         );
@@ -5383,6 +5777,64 @@ impl Shell {
         theme::outline(canvas, sidebar, 10, theme::BORDER);
         theme::rounded_rect(canvas, content, 10, theme::SURFACE);
         theme::outline(canvas, content, 10, theme::BORDER);
+        let search = self.settings_search_bounds();
+        let search_focused = self
+            .file_focus
+            .focused()
+            .is_some_and(|id| id.scope == 5 && id.local == 28);
+        theme::rounded_rect(canvas, search, 6, theme::SURFACE);
+        Self::control_border(
+            canvas,
+            search,
+            if search_focused {
+                theme::ACCENT
+            } else {
+                theme::BORDER
+            },
+        );
+        if search_focused {
+            self.draw_focus_outline(canvas, search);
+        }
+        let search_label = if self.settings_search.as_str().is_empty() {
+            "Search settings"
+        } else {
+            self.settings_search.as_str()
+        };
+        draw_fit(
+            canvas,
+            search.x + 8,
+            search.y + 9,
+            search_label,
+            search.width - 36,
+            if self.settings_search.as_str().is_empty() {
+                theme::MUTED
+            } else {
+                theme::TEXT
+            },
+            theme::Font::Small,
+        );
+        let clear = self.settings_clear_search_bounds();
+        theme::rounded_rect(
+            canvas,
+            clear,
+            5,
+            if self.settings_search.as_str().is_empty() {
+                theme::SURFACE
+            } else {
+                theme::SURFACE_RAISED
+            },
+        );
+        if !self.settings_search.as_str().is_empty() {
+            draw_fit(
+                canvas,
+                clear.x + 5,
+                clear.y + 5,
+                "x",
+                clear.width - 10,
+                theme::TEXT,
+                theme::Font::Small,
+            );
+        }
         for (index, section) in settings_catalog::SECTIONS.iter().enumerate() {
             let Some(item) = self.settings_category_bounds(index) else {
                 continue;
@@ -5435,6 +5887,28 @@ impl Shell {
             canvas.set_text_scale(settings_scale);
         }
 
+        if settings_catalog::matching_count(self.settings_search.as_str()) == 0 {
+            draw_fit(
+                canvas,
+                content.x + 18,
+                content.y + 24,
+                "No matching settings",
+                content.width - 36,
+                theme::TEXT,
+                theme::Font::Body,
+            );
+            draw_fit(
+                canvas,
+                content.x + 18,
+                content.y + 52,
+                "Try a category or setting name.",
+                content.width - 36,
+                theme::MUTED,
+                theme::Font::Small,
+            );
+            canvas.set_text_scale(previous_text_scale);
+            return;
+        }
         match self.settings_category() {
             settings_catalog::Category::Appearance => {
                 self.render_appearance(
@@ -7609,6 +8083,62 @@ fn app_icon(app: App) -> theme::Icon {
         App::Calculator => theme::Icon::Calculator,
     }
 }
+fn app_short_title(app: App) -> &'static str {
+    match app {
+        App::Terminal => "Terminal",
+        App::Files => "Prism Files",
+        App::Monitor => "Monitor",
+        App::Settings => "Settings",
+        App::Editor => "Editor",
+        App::Calculator => "Calculator",
+    }
+}
+fn home_tool_label(index: usize) -> &'static str {
+    match index {
+        0 => "Move",
+        1 => "Resize",
+        2 => "Minimize",
+        3 => "Maximize",
+        4 => "Restore",
+        5 => "Close",
+        _ => "Shortcuts",
+    }
+}
+fn draw_home_tool_icon(canvas: &mut Canvas<'_>, index: usize, item: Bounds) {
+    let size = item.height.saturating_sub(8).clamp(8, 18);
+    let x = item.x + 7;
+    let y = item.y + (item.height - size) / 2;
+    let color = theme::ACCENT;
+    match index {
+        0 => {
+            let center = size / 2;
+            canvas.rect(x + center - 1, y + 2, 2, size - 4, color);
+            canvas.rect(x + 2, y + center - 1, size - 4, 2, color);
+            canvas.rect(x + center - 2, y, 4, 2, color);
+            canvas.rect(x + center - 2, y + size - 2, 4, 2, color);
+            canvas.rect(x, y + center - 2, 2, 4, color);
+            canvas.rect(x + size - 2, y + center - 2, 2, 4, color);
+        }
+        1 => {
+            canvas.rect(x + 2, y + 2, 2, size - 4, color);
+            canvas.rect(x + 2, y + 2, size - 4, 2, color);
+            canvas.rect(x + size - 4, y + 2, 2, 4, color);
+            canvas.rect(x + size - 6, y + size - 4, 4, 2, color);
+            canvas.rect(x + 2, y + size - 4, 4, 2, color);
+            canvas.rect(x + size - 4, y + size - 6, 2, 4, color);
+        }
+        2 => theme::icon(canvas, theme::Icon::Minimize, x, y, size, color),
+        3 => theme::icon(canvas, theme::Icon::Maximize, x, y, size, color),
+        4 => {
+            canvas.rect(x + 4, y + 1, size - 5, 2, color);
+            canvas.rect(x + size - 3, y + 1, 2, size - 5, color);
+            canvas.rect(x + 2, y + 4, 2, size - 5, color);
+            canvas.rect(x + 2, y + size - 3, size - 5, 2, color);
+        }
+        5 => theme::icon(canvas, theme::Icon::Close, x, y, size, color),
+        _ => theme::icon(canvas, theme::Icon::Notices, x, y, size, color),
+    }
+}
 
 fn draw_limited(canvas: &mut Canvas<'_>, x: i32, y: i32, text: &str, columns: usize, color: u32) {
     // Shell lines are ASCII; take a valid UTF-8 prefix defensively for other callers.
@@ -7690,6 +8220,45 @@ fn draw_ellipsized(
         color,
         font,
     );
+}
+fn calculation_label_for_width(
+    query: &str,
+    value: i64,
+    max_width: i32,
+    scale: appearance::TextScale,
+    font: theme::Font,
+) -> Line {
+    use core::fmt::Write;
+
+    let mut suffix = Line::new();
+    let _ = write!(suffix, " = {}", value);
+    let mut full = Line::new();
+    let _ = write!(full, "{}{}", query, suffix.as_str());
+    if max_width <= 0 || theme::text_width_scaled(full.as_str(), font, scale) <= max_width {
+        return full;
+    }
+
+    // Keep the evaluated value visible when a long query meets a compact Home
+    // panel. The CALC source tag remains in its own reserved column.
+    let ellipsis = "...";
+    let suffix_width = theme::text_width_scaled(suffix.as_str(), font, scale);
+    let ellipsis_width = theme::text_width_scaled(ellipsis, font, scale);
+    if suffix_width + ellipsis_width > max_width {
+        let visible_suffix = fitted_text_prefix(suffix.as_str(), max_width, scale, font);
+        let mut clipped = Line::new();
+        clipped.set(visible_suffix);
+        return clipped;
+    }
+
+    let prefix = fitted_text_prefix(
+        query,
+        max_width - suffix_width - ellipsis_width,
+        scale,
+        font,
+    );
+    let mut visible = Line::new();
+    let _ = write!(visible, "{}{}{}", prefix, ellipsis, suffix.as_str());
+    visible
 }
 fn files_entry_name_width(area: Bounds) -> i32 {
     // Keep an eight-pixel gutter before the fixed FILE/FOLDER kind label.
@@ -7997,6 +8566,204 @@ mod tests {
             calculator.y + calculator.height / 2,
         ));
         assert_eq!(shell.desktop().focused(), Some(App::Calculator));
+    }
+    fn enter_home_search(query: &str) -> Shell {
+        let mut shell = Shell::new();
+        shell.set_viewport(1280, 800);
+        shell.on_key(Key::OpenSearch);
+        for character in query.chars() {
+            shell.on_key(Key::Character(character));
+        }
+        shell
+    }
+    #[test]
+    fn home_search_returns_bounded_precedence_and_parenthesized_calculations() {
+        let shell = enter_home_search("2+3*4");
+        assert_eq!(shell.search_count(), 1);
+        assert!(matches!(
+            shell.search_result(0),
+            Some(SearchResult::Calculation(14))
+        ));
+
+        let shell = enter_home_search("(2+3)*4");
+        assert_eq!(shell.search_count(), 1);
+        assert!(matches!(
+            shell.search_result(0),
+            Some(SearchResult::Calculation(20))
+        ));
+    }
+    #[test]
+    fn home_search_excludes_invalid_divide_by_zero_and_overflow_expressions() {
+        for query in [
+            "1/0",
+            "3%(2-2)",
+            "9223372036854775807+1",
+            "-9223372036854775808/-1",
+            "2+",
+            "(2+3",
+        ] {
+            let shell = enter_home_search(query);
+            assert_eq!(shell.search_count(), 0, "unexpected result for {query:?}");
+            assert!(
+                shell.search_result(0).is_none(),
+                "unexpected result for {query:?}"
+            );
+        }
+    }
+    #[test]
+    fn home_calculation_result_has_render_and_accessible_label_and_source() {
+        extern crate std;
+
+        let mut shell = enter_home_search("2+3*4");
+        let mut label = Line::new();
+        let (name, icon, source) =
+            shell.search_result_presentation(shell.search_result(0).unwrap(), &mut label);
+        assert_eq!(name, "2+3*4 = 14");
+        assert!(matches!(icon, theme::Icon::Calculator));
+        assert_eq!(source, "CALC");
+
+        let mut snapshot = accessibility::Snapshot::empty();
+        shell.write_accessibility_snapshot(&mut snapshot).unwrap();
+        let result = snapshot
+            .nodes()
+            .iter()
+            .find(|node| node.role == accessibility::Role::ListItem)
+            .unwrap();
+        assert_eq!(result.name(), "2+3*4 = 14");
+        assert_eq!(result.value(), "CALC");
+        assert!(result.state.selected);
+
+        let mut pixels = std::vec![0; 1280 * 800];
+        {
+            let mut canvas = Canvas::new(&mut pixels, 1280, 800, 1280, PixelFormat::Bgr).unwrap();
+            shell.render(&mut canvas);
+        }
+        let bounds = shell.home_bounds();
+        let source_x = bounds.x + bounds.width - 32 - theme::text_width("CALC", theme::Font::Small);
+        let source_y = bounds.y + 124;
+        assert!((0..12).any(|dy| {
+            (source_x..source_x + theme::text_width("CALC", theme::Font::Small))
+                .any(|x| pixels[(source_y + dy) as usize * 1280 + x as usize] == theme::MUTED)
+        }));
+    }
+    #[test]
+    fn compact_home_calculation_label_keeps_evaluated_value_visible() {
+        let query = "1+1+1+1+1+1+1+1+1+1+1+1+1+1+1";
+        let mut shell = enter_home_search(query);
+        shell.set_viewport(320, 800);
+        let bounds = shell.home_bounds();
+        let source_width = theme::text_width("CALC", theme::Font::Small);
+        let label_width = (bounds.width - 32 - source_width - 70).max(0);
+
+        let visible = calculation_label_for_width(
+            query,
+            15,
+            label_width,
+            appearance::TextScale::Percent100,
+            theme::Font::Body,
+        );
+        assert!(visible.as_str().contains("..."));
+        assert!(visible.as_str().ends_with(" = 15"));
+        assert!(theme::text_width(visible.as_str(), theme::Font::Body) <= label_width);
+    }
+    #[test]
+    fn activating_home_calculation_opens_evaluated_calculator() {
+        let mut shell = enter_home_search("(2+3)*4");
+        assert!(matches!(
+            shell.search_result(0),
+            Some(SearchResult::Calculation(20))
+        ));
+
+        shell.on_key(Key::Enter);
+
+        assert_eq!(shell.search_query(), None);
+        assert_eq!(shell.desktop().focused(), Some(App::Calculator));
+        assert_eq!(shell.calculator().expression(), "(2+3)*4");
+        assert_eq!(shell.calculator().result(), Some(Ok(20)));
+        assert_eq!(shell.calculator().result_text(), "20");
+    }
+    #[test]
+    fn home_overlay_search_and_tab_navigation_precede_focused_calculator() {
+        use accessibility::{Role, Snapshot};
+
+        let mut shell = Shell::new();
+        shell.set_viewport(1280, 800);
+        shell.open_app(App::Calculator);
+        shell.on_key(Key::Character('9'));
+        assert_eq!(
+            shell.calculator().focused(),
+            calculator_app::Control::Expression
+        );
+        assert_eq!(shell.calculator().expression(), "9");
+
+        shell.on_key(Key::Menu);
+        shell.on_key(Key::Tab);
+        assert!(shell.launcher_open());
+        assert_eq!(
+            shell.selection, 1,
+            "Tab navigates Home instead of Calculator"
+        );
+        assert_eq!(
+            shell.calculator().focused(),
+            calculator_app::Control::Expression
+        );
+        shell.on_key(Key::Escape);
+        assert!(!shell.launcher_open(), "Escape closes the Home overlay");
+        assert_eq!(shell.calculator().expression(), "9");
+        shell.on_key(Key::Escape);
+        assert!(
+            !shell.launcher_open(),
+            "Calculator Escape must not open Home"
+        );
+        assert_eq!(shell.calculator().expression(), "");
+
+        shell.on_key(Key::OpenSearch);
+        let mut snapshot = Snapshot::empty();
+        shell.write_accessibility_snapshot(&mut snapshot).unwrap();
+        let search = snapshot
+            .nodes()
+            .iter()
+            .find(|node| node.role == Role::TextBox)
+            .unwrap();
+        assert_eq!(search.name(), HOME_SEARCH_LABEL);
+        assert!(search.name().contains("calculations"));
+        assert_eq!(search.value(), "");
+        assert!(search.state.focused);
+
+        for character in "2+3*4".chars() {
+            shell.on_key(Key::Character(character));
+        }
+        shell.on_key(Key::Tab);
+        assert_eq!(shell.search_query(), Some("2+3*4"));
+        assert_eq!(
+            shell.calculator().focused(),
+            calculator_app::Control::Expression
+        );
+
+        shell.write_accessibility_snapshot(&mut snapshot).unwrap();
+        let search = snapshot
+            .nodes()
+            .iter()
+            .find(|node| node.role == Role::TextBox)
+            .unwrap();
+        assert_eq!(search.name(), HOME_SEARCH_LABEL);
+        assert_eq!(search.value(), "2+3*4");
+        assert!(search.state.focused);
+        let result = snapshot
+            .nodes()
+            .iter()
+            .find(|node| node.role == Role::ListItem)
+            .unwrap();
+        assert_eq!(result.name(), "2+3*4 = 14");
+        assert_eq!(result.value(), "CALC");
+        assert!(result.state.selected);
+        assert!(!result.state.focused);
+
+        shell.on_key(Key::Enter);
+        assert_eq!(shell.search_query(), None);
+        assert_eq!(shell.desktop().focused(), Some(App::Calculator));
+        assert_eq!(shell.calculator().expression(), "2+3*4");
+        assert_eq!(shell.calculator().result(), Some(Ok(14)));
     }
     #[test]
     fn supplied_command_and_panel_data_are_bounded_and_actual() {
@@ -8862,7 +9629,14 @@ mod tests {
     #[test]
     fn centered_desktop_hit_geometry_matches_render_at_supported_resolutions() {
         extern crate std;
-        for (width, height) in [(640, 480), (1024, 768), (1280, 800), (1920, 1080)] {
+        for (width, height) in [
+            (320, 480),
+            (320, 560),
+            (640, 480),
+            (1024, 768),
+            (1280, 800),
+            (1920, 1080),
+        ] {
             let mut shell = Shell::new();
             shell.set_viewport(width, height);
             let b = shell.taskbar_bounds();
@@ -8891,10 +9665,22 @@ mod tests {
                     && panel.x + panel.width <= width as i32
                     && panel.y + panel.height < b.y
             );
-            for index in 0..App::ALL.len() {
+            for index in 0..HOME_ACTION_COUNT {
                 let item = shell.home_action_bounds(index).unwrap();
+                assert!(item.width > 0 && item.height > 0);
                 assert!(item.x >= panel.x && item.x + item.width <= panel.x + panel.width);
                 assert!(item.y >= panel.y && item.y + item.height <= panel.y + panel.height);
+                for other_index in index + 1..HOME_ACTION_COUNT {
+                    let other = shell.home_action_bounds(other_index).unwrap();
+                    let overlaps = item.x < other.x + other.width
+                        && other.x < item.x + item.width
+                        && item.y < other.y + other.height
+                        && other.y < item.y + item.height;
+                    assert!(
+                        !overlaps,
+                        "Home action cards {index} and {other_index} overlap"
+                    );
+                }
             }
             let mut pixels = std::vec![0xdeadbeef;width*height+2];
             let end = pixels.len() - 1;
@@ -8903,6 +9689,50 @@ mod tests {
             shell.render(&mut canvas);
             assert_eq!(pixels[0], 0xdeadbeef);
             assert_eq!(pixels[end], 0xdeadbeef);
+            let app_selected = shell.home_action_bounds(0).unwrap();
+            let app_unselected = shell.home_action_bounds(1).unwrap();
+            let selected_pixel = 1
+                + (app_selected.y + app_selected.height / 2) as usize * width
+                + (app_selected.x + app_selected.width - 4) as usize;
+            let unselected_pixel = 1
+                + (app_unselected.y + app_unselected.height / 2) as usize * width
+                + (app_unselected.x + app_unselected.width - 4) as usize;
+            assert_ne!(
+                pixels[selected_pixel], pixels[unselected_pixel],
+                "selected app card is visually distinct at {width}x{height}"
+            );
+
+            for _ in 0..App::ALL.len() {
+                shell.on_key(Key::Down);
+            }
+            assert_eq!(shell.selection, App::ALL.len());
+            let tool_selected = shell.home_action_bounds(App::ALL.len()).unwrap();
+            let tool_unselected = shell.home_action_bounds(App::ALL.len() + 1).unwrap();
+            let mut tool_pixels = std::vec![0xdeadbeef;width*height+2];
+            let tool_end = tool_pixels.len() - 1;
+            {
+                let mut canvas = Canvas::new(
+                    &mut tool_pixels[1..tool_end],
+                    width,
+                    height,
+                    width,
+                    PixelFormat::Bgr,
+                )
+                .unwrap();
+                shell.render(&mut canvas);
+            }
+            let tool_selected_pixel = 1
+                + (tool_selected.y + tool_selected.height / 2) as usize * width
+                + (tool_selected.x + tool_selected.width - 4) as usize;
+            let tool_unselected_pixel = 1
+                + (tool_unselected.y + tool_unselected.height / 2) as usize * width
+                + (tool_unselected.x + tool_unselected.width - 4) as usize;
+            assert_ne!(
+                tool_pixels[tool_selected_pixel], tool_pixels[tool_unselected_pixel],
+                "selected window tool is visually distinct at {width}x{height}"
+            );
+            assert_eq!(tool_pixels[0], 0xdeadbeef);
+            assert_eq!(tool_pixels[tool_end], 0xdeadbeef);
         }
     }
     fn directory_listing(
@@ -9079,6 +9909,30 @@ mod tests {
             )
             .unwrap();
         assert_eq!(shell.files_directory().selected().unwrap().id, 9);
+        assert!(!shell.files_directory().dialog_active());
+        assert_eq!(shell.file_focus.modal_depth(), 0);
+        assert_eq!(shell.file_focus.active_scope(), 2);
+
+        // The completed Files dialog must not leave its modal scope above
+        // Settings or swallow the next field activation and keyboard input.
+        shell.open_app(App::Settings);
+        let search = shell.settings_search_bounds();
+        shell.on_pointer(Pointer::Down(search.x + 20, search.y + 12));
+        assert_eq!(
+            shell.file_focus.focused(),
+            Some(keyboard_focus::ControlId {
+                scope: 5,
+                local: 28,
+            })
+        );
+        for character in "keyboard".chars() {
+            shell.on_key(Key::Character(character));
+        }
+        assert_eq!(shell.settings_search.as_str(), "keyboard");
+        assert_eq!(
+            shell.settings_category(),
+            settings_catalog::Category::Devices
+        );
     }
     #[test]
     fn files_move_and_remove_controls_emit_snapshot_bound_directory_actions() {
@@ -9953,6 +10807,192 @@ mod tests {
         assert_eq!(
             resolution.value(),
             "Unavailable in this build; no action is enabled."
+        );
+    }
+    #[test]
+    fn settings_search_filters_sections_and_keyboard_jumps_to_matches() {
+        use accessibility::{Role, Snapshot};
+        let mut shell = Shell::new();
+        shell.set_viewport(1280, 800);
+        shell
+            .load_appearance(appearance::Loaded {
+                preferences: appearance::Preferences::default(),
+                origin: appearance::Origin::Persisted,
+            })
+            .unwrap();
+        shell.open_app(App::Settings);
+
+        shell.on_key(Key::Character('/'));
+        assert_eq!(
+            shell.file_focus.focused(),
+            Some(keyboard_focus::ControlId {
+                scope: 5,
+                local: 28
+            })
+        );
+        for character in "access".chars() {
+            shell.on_key(Key::Character(character));
+        }
+        assert_eq!(shell.settings_search.as_str(), "access");
+        assert_eq!(shell.settings_category(), settings_catalog::Category::Sound);
+        assert!(shell.settings_category_bounds(3).is_some());
+        assert!(shell.settings_category_bounds(10).is_some());
+        for index in [0, 1, 2, 4, 5, 6, 7, 8, 9, 11] {
+            assert!(shell.settings_category_bounds(index).is_none());
+        }
+        let search = shell.settings_search_bounds();
+        let first = shell.settings_category_bounds(3).unwrap();
+        let settings = shell.desktop.window(App::Settings).bounds;
+        assert!(search.x >= settings.x && search.x + search.width <= settings.x + 180);
+        assert!(first.y >= search.y + search.height);
+
+        // The query matches both Sound's accessibility-audio setting and the
+        // Accessibility category. Arrow navigation selects the second result;
+        // Enter moves focus to that category's normal Settings control.
+        shell.on_key(Key::Down);
+        assert_eq!(
+            shell.settings_category(),
+            settings_catalog::Category::Accessibility
+        );
+        assert_eq!(
+            shell.file_focus.focused(),
+            Some(keyboard_focus::ControlId {
+                scope: 5,
+                local: 28
+            })
+        );
+        shell.on_key(Key::Enter);
+        assert_eq!(
+            shell.file_focus.focused(),
+            Some(keyboard_focus::ControlId {
+                scope: 5,
+                local: 20
+            })
+        );
+
+        let mut snapshot = Snapshot::empty();
+        shell.write_accessibility_snapshot(&mut snapshot).unwrap();
+        let search_node = snapshot
+            .nodes()
+            .iter()
+            .find(|node| node.name() == "Search settings")
+            .unwrap();
+        assert_eq!(search_node.role, Role::TextBox);
+        assert_eq!(search_node.value(), "access");
+        assert_eq!(search_node.bounds, Some(search));
+        let unsupported = snapshot
+            .nodes()
+            .iter()
+            .find(|node| node.name() == "Screen reader, captions and speech")
+            .unwrap();
+        assert!(!unsupported.state.enabled);
+        assert!(unsupported
+            .value()
+            .contains("only Settings text size and focus outline preferences are active"));
+    }
+    #[test]
+    fn settings_search_no_match_is_announced_and_escape_clears_without_losing_category() {
+        use accessibility::{Role, Snapshot};
+        let mut shell = Shell::new();
+        shell
+            .load_appearance(appearance::Loaded {
+                preferences: appearance::Preferences::default(),
+                origin: appearance::Origin::Persisted,
+            })
+            .unwrap();
+        shell.open_app(App::Settings);
+        let strong = shell.accessibility_control_bounds(1).unwrap();
+        shell.on_key(Key::Character('/'));
+        for character in "zz".chars() {
+            shell.on_key(Key::Character(character));
+        }
+        // The first character briefly matched Accessibility's "text size"
+        // setting. Losing the last result hides the list but preserves that
+        // selection for when the query is cleared.
+        assert_eq!(
+            shell.settings_category(),
+            settings_catalog::Category::Accessibility
+        );
+        assert!(settings_catalog::matching_index(shell.settings_search.as_str(), 0).is_none());
+        assert!(settings_catalog::SECTIONS
+            .iter()
+            .enumerate()
+            .all(|(index, _)| shell.settings_category_bounds(index).is_none()));
+
+        let mut snapshot = Snapshot::empty();
+        shell.write_accessibility_snapshot(&mut snapshot).unwrap();
+        assert!(snapshot.nodes().iter().any(|node| {
+            node.role == Role::Status
+                && node.name() == "Settings search results"
+                && node.value().contains("No matching settings")
+        }));
+        let search = snapshot
+            .nodes()
+            .iter()
+            .find(|node| node.name() == "Search settings")
+            .unwrap();
+        assert_eq!(search.value(), "zz");
+        assert!(search.state.focused);
+
+        shell.on_pointer(Pointer::Down(strong.x + 12, strong.y + 12));
+        assert_eq!(
+            shell.appearance_state().draft().focus_indicator,
+            appearance::FocusIndicator::Standard,
+            "a filtered-out content panel must not accept stale pointer hits"
+        );
+
+        shell.on_key(Key::Escape);
+        assert_eq!(shell.settings_search.as_str(), "");
+        assert_eq!(
+            shell.settings_category(),
+            settings_catalog::Category::Accessibility
+        );
+        assert!(shell.settings_category_bounds(10).is_some());
+        assert_eq!(
+            shell.file_focus.focused(),
+            Some(keyboard_focus::ControlId {
+                scope: 5,
+                local: 28
+            })
+        );
+    }
+    #[test]
+    fn settings_search_pointer_clear_restores_all_categories() {
+        let mut shell = Shell::new();
+        shell.open_app(App::Settings);
+        let search = shell.settings_search_bounds();
+        assert_eq!(
+            shell.cursor_shape_at(search.x + 12, search.y + 12),
+            cursor::Shape::IBeam
+        );
+        let clear = shell.settings_clear_search_bounds();
+        assert_eq!(
+            shell.cursor_shape_at(clear.x + 4, clear.y + 4),
+            cursor::Shape::Arrow
+        );
+        shell.on_pointer(Pointer::Down(search.x + 12, search.y + 12));
+        for character in "resolution".chars() {
+            shell.on_key(Key::Character(character));
+        }
+        assert_eq!(
+            shell.settings_category(),
+            settings_catalog::Category::Display
+        );
+        assert!(shell.settings_category_bounds(1).is_some());
+        assert!(shell.settings_category_bounds(2).is_none());
+        shell.on_pointer(Pointer::Down(clear.x + 4, clear.y + 4));
+        assert_eq!(shell.settings_search.as_str(), "");
+        assert_eq!(
+            shell.settings_category(),
+            settings_catalog::Category::Display
+        );
+        assert!(shell.settings_category_bounds(2).is_some());
+        assert_eq!(
+            shell.file_focus.focused(),
+            Some(keyboard_focus::ControlId {
+                scope: 5,
+                local: 28
+            })
         );
     }
     #[test]

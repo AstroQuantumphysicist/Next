@@ -26,3 +26,5 @@ pub mod portal;
 pub mod uart;
 
 pub mod datagram;
+
+pub mod timer;

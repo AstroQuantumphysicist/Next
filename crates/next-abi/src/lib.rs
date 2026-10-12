@@ -111,14 +111,35 @@ pub enum Syscall {
     SurfaceCloseReply = 44,
     /// Bounded atomic wait-any over native event handles (v0 extension).
     ObjectWaitMany = 45,
+    TimerCreate = 46,
+    TimerCancel = 47,
 }
 
 /// Maximum input count for the native `ObjectWaitMany` event wait-any call.
 pub const OBJECT_WAIT_MANY_MAX: usize = 16;
+/// Timer capabilities permit WAIT, SIGNAL(cancel), DUPLICATE and TRANSFER only.
+pub const TIMER_RIGHTS: u64 = 0x78;
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn timer_rights_and_extension_numbers_are_explicit() {
+        assert_eq!(Syscall::TimerCreate as u64, 46);
+        assert_eq!(Syscall::TimerCancel as u64, 47);
+        assert_eq!(
+            TIMER_RIGHTS,
+            Rights::WAIT
+                .union(Rights::SIGNAL)
+                .union(Rights::DUPLICATE)
+                .union(Rights::TRANSFER)
+                .0
+        );
+        assert_eq!(
+            TIMER_RIGHTS & (Rights::ADMIN.0 | Rights::READ.0 | Rights::WRITE.0 | Rights::EXECUTE.0),
+            0
+        );
+    }
     #[test]
     fn rights_fail_closed() {
         assert!(Rights::READ.union(Rights::WRITE).contains(Rights::READ));

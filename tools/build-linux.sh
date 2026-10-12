@@ -27,7 +27,7 @@ as --64 -o build/compat/linux/namespace.o crates/linux-fixtures/namespace.S
 ld -static --build-id=none -z max-page-size=4096 -T crates/linux-fixtures/linux.ld -o build/compat/linux/namespace.elf build/compat/linux/namespace.o
 as --64 --defsym NEXT_CROSS=1 -o build/compat/linux/namespace-gate.o crates/linux-fixtures/namespace.S
 ld -static --build-id=none -z max-page-size=4096 -T crates/linux-fixtures/linux.ld -o build/compat/linux/namespace-gate.elf build/compat/linux/namespace-gate.o
-for fixture in getpid uname lseek fstat getdents cwd; do
+for fixture in getpid uname lseek fstat getdents cwd timefile; do
     as --64 -o "build/compat/linux/$fixture.o" "crates/linux-fixtures/$fixture.S"
     ld -static --build-id=none -z max-page-size=4096 -T crates/linux-fixtures/linux.ld \
         -o "build/compat/linux/$fixture.elf" "build/compat/linux/$fixture.o"
@@ -130,3 +130,26 @@ with tempfile.TemporaryDirectory(prefix='next-linux-cwd-') as directory:
         raise SystemExit(f'Host Linux cwd fixture failed: status={result.returncode}, stdout={result.stdout!r}, stderr={result.stderr!r}')
 print('Independent Linux cwd/openat ELF host execution PASS (exit 56)')
 PYCWD
+python3 - <<'PYTIMEFILE'
+from pathlib import Path
+import subprocess
+import tempfile
+
+binary = Path('build/compat/linux/timefile.elf').resolve()
+with tempfile.TemporaryDirectory(prefix='next-linux-timefile-') as directory:
+    scratch = Path(directory) / 'timefile'
+    result = subprocess.run(
+        [str(binary), str(scratch)],
+        cwd=directory,
+        stdin=subprocess.DEVNULL,
+        capture_output=True,
+        timeout=3,
+    )
+    expected = b'LINUX TIMEFILE ELF: gettimeofday and ftruncate descriptor semantics PASS\n'
+    if result.returncode != 57 or result.stdout != expected or result.stderr or scratch.exists():
+        raise SystemExit(
+            f'Host Linux timefile fixture failed: status={result.returncode}, '
+            f'stdout={result.stdout!r}, stderr={result.stderr!r}, scratch_exists={scratch.exists()}'
+        )
+print('Independent Linux gettimeofday/ftruncate ELF host execution PASS (exit 57)')
+PYTIMEFILE

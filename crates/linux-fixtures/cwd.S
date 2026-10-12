@@ -36,9 +36,67 @@ _start:
     cmp rax, -14 /* EFAULT */
     jne failed
 
+    /* Place cwd exactly at a mapped page edge, then test a one-byte crossing. */
+    mov eax, 9 /* mmap(NULL,8192,READ|WRITE,PRIVATE|ANON,-1,0) */
+    xor edi, edi
+    mov esi, 8192
+    mov edx, 3
+    mov r10d, 0x22
+    mov r8, -1
+    xor r9d, r9d
+    syscall
+    cmp rax, -4095
+    jae failed
+    mov rbx, rax
+    lea rdi, [rbx + 4096]
+    mov esi, 4096
+    mov eax, 11 /* munmap the second page */
+    syscall
+    test rax, rax
+    jne failed
+    lea rdi, [rbx + 4096]
+    sub rdi, r12
+    mov eax, 79
+    mov esi, r12d
+    syscall
+    cmp rax, r12 /* exact fit through the last mapped byte succeeds */
+    jne failed
+    lea rsi, [rip + initial_cwd]
+    lea rdi, [rbx + 4096]
+    sub rdi, r12
+    mov rcx, r12
+    cld
+    repe cmpsb
+    jne failed
+    lea rdi, [rbx + 4096]
+    sub rdi, r12
+    inc rdi /* one byte of the requested copy now crosses into an unmapped page */
+    mov eax, 79
+    mov esi, r12d
+    syscall
+    cmp rax, -14 /* EFAULT */
+    jne failed
+    mov eax, 11 /* release the remaining mapped page */
+    mov rdi, rbx
+    mov esi, 4096
+    syscall
+    test rax, rax
+    jne failed
+
+    /* Form an absolute sample path from the current cwd for portable host runs. */
+    cld
+    lea rsi, [rip + initial_cwd]
+    lea rdi, [rip + absolute_sample]
+    mov rcx, r12
+    dec rcx
+    rep movsb
+    lea rsi, [rip + absolute_sample_suffix]
+    mov ecx, absolute_sample_suffix_end-absolute_sample_suffix
+    rep movsb
+
     /* AT_FDCWD-relative open of the fixture's root-level sample file. */
     mov eax, 257 /* openat */
-    mov rdi, -100 /* AT_FDCWD */
+    mov edi, 0xffffff9c /* low32 is AT_FDCWD; upper32 is deliberately zero */
     lea rsi, [rip + sample_name]
     mov edx, 0x80000 /* O_RDONLY|O_CLOEXEC */
     xor r10d, r10d
@@ -48,6 +106,40 @@ _start:
     mov r14, rax
     call verify_sample
     mov eax, 3 /* close */
+    mov rdi, r14
+    syscall
+    test rax, rax
+    jne failed
+
+    /* A nonzero high32 still truncates to AT_FDCWD in the low32. */
+    mov eax, 257
+    mov rdi, 0x1ffffff9c
+    lea rsi, [rip + sample_name]
+    mov edx, 0x80000
+    xor r10d, r10d
+    syscall
+    test rax, rax
+    js failed
+    mov r14, rax
+    call verify_sample
+    mov eax, 3
+    mov rdi, r14
+    syscall
+    test rax, rax
+    jne failed
+
+    /* An absolute path ignores an invalid dirfd, as on Linux. */
+    mov eax, 257
+    mov edi, 99
+    lea rsi, [rip + absolute_sample]
+    mov edx, 0x80000
+    xor r10d, r10d
+    syscall
+    test rax, rax
+    js failed
+    mov r14, rax
+    call verify_sample
+    mov eax, 3
     mov rdi, r14
     syscall
     test rax, rax
@@ -119,7 +211,8 @@ _start:
     js failed
     mov r15, rax
     mov eax, 257
-    mov rdi, r15
+    mov rdi, 0x100000000
+    or rdi, r15 /* valid fd in low32; nonzero high32 must be ignored */
     lea rsi, [rip + parent_sample_name]
     mov edx, 0x80000
     xor r10d, r10d
@@ -246,6 +339,8 @@ helix_release_end:
 sample: .ascii "cwd-sample"
 sample_end:
 sample_name: .asciz "sample"
+absolute_sample_suffix: .asciz "/sample"
+absolute_sample_suffix_end:
 alpha_name: .asciz "alpha"
 current_directory_name: .asciz "."
 alpha_suffix: .asciz "alpha"
@@ -263,6 +358,7 @@ message_end:
 initial_cwd: .skip 128
 current_cwd: .skip 128
 expected_nested: .skip 128
+absolute_sample: .skip 160
 sample_buffer: .skip SAMPLE_LENGTH
 uname_buffer: .skip 390
 .section .note.GNU-stack,"",@progbits

@@ -1,0 +1,318 @@
+{
+  "scope": "QEMU q35/TCG/OVMF, qemu64, one configured vCPU, 1280x800, signed development image.",
+  "passed": true,
+  "check_count": 138,
+  "signed_image_sha256": "64d07c2ff4b53c3e14dafdb23ed28b655bafc98eab9543fe099229910f302d10",
+  "source_image": "next-dev.img (recorded by hash; not copied into this evidence directory)",
+  "qemu_report": "boot-smoke.json",
+  "screenshots": [
+    {
+      "name": "prism-home",
+      "title": "Home",
+      "guest_ppm": "build/runtime-linux-search-timer-zero-qemu64-r10/prism-gallery/home.ppm",
+      "guest_ppm_sha256": "2dd32f39a46a19b887c3c6481e55c88ee1b7ecef2d1c0211dbdb539064109918",
+      "bundle_png": "images/prism-home.png",
+      "bundle_png_sha256": "b06ac1d882f1bb71d29c803273d1fb120b7b2028c5f912b8a3002a1d2199403a",
+      "docs_png": "docs/images/prism-home.png",
+      "docs_png_sha256": "b06ac1d882f1bb71d29c803273d1fb120b7b2028c5f912b8a3002a1d2199403a",
+      "dimensions": [
+        1280,
+        800
+      ]
+    },
+    {
+      "name": "prism-home-search-terminal",
+      "title": "Home search selecting Next Terminal",
+      "guest_ppm": "build/runtime-linux-search-timer-zero-qemu64-r10/prism-gallery/home-search-terminal.ppm",
+      "guest_ppm_sha256": "0ba9e19b49b486fb8e26a5061fd63cf69b85dbba1ce088d9b4409822e20eadf5",
+      "bundle_png": "images/prism-home-search-terminal.png",
+      "bundle_png_sha256": "48dc7130a39dd4132e425abfa2f33474aad8b17658e7a816f0e187e5fd4b65c2",
+      "docs_png": "docs/images/prism-home-search-terminal.png",
+      "docs_png_sha256": "48dc7130a39dd4132e425abfa2f33474aad8b17658e7a816f0e187e5fd4b65c2",
+      "dimensions": [
+        1280,
+        800
+      ]
+    },
+    {
+      "name": "prism-home-search-calculation",
+      "title": "Home search arithmetic result",
+      "guest_ppm": "build/runtime-linux-search-timer-zero-qemu64-r10/prism-gallery/home-search-calculation.ppm",
+      "guest_ppm_sha256": "60f6db04126c223dace23b9d24e29ef22e6f769c787f15724b7a94b5055fa55a",
+      "bundle_png": "images/prism-home-search-calculation.png",
+      "bundle_png_sha256": "8eff9981939c51f20a6f26e89c263c6eba6b46a9d78703887fe7633acfd9ed45",
+      "docs_png": "docs/images/prism-home-search-calculation.png",
+      "docs_png_sha256": "8eff9981939c51f20a6f26e89c263c6eba6b46a9d78703887fe7633acfd9ed45",
+      "dimensions": [
+        1280,
+        800
+      ]
+    },
+    {
+      "name": "prism-terminal",
+      "title": "Terminal",
+      "guest_ppm": "build/runtime-linux-search-timer-zero-qemu64-r10/prism-gallery/terminal.ppm",
+      "guest_ppm_sha256": "b1ae0c994637ab62d77b1fc6dd358367cafa77b083c81f8126648021d97c2a61",
+      "bundle_png": "images/prism-terminal.png",
+      "bundle_png_sha256": "39b1d10ca7d3eb0811861385a8e4e642f4c8bb8c743b7e2e55bf99786bbaba31",
+      "docs_png": "docs/images/prism-terminal.png",
+      "docs_png_sha256": "39b1d10ca7d3eb0811861385a8e4e642f4c8bb8c743b7e2e55bf99786bbaba31",
+      "dimensions": [
+        1280,
+        800
+      ]
+    },
+    {
+      "name": "prism-files",
+      "title": "Files workspace",
+      "guest_ppm": "build/runtime-linux-search-timer-zero-qemu64-r10/prism-gallery/files.ppm",
+      "guest_ppm_sha256": "3494d05601349ad25daab082ffa00a10591192bb0d8a6bb5675482b37b58800b",
+      "bundle_png": "images/prism-files.png",
+      "bundle_png_sha256": "1a7ca5f8ab73adc6b103c5c566d5c7bfecdfb391df98e131902aef4c42601bad",
+      "docs_png": "docs/images/prism-files.png",
+      "docs_png_sha256": "1a7ca5f8ab73adc6b103c5c566d5c7bfecdfb391df98e131902aef4c42601bad",
+      "dimensions": [
+        1280,
+        800
+      ]
+    },
+    {
+      "name": "prism-monitor",
+      "title": "System Monitor",
+      "guest_ppm": "build/runtime-linux-search-timer-zero-qemu64-r10/prism-gallery/monitor.ppm",
+      "guest_ppm_sha256": "3f2b5c15660ee707bfa44626066ded7f10ec7d53149dd8c0cf1758539ee85a91",
+      "bundle_png": "images/prism-monitor.png",
+      "bundle_png_sha256": "d22623f2aee1e1afa6539aa0806fe7d522d90a514c617a14427d4531cba00d19",
+      "docs_png": "docs/images/prism-monitor.png",
+      "docs_png_sha256": "d22623f2aee1e1afa6539aa0806fe7d522d90a514c617a14427d4531cba00d19",
+      "dimensions": [
+        1280,
+        800
+      ]
+    },
+    {
+      "name": "prism-settings",
+      "title": "Settings Appearance",
+      "guest_ppm": "build/runtime-linux-search-timer-zero-qemu64-r10/prism-gallery/settings.ppm",
+      "guest_ppm_sha256": "0320ea3abfe4ccafce7718ccfafec187422638d12a5a86d2f43ced053630b975",
+      "bundle_png": "images/prism-settings.png",
+      "bundle_png_sha256": "8721b66884b6f9240d0240bb0688771f62c4e3433b0c2282c325f3e57588135d",
+      "docs_png": "docs/images/prism-settings.png",
+      "docs_png_sha256": "8721b66884b6f9240d0240bb0688771f62c4e3433b0c2282c325f3e57588135d",
+      "dimensions": [
+        1280,
+        800
+      ]
+    },
+    {
+      "name": "prism-settings-search-keyboard",
+      "title": "Settings keyboard search",
+      "guest_ppm": "build/runtime-linux-search-timer-zero-qemu64-r10/prism-gallery/settings-search-keyboard.ppm",
+      "guest_ppm_sha256": "008dcc5df25bfc6d0adc7c23888da52693143f2a6598511ef01cae46d3c60e4f",
+      "bundle_png": "images/prism-settings-search-keyboard.png",
+      "bundle_png_sha256": "de64c99cac07285809b676c47f100cbccead255c03cfd9c67d3f00f700d7dde8",
+      "docs_png": "docs/images/prism-settings-search-keyboard.png",
+      "docs_png_sha256": "de64c99cac07285809b676c47f100cbccead255c03cfd9c67d3f00f700d7dde8",
+      "dimensions": [
+        1280,
+        800
+      ]
+    },
+    {
+      "name": "prism-settings-accessibility",
+      "title": "Settings Accessibility preferences",
+      "guest_ppm": "build/runtime-linux-search-timer-zero-qemu64-r10/prism-gallery/settings-accessibility.ppm",
+      "guest_ppm_sha256": "bae194425abbe467cea64f700db6af6a59476516d7f9ae8c6978283827b4c015",
+      "bundle_png": "images/prism-settings-accessibility.png",
+      "bundle_png_sha256": "ad0d90db65c496e12f77574c692ed5bdc12a73f6a31ddb2c5780c8b84c7fa2a5",
+      "docs_png": "docs/images/prism-settings-accessibility.png",
+      "docs_png_sha256": "ad0d90db65c496e12f77574c692ed5bdc12a73f6a31ddb2c5780c8b84c7fa2a5",
+      "dimensions": [
+        1280,
+        800
+      ]
+    },
+    {
+      "name": "prism-settings-text-scale",
+      "title": "Settings 125 percent text size",
+      "guest_ppm": "build/runtime-linux-search-timer-zero-qemu64-r10/prism-gallery/settings-text-scale.ppm",
+      "guest_ppm_sha256": "2c027241097b57787b220424d0cc0d075a2838ed60d536658edc658ace412c71",
+      "bundle_png": "images/prism-settings-text-scale.png",
+      "bundle_png_sha256": "d11577ac4c00f955242dd3089f478046bd56c446b3969431d7cfd1428b59b16c",
+      "docs_png": "docs/images/prism-settings-text-scale.png",
+      "docs_png_sha256": "d11577ac4c00f955242dd3089f478046bd56c446b3969431d7cfd1428b59b16c",
+      "dimensions": [
+        1280,
+        800
+      ]
+    },
+    {
+      "name": "prism-editor",
+      "title": "Editor",
+      "guest_ppm": "build/runtime-linux-search-timer-zero-qemu64-r10/prism-gallery/editor.ppm",
+      "guest_ppm_sha256": "d1254e3ec26e2b9f481869b2a4a554ba790882030da50d2e250072d1b7061d1a",
+      "bundle_png": "images/prism-editor.png",
+      "bundle_png_sha256": "dd9be508e11443f2fb6741e3e6f4201cb097fce254ab4c28a54d9c020ae9b28d",
+      "docs_png": "docs/images/prism-editor.png",
+      "docs_png_sha256": "dd9be508e11443f2fb6741e3e6f4201cb097fce254ab4c28a54d9c020ae9b28d",
+      "dimensions": [
+        1280,
+        800
+      ]
+    },
+    {
+      "name": "prism-calculator",
+      "title": "Calculator",
+      "guest_ppm": "build/runtime-linux-search-timer-zero-qemu64-r10/prism-gallery/calculator.ppm",
+      "guest_ppm_sha256": "1b9d975135cc075c0ae18cfcd2918d9e703bb6b9442d5bb2b1bc7207a3828ff6",
+      "bundle_png": "images/prism-calculator.png",
+      "bundle_png_sha256": "6b75d35fb6362c026ce24fc63af27fa75932db5525e54f43ffbd7d6b70443a2c",
+      "docs_png": "docs/images/prism-calculator.png",
+      "docs_png_sha256": "6b75d35fb6362c026ce24fc63af27fa75932db5525e54f43ffbd7d6b70443a2c",
+      "dimensions": [
+        1280,
+        800
+      ]
+    },
+    {
+      "name": "prism-shortcuts",
+      "title": "Keyboard shortcuts guide",
+      "guest_ppm": "build/runtime-linux-search-timer-zero-qemu64-r10/prism-gallery/shortcuts.ppm",
+      "guest_ppm_sha256": "0c9d3218f937180c61ee76ab1b39b15c77d781d55e7b528abadba15756c2429a",
+      "bundle_png": "images/prism-shortcuts.png",
+      "bundle_png_sha256": "9a857fef2d24b67421d2f3f2a024b3386a4e4e7d984a1b83d1ed5ba28c7abc5b",
+      "docs_png": "docs/images/prism-shortcuts.png",
+      "docs_png_sha256": "9a857fef2d24b67421d2f3f2a024b3386a4e4e7d984a1b83d1ed5ba28c7abc5b",
+      "dimensions": [
+        1280,
+        800
+      ]
+    },
+    {
+      "name": "prism-notifications",
+      "title": "Notifications",
+      "guest_ppm": "build/runtime-linux-search-timer-zero-qemu64-r10/prism-gallery/notifications.ppm",
+      "guest_ppm_sha256": "afbe958726dcb910b508356e23c7555ed861a248bb984ac570cb7bf412f9df54",
+      "bundle_png": "images/prism-notifications.png",
+      "bundle_png_sha256": "90f79f8b154e166eb560c69accfc6debc808b4bc28e8d16bd96820474a2e667e",
+      "docs_png": "docs/images/prism-notifications.png",
+      "docs_png_sha256": "90f79f8b154e166eb560c69accfc6debc808b4bc28e8d16bd96820474a2e667e",
+      "dimensions": [
+        1280,
+        800
+      ]
+    },
+    {
+      "name": "prism-files-tabs-root",
+      "title": "Files root tab",
+      "guest_ppm": "build/runtime-linux-search-timer-zero-qemu64-r10/files-tabs-root.ppm",
+      "guest_ppm_sha256": "1ff5e1db9b0d8bba5a56c7317ae007c57d66f385ea8df4c7b88377bfea7ce299",
+      "bundle_png": "images/prism-files-tabs-root.png",
+      "bundle_png_sha256": "1b9dc4e368361244585be0e31bcc294db8b3bf8bda5649ca89bd5caada09af35",
+      "docs_png": "docs/images/prism-files-tabs-root.png",
+      "docs_png_sha256": "1b9dc4e368361244585be0e31bcc294db8b3bf8bda5649ca89bd5caada09af35",
+      "dimensions": [
+        1280,
+        800
+      ]
+    },
+    {
+      "name": "prism-files-tabs-nested",
+      "title": "Files nested tab",
+      "guest_ppm": "build/runtime-linux-search-timer-zero-qemu64-r10/files-tabs-nested.ppm",
+      "guest_ppm_sha256": "99c9d12483716bb0550c9361a06bda2e1007991be521248f1cb1dda18fe9ca8a",
+      "bundle_png": "images/prism-files-tabs-nested.png",
+      "bundle_png_sha256": "c78bdb2689e7c1d2aadf503a81c4605596950ee9aab2953c9764beb9898d1efa",
+      "docs_png": "docs/images/prism-files-tabs-nested.png",
+      "docs_png_sha256": "c78bdb2689e7c1d2aadf503a81c4605596950ee9aab2953c9764beb9898d1efa",
+      "dimensions": [
+        1280,
+        800
+      ]
+    },
+    {
+      "name": "prism-files-tabs-ibeam",
+      "title": "Files location I-beam cursor",
+      "guest_ppm": "build/runtime-linux-search-timer-zero-qemu64-r10/files-tabs-ibeam-address.ppm",
+      "guest_ppm_sha256": "1b20cbe6a04c2bc17f8f8f6d46eeb71b8884d376e0227b49e324d2ed637c8e94",
+      "bundle_png": "images/prism-files-tabs-ibeam.png",
+      "bundle_png_sha256": "894928576f70f58feeac628699f3bccaf94d897dd14ca79dd5c45cb13a24df0e",
+      "docs_png": "docs/images/prism-files-tabs-ibeam.png",
+      "docs_png_sha256": "894928576f70f58feeac628699f3bccaf94d897dd14ca79dd5c45cb13a24df0e",
+      "dimensions": [
+        1280,
+        800
+      ]
+    },
+    {
+      "name": "prism-files-dual-pane",
+      "title": "Independent Files panes",
+      "guest_ppm": "build/runtime-linux-search-timer-zero-qemu64-r10/files-tabs-dual-pane-left-root-right-nested.ppm",
+      "guest_ppm_sha256": "9c1ffdf0284a91af87f530755826bcb7ae4cf4806bb4616494878014a6a04772",
+      "bundle_png": "images/prism-files-dual-pane.png",
+      "bundle_png_sha256": "1ca00c37c08fe88e313e7b1935a506cd9c2921269aadb02bea03972c8b7567b8",
+      "docs_png": "docs/images/prism-files-dual-pane.png",
+      "docs_png_sha256": "1ca00c37c08fe88e313e7b1935a506cd9c2921269aadb02bea03972c8b7567b8",
+      "dimensions": [
+        1280,
+        800
+      ]
+    },
+    {
+      "name": "prism-files-copy-to-other-pane",
+      "title": "Files cross-pane copy",
+      "guest_ppm": "build/runtime-linux-search-timer-zero-qemu64-r10/files-tabs-copy-to-other-pane.ppm",
+      "guest_ppm_sha256": "43663785af62d63ac5c1235235e0c1c0cdc5c58b09a32d0f427b6256e7f44edb",
+      "bundle_png": "images/prism-files-copy-to-other-pane.png",
+      "bundle_png_sha256": "1b60cdd198d01aa4f2852a8d3db361d0a177fae928f117f8b5fda90ecebd3829",
+      "docs_png": "docs/images/prism-files-copy-to-other-pane.png",
+      "docs_png_sha256": "1b60cdd198d01aa4f2852a8d3db361d0a177fae928f117f8b5fda90ecebd3829",
+      "dimensions": [
+        1280,
+        800
+      ]
+    },
+    {
+      "name": "prism-snap-quadrant",
+      "title": "Terminal quadrant snap",
+      "guest_ppm": "build/runtime-linux-search-timer-zero-qemu64-r10/prism-quadrant-snap.ppm",
+      "guest_ppm_sha256": "5996a73b2d695337f171e271266ca24cacccc8239bd1a12188d98596e9b8f945",
+      "bundle_png": "images/prism-snap-quadrant.png",
+      "bundle_png_sha256": "9cf0c9a7228c46e65aacb19c5fcaeb4e2adc0b64516a0b76a5e623c91a19e259",
+      "docs_png": "docs/images/prism-snap-quadrant.png",
+      "docs_png_sha256": "9cf0c9a7228c46e65aacb19c5fcaeb4e2adc0b64516a0b76a5e623c91a19e259",
+      "dimensions": [
+        1280,
+        800
+      ]
+    }
+  ],
+  "contact_sheet": {
+    "bundle_png": "images/prism-overview.png",
+    "bundle_png_sha256": "13fb4b2eeab2237df0a06101f5c6efed9d9a242b9e3ae98a691a58c9ac4811e8",
+    "docs_png": "docs/images/prism-overview.png",
+    "docs_png_sha256": "13fb4b2eeab2237df0a06101f5c6efed9d9a242b9e3ae98a691a58c9ac4811e8",
+    "derived_from_capture_names": [
+      "prism-home",
+      "prism-home-search-terminal",
+      "prism-home-search-calculation",
+      "prism-terminal",
+      "prism-files",
+      "prism-monitor",
+      "prism-settings",
+      "prism-settings-search-keyboard",
+      "prism-settings-accessibility",
+      "prism-settings-text-scale",
+      "prism-editor",
+      "prism-calculator",
+      "prism-shortcuts",
+      "prism-notifications",
+      "prism-files-tabs-root",
+      "prism-files-tabs-nested",
+      "prism-files-tabs-ibeam",
+      "prism-files-dual-pane",
+      "prism-files-copy-to-other-pane",
+      "prism-snap-quadrant"
+    ]
+  }
+}
