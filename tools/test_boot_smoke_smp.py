@@ -123,11 +123,33 @@ class BootSmokeSmpProfileTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "expected 4"):
             boot_smoke.validate_files_tab_action_sequence(good.rsplit(b"PRISM DIRECTORY ACTION:", 1)[0])
 
+    def test_files_copy_requires_one_successful_commit_with_exact_source_and_target(self):
+        source = "/native/alpha/copy-source"
+        destination = "/native/copy-source"
+        line = (
+            f"PRISM FILE COMMIT: request=88 intent=Copy {{ source: Snapshot {{ path: "
+            f"{self.debug_path(source)}, revision: 4 }}, destination: {self.debug_path(destination)}, "
+            "replace: None } result=Ok(())\r\n"
+        ).encode()
+        record = boot_smoke.validate_files_copy_commit(line, source, destination)
+        self.assertEqual(record["request"], 88)
+        self.assertEqual(record["source"], source)
+        self.assertEqual(record["destination"], destination)
+        with self.assertRaisesRegex(RuntimeError, "expected one"):
+            boot_smoke.validate_files_copy_commit(
+                line.replace(b"result=Ok(())", b"result=Err(Conflict)"),
+                source,
+                destination,
+            )
+        with self.assertRaisesRegex(RuntimeError, "Copy paths"):
+            boot_smoke.validate_files_copy_commit(line, source, "/native/wrong")
+
     def test_files_tab_click_geometry_matches_default_guest_window(self):
         self.assertEqual(
             boot_smoke.files_tab_click_targets(1280, 800),
             {"add": (528, 222), "root": (203, 222), "nested": (413, 222),
-             "address": (120, 257), "left_switch": (533, 257), "right_switch": (1009, 257)},
+             "address": (120, 257), "left_switch": (533, 257), "right_switch": (1009, 257),
+             "copy_to_other": (776, 180), "left_first_row": (334, 293)},
         )
         small = boot_smoke.files_tab_click_targets(1024, 768)
         self.assertTrue(all(0 <= x < 1024 and 0 <= y < 768 for x, y in small.values()))

@@ -27,7 +27,7 @@ as --64 -o build/compat/linux/namespace.o crates/linux-fixtures/namespace.S
 ld -static --build-id=none -z max-page-size=4096 -T crates/linux-fixtures/linux.ld -o build/compat/linux/namespace.elf build/compat/linux/namespace.o
 as --64 --defsym NEXT_CROSS=1 -o build/compat/linux/namespace-gate.o crates/linux-fixtures/namespace.S
 ld -static --build-id=none -z max-page-size=4096 -T crates/linux-fixtures/linux.ld -o build/compat/linux/namespace-gate.elf build/compat/linux/namespace-gate.o
-for fixture in getpid uname lseek fstat getdents; do
+for fixture in getpid uname lseek fstat getdents cwd; do
     as --64 -o "build/compat/linux/$fixture.o" "crates/linux-fixtures/$fixture.S"
     ld -static --build-id=none -z max-page-size=4096 -T crates/linux-fixtures/linux.ld \
         -o "build/compat/linux/$fixture.elf" "build/compat/linux/$fixture.o"
@@ -114,3 +114,19 @@ with tempfile.TemporaryDirectory(prefix='next-linux-getdents-') as directory:
         raise SystemExit(f'Host Linux getdents fixture failed: status={result.returncode}, stdout={result.stdout!r}, stderr={result.stderr!r}')
 print('Independent Linux getdents64 ELF host execution PASS (exit 55)')
 PYGETDENTS
+python3 - <<'PYCWD'
+from pathlib import Path
+import subprocess
+import tempfile
+
+binary = Path('build/compat/linux/cwd.elf').resolve()
+with tempfile.TemporaryDirectory(prefix='next-linux-cwd-') as directory:
+    root = Path(directory)
+    (root / 'alpha').mkdir()
+    (root / 'sample').write_bytes(b'cwd-sample')
+    result = subprocess.run([str(binary)], cwd=root, capture_output=True, timeout=3, stdin=subprocess.DEVNULL)
+    expected = b'LINUX CWD ELF: getcwd, chdir, and relative openat PASS\n'
+    if result.returncode != 56 or result.stdout != expected or result.stderr:
+        raise SystemExit(f'Host Linux cwd fixture failed: status={result.returncode}, stdout={result.stdout!r}, stderr={result.stderr!r}')
+print('Independent Linux cwd/openat ELF host execution PASS (exit 56)')
+PYCWD

@@ -894,6 +894,7 @@ pub(crate) fn linux_directory(path: &str) -> Result<crate::linux_fs::dirent::Sna
         hash | (1 << 63)
     };
     let mut snapshot = Snapshot::EMPTY;
+    snapshot.identity = listing.folder.id;
     snapshot
         .push(Entry::new(inode(path), 4, ".").ok_or(errno(5))?)
         .ok_or(errno(5))?;

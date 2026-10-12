@@ -2974,7 +2974,7 @@ impl Runtime {
         requested
     }
 }
-fn linux_path<'a>(
+fn linux_cstring<'a>(
     rt: &Runtime,
     slot: usize,
     address: u64,
@@ -2985,16 +2985,22 @@ fn linux_path<'a>(
         copy_in(rt, slot, pointer, &mut bytes[length..length + 1]).map_err(|_| linux::EFAULT)?;
         if bytes[length] == 0 {
             let path = core::str::from_utf8(&bytes[..length]).map_err(|_| linux::EINVAL)?;
-            // The Linux ABI accepts absolute paths, then the descriptor/VFS
-            // adapter returns EACCES for paths outside its granted namespace.
-            // Relative path resolution is not implemented in this profile.
-            if !path.starts_with('/') {
-                return Err(linux::ENOSYS);
-            }
             return Ok(path);
         }
     }
     Err((-36i64) as u64)
+}
+fn linux_path<'a>(
+    rt: &Runtime,
+    slot: usize,
+    address: u64,
+    bytes: &'a mut [u8; 32],
+) -> Result<&'a str, u64> {
+    let path = linux_cstring(rt, slot, address, bytes)?;
+    if !path.starts_with('/') {
+        return Err(linux::ENOSYS);
+    }
+    Ok(path)
 }
 fn valid_native_path(path: &str) -> bool {
     path.starts_with("/native/")
@@ -3008,18 +3014,30 @@ fn valid_native_path(path: &str) -> bool {
                     .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'.' | b'_' | b'-'))
         })
 }
-fn linux_open(rt: &Runtime, slot: usize, address: u64, flags: u64, mode: u64) -> u64 {
+fn linux_open(rt: &Runtime, slot: usize, dirfd: u64, address: u64, flags: u64, mode: u64) -> u64 {
     let mut bytes = [0u8; 32];
-    linux_path(rt, slot, address, &mut bytes)
+    linux_cstring(rt, slot, address, &mut bytes)
         .and_then(|path| {
-            crate::linux_fs::open(
-                slot,
-                rt.processes[slot].generation,
-                rt.processes[slot].console_owned,
-                path,
-                flags,
-                mode,
-            )
+            if dirfd as u32 == (-100i32) as u32 {
+                crate::linux_fs::open(
+                    slot,
+                    rt.processes[slot].generation,
+                    rt.processes[slot].console_owned,
+                    path,
+                    flags,
+                    mode,
+                )
+            } else {
+                crate::linux_fs::openat(
+                    slot,
+                    rt.processes[slot].generation,
+                    rt.processes[slot].console_owned,
+                    dirfd,
+                    path,
+                    flags,
+                    mode,
+                )
+            }
         })
         .unwrap_or_else(|error| error)
 }
@@ -3127,6 +3145,32 @@ pub extern "sysv64" fn linux_dispatch(frame: *mut CpuFrame) -> u64 {
                 )
             }
             frame.rax = 0;
+        }
+        79 => {
+            frame.rax = crate::linux_fs::getcwd(slot, generation, frame.rsi, |bytes| {
+                if !user_range(&rt.processes[slot], frame.rdi, bytes.len(), true) {
+                    return Err(linux::EFAULT);
+                }
+                unsafe {
+                    copy_nonoverlapping(
+                        bytes.as_ptr(),
+                        physical_pointer(slot, frame.rdi),
+                        bytes.len(),
+                    );
+                }
+                Ok(())
+            })
+            .map(|n| n as u64)
+            .unwrap_or_else(|e| e);
+        }
+        80 => {
+            let mut bytes = [0; 32];
+            frame.rax = linux_cstring(rt, slot, frame.rdi, &mut bytes)
+                .and_then(|p| {
+                    crate::linux_fs::chdir(slot, generation, rt.processes[slot].console_owned, p)
+                })
+                .map(|()| 0)
+                .unwrap_or_else(|e| e);
         }
         82 | 264 => {
             let (old_address, new_address) = if frame.rax == 82 {
@@ -3252,8 +3296,8 @@ pub extern "sysv64" fn linux_dispatch(frame: *mut CpuFrame) -> u64 {
                 Err(_) => frame.rax = linux::EFAULT,
             }
         }
-        2 => frame.rax = linux_open(rt, slot, frame.rdi, frame.rsi, frame.rdx),
-        257 => frame.rax = linux_open(rt, slot, frame.rsi, frame.rdx, frame.r10),
+        2 => frame.rax = linux_open(rt, slot, (-100i64) as u64, frame.rdi, frame.rsi, frame.rdx),
+        257 => frame.rax = linux_open(rt, slot, frame.rdi, frame.rsi, frame.rdx, frame.r10),
         3 => {
             frame.rax = crate::linux_fs::close(slot, generation, frame.rdi)
                 .map(|()| 0)

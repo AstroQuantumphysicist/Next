@@ -1342,13 +1342,14 @@ impl Shell {
             .saturating_sub(self.file_list_rows().saturating_sub(1))
     }
     pub fn file_action_button_bounds(&self, index: usize) -> Option<Bounds> {
-        if index >= 6 {
+        if index >= 7 {
             return None;
         }
         let b = self.desktop.window(App::Files).bounds;
-        let width = ((b.width - 56) / 6).clamp(0, 96);
+        let gap = if b.width < 480 { 4 } else { 8 };
+        let width = ((b.width - 16 - 6 * gap) / 7).clamp(0, 96);
         Some(Bounds {
-            x: b.x + 12 + index as i32 * (width + 8),
+            x: b.x + 12 + index as i32 * (width + gap),
             y: b.y + 52,
             width,
             height: 32,
@@ -1660,6 +1661,13 @@ impl Shell {
                     keyboard_focus::Role::Button,
                     right.tab_count() > 1 && !right.active_model().busy(),
                 ),
+                Self::file_control(
+                    2,
+                    23,
+                    "Copy selected file to other pane",
+                    keyboard_focus::Role::Button,
+                    self.copy_to_other_pane_destination().is_some(),
+                ),
             ];
             if self.file_focus.active_scope() != 2 {
                 let _ = self.file_focus.set_base_scope(2);
@@ -1794,6 +1802,10 @@ impl Shell {
         true
     }
     fn begin_files_directory_action(&mut self, index: usize) {
+        if index == 6 {
+            self.begin_copy_to_other_pane();
+            return;
+        }
         self.file_status.set("");
         let result = match index {
             0 => self.files_directory.up().map(|_| ()),
@@ -1841,6 +1853,83 @@ impl Shell {
             });
         }
         self.sync_files_directory_dialog_focus();
+    }
+    fn other_pane_copy_destination(&self) -> Option<files_actions::Path> {
+        if !self.files_directory_mode {
+            return None;
+        }
+        let selected = self.files_directory.selected()?;
+        if selected.kind != files_directory::Kind::File {
+            return None;
+        }
+        self.selected_file_binding_index()?;
+        let other_index = 1 - self.files_directory.active_pane();
+        let model = self.files_directory.pane(other_index)?.active_model();
+        if model.busy() || model.dialog_active() {
+            return None;
+        }
+        let listing = model.listing()?;
+        let basename = selected.path.as_str().rsplit('/').next()?;
+        let mut destination = Line::new();
+        use core::fmt::Write;
+        write!(destination, "{}/{}", listing.folder.path.as_str(), basename).ok()?;
+        files_actions::Path::new(destination.as_str()).ok()
+    }
+    fn copy_to_other_pane_destination(&self) -> Option<files_actions::Path> {
+        let selected = self.files_directory.selected()?;
+        let destination = self.other_pane_copy_destination()?;
+        (destination != selected.path).then_some(destination)
+    }
+    fn begin_copy_to_other_pane(&mut self) {
+        self.file_status.set("");
+        let selected = self.files_directory.selected();
+        let raw_destination = self.other_pane_copy_destination();
+        if selected
+            .zip(raw_destination)
+            .is_some_and(|(selected, destination)| destination == selected.path)
+        {
+            self.file_status
+                .set("Both panes show the same folder; choose a different destination folder.");
+            self.sync_files_focus();
+            return;
+        }
+        let destination = raw_destination;
+        let source_index = self.selected_file_binding_index();
+        let Some(destination) = destination else {
+            self.file_status
+                .set("Select a stored file and load the other pane first.");
+            self.sync_files_focus();
+            return;
+        };
+        let Some(source_index) = source_index else {
+            self.file_status
+                .set("Select a stored file and load the other pane first.");
+            self.sync_files_focus();
+            return;
+        };
+        let Some(source) = files_actions::Path::new(self.files[source_index].path.as_str())
+            .ok()
+            .map(|path| files_actions::Snapshot {
+                path,
+                revision: self.files_revision,
+            })
+        else {
+            self.file_status
+                .set("The selected file is no longer available.");
+            self.sync_files_focus();
+            return;
+        };
+        let namespace = files_actions::Namespace::new("/native").unwrap();
+        if self.file_dialog.begin_copy(source, namespace).is_err()
+            || self.file_dialog.set_input(destination.as_str()).is_err()
+        {
+            let _ = self.file_dialog.cancel();
+            self.file_status
+                .set("Copy destination must fit within the supported /native path.");
+            self.sync_files_focus();
+            return;
+        }
+        self.sync_file_dialog_focus();
     }
     fn files_directory_dialog_key(&mut self, key: Key) {
         match key {
@@ -1936,6 +2025,7 @@ impl Shell {
                 self.sync_selected_directory_file();
                 self.begin_file_operation(3);
             }
+            Key::Character('o') => self.begin_files_directory_action(6),
             Key::Character('t')
                 if self
                     .files_directory
@@ -2037,6 +2127,7 @@ impl Shell {
                         self.sync_selected_directory_file();
                     }
                     Some(local @ 2..=7) => self.begin_files_directory_action(local as usize - 2),
+                    Some(23) => self.begin_files_directory_action(6),
                     Some(8) => self.files_directory_address_editing = true,
                     _ => {
                         if let Ok(Some(path)) = self.files_directory.open_selected() {
@@ -3606,15 +3697,13 @@ impl Shell {
             }
             return;
         }
-        if let Some(index) = (0..6).find(|index| {
+        if let Some(index) = (0..7).find(|index| {
             self.file_action_button_bounds(*index)
                 .is_some_and(|bounds| Self::hit(bounds, x, y))
         }) {
+            let local = if index == 6 { 23 } else { index as u32 + 2 };
             let _ = self.file_focus.select(
-                keyboard_focus::ControlId {
-                    scope: 2,
-                    local: index as u32 + 2,
-                },
+                keyboard_focus::ControlId { scope: 2, local },
                 keyboard_focus::Input::Pointer,
             );
             self.begin_files_directory_action(index);
@@ -6612,6 +6701,7 @@ impl Shell {
             },
             "Trash",
             "Find",
+            "Copy to other pane",
         ];
         for (index, label) in labels.into_iter().enumerate() {
             let Some(button) = self.file_action_button_bounds(index) else {
@@ -6621,6 +6711,7 @@ impl Shell {
                 0 | 1 | 4 | 5 => true,
                 2 => selected_file || self.files_directory.can_move_selected(),
                 3 => selected_file || self.files_directory.can_remove_selected(),
+                6 => self.copy_to_other_pane_destination().is_some(),
                 _ => false,
             };
             theme::rounded_rect(
@@ -6645,28 +6736,29 @@ impl Shell {
             let compact_label = [
                 "Up",
                 "New",
-                "Move",
-                if selected_file { "Trash" } else { "Remove" },
-                "Trash",
+                "Mv",
+                if selected_file { "Tr" } else { "Rm" },
+                "Tr",
                 "Find",
+                "Copy",
             ][index];
-            theme::text(
+            draw_fit(
                 canvas,
-                button.x + 7,
+                button.x + 2,
                 button.y + 6,
                 if button.width < 82 {
                     compact_label
                 } else {
                     label
                 },
+                button.width - 4,
                 if enabled { theme::TEXT } else { theme::MUTED },
                 theme::Font::Small,
             );
             if self.file_focus.focus_visible()
-                && self
-                    .file_focus
-                    .focused()
-                    .is_some_and(|id| id.scope == 2 && id.local == index as u32 + 2)
+                && self.file_focus.focused().is_some_and(|id| {
+                    id.scope == 2 && id.local == if index == 6 { 23 } else { index as u32 + 2 }
+                })
             {
                 theme::outline(canvas, button, 8, theme::ACCENT);
             }
@@ -8853,6 +8945,52 @@ mod tests {
             .unwrap();
         shell
     }
+    fn copy_to_other_pane_shell(source_kind: files_directory::Kind, other_path: &str) -> Shell {
+        let source_id = if source_kind == files_directory::Kind::Directory {
+            7
+        } else {
+            0
+        };
+        let mut shell = loaded_directory_shell(&[("/native/source", source_kind, source_id)]);
+        shell.set_file(1, "/native/source", "source bytes");
+        shell.set_files_revision(33);
+        if other_path != "/native" {
+            assert!(shell.files_directory.switch_pane(1));
+            shell
+                .files_directory
+                .navigate(files_actions::Path::new(other_path).unwrap())
+                .unwrap();
+            let action = shell.take_files_directory_action().unwrap();
+            assert!(matches!(
+                action.intent,
+                files_directory::Intent::Navigate { path }
+                    if path.as_str() == other_path
+            ));
+            shell
+                .files_directory_action_result(
+                    action.request,
+                    Ok(directory_listing(other_path, 20, 2, &[])),
+                )
+                .unwrap();
+        }
+        assert!(shell.activate_files_pane(0));
+        shell.sync_files_focus();
+        shell
+    }
+    fn assert_copy_pane_state(
+        shell: &Shell,
+        left_path: &str,
+        left_selected: Option<files_directory::Entry>,
+        right_path: &str,
+        right_selected: Option<files_directory::Entry>,
+    ) {
+        let left = shell.files_directory().pane(0).unwrap().active_model();
+        let right = shell.files_directory().pane(1).unwrap().active_model();
+        assert_eq!(left.current_path(), Some(left_path));
+        assert_eq!(left.selected(), left_selected);
+        assert_eq!(right.current_path(), Some(right_path));
+        assert_eq!(right.selected(), right_selected);
+    }
     #[test]
     fn files_opens_real_directory_rows_and_routes_folder_and_file_activation() {
         let mut shell = Shell::new();
@@ -10469,7 +10607,284 @@ mod tests {
         assert_eq!(shell.files[1].path.as_str(), "/native/source");
         assert!(shell.file_action_button_bounds(3).is_some());
         assert!(shell.file_action_button_bounds(4).is_some());
-        assert!(shell.file_action_button_bounds(6).is_none());
+        assert!(shell.file_action_button_bounds(6).is_some());
+    }
+    #[test]
+    fn files_copy_to_other_pane_uses_other_path_and_preserves_state_on_cancel_and_conflict() {
+        let mut shell =
+            copy_to_other_pane_shell(files_directory::Kind::File, "/native/destination");
+        let left_selected = shell.files_directory().pane(0).unwrap().selected();
+        let right_selected = shell.files_directory().pane(1).unwrap().selected();
+        assert_eq!(left_selected.unwrap().path.as_str(), "/native/source");
+        assert_eq!(
+            shell.files_directory().pane(0).unwrap().current_path(),
+            Some("/native")
+        );
+        assert_eq!(
+            shell.files_directory().pane(1).unwrap().current_path(),
+            Some("/native/destination")
+        );
+        shell.sync_files_focus();
+        let action_control = shell
+            .file_focus
+            .state(keyboard_focus::ControlId {
+                scope: 2,
+                local: 23,
+            })
+            .unwrap();
+        assert!(action_control.control.enabled);
+        assert_eq!(
+            action_control.control.label,
+            "Copy selected file to other pane"
+        );
+
+        let button = shell.file_action_button_bounds(6).unwrap();
+        shell.on_pointer(Pointer::Down(
+            button.x + button.width / 2,
+            button.y + button.height / 2,
+        ));
+        assert!(shell.file_dialog().is_copy());
+        assert_eq!(shell.file_dialog().input(), "/native/destination/source");
+        shell.on_key(Key::Escape);
+        assert!(!shell.file_dialog_active());
+        assert!(shell.take_file_action().is_none());
+        assert_copy_pane_state(
+            &shell,
+            "/native",
+            left_selected,
+            "/native/destination",
+            right_selected,
+        );
+
+        shell.on_key(Key::Character('o'));
+        assert!(shell.file_dialog().is_copy());
+        assert_eq!(shell.file_dialog().input(), "/native/destination/source");
+        shell.on_key(Key::Enter);
+        let Some(files_actions::Action::InspectDestination { request, path }) =
+            shell.take_file_action()
+        else {
+            panic!("other-pane destination inspection")
+        };
+        assert_eq!(path.as_str(), "/native/destination/source");
+        let destination = files_actions::Snapshot { path, revision: 34 };
+        shell
+            .file_destination_result(request, Ok(Some(destination)))
+            .unwrap();
+        assert_eq!(
+            shell.file_dialog().phase(),
+            files_actions::Phase::ConfirmOverwrite
+        );
+        assert!(!shell.file_dialog().approved());
+        shell.on_key(Key::Tab);
+        assert!(shell.file_dialog().approved());
+        shell.on_key(Key::Enter);
+        let Some(files_actions::Action::Commit {
+            request,
+            intent:
+                files_actions::Intent::Copy {
+                    source,
+                    destination: target,
+                    replace,
+                },
+        }) = shell.take_file_action()
+        else {
+            panic!("authorized copy commit")
+        };
+        assert_eq!(source.path.as_str(), "/native/source");
+        assert_eq!(source.revision, 33);
+        assert_eq!(target.as_str(), "/native/destination/source");
+        assert_eq!(replace, Some(destination));
+        shell
+            .file_action_result(request, Err(files_actions::BackendError::Conflict))
+            .unwrap();
+        assert_eq!(
+            shell.file_dialog().error(),
+            Some(files_actions::BackendError::Conflict)
+        );
+        assert_copy_pane_state(
+            &shell,
+            "/native",
+            left_selected,
+            "/native/destination",
+            right_selected,
+        );
+        shell.on_key(Key::Escape);
+        assert_copy_pane_state(
+            &shell,
+            "/native",
+            left_selected,
+            "/native/destination",
+            right_selected,
+        );
+    }
+    #[test]
+    fn files_copy_to_other_pane_success_refreshes_both_pane_paths() {
+        let mut shell =
+            copy_to_other_pane_shell(files_directory::Kind::File, "/native/destination");
+        shell.on_key(Key::Character('o'));
+        assert_eq!(shell.file_dialog().input(), "/native/destination/source");
+        shell.on_key(Key::Enter);
+        let Some(files_actions::Action::InspectDestination { request, path }) =
+            shell.take_file_action()
+        else {
+            panic!("destination inspection")
+        };
+        shell.file_destination_result(request, Ok(None)).unwrap();
+        let Some(files_actions::Action::Commit {
+            request,
+            intent:
+                files_actions::Intent::Copy {
+                    source,
+                    destination,
+                    replace,
+                },
+        }) = shell.take_file_action()
+        else {
+            panic!("copy commit")
+        };
+        assert_eq!(path, destination);
+        assert_eq!(source.path.as_str(), "/native/source");
+        assert_eq!(destination.as_str(), "/native/destination/source");
+        assert_eq!(replace, None);
+        shell.file_action_result(request, Ok(())).unwrap();
+        assert_eq!(shell.file_status(), "File copied.");
+        let left = shell.files_directory().pane(0).unwrap().active_model();
+        let right = shell.files_directory().pane(1).unwrap().active_model();
+        assert!(left.busy() && left.listing().is_none());
+        assert!(right.busy() && right.listing().is_none());
+        assert_eq!(left.address(), "/native");
+        assert_eq!(right.address(), "/native/destination");
+
+        let first = shell.take_files_directory_action().unwrap();
+        let second = shell.take_files_directory_action().unwrap();
+        let refresh_paths = [
+            match first.intent {
+                files_directory::Intent::Navigate { path } => path,
+                _ => panic!("left refresh navigation"),
+            },
+            match second.intent {
+                files_directory::Intent::Navigate { path } => path,
+                _ => panic!("right refresh navigation"),
+            },
+        ];
+        assert!(refresh_paths.iter().any(|path| path.as_str() == "/native"));
+        assert!(refresh_paths
+            .iter()
+            .any(|path| path.as_str() == "/native/destination"));
+        for action in [first, second] {
+            match action.intent {
+                files_directory::Intent::Navigate { path } if path.as_str() == "/native" => shell
+                    .files_directory_action_result(
+                        action.request,
+                        Ok(directory_listing(
+                            "/native",
+                            0,
+                            3,
+                            &[
+                                ("/native/source", files_directory::Kind::File, 0),
+                                ("/native/copied", files_directory::Kind::File, 0),
+                            ],
+                        )),
+                    )
+                    .unwrap(),
+                files_directory::Intent::Navigate { path }
+                    if path.as_str() == "/native/destination" =>
+                {
+                    shell
+                        .files_directory_action_result(
+                            action.request,
+                            Ok(directory_listing(
+                                "/native/destination",
+                                20,
+                                3,
+                                &[("/native/destination/source", files_directory::Kind::File, 0)],
+                            )),
+                        )
+                        .unwrap()
+                }
+                _ => panic!("refresh navigation"),
+            }
+        }
+        assert_eq!(
+            shell.files_directory().pane(0).unwrap().current_path(),
+            Some("/native")
+        );
+        assert_eq!(
+            shell.files_directory().pane(1).unwrap().current_path(),
+            Some("/native/destination")
+        );
+    }
+    #[test]
+    fn files_copy_to_other_pane_rejects_directories_and_same_folder_targets() {
+        let mut directory =
+            copy_to_other_pane_shell(files_directory::Kind::Directory, "/native/destination");
+        directory.sync_files_focus();
+        assert!(
+            !directory
+                .file_focus
+                .state(keyboard_focus::ControlId {
+                    scope: 2,
+                    local: 23
+                })
+                .unwrap()
+                .control
+                .enabled
+        );
+        directory.on_key(Key::Character('o'));
+        assert!(!directory.file_dialog_active());
+        assert!(directory.take_file_action().is_none());
+
+        let mut same_folder = copy_to_other_pane_shell(files_directory::Kind::File, "/native");
+        same_folder.sync_files_focus();
+        assert!(
+            !same_folder
+                .file_focus
+                .state(keyboard_focus::ControlId {
+                    scope: 2,
+                    local: 23
+                })
+                .unwrap()
+                .control
+                .enabled
+        );
+        let left_selected = same_folder.files_directory().pane(0).unwrap().selected();
+        let right_selected = same_folder.files_directory().pane(1).unwrap().selected();
+        let button = same_folder.file_action_button_bounds(6).unwrap();
+        same_folder.on_pointer(Pointer::Down(
+            button.x + button.width / 2,
+            button.y + button.height / 2,
+        ));
+        assert!(!same_folder.file_dialog_active());
+        assert_eq!(
+            same_folder.file_status(),
+            "Both panes show the same folder; choose a different destination folder."
+        );
+        assert_copy_pane_state(
+            &same_folder,
+            "/native",
+            left_selected,
+            "/native",
+            right_selected,
+        );
+    }
+    #[test]
+    fn files_copy_toolbar_keeps_seventh_action_readable_at_compact_width() {
+        let mut shell =
+            copy_to_other_pane_shell(files_directory::Kind::File, "/native/destination");
+        shell.set_viewport(320, 560);
+        let window = shell.desktop().window(App::Files).bounds;
+        let button = shell.file_action_button_bounds(6).unwrap();
+        assert!(button.width > 0);
+        assert!(button.x >= window.x);
+        assert!(button.x + button.width <= window.x + window.width);
+        let label = "Copy";
+        let copy_label_width =
+            theme::text_width_scaled(label, theme::Font::Small, appearance::TextScale::Percent100);
+        assert!(
+            copy_label_width <= button.width - 4,
+            "copy label width {copy_label_width}, button width {}",
+            button.width
+        );
     }
     #[test]
     fn native_windows_use_exact_top_identity_for_pixels_and_input() {

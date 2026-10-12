@@ -43,11 +43,14 @@ impl Entry {
 }
 #[derive(Clone, Copy)]
 pub struct Snapshot {
+    /// Persisted folder id (zero only for the immutable native root).
+    pub identity: u64,
     pub entries: [Entry; MAX_ENTRIES],
     pub count: usize,
 }
 impl Snapshot {
     pub const EMPTY: Self = Self {
+        identity: 0,
         entries: [Entry::EMPTY; MAX_ENTRIES],
         count: 0,
     };

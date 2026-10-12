@@ -1,6 +1,6 @@
 # Validation evidence
 
-The latest ABI and Prism run is in [fstat-getdents-files-r3](milestones/runtime-prism-2026-10-12/fstat-getdents-files-r3/): signed image SHA256 `1b226f5ee89a59656cf74a673ea381f7d56e9dbe764bb852c75d224a902d6c6b` passed 128 qemu64 checks, including Linux `fstat`/`getdents64` and independent Files pane navigation. Its 16 captures are shown in the [visual gallery](../PRISM-VISUAL-GALLERY.md). The previous [feature-wave-final](milestones/runtime-prism-2026-10-12/feature-wave-final/) image remains the source for the bounded DHCPv6 peer exchange.
+The latest ABI and Prism run is in [cwd-copy-wave](milestones/runtime-prism-2026-10-12/cwd-copy-wave/): signed image SHA256 `63374568a17fcd592fdabe24008abba36975ab48732a2b044b0f3efa1a6c36a6` passed 134 qemu64 checks, including Linux `getcwd`/`chdir`/relative `openat`, Files tab and pane navigation, and cross-pane copy. Its 17 captures are shown in the [visual gallery](../PRISM-VISUAL-GALLERY.md). The earlier [fstat/getdents Files bundle](milestones/runtime-prism-2026-10-12/fstat-getdents-files-r3/) retains its source-bound status for the Linux `fstat`/`getdents64` fixtures. The [feature-wave-final](milestones/runtime-prism-2026-10-12/feature-wave-final/) image remains the source for the bounded DHCPv6 peer exchange.
 
 ![Current Prism guest screens](../images/prism-overview.png)
 
@@ -9,7 +9,7 @@ The latest ABI and Prism run is in [fstat-getdents-files-r3](milestones/runtime-
 The following material records an older development image SHA256
 `03d54128375ad7f167c724ebdf98baca06b5add89f88edce457bf426df326c39`.
 Its source-bound artifacts remain useful for their original scope; current
-guest validation is recorded in [the fstat/getdents Files bundle](milestones/runtime-prism-2026-10-12/fstat-getdents-files-r3/),
+guest validation is recorded in [the cwd and Files bundle](milestones/runtime-prism-2026-10-12/cwd-copy-wave/),
 with the earlier network peer checks retained in [feature-wave-final](milestones/runtime-prism-2026-10-12/feature-wave-final/).
 
 `validation.txt` records 174 workspace Rust tests, eight separately exercised

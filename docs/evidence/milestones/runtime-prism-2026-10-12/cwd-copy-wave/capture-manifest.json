@@ -1,0 +1,228 @@
+{
+  "scope": "QEMU q35/TCG/OVMF, qemu64, one configured vCPU; APs stopped; scheduler on BSP",
+  "passed": true,
+  "check_count": 134,
+  "signed_image_sha256": "63374568a17fcd592fdabe24008abba36975ab48732a2b044b0f3efa1a6c36a6",
+  "qemu_report": "boot-smoke.json",
+  "screenshots": [
+    {
+      "name": "prism-home",
+      "guest_ppm": "build/cwd-copy-clean-gallery-qemu64/prism-gallery/home.ppm",
+      "guest_ppm_sha256": "986898a04a7eeb1f69b80fa9225a85895c0b0e04bd8dd3856ddf69299c0ef228",
+      "committed_png": "docs/images/prism-home.png",
+      "committed_png_sha256": "652454c1416b94e823e5bbff96eb1dd16490a0ae7ea2b7d32b8e4c8bb83a4ff2",
+      "evidence_png": "images/prism-home.png",
+      "dimensions": [
+        1280,
+        800
+      ]
+    },
+    {
+      "name": "prism-terminal",
+      "guest_ppm": "build/cwd-copy-clean-gallery-qemu64/prism-gallery/terminal.ppm",
+      "guest_ppm_sha256": "ce238f2f2e7d17e34583361dc7aed0d3453496c3d21ba25f8c6b58397a3851fa",
+      "committed_png": "docs/images/prism-terminal.png",
+      "committed_png_sha256": "9b932e08230ed08d4412eb27c1646d53cef1cc10b52c90645ee09bebf64d3038",
+      "evidence_png": "images/prism-terminal.png",
+      "dimensions": [
+        1280,
+        800
+      ]
+    },
+    {
+      "name": "prism-files",
+      "guest_ppm": "build/cwd-copy-clean-gallery-qemu64/prism-gallery/files.ppm",
+      "guest_ppm_sha256": "199785402b09377b5de98e46dff3af4856559f2ab3728694b6a2b9a7d25c0f94",
+      "committed_png": "docs/images/prism-files.png",
+      "committed_png_sha256": "319137ec5c20f981b9685fce5a9cf98ab9540c54d9e2a499f022a814f0227e20",
+      "evidence_png": "images/prism-files.png",
+      "dimensions": [
+        1280,
+        800
+      ]
+    },
+    {
+      "name": "prism-monitor",
+      "guest_ppm": "build/cwd-copy-clean-gallery-qemu64/prism-gallery/monitor.ppm",
+      "guest_ppm_sha256": "a68a852cdf043677ee8feb31998bfac5c1fb880a0f509a0ea8f8a98e6d8aee77",
+      "committed_png": "docs/images/prism-monitor.png",
+      "committed_png_sha256": "440964d0c3d09d793cf0590ccef58a62fb906693373d0b91251982490d4a7bf2",
+      "evidence_png": "images/prism-monitor.png",
+      "dimensions": [
+        1280,
+        800
+      ]
+    },
+    {
+      "name": "prism-settings",
+      "guest_ppm": "build/cwd-copy-clean-gallery-qemu64/prism-gallery/settings.ppm",
+      "guest_ppm_sha256": "02cc2b0c080d9851e83124861b5902efc3ac7fd75379f6647bee905e27dbfec6",
+      "committed_png": "docs/images/prism-settings.png",
+      "committed_png_sha256": "f14db37322638747b253a4d2f898f977c9e7cc1c580bbd7b20359116087db12b",
+      "evidence_png": "images/prism-settings.png",
+      "dimensions": [
+        1280,
+        800
+      ]
+    },
+    {
+      "name": "prism-settings-accessibility",
+      "guest_ppm": "build/cwd-copy-clean-gallery-qemu64/prism-gallery/settings-accessibility.ppm",
+      "guest_ppm_sha256": "195f150f72bd8bd13a9aa4c0058327cf723cb38a54a84074fb6bd75358dc9f39",
+      "committed_png": "docs/images/prism-settings-accessibility.png",
+      "committed_png_sha256": "f6bab80afc54362571398b80ea2827e4f972a97f439fc620eb8d7cbf94e8b3aa",
+      "evidence_png": "images/prism-settings-accessibility.png",
+      "dimensions": [
+        1280,
+        800
+      ]
+    },
+    {
+      "name": "prism-settings-text-scale",
+      "guest_ppm": "build/cwd-copy-clean-gallery-qemu64/prism-gallery/settings-text-scale.ppm",
+      "guest_ppm_sha256": "703c2f4e8bda04155a1cf3fbc73267e7bec24d31075399d5ad8845ec0cbc0f2a",
+      "committed_png": "docs/images/prism-settings-text-scale.png",
+      "committed_png_sha256": "94716ae30ed7499b71a641b463e5720bdbc87a2ff02d4418984fe17adde28af1",
+      "evidence_png": "images/prism-settings-text-scale.png",
+      "dimensions": [
+        1280,
+        800
+      ]
+    },
+    {
+      "name": "prism-editor",
+      "guest_ppm": "build/cwd-copy-clean-gallery-qemu64/prism-gallery/editor.ppm",
+      "guest_ppm_sha256": "e79094a4c6fcc8267bf0c8aec44a21236d50cc8d3ac957867c96ae1e3334a12b",
+      "committed_png": "docs/images/prism-editor.png",
+      "committed_png_sha256": "2295004cfa1a658141500fcc4615dfd8ea0ba3587afb844bef56af9296469cf5",
+      "evidence_png": "images/prism-editor.png",
+      "dimensions": [
+        1280,
+        800
+      ]
+    },
+    {
+      "name": "prism-calculator",
+      "guest_ppm": "build/cwd-copy-clean-gallery-qemu64/prism-gallery/calculator.ppm",
+      "guest_ppm_sha256": "06f2ae150edd0ce01a87ecc01fa4898d6667e3706cd9835e49dd57377e087da5",
+      "committed_png": "docs/images/prism-calculator.png",
+      "committed_png_sha256": "c2e31231c3aebbd0f35cc41dc6587302cf0573c4d2a13fa79caa200159e1a35e",
+      "evidence_png": "images/prism-calculator.png",
+      "dimensions": [
+        1280,
+        800
+      ]
+    },
+    {
+      "name": "prism-shortcuts",
+      "guest_ppm": "build/cwd-copy-clean-gallery-qemu64/prism-gallery/shortcuts.ppm",
+      "guest_ppm_sha256": "42a4d6455016db6427839a196660dba1562fe3fc7f8d11b21a4220847bea9274",
+      "committed_png": "docs/images/prism-shortcuts.png",
+      "committed_png_sha256": "79e5c722456ccafd0466828a5b6d16dae153ee356e959686ad86aec084368d8c",
+      "evidence_png": "images/prism-shortcuts.png",
+      "dimensions": [
+        1280,
+        800
+      ]
+    },
+    {
+      "name": "prism-notifications",
+      "guest_ppm": "build/cwd-copy-clean-gallery-qemu64/prism-gallery/notifications.ppm",
+      "guest_ppm_sha256": "adbb1f8fda2797df41468ddf6b55eb98ebffd2b9cb35e73308e7fc38c637be93",
+      "committed_png": "docs/images/prism-notifications.png",
+      "committed_png_sha256": "2ec8f6e096dab921554af15aec1ca6cc7df3a4cc66e12ff034dc0c43fd4dad6e",
+      "evidence_png": "images/prism-notifications.png",
+      "dimensions": [
+        1280,
+        800
+      ]
+    },
+    {
+      "name": "prism-files-tabs-root",
+      "guest_ppm": "build/cwd-copy-clean-gallery-qemu64/files-tabs-root.ppm",
+      "guest_ppm_sha256": "1ff5e1db9b0d8bba5a56c7317ae007c57d66f385ea8df4c7b88377bfea7ce299",
+      "committed_png": "docs/images/prism-files-tabs-root.png",
+      "committed_png_sha256": "4fa46889eacf1690102aed3904989c04df85e88943dbec03ce6e95af81a0a497",
+      "evidence_png": "images/prism-files-tabs-root.png",
+      "dimensions": [
+        1280,
+        800
+      ]
+    },
+    {
+      "name": "prism-files-tabs-nested",
+      "guest_ppm": "build/cwd-copy-clean-gallery-qemu64/files-tabs-nested.ppm",
+      "guest_ppm_sha256": "99c9d12483716bb0550c9361a06bda2e1007991be521248f1cb1dda18fe9ca8a",
+      "committed_png": "docs/images/prism-files-tabs-nested.png",
+      "committed_png_sha256": "d984b4adb57fb807f6ce804fda78a36ccd2d63db1f396debbe22ff3b4e6fbcf4",
+      "evidence_png": "images/prism-files-tabs-nested.png",
+      "dimensions": [
+        1280,
+        800
+      ]
+    },
+    {
+      "name": "prism-files-tabs-ibeam",
+      "guest_ppm": "build/cwd-copy-clean-gallery-qemu64/files-tabs-ibeam-address.ppm",
+      "guest_ppm_sha256": "1b20cbe6a04c2bc17f8f8f6d46eeb71b8884d376e0227b49e324d2ed637c8e94",
+      "committed_png": "docs/images/prism-files-tabs-ibeam.png",
+      "committed_png_sha256": "81a2e9b1ebabcff676cb011602c764082a117efa18e9af60da217b3172507a0d",
+      "evidence_png": "images/prism-files-tabs-ibeam.png",
+      "dimensions": [
+        1280,
+        800
+      ]
+    },
+    {
+      "name": "prism-files-dual-pane",
+      "guest_ppm": "build/cwd-copy-clean-gallery-qemu64/files-tabs-dual-pane-left-root-right-nested.ppm",
+      "guest_ppm_sha256": "9c1ffdf0284a91af87f530755826bcb7ae4cf4806bb4616494878014a6a04772",
+      "committed_png": "docs/images/prism-files-dual-pane.png",
+      "committed_png_sha256": "c251225ab44b960b6c227110380387e44c51f0c3cbf7e60b05490223a97baff2",
+      "evidence_png": "images/prism-files-dual-pane.png",
+      "dimensions": [
+        1280,
+        800
+      ]
+    },
+    {
+      "name": "prism-files-copy-to-other-pane",
+      "guest_ppm": "build/cwd-copy-clean-gallery-qemu64/files-tabs-copy-to-other-pane.ppm",
+      "guest_ppm_sha256": "d4b0cdffceb73a3090407a050ae474e997d85bc77641e5569ef3144830fcd4e2",
+      "committed_png": "docs/images/prism-files-copy-to-other-pane.png",
+      "committed_png_sha256": "c2372bc87b15d2b819b0af49783ce8464d626f5ae66f434775a878ca39243840",
+      "evidence_png": "images/prism-files-copy-to-other-pane.png",
+      "dimensions": [
+        1280,
+        800
+      ]
+    },
+    {
+      "name": "prism-snap-quadrant",
+      "guest_ppm": "build/cwd-copy-clean-gallery-qemu64/prism-quadrant-snap.ppm",
+      "guest_ppm_sha256": "6a7bb413ae451508d2172e53ea409a47e7ae47e442b3f1815bbfe5324672b1cc",
+      "committed_png": "docs/images/prism-snap-quadrant.png",
+      "committed_png_sha256": "eeb4ab445b39dfea7257beab6342def73c286fe20484532e7f99967276a28d2e",
+      "evidence_png": "images/prism-snap-quadrant.png",
+      "dimensions": [
+        1280,
+        800
+      ]
+    }
+  ],
+  "contact_sheet": {
+    "committed_png": "docs/images/prism-overview.png",
+    "committed_png_sha256": "d6fef817bcd6ba4dc9a53e00c0061e51c65e1948209aabb122ed6904d8d6de88",
+    "description": "Deterministic contact sheet of the 17 guest captures above."
+  },
+  "final_desktop_capture": {
+    "guest_ppm": "build/cwd-copy-clean-gallery-qemu64/screenshot.ppm",
+    "guest_ppm_sha256": "91eace6ec5bfa40c9f813bd0d7409e6fe71b4c8fddcc6a73e150ea48c36a9cde",
+    "evidence_png": "images/desktop-final.png",
+    "evidence_png_sha256": "d005651428385b3b9c919c593cb3f2537f2737f9ec777de86aa9cc1679b3aaa3",
+    "dimensions": [
+      1280,
+      800
+    ]
+  }
+}

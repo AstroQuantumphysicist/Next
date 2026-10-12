@@ -4,46 +4,45 @@ Next is an original Rust-first operating system: Helix is its kernel and Prism i
 
 ![Prism desktop Home, captured from the running QEMU guest](docs/images/prism-home.png)
 
-The [Prism visual gallery](docs/PRISM-VISUAL-GALLERY.md) shows the main guest screens, independent Files tabs and panes, and the address-field cursor. The [Prism visual tour](docs/PRISM-VISUAL-TOUR.md) embeds every current capture with a caption and clearly scoped evidence notes.
+The [Prism visual gallery](docs/PRISM-VISUAL-GALLERY.md) shows the current QEMU guest screens and interaction states. The [Prism visual tour](docs/PRISM-VISUAL-TOUR.md) adds captions and implementation schematics for the visible shell, Files workspace, and Settings preferences.
 
 Prism uses Microsoft Selawik, the open-source metrically compatible replacement for Segoe UI; it does not bundle proprietary Segoe UI Variable. The raster atlas and shaping limits are documented in the [font provenance and notices](docs/third-party/README.md#font-assets).
 
-![Overview of all current Prism guest screens](docs/images/prism-overview.png)
+## Prism capture index
+
+These seventeen images are captures from the signed qemu64 guest image recorded
+below. They document that tested image; later source changes need a fresh
+capture before the pictures can represent them. The index links each thumbnail
+to its full-size frame. The gallery and tour explain what each frame shows and
+include implementation schematics.
 
 <table>
   <tr>
-    <td align="center"><a href="docs/images/prism-home.png"><img src="docs/images/prism-home.png" alt="Prism Home with pinned applications and taskbar" width="200"></a><br><sub>Home</sub></td>
-    <td align="center"><a href="docs/images/prism-terminal.png"><img src="docs/images/prism-terminal.png" alt="Prism Terminal window" width="200"></a><br><sub>Terminal</sub></td>
-    <td align="center"><a href="docs/images/prism-files.png"><img src="docs/images/prism-files.png" alt="Prism Files browsing the native store" width="200"></a><br><sub>Files</sub></td>
-    <td align="center"><a href="docs/images/prism-monitor.png"><img src="docs/images/prism-monitor.png" alt="Prism System Monitor" width="200"></a><br><sub>System Monitor</sub></td>
+    <td align="center"><a href="docs/images/prism-home.png"><img src="docs/images/prism-home.png" alt="Prism Home with pinned applications and taskbar" width="170"></a><br><sub>Home</sub></td>
+    <td align="center"><a href="docs/images/prism-files.png"><img src="docs/images/prism-files.png" alt="Prism Files browsing the native store" width="170"></a><br><sub>Files</sub></td>
+    <td align="center"><a href="docs/images/prism-files-tabs-root.png"><img src="docs/images/prism-files-tabs-root.png" alt="Files root tab beside a second tab" width="170"></a><br><sub>Files root tab</sub></td>
+    <td align="center"><a href="docs/images/prism-files-tabs-nested.png"><img src="docs/images/prism-files-tabs-nested.png" alt="Files nested tab beside the retained root tab" width="170"></a><br><sub>Files nested tab</sub></td>
   </tr>
   <tr>
-    <td align="center"><a href="docs/images/prism-settings.png"><img src="docs/images/prism-settings.png" alt="Prism Settings appearance page" width="200"></a><br><sub>Settings</sub></td>
-    <td align="center"><a href="docs/images/prism-settings-accessibility.png"><img src="docs/images/prism-settings-accessibility.png" alt="Saved Strong keyboard focus outline preference" width="200"></a><br><sub>Accessibility focus</sub></td>
-    <td align="center"><a href="docs/images/prism-settings-text-scale.png"><img src="docs/images/prism-settings-text-scale.png" alt="Saved 125 percent Settings text size" width="200"></a><br><sub>125% text size</sub></td>
-    <td align="center"><a href="docs/images/prism-editor.png"><img src="docs/images/prism-editor.png" alt="Prism Editor" width="200"></a><br><sub>Editor</sub></td>
+    <td align="center"><a href="docs/images/prism-files-tabs-ibeam.png"><img src="docs/images/prism-files-tabs-ibeam.png" alt="I-beam cursor over the Files location field" width="170"></a><br><sub>Files location cursor</sub></td>
+    <td align="center"><a href="docs/images/prism-files-dual-pane.png"><img src="docs/images/prism-files-dual-pane.png" alt="Files panes with independent paths" width="170"></a><br><sub>Files dual pane</sub></td>
+    <td align="center"><a href="docs/images/prism-settings.png"><img src="docs/images/prism-settings.png" alt="Settings Appearance page" width="170"></a><br><sub>Settings Appearance</sub></td>
+    <td align="center"><a href="docs/images/prism-settings-accessibility.png"><img src="docs/images/prism-settings-accessibility.png" alt="Settings with saved Strong focus outline" width="170"></a><br><sub>Accessibility focus</sub></td>
   </tr>
   <tr>
-    <td align="center"><a href="docs/images/prism-calculator.png"><img src="docs/images/prism-calculator.png" alt="Prism Calculator" width="200"></a><br><sub>Calculator</sub></td>
-    <td align="center"><a href="docs/images/prism-shortcuts.png"><img src="docs/images/prism-shortcuts.png" alt="Prism keyboard shortcut guide" width="200"></a><br><sub>Keyboard shortcuts</sub></td>
-    <td align="center"><a href="docs/images/prism-notifications.png"><img src="docs/images/prism-notifications.png" alt="Prism notification center" width="200"></a><br><sub>Notifications</sub></td>
-    <td align="center"><a href="docs/images/prism-snap-quadrant.png"><img src="docs/images/prism-snap-quadrant.png" alt="Terminal snapped to the lower-left quadrant" width="200"></a><br><sub>Quarter snap</sub></td>
+    <td align="center"><a href="docs/images/prism-settings-text-scale.png"><img src="docs/images/prism-settings-text-scale.png" alt="Settings with saved 125 percent text size" width="170"></a><br><sub>Settings text size</sub></td>
+    <td align="center"><a href="docs/images/prism-terminal.png"><img src="docs/images/prism-terminal.png" alt="Prism Terminal" width="170"></a><br><sub>Terminal</sub></td>
+    <td align="center"><a href="docs/images/prism-editor.png"><img src="docs/images/prism-editor.png" alt="Prism Editor" width="170"></a><br><sub>Editor</sub></td>
+    <td align="center"><a href="docs/images/prism-calculator.png"><img src="docs/images/prism-calculator.png" alt="Prism Calculator expression view" width="170"></a><br><sub>Calculator</sub></td>
   </tr>
-</table>
-
-Files also supports two independent side-by-side panes. This QEMU frame shows the left pane at `/native` while the right pane retains `/native/alpha` after separate navigation:
-
-![Prism Files with independent left and right paths](docs/images/prism-files-dual-pane.png)
-
-The latest Files tab captures show independent root and nested-folder views:
-
-The current guest smoke opens and switches both tabs and checks the I-beam cursor pixels against the framebuffer.
-
-<table>
   <tr>
-    <td align="center"><a href="docs/images/prism-files-tabs-root.png"><img src="docs/images/prism-files-tabs-root.png" alt="Prism Files with the /native root tab active beside a second alpha tab" width="280"></a><br><sub>Root tab active; the adjacent tab retains <code>/native/alpha</code></sub></td>
-    <td align="center"><a href="docs/images/prism-files-tabs-nested.png"><img src="docs/images/prism-files-tabs-nested.png" alt="Prism Files with the /native/alpha tab active beside the retained root tab" width="280"></a><br><sub>Nested tab active; the root tab remains open</sub></td>
-    <td align="center"><a href="docs/images/prism-files-tabs-ibeam.png"><img src="docs/images/prism-files-tabs-ibeam.png" alt="Prism Files with an I-beam cursor over the editable location field" width="280"></a><br><sub>I-beam cursor over the editable location field</sub></td>
+    <td align="center"><a href="docs/images/prism-monitor.png"><img src="docs/images/prism-monitor.png" alt="Prism System Monitor" width="170"></a><br><sub>System Monitor</sub></td>
+    <td align="center"><a href="docs/images/prism-snap-quadrant.png"><img src="docs/images/prism-snap-quadrant.png" alt="Terminal snapped into the lower-left quadrant" width="170"></a><br><sub>Quarter snap</sub></td>
+    <td align="center"><a href="docs/images/prism-shortcuts.png"><img src="docs/images/prism-shortcuts.png" alt="Prism keyboard shortcut guide" width="170"></a><br><sub>Keyboard shortcuts</sub></td>
+    <td align="center"><a href="docs/images/prism-notifications.png"><img src="docs/images/prism-notifications.png" alt="Prism notification center" width="170"></a><br><sub>Notifications</sub></td>
+  </tr>
+  <tr>
+    <td align="center" colspan="4"><a href="docs/images/prism-files-copy-to-other-pane.png"><img src="docs/images/prism-files-copy-to-other-pane.png" alt="Files copying a selected file into the other pane" width="170"></a><br><sub>Files copy to other pane</sub></td>
   </tr>
 </table>
 
@@ -53,7 +52,7 @@ The tested QEMU profile also supports legacy virtio block reads/writes/flush, FA
 
 Source 18's frozen Prism refresh and acceptance run remain archived in [Prism acceptance](docs/PRISM-ACCEPTANCE.md) and [its evidence bundle](docs/evidence/milestones/a6afc2715e8e/). This feature wave adds bounded event-only wait-any, guest DHCP renewal/rebind and recovery checks, the DHCPv6 candidate exchange, a 12-category Settings shell with saved text size, IPv6 ingress validation, static audio and network DMA ownership tests, a host/test-gated backup archive restore bridge, safer package path validation, guest Linux `getpid`/`uname`/`lseek`/`fstat`/`getdents64` fixtures, Files tabs, dual panes and an editable location field, four-way single-work-area snapping, a bounded host capture-consent policy model, and a QEMU-verified A/B trial/rollback path. The A/B policy remains a development slice: there is no production updater or health-confirmation service, and ordinary EFI variables are not a protected anti-rollback anchor. QEMU profiles check 1/2/4/8-vCPU topology while keeping APs stopped; the scheduler still runs only on the BSP. Host/TCG checks do not establish product readiness. Next is still a development build; real hardware support, SMP-safe operation, broad compatibility, full Settings behavior, assistive services, and a complete GUI toolkit remain unfinished.
 
-The [Prism visual gallery](docs/PRISM-VISUAL-GALLERY.md) contains 16 QEMU guest captures from one image, including Files root/nested tabs, an I-beam cursor, and independently navigated panes. The signed image SHA256 `1b226f5ee89a59656cf74a673ea381f7d56e9dbe764bb852c75d224a902d6c6b` passed 128 qemu64 checks, including Linux `getpid`, `uname`, `lseek`, `fstat`, and `getdents64` guest fixtures (exit values 51–55). A previous signed image, SHA256 `8902846a7a484186361520c6c626846479710faef2afa8729bdad664e66825f3`, passed the deterministic DHCPv6 candidate peer and separate controlled DHCPv4 renewal/rebind/recovery checks. The earlier 2/4/8-vCPU topology profiles each passed 119 checks on image SHA256 `f4986796589aa9e5d75ad5eddbaf620a17613ccb35bbdfb66d7e17ca3a40fc0d`; all tested profiles keep APs stopped and scheduler work on the BSP. Host-only evidence covers a bounded capture-consent policy (no compositor integration), NextFS open/rename/unlink races, static virtio-net and AC97 DMA ownership, CPU topology parsing, package path confinement, and channel benchmarks. Reports, logs, and framebuffer captures are in [the October 12 runtime and Prism evidence](docs/evidence/milestones/runtime-prism-2026-10-12/).
+The [Prism visual gallery](docs/PRISM-VISUAL-GALLERY.md) contains 17 QEMU guest captures from one image, including Files root/nested tabs, an I-beam cursor, independent panes, and cross-pane copy. The latest signed image SHA256 `63374568a17fcd592fdabe24008abba36975ab48732a2b044b0f3efa1a6c36a6` passed 134 qemu64 checks, including Linux `getcwd`, `chdir`, and relative `openat` in the original guest fixture (exit status 56). The previous image, SHA256 `1b226f5ee89a59656cf74a673ea381f7d56e9dbe764bb852c75d224a902d6c6b`, passed 128 checks including Linux `getpid`, `uname`, `lseek`, `fstat`, and `getdents64` (exit values 51–55). A prior signed image, SHA256 `8902846a7a484186361520c6c626846479710faef2afa8729bdad664e66825f3`, passed the deterministic DHCPv6 candidate peer and separate controlled DHCPv4 renewal/rebind/recovery checks. The earlier 2/4/8-vCPU topology profiles each passed 119 checks on image SHA256 `f4986796589aa9e5d75ad5eddbaf620a17613ccb35bbdfb66d7e17ca3a40fc0d`; all tested profiles keep APs stopped and scheduler work on the BSP. Host-only evidence covers a bounded capture-consent policy (no compositor integration), NextFS open/rename/unlink races, static virtio-net and AC97 DMA ownership, CPU topology parsing, package path confinement, and channel benchmarks. Reports, logs, and framebuffer captures are in [the October 12 runtime and Prism evidence](docs/evidence/milestones/runtime-prism-2026-10-12/).
 
 A deliberately small [Linux x86-64 profile](docs/LINUX-PROFILE.md) executes original static ELF fixtures on host Linux and Helix, using Linux `SYSCALL` numbers. Fixtures exercise bounded file descriptors, shared inode lifetime, positional `pread64`/`pwrite64`, `fstat`, snapshot-based `getdents64`, anonymous memory/heap operations, monotonic clock/sleep, and thread-local bases. An original PE32+ fixture runs on Helix through GetStdHandle, WriteFile and ExitProcess shims, with explicit personality-gate checks; this has no actual Windows certification. These fixtures establish only their own behavior, not broad Linux compatibility. Signed bounded GPT storage policy can mount a specifically authorized preformatted COW journal, with real read-only and refusal cases; it does not install, format or repair disks. Dynamic ELF, general libc/POSIX applications, general Windows/NT applications, a stable SDK, guest package installation/update policy, GPT installation, full NextFS, audio services/mixing/capture, accelerated graphics, SMP and physical hardware certification remain outstanding. The [requirement report](docs/STATUS.md), [architecture](docs/ARCHITECTURE.md), and [roadmap](docs/ROADMAP.md) record the larger scope.
 

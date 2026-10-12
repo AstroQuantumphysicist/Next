@@ -38,6 +38,12 @@ FILES_DIRECTORY_ACTION_RE = re.compile(
     rb"PRISM DIRECTORY ACTION: request=(\d+) kind=(.*?) result=(Ok\(\d+\)|Err\([^)]+\))\r?\n"
 )
 FILES_DEBUG_PATH_RE = re.compile(rb"Path \{ bytes: \[([0-9, ]*)\], len: (\d+) \}")
+FILES_FILE_COPY_COMMIT_RE = re.compile(
+    rb"PRISM FILE COMMIT: request=(\d+) intent=Copy (.*?) result=Ok\(\(\)\)\r?\n"
+)
+FILES_FILE_CREATE_COMMIT_RE = re.compile(
+    rb"PRISM FILE COMMIT: request=(\d+) intent=Create (.*?) result=Ok\(\(\)\)\r?\n"
+)
 
 
 def validate_guest_rtc_anchor(guest_seconds, host_launch_seconds):
@@ -76,6 +82,44 @@ def parse_files_directory_actions(serial_data):
             "result": match[3].decode("ascii"),
         })
     return records
+
+
+def _decode_files_debug_paths(serial_data):
+    paths = []
+    for match in FILES_DEBUG_PATH_RE.finditer(bytes(serial_data)):
+        raw = [int(value) for value in match[1].split(b",") if value.strip()]
+        length = int(match[2])
+        if length > len(raw) or any(value > 255 for value in raw):
+            raise RuntimeError("malformed Files action path bytes")
+        try:
+            paths.append(bytes(raw[:length]).decode("ascii"))
+        except UnicodeDecodeError as error:
+            raise RuntimeError("Files action path is not ASCII") from error
+    return paths
+
+
+def validate_files_copy_commit(serial_data, source, destination):
+    """Require one successful, backend-confirmed Copy with exact source/target paths."""
+    records = []
+    for match in FILES_FILE_COPY_COMMIT_RE.finditer(bytes(serial_data)):
+        paths = _decode_files_debug_paths(match[2])
+        if len(paths) != 2:
+            raise RuntimeError(f"Files Copy commit had {len(paths)} paths, expected source and destination")
+        records.append({
+            "request": int(match[1]),
+            "source": paths[0],
+            "destination": paths[1],
+            "result": "Ok(())",
+        })
+    if len(records) != 1:
+        raise RuntimeError(f"Files Copy smoke recorded {len(records)} successful Copy commits, expected one")
+    record = records[0]
+    if record["source"] != source or record["destination"] != destination:
+        raise RuntimeError(
+            f"Files Copy paths were {record['source']!r} -> {record['destination']!r}, "
+            f"expected {source!r} -> {destination!r}"
+        )
+    return record
 
 
 def validate_files_tab_action_sequence(serial_data):
@@ -130,8 +174,16 @@ def files_tab_click_targets(width, height):
     switch_y = y + 130 + 4 + 11
     left_switch = (left_x + pane_width - switch_width // 2, switch_y)
     right_switch = (left_x + pane_width + 8 + pane_width - switch_width // 2, switch_y)
+    action_gap = 4 if window_width < 480 else 8
+    action_width = max(0, min(96, (window_width - 16 - 6 * action_gap) // 7))
+    copy_to_other = (
+        x + 12 + 6 * (action_width + action_gap) + action_width // 2,
+        y + 52 + 16,
+    )
+    left_first_row = (left_x + pane_width // 2, y + 168 + 13)
     return {"add": add, "root": root, "nested": nested, "address": address,
-            "left_switch": left_switch, "right_switch": right_switch}
+            "left_switch": left_switch, "right_switch": right_switch,
+            "copy_to_other": copy_to_other, "left_first_row": left_first_row}
 
 
 def validate_smp_profile_count(cpu_count):
@@ -953,6 +1005,16 @@ def main():
                 report["checks"].append("serial console restores Terminal focus from Files panel")
                 response_end=serial_data.index(commands[0][1].encode(),start)+len(commands[0][1])
                 wait_text("PRISM FRAME:",response_end)
+                # Process-exit notifications from earlier compatibility tests
+                # can still be visible as desktop toasts. Opening the center
+                # dismisses the transient toast but keeps its history intact.
+                dismiss_files_toast = len(serial_data)
+                editor_key("f8")
+                wait_text("PRISM DESKTOP: focused=Some(Terminal) home=false", dismiss_files_toast)
+                close_notifications = len(serial_data)
+                editor_key("esc")
+                wait_text("PRISM DESKTOP: focused=Some(Terminal) home=false", close_notifications)
+                report["checks"].append("dismissed transient process toast before Files screenshot captures")
                 # Rebuild the Files tab flow from actual PS/2 input and mouse
                 # clicks. The directory-action records prove each resulting
                 # path came back from the guest Store, not just the address UI.
@@ -1201,6 +1263,113 @@ def main():
                 report["checks"].append(
                     "Files left and right panes navigate independently, preserve inactive paths, and capture a distinct root/nested view"
                 )
+                # Build a real source file through Files, then copy it from
+                # the left pane into the right pane's current root folder.
+                # The commit log carries the authoritative source and target
+                # snapshots returned by the existing Inspect/Commit adapter.
+                click_files_tab(tab_targets["left_switch"])
+                navigate_files_address("/native/alpha")
+                copy_name = f"copy-{os.getpid() & 0xffff:04x}"
+                copy_source_path = f"/native/alpha/{copy_name}"
+                copy_destination_path = f"/native/{copy_name}"
+                create_mark = len(serial_data)
+                editor_key("f")
+                for character in copy_name:
+                    editor_key("minus" if character == "-" else character)
+                editor_key("ret")
+                create_commit = wait_regex(FILES_FILE_CREATE_COMMIT_RE.pattern, create_mark)
+                if _decode_files_debug_paths(create_commit[2]) != [copy_source_path]:
+                    raise RuntimeError("Files did not create the expected one-file copy fixture")
+
+                def wait_files_refresh_actions(mark, expected_paths):
+                    events = []
+                    cursor = mark
+                    for _ in expected_paths:
+                        event = wait_regex(FILES_DIRECTORY_ACTION_RE.pattern, cursor)
+                        events.append(event)
+                        cursor = event.end()
+                    records = parse_files_directory_actions(serial_data[mark:cursor])
+                    if len(records) != len(expected_paths):
+                        raise RuntimeError("Files copy did not refresh both pane listings")
+                    for record, expected_path in zip(records, expected_paths):
+                        if "Navigate" not in record["kind"] or not record["paths"] or record["paths"][-1] != expected_path:
+                            raise RuntimeError(
+                                f"Files copy refresh was {record!r}, expected Navigate to {expected_path}"
+                            )
+                        if not record["result"].startswith("Ok("):
+                            raise RuntimeError(f"Files copy pane refresh failed: {record!r}")
+                    # Directory mutations can publish an accessibility
+                    # snapshot and an output frame without a second generic
+                    # PRISM FRAME record. Wait for an actual presentation
+                    # signal instead of stalling after a valid refresh.
+                    wait_regex(
+                        rb"(?:PRISM FRAME: generation=\d+|PRISM OUTPUT FRAME: generation=\d+)",
+                        events[-1].end(),
+                    )
+                    return records
+
+                create_refreshes = wait_files_refresh_actions(
+                    create_commit.end(), ["/native/alpha", "/native"]
+                )
+                click_files_tab(tab_targets["left_first_row"])
+                copy_mark = len(serial_data)
+                click_files_tab(tab_targets["copy_to_other"])
+                editor_key("ret")
+                inspect = wait_regex(
+                    rb"PRISM FILE INSPECT: request=(\d+) path="
+                    + re.escape(copy_destination_path.encode("ascii"))
+                    + rb" result=Ok\(None\)\r?\n",
+                    copy_mark,
+                )
+                copy_commit = wait_regex(FILES_FILE_COPY_COMMIT_RE.pattern, inspect.end())
+                copy_record = validate_files_copy_commit(
+                    serial_data[copy_mark:], copy_source_path, copy_destination_path
+                )
+                copy_refreshes = wait_files_refresh_actions(
+                    copy_commit.end(), ["/native/alpha", "/native"]
+                )
+                copy_capture = capture_files_tabs("copy-to-other-pane")
+                report["files_copy_to_other_pane"] = {
+                    "source": copy_source_path,
+                    "destination": copy_destination_path,
+                    "commit": copy_record,
+                    "fixture_refreshes": create_refreshes,
+                    "copy_refreshes": copy_refreshes,
+                    "capture": copy_capture,
+                }
+                report["checks"].append(
+                    "Files copies a selected regular file from the left pane into the right pane's current folder through the trusted Inspect/Commit flow and refreshes both panes"
+                )
+                # The guest data store is deliberately small. The screenshot
+                # and authoritative copy result above are the evidence, so
+                # remove both fixture files before later Settings persistence
+                # checks need their own journal record.
+                editor_command(
+                    f"rm {copy_source_path}",
+                    f"NEXT DATA: Removed {copy_source_path}",
+                )
+                editor_command(
+                    f"rm {copy_destination_path}",
+                    f"NEXT DATA: Removed {copy_destination_path}",
+                )
+                # The existing Files flow has now created /native/alpha;
+                # seed a deterministic root file for the relative openat ELF.
+                sample_mark = len(serial_data)
+                serial.sendall(b"write /native/sample cwd-sample\r")
+                wait_text("NEXT DATA: Wrote 10 bytes to /native/sample", sample_mark)
+                wait_text("PRISM FRAME:", sample_mark)
+                report["checks"].append("seeded /native/sample for the Linux cwd/openat fixture")
+                cwd_mark = len(serial_data)
+                serial.sendall(b"run /compat/linux/cwd.elf\r")
+                wait_text("LINUX CWD ELF: getcwd, chdir, and relative openat PASS", cwd_mark)
+                wait_text("status=56", cwd_mark)
+                report["checks"].append(
+                    "original Linux getcwd/chdir/relative-openat fixture validates cwd bytes, error atomicity, confinement and directory-relative reads"
+                )
+                editor_command("rm /native/sample", "NEXT DATA: Removed /native/sample")
+                report["checks"].append(
+                    "removed the Linux cwd fixture sample to keep the bounded guest store available for later persistence checks"
+                )
                 mark = len(serial_data)
                 serial.sendall(b"uart\r")
                 uart = wait_regex(rb"NEXT UART: accepted=(\d+) transmitted=(\d+) dropped=(\d+) stalled=(\d+) absent=(\d+) pending=(\d+)", mark)
@@ -1312,6 +1481,12 @@ def main():
                         if closed[1] == b"None":
                             break
                     gallery_key("f10", expected=rb"PRISM DESKTOP: focused=None home=true")
+                    # Preserve notification history for its own gallery frame
+                    # while removing the transient exit toast from the Home
+                    # and application captures.
+                    gallery_key("f8", expected=rb"PRISM DESKTOP: focused=None home=true")
+                    gallery_key("esc", expected=rb"PRISM DESKTOP: focused=None home=true")
+                    report["checks"].append("dismissed transient process toast before Prism gallery screenshots")
                     capture_gallery("home")
                     gallery_key("esc", expected=rb"PRISM DESKTOP: focused=None home=false")
                     apps = ("terminal", "files", "monitor", "settings", "editor", "calculator")

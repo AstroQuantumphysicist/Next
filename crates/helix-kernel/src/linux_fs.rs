@@ -3,6 +3,8 @@
 //! Eight file descriptors per process; directory streams are bounded open snapshots.
 #[path = "linux_dirent.rs"]
 pub(crate) mod dirent;
+#[path = "linux_path.rs"]
+mod path;
 use crate::file::{self, FileHandle};
 use crate::linux;
 use core::{
@@ -15,6 +17,7 @@ use helix_core::{
     handle::Rights,
 };
 use next_abi::Status;
+use path::Path;
 pub const MAX_IO: usize = 4096;
 /// Linux x86-64 `struct stat` size for syscall 5 (144-byte `newfstat` ABI).
 pub const STAT_BYTES: usize = 144;
@@ -56,6 +59,7 @@ struct Stream {
 #[derive(Clone, Copy)]
 struct Directory {
     generation: u64,
+    path: Path,
     snapshot: dirent::Snapshot,
     cursor: usize,
     refs: u8,
@@ -63,6 +67,7 @@ struct Directory {
 impl Directory {
     const EMPTY: Self = Self {
         generation: 0,
+        path: Path::ROOT,
         snapshot: dirent::Snapshot::EMPTY,
         cursor: 0,
         refs: 0,
@@ -70,6 +75,8 @@ impl Directory {
 }
 struct Owner {
     generation: u64,
+    cwd: Path,
+    cwd_identity: u64,
     directories: [Directory; 8],
     next_directory_generation: u64,
     fds: Descriptors<Stream, 8>,
@@ -80,6 +87,8 @@ struct Owner {
 impl Owner {
     const EMPTY: Self = Self {
         generation: 0,
+        cwd: Path::ROOT,
+        cwd_identity: 0,
         directories: [Directory::EMPTY; 8],
         next_directory_generation: 1,
         fds: Descriptors::new(),
@@ -120,14 +129,139 @@ fn with_owner<T>(
         }
         owner.directories = [Directory::EMPTY; 8];
         owner.generation = generation;
+        owner.cwd = Path::ROOT;
+        owner.cwd_identity = 0;
         owner.stdin = true;
         owner.stdout = true;
         owner.stderr = true;
     }
     operation(owner)
 }
-/// No new namespace authority is derived from the Linux personality itself.
+fn validate_origin(path: Path, identity: u64) -> Result<(), u64> {
+    let current = crate::filesystem::linux_directory(path.as_str()).map_err(|error| {
+        if error == errno(20) {
+            errno(2)
+        } else {
+            error
+        }
+    })?;
+    if !current.valid_directory() {
+        return Err(errno(5));
+    }
+    if current.identity != identity {
+        return Err(errno(2));
+    }
+    Ok(())
+}
+fn resolve_at(slot: usize, generation: u64, dirfd: u64, input: &str) -> Result<Path, u64> {
+    if input.is_empty() {
+        return Err(errno(2));
+    }
+    let base = if input.starts_with('/') {
+        Path::ROOT
+    } else {
+        let (base, identity) = with_owner(slot, generation, |owner| {
+            if dirfd as u32 == (-100i32) as u32 {
+                return Ok((owner.cwd, owner.cwd_identity));
+            }
+            let fd = u64::from(dirfd as u32);
+            if fd < 3 {
+                let live = match fd {
+                    0 => owner.stdin,
+                    1 => owner.stdout,
+                    2 => owner.stderr,
+                    _ => false,
+                };
+                return Err(errno(if live { 20 } else { 9 }));
+            }
+            let (stream, _) = owner.fds.get(fd).map_err(fd_error)?;
+            match stream.object {
+                StreamObject::Directory(index) => Ok((
+                    owner.directories[index].path,
+                    owner.directories[index].snapshot.identity,
+                )),
+                _ => Err(errno(20)),
+            }
+        })?;
+        validate_origin(base, identity)?;
+        base
+    };
+    Path::resolve(base, input, |path| {
+        let listing = crate::filesystem::linux_directory(path)?;
+        if !listing.valid_directory() {
+            return Err(errno(5));
+        }
+        Ok(())
+    })
+}
 pub fn open(
+    slot: usize,
+    generation: u64,
+    granted: bool,
+    input: &str,
+    flags: u64,
+    mode: u64,
+) -> Result<u64, u64> {
+    openat(
+        slot,
+        generation,
+        granted,
+        (-100i64) as u64,
+        input,
+        flags,
+        mode,
+    )
+}
+pub fn openat(
+    slot: usize,
+    generation: u64,
+    granted: bool,
+    dirfd: u64,
+    input: &str,
+    flags: u64,
+    mode: u64,
+) -> Result<u64, u64> {
+    if !granted {
+        return Err(errno(13));
+    }
+    let path = resolve_at(slot, generation, dirfd, input)?;
+    open_resolved(slot, generation, granted, path.as_str(), flags, mode)
+}
+pub fn chdir(slot: usize, generation: u64, granted: bool, input: &str) -> Result<(), u64> {
+    if !granted {
+        return Err(errno(13));
+    }
+    let path = resolve_at(slot, generation, (-100i64) as u64, input)?;
+    let listing = crate::filesystem::linux_directory(path.as_str())?;
+    if !listing.valid_directory() {
+        return Err(errno(5));
+    }
+    with_owner(slot, generation, |owner| {
+        owner.cwd = path;
+        owner.cwd_identity = listing.identity;
+        Ok(())
+    })
+}
+/// Copyout has no adapter guard; returns the raw NUL-inclusive syscall count.
+pub fn getcwd(
+    slot: usize,
+    generation: u64,
+    capacity: u64,
+    copyout: impl FnOnce(&[u8]) -> Result<(), u64>,
+) -> Result<usize, u64> {
+    let (path, identity) = with_owner(slot, generation, |owner| {
+        Ok((owner.cwd, owner.cwd_identity))
+    })?;
+    let bytes = path.bytes_with_nul();
+    if capacity < bytes.len() as u64 {
+        return Err(errno(34));
+    }
+    validate_origin(path, identity)?;
+    copyout(bytes)?;
+    Ok(bytes.len())
+}
+/// No new namespace authority is derived from the Linux personality itself.
+fn open_resolved(
     slot: usize,
     generation: u64,
     granted: bool,
@@ -178,6 +312,7 @@ pub fn open(
                 };
                 owner.directories[index] = Directory {
                     generation: owner.next_directory_generation,
+                    path: Path::resolve(Path::ROOT, path, |_| Ok(()))?,
                     snapshot,
                     cursor: 0,
                     refs: 1,
@@ -640,6 +775,8 @@ pub fn close_all(slot: usize, generation: u64) {
             }
         }
         owner.directories = [Directory::EMPTY; 8];
+        owner.cwd = Path::ROOT;
+        owner.cwd_identity = 0;
         owner.stdin = false;
         owner.stdout = false;
         owner.stderr = false;

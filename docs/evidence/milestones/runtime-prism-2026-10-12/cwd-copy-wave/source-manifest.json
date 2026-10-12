@@ -1,0 +1,48 @@
+{
+  "source_base_commit": "67a79ca49ace8a7bb3a3a14c96e97e62d7f1e500",
+  "source_snapshot_sha256": "6d4f30b783161718bc6468b8cb375097f8b117340d7529c6c004795380d97eae",
+  "source_files": [
+    {
+      "path": "crates/helix-kernel/src/filesystem.rs",
+      "sha256": "666bebeb6e55b143dbdded8e3482f65d077c3721b86c813a1b2645d2959436b5"
+    },
+    {
+      "path": "crates/helix-kernel/src/linux_dirent.rs",
+      "sha256": "c39aa315ad60c87f1ddb4d268adb1e5ce804d4cca8ad4785f783623d612cf657"
+    },
+    {
+      "path": "crates/helix-kernel/src/linux_fs.rs",
+      "sha256": "41c9f17dc7ded6c8e86b0ecb4753f67c3c00187574ec5b863754e824b887fb0c"
+    },
+    {
+      "path": "crates/helix-kernel/src/linux_path.rs",
+      "sha256": "ba2a479b1d37695476e427298757c3f3da03c2e1f700544151318bb22717e47b"
+    },
+    {
+      "path": "crates/helix-kernel/src/native.rs",
+      "sha256": "285fae0cea7213ab2b07ab411674fd6a8eecb9bf914e0b3934c37cf9f53c5203"
+    },
+    {
+      "path": "crates/prism/src/lib.rs",
+      "sha256": "92432c3e8d5106c81af28e92b8e1b1c7f4d224d1cbd4a10a88e64f9322549024"
+    },
+    {
+      "path": "crates/linux-fixtures/cwd.S",
+      "sha256": "c0f216cdc0c62cd4a0a6e0b68000d236ceb709ed5a8e284a7cf98f2e3a287e91"
+    },
+    {
+      "path": "tools/build-linux.sh",
+      "sha256": "72116e794cd1125b40ec0aebc7af02374c27ab0a697eaaa997b8eb5b1e8bb617"
+    },
+    {
+      "path": "tools/boot_smoke.py",
+      "sha256": "e19200a6cb4ebfce6377daa8c212bbf93887e0b3c3c8f9d88520824a11068c30"
+    },
+    {
+      "path": "tools/test_boot_smoke_smp.py",
+      "sha256": "e315c0afa14bcfaf17d3e620ddb299c98a8b57fe2881c5d280ab5080adf4ce71"
+    }
+  ],
+  "signed_image_sha256": "63374568a17fcd592fdabe24008abba36975ab48732a2b044b0f3efa1a6c36a6",
+  "build_manifest_sha256": "7282a14836c5272984b8c95551c467564d8e7877396d37ab546070deaa47def2"
+}

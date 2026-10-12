@@ -187,6 +187,13 @@ mod file {
             .path
             .clear();
     }
+    pub fn exists_for_test(path: &str) -> bool {
+        MOCK.lock()
+            .unwrap()
+            .files
+            .iter()
+            .any(|file| file.path == path)
+    }
     pub fn retain(handle: FileHandle) -> Result<(), Status> {
         let mut mock = MOCK.lock().unwrap();
         let entry = mock
@@ -206,10 +213,20 @@ mod file {
 }
 
 mod filesystem {
+    use std::sync::atomic::{AtomicU64, Ordering};
+    pub static DIR_ID: AtomicU64 = AtomicU64::new(10);
     use crate::linux_fs::dirent::{Entry, Snapshot};
     pub fn linux_directory(path: &str) -> Result<Snapshot, u64> {
-        if path == "/native" || path == "/native/dir" {
+        if matches!(path, "/native" | "/native/dir" | "/native/dir/child") {
+            if path != "/native" && DIR_ID.load(Ordering::Relaxed) == 0 {
+                return Err((-2i64) as u64);
+            }
             let mut result = Snapshot::EMPTY;
+            result.identity = if path == "/native" {
+                0
+            } else {
+                DIR_ID.load(Ordering::Relaxed)
+            };
             for (ino, kind, name) in [(1, 4, "."), (1, 4, ".."), (2, 8, "alpha"), (3, 4, "child")] {
                 result.push(Entry::new(ino, kind, name).unwrap()).unwrap();
             }
@@ -738,5 +755,201 @@ fn unlocked_copyout_cannot_commit_into_replaced_or_repositioned_directory() {
         Ok(32)
     );
     assert_eq!(&name[19..25], b"alpha\0");
+    linux_fs::close_all(SLOT, G);
+}
+
+fn cwd_string(slot: usize, generation: u64) -> String {
+    let mut bytes = Vec::new();
+    let count = linux_fs::getcwd(slot, generation, 32, |b| {
+        bytes.extend_from_slice(b);
+        Ok(())
+    })
+    .unwrap();
+    assert_eq!(count, bytes.len());
+    assert_eq!(bytes.pop(), Some(0));
+    String::from_utf8(bytes).unwrap()
+}
+#[test]
+fn cwd_is_process_owned_failure_atomic_and_generation_reset() {
+    let _serial = SERIAL.lock().unwrap();
+    const G: u64 = 201;
+    filesystem::DIR_ID.store(10, std::sync::atomic::Ordering::Relaxed);
+    linux_fs::close_all(2, G);
+    linux_fs::close_all(3, G);
+    assert_eq!(cwd_string(2, G), "/native");
+    assert_eq!(
+        linux_fs::getcwd(2, G, 7, |_| panic!("short getcwd copied")),
+        Err((-34i64) as u64)
+    );
+    assert_eq!(
+        linux_fs::getcwd(2, G, 0, |_| panic!("zero getcwd copied")),
+        Err((-34i64) as u64)
+    );
+    assert_eq!(
+        linux_fs::getcwd(2, G, 4096, |b| {
+            assert_eq!(b, b"/native\0");
+            Err((-14i64) as u64)
+        }),
+        Err((-14i64) as u64)
+    );
+    assert_eq!(linux_fs::chdir(2, G, false, "dir"), Err((-13i64) as u64));
+    linux_fs::chdir(2, G, true, "//native/./dir/").unwrap();
+    assert_eq!(cwd_string(2, G), "/native/dir");
+    assert_eq!(cwd_string(3, G), "/native");
+    for (path, error) in [
+        ("/native/missing-dir", 2),
+        ("/native/plain", 20),
+        ("../../escape", 13),
+        ("", 2),
+    ] {
+        assert_eq!(
+            linux_fs::chdir(2, G, true, path),
+            Err((-(error as i64)) as u64)
+        );
+        assert_eq!(cwd_string(2, G), "/native/dir");
+    }
+    linux_fs::chdir(2, G, true, "child/..").unwrap();
+    assert_eq!(cwd_string(2, G), "/native/dir");
+    let mut copied = [0xa5; 32];
+    assert_eq!(
+        linux_fs::getcwd(2, G, 32, |b| {
+            assert_eq!(
+                linux_fs::getcwd(3, G, 1, |_| panic!()),
+                Err((-34i64) as u64)
+            );
+            copied[..b.len()].copy_from_slice(b);
+            Ok(())
+        }),
+        Ok(12)
+    );
+    assert_eq!(&copied[..12], b"/native/dir\0");
+    assert_eq!(&copied[12..], &[0xa5; 20]);
+    assert_eq!(cwd_string(2, G + 1), "/native");
+    linux_fs::close_all(2, G + 1);
+    linux_fs::close_all(3, G);
+}
+#[test]
+fn openat_resolves_exact_cwd_or_directory_origin_and_checks_ancestry() {
+    let _serial = SERIAL.lock().unwrap();
+    const SLOT: usize = 3;
+    const G: u64 = 202;
+    filesystem::DIR_ID.store(10, std::sync::atomic::Ordering::Relaxed);
+    linux_fs::close_all(SLOT, G);
+    let d = linux_fs::open(SLOT, G, true, "dir", 65536, 0).unwrap();
+    let dup = linux_fs::duplicate(SLOT, G, d).unwrap();
+    let file = linux_fs::openat(
+        SLOT,
+        G,
+        true,
+        d | (1 << 32),
+        "./child/../openat-proof",
+        0,
+        0,
+    )
+    .unwrap();
+    assert!(file::exists_for_test("/native/dir/openat-proof"));
+    assert_eq!(
+        linux_fs::openat(SLOT, G, true, file, "relative", 0, 0),
+        Err((-20i64) as u64)
+    );
+    assert_eq!(
+        linux_fs::openat(SLOT, G, true, 999, "relative", 0, 0),
+        Err((-9i64) as u64)
+    );
+    assert_eq!(
+        linux_fs::openat(SLOT, G, true, 999, "", 0, 0),
+        Err((-2i64) as u64)
+    );
+    let absolute = linux_fs::openat(SLOT, G, true, 999, "/native/plain", 0, 0).unwrap();
+    assert_eq!(
+        linux_fs::openat(SLOT, G, false, d, "file", 0, 0),
+        Err((-13i64) as u64)
+    );
+    for (path, error) in [
+        ("missing-dir/../plain", 2),
+        ("plain/../other", 20),
+        ("plain/", 20),
+        ("../native/plain", 13),
+    ] {
+        assert_eq!(
+            linux_fs::openat(SLOT, G, true, (-100i64) as u64, path, 0, 0),
+            Err((-(error as i64)) as u64)
+        );
+    }
+    linux_fs::chdir(SLOT, G, true, "dir").unwrap();
+    let relative =
+        linux_fs::openat(SLOT, G, true, u64::from((-100i32) as u32), "file", 0, 0).unwrap();
+    linux_fs::close(SLOT, G, relative).unwrap();
+    linux_fs::close(SLOT, G, absolute).unwrap();
+    linux_fs::close(SLOT, G, file).unwrap();
+    linux_fs::close(SLOT, G, d).unwrap();
+    assert_eq!(
+        linux_fs::openat(SLOT, G, true, d, "file", 0, 0),
+        Err((-9i64) as u64)
+    );
+    let retained = linux_fs::openat(SLOT, G, true, dup, "file", 0, 0).unwrap();
+    linux_fs::close(SLOT, G, retained).unwrap();
+    linux_fs::close_all(SLOT, G);
+}
+#[test]
+fn removed_or_recreated_cwd_and_dirfd_never_retarget_a_new_directory() {
+    let _serial = SERIAL.lock().unwrap();
+    const SLOT: usize = 3;
+    const G: u64 = 203;
+    filesystem::DIR_ID.store(20, std::sync::atomic::Ordering::Relaxed);
+    linux_fs::close_all(SLOT, G);
+    let d = linux_fs::open(SLOT, G, true, "dir", 65536, 0).unwrap();
+    linux_fs::chdir(SLOT, G, true, "dir").unwrap();
+    filesystem::DIR_ID.store(0, std::sync::atomic::Ordering::Relaxed);
+    assert_eq!(
+        linux_fs::getcwd(SLOT, G, 32, |_| panic!("missing cwd copied")),
+        Err((-2i64) as u64)
+    );
+    filesystem::DIR_ID.store(21, std::sync::atomic::Ordering::Relaxed);
+    assert_eq!(
+        linux_fs::getcwd(SLOT, G, 32, |_| panic!("replaced cwd copied")),
+        Err((-2i64) as u64)
+    );
+    assert_eq!(
+        linux_fs::open(SLOT, G, true, "file", 0, 0),
+        Err((-2i64) as u64)
+    );
+    assert_eq!(
+        linux_fs::openat(SLOT, G, true, d, "file", 0, 0),
+        Err((-2i64) as u64)
+    );
+    linux_fs::chdir(SLOT, G, true, "/native").unwrap();
+    assert_eq!(cwd_string(SLOT, G), "/native");
+    linux_fs::chdir(SLOT, G, true, "dir").unwrap();
+    assert_eq!(cwd_string(SLOT, G), "/native/dir");
+    assert_eq!(
+        linux_fs::openat(SLOT, G, true, d, "file", 0, 0),
+        Err((-2i64) as u64)
+    );
+    linux_fs::close_all(SLOT, G);
+    filesystem::DIR_ID.store(10, std::sync::atomic::Ordering::Relaxed);
+}
+
+#[test]
+fn openat_live_stdio_is_not_a_directory_and_absolute_paths_ignore_dirfd() {
+    let _serial = SERIAL.lock().unwrap();
+    const SLOT: usize = 3;
+    const G: u64 = 210;
+    filesystem::DIR_ID.store(10, std::sync::atomic::Ordering::Relaxed);
+    // New process generation initializes open standard streams.
+    assert_eq!(cwd_string(SLOT, G), "/native");
+    for fd in 0..3 {
+        assert_eq!(
+            linux_fs::openat(SLOT, G, true, fd, "file", 0, 0),
+            Err((-20i64) as u64)
+        );
+    }
+    linux_fs::close(SLOT, G, 0).unwrap();
+    assert_eq!(
+        linux_fs::openat(SLOT, G, true, 0, "file", 0, 0),
+        Err((-9i64) as u64)
+    );
+    let absolute = linux_fs::openat(SLOT, G, true, 0, "/native/absolute", 0, 0).unwrap();
+    linux_fs::close(SLOT, G, absolute).unwrap();
     linux_fs::close_all(SLOT, G);
 }

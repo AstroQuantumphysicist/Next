@@ -1,11 +1,12 @@
 # Runtime and Prism evidence — 2026-10-12
 
 The latest signed development image SHA-256 is
-`1b226f5ee89a59656cf74a673ea381f7d56e9dbe764bb852c75d224a902d6c6b`. Its qemu64
-desktop smoke passed 128 checks, including the Linux `fstat` and `getdents64`
-fixtures and independent Files pane navigation. The [fstat/getdents/Files bundle](fstat-getdents-files-r3/README.md)
-contains the report, capture hashes, serial traces, and the 16 current Prism
-screenshots. The earlier [feature-wave bundle](feature-wave-final/README.md)
+`63374568a17fcd592fdabe24008abba36975ab48732a2b044b0f3efa1a6c36a6`. Its qemu64
+desktop smoke passed 134 checks, including the Linux cwd fixture and Files tab,
+pane, and copy workflows. The [cwd and Prism bundle](cwd-copy-wave/README.md)
+contains the report, capture hashes, serial trace, and the 17 current Prism
+screenshots. The earlier [fstat/getdents Files bundle](fstat-getdents-files-r3/README.md)
+retains its source-bound report for those two fixtures. The [feature-wave bundle](feature-wave-final/README.md)
 records the separate DHCPv6 peer exchange on its own image. APs remain stopped
 and the scheduler runs only on the BSP; these tests do not establish SMP
 scheduling or physical-hardware support.
