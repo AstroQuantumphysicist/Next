@@ -11,8 +11,10 @@ bash tools/build-nt.sh
 bash tools/build-apps.sh
 python3 tools/test_apps.py
 cargo test --locked --offline --workspace --exclude next-boot --exclude helix-kernel --exclude next-user
+cargo test --locked --offline -p next-fs --features host-backup
 cargo test --locked --offline -p next-package --features host-tools installer::tests
 cargo clippy --locked --offline --workspace --exclude next-boot --exclude helix-kernel --exclude next-user --all-targets -- -D warnings
+cargo clippy --locked --offline -p next-fs --features host-backup --all-targets -- -D warnings
 cargo clippy --locked --offline -p next-package --features host-tools --all-targets -- -D warnings
 cargo clippy --locked --offline -p next-boot --target x86_64-unknown-uefi -- -D warnings
 source tools/kernel-env.sh
@@ -25,6 +27,7 @@ build/storage-tests
 python3 tools/test-audio-dma.py
 rustc --edition=2021 --test crates/helix-kernel/src/panic_report.rs -o build/panic-report-tests
 build/panic-report-tests
+bash tools/test-acpi-topology.sh
 rustc --edition=2021 --test tools/linux_profile_tests.rs -o build/linux-profile-tests
 build/linux-profile-tests
 python3 tools/test-linux-fs-contract.py

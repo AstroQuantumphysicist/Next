@@ -68,3 +68,7 @@ Host tests inject cuts before and after every one of the 69 transaction write/fl
 `tools/persistence_smoke.py` adds a separate integration check: it boots two fresh QEMU instances using the same writable scratch copy, writes and flushes `/persistent` in the first instance, reads its expected contents in the second instance, then durably removes it. It compares the protected FAT32 extent byte for byte by SHA256 and verifies the original generated image remained unchanged. This tests clean VM reboot persistence; fault-injection host tests supply the crash-boundary coverage. Neither test implies complete NextFS, real hardware certification, snapshots exposed to users, encryption, quotas, or production update/rollback support.
 
 The d4f7b7da7ef8 persistence milestone additionally runs the read-only host verifier against the actual two-boot guest-written journal, selects generation 94, and checks durable removal of `/persistent`. This cross-check validates the development serialization and clean-reboot workflow; it is not a repair operation or physical power-loss certification.
+
+The separately gated archive codec and one-transaction journal restore are
+described in [BACKUP-ARCHIVE.md](BACKUP-ARCHIVE.md). That feature is a bounded
+host/test slice, not an integrated backup service.

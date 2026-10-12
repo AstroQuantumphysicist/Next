@@ -24,6 +24,7 @@ from tcp_responder import Responder as TcpResponder
 from lapic_outcome import parse_outcome as parse_lapic_outcome, verify_continuation as verify_lapic_continuation
 
 ROOT = Path(__file__).resolve().parents[1]
+SMP_PROFILE_CPUS = (1, 2, 4, 8)
 BOOT_FAILURE_CODES = {
     "panic": 0x4E580001,
     "deployment": 0x4E580101,
@@ -32,6 +33,66 @@ BOOT_FAILURE_CODES = {
     "firmware-handoff": 0x4E580401,
     "boot-record": 0x4E580501,
 }
+
+
+def validate_smp_profile_count(cpu_count):
+    if isinstance(cpu_count, bool) or cpu_count not in SMP_PROFILE_CPUS:
+        raise ValueError(f"unsupported configured-CPU profile: {cpu_count}")
+    return cpu_count
+
+
+def validate_qmp_cpu_objects(configured_cpus, expected_count):
+    validate_smp_profile_count(expected_count)
+    if not isinstance(configured_cpus, list) or len(configured_cpus) != expected_count:
+        actual = len(configured_cpus) if isinstance(configured_cpus, list) else "invalid"
+        raise RuntimeError(f"QMP reports {actual} CPUs, expected {expected_count}")
+    indices = [cpu.get("cpu-index") if isinstance(cpu, dict) else None for cpu in configured_cpus]
+    if any(not isinstance(index, int) or isinstance(index, bool) for index in indices):
+        raise RuntimeError("QMP CPU objects must each include an integer cpu-index")
+    if set(indices) != set(range(expected_count)):
+        raise RuntimeError(f"QMP CPU indices are {indices}, expected 0 through {expected_count - 1}")
+    return configured_cpus
+
+
+def validate_acpi_enabled_cpu_count(serial_data, expected_count):
+    validate_smp_profile_count(expected_count)
+    matches = re.findall(
+        rb"(?m)^HELIX ACPI PASS cpus=(\d+) io_apics=(\d+) overrides=(\d+) tables=(\d+) bsp=(\d+); discovery only\r?$",
+        bytes(serial_data),
+    )
+    if len(matches) != 1:
+        raise RuntimeError(f"expected exactly one ACPI/MADT discovery record, found {len(matches)}")
+    values = [int(value) for value in matches[0]]
+    topology = {
+        "enabled_cpus": values[0],
+        "io_apics": values[1],
+        "overrides": values[2],
+        "validated_tables": values[3],
+        "bootstrap_apic_id": values[4],
+    }
+    if topology["enabled_cpus"] != expected_count:
+        raise RuntimeError(
+            f"ACPI/MADT reports {topology['enabled_cpus']} enabled CPUs, expected {expected_count}"
+        )
+    return topology
+
+
+def validate_bsp_only(serial_data):
+    data = bytes(serial_data)
+    reservation = b"HELIX AP RESERVATION PASS"
+    scratch = b"HELIX AP SCRATCH PASS"
+    if reservation not in data or scratch not in data or data.count(b"APs remain stopped") < 2:
+        raise RuntimeError("AP reservation and bootstrap scratch must both remain retained with APs stopped")
+    started = re.search(rb"(?m)^HELIX AP (?:ONLINE|STARTED|SCHEDULER)\b", data)
+    if started:
+        raise RuntimeError("unexpected AP activation marker in a BSP-only profile")
+    return {
+        "startup_enabled": False,
+        "scheduler_cpu_scope": "bootstrap CPU only",
+        "ap_reservation_retained": True,
+        "ap_scratch_retained": True,
+        "ap_online_markers": [],
+    }
 
 
 def validate_boot_failure_record(serial_data, expected_stage=None):
@@ -116,8 +177,8 @@ def exercise_file_portal(serial, serial_data, wait_text, wait_regex, wait_exit,
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--cpu", choices=["qemu64","max"],default="qemu64")
-    parser.add_argument("--smp", type=int, choices=[1, 2], default=1,
-                        help="configured QEMU vCPUs; --smp 2 is a BSP-only topology/scheduler regression profile, not SMP scheduling")
+    parser.add_argument("--smp", type=int, choices=SMP_PROFILE_CPUS, default=1,
+                        help="configured QEMU vCPUs (1, 2, 4, or 8); all profiles keep APs stopped and exercise the scheduler only on the BSP")
     parser.add_argument("--require-lapic-calibration", action="store_true", help="require successful optional LAPIC calibration rather than a verified PIT fallback")
     parser.add_argument("--require-guarded-emergency-stack", action="store_true", help="require both actual CPU page-fault probes for the guarded emergency IST stack")
     parser.add_argument("--trace-exceptions", action="store_true", help="save QEMU CPU exception diagnostics below the output directory")
@@ -148,7 +209,7 @@ def main():
         parser.error("persistence phase requires --persistent-data")
     screenshot = build / "screenshot.ppm"
     screenshot.unlink(missing_ok=True)
-    report = {"passed": False, "scope": ("QEMU q35/TCG with two configured vCPUs, validated ACPI topology, APs intentionally stopped, and scheduler workload exercised only on the BSP; legacy PS/2, software framebuffer, PIT/PIC timer interrupts, legacy virtio read/write/flush in dedicated trailing data region, FAT32 reads, native processes and IPC; no SMP scheduling or hardware certification" if args.smp == 2 else "QEMU q35/TCG, single CPU, legacy PS/2, software framebuffer, PIT/PIC timer interrupts, legacy virtio read/write/flush in dedicated trailing data region, FAT32 reads, native processes and IPC; no hardware certification"),
+    report = {"passed": False, "scope": (f"QEMU q35/TCG with {args.smp} configured vCPU(s), validated ACPI/MADT topology, APs intentionally stopped, and scheduler workload exercised only on the BSP; legacy PS/2, software framebuffer, PIT/PIC timer interrupts, legacy virtio read/write/flush in dedicated trailing data region, FAT32 reads, native processes and IPC; no SMP scheduling or hardware certification"),
               "configured_vcpus": args.smp,
               "ap_startup_enabled": False,
               "scheduler_cpu_scope": "bootstrap CPU only",
@@ -303,9 +364,7 @@ def main():
             if "QMP" not in qmp_read():
                 raise RuntimeError("invalid QMP greeting")
             qmp_command("qmp_capabilities")
-            configured_cpus = qmp_command("query-cpus-fast")
-            if not isinstance(configured_cpus, list) or len(configured_cpus) != args.smp:
-                raise RuntimeError(f"QMP reports {len(configured_cpus) if isinstance(configured_cpus, list) else 'invalid'} CPUs, expected {args.smp}")
+            configured_cpus = validate_qmp_cpu_objects(qmp_command("query-cpus-fast"), args.smp)
             report["qmp_cpus"] = [{"cpu_index": cpu.get("cpu-index"), "thread_id": cpu.get("thread-id"),
                                     "apic_id": cpu.get("props", {}).get("apic-id")}
                                    for cpu in configured_cpus]
@@ -388,7 +447,7 @@ def main():
                     ("HELIX IOAPIC IRQ RESULT Report { gsi: 2", "actual PIT IRQ0 routing transition reports ISR-observed IOAPIC delivery or verified PIC rollback"),
                     ("SERVICE WORKER: NETWORK declaration without execution grant denied UDP socket", "independently attenuated worker NETWORK grant blocks socket creation despite signed declaration"),
                     ("NEXTD: recipient NETWORK capability import denial acknowledged", "moving a socket to an unprivileged recipient cannot bypass NETWORK authority; denied import preserves ownership until teardown"),
-                    ("HELIX ACPI PASS cpus=1", "validated ACPI tables discover BSP, IOAPIC and interrupt overrides; no SMP startup"),
+                    ("HELIX ACPI PASS", "validated ACPI/MADT processor topology; no AP startup"),
                     ("HELIX COW STORE PASS", "COW data store commits file write/rename/delete and remounts without touching ESP"),
                     ("HELIX AUDIO PASS", "actual AC97 DMA playback completes 12000 stereo frames at 48 kHz"),
                     ("HELIX DHCP PASS address=[10, 0, 2, 15]", "actual DHCP Discover/Offer/Request/Ack obtains bounded QEMU lease"),
@@ -412,18 +471,14 @@ def main():
                         wait_regex(rb"HELIX GPT STORE PASS generation=(\d+) read_only=false formatted=false selftest=false")
                         report["checks"].append("owner-signed exact GPT binding mounts existing132-sector journal without formatting or repair")
                         continue
-                    if marker == "HELIX ACPI PASS cpus=1":
-                        topology = wait_regex(rb"HELIX ACPI PASS cpus=(\d+) io_apics=(\d+) overrides=(\d+) tables=(\d+) bsp=(\d+); discovery only")
-                        discovered = int(topology[1])
-                        if discovered != args.smp:
-                            raise RuntimeError(f"ACPI discovered {discovered} enabled CPUs, expected {args.smp}")
-                        report["acpi_topology"] = {"enabled_cpus": discovered, "io_apics": int(topology[2]),
-                                                    "overrides": int(topology[3]), "validated_tables": int(topology[4]),
-                                                    "bootstrap_apic_id": int(topology[5])}
-                        if args.smp == 2:
-                            report["checks"].append("MADT discovery finds both configured CPU records; this does not start either AP")
-                        else:
-                            report["checks"].append(check)
+                    if marker == "HELIX ACPI PASS":
+                        wait_regex(rb"HELIX ACPI PASS cpus=(\d+) io_apics=(\d+) overrides=(\d+) tables=(\d+) bsp=(\d+); discovery only")
+                        report["acpi_topology"] = validate_acpi_enabled_cpu_count(
+                            bytes(serial_data), args.smp
+                        )
+                        report["checks"].append(
+                            f"ACPI/MADT discovery reports exactly {args.smp} enabled CPU(s); this does not start APs"
+                        )
                     else:
                         wait_text(marker)
                         report["checks"].append(check)
@@ -431,12 +486,12 @@ def main():
                 if int(routing[2]) < 3 or routing[4] != b"true":
                     raise RuntimeError("IOAPIC routing did not prove actual ISR-observed delivery")
                 report["ioapic_delivery"] = {"gsi": int(routing[1]), "apic_interrupts": int(routing[2]), "pic_interrupts": int(routing[3])}
-                if args.smp == 2:
-                    if bytes(serial_data).count(b"APs remain stopped") < 2:
-                        raise RuntimeError("kernel did not explicitly retain BSP-only AP reservation/scratch posture")
-                    if re.search(rb"(?m)^HELIX AP (?:ONLINE|STARTED|SCHEDULER)\b", serial_data):
-                        raise RuntimeError("unexpected AP activation marker in a BSP-only profile")
-                    report["checks"].append("AP trampoline and scratch remain reserved with APs stopped; no AP execution or scheduler claim")
+                wait_text("HELIX AP RESERVATION PASS")
+                wait_text("HELIX AP SCRATCH PASS")
+                report["ap_status"] = validate_bsp_only(bytes(serial_data))
+                report["checks"].append(
+                    "AP trampoline and scratch remain reserved with APs stopped; scheduler workload ran only on the BSP"
+                )
                 wait_regex(rb"HELIX LAPIC TIMER (?:PASS|UNAVAILABLE)[^\r\n]*\r?\n")
                 lapic_outcome = parse_lapic_outcome(bytes(serial_data), args.require_lapic_calibration)
                 report["lapic_calibration"] = lapic_outcome.report()
@@ -682,21 +737,38 @@ def main():
                     wait_text("PRISM FRAME:", event.end())
                     return tuple(map(int, event.groups()[2:]))
                 left = snap_key("Preview", "meta_l", "left")
-                left_applied = snap_key("Applied", "ret")
-                if left != left_applied:
+                bottom_left = snap_key("Preview", "down")
+                quadrant_applied = snap_key("Applied", "ret")
+                if bottom_left != quadrant_applied:
                     raise RuntimeError("snap commit differs from selected preview")
+                snap_frame = build / "prism-quadrant-snap.ppm"
+                qmp_command("screendump", {"filename": str(snap_frame), "format": "ppm"})
+                snap_image = snap_frame.read_bytes()
+                snap_header = re.match(rb"P6\s+(\d+)\s+(\d+)\s+255\s", snap_image)
+                snap_width, snap_height = (
+                    (int(snap_header[1]), int(snap_header[2])) if snap_header else (0, 0)
+                )
+                if (not snap_header or snap_width <= 0 or snap_height <= 0
+                        or len(snap_image[snap_header.end():]) != snap_width * snap_height * 3):
+                    raise RuntimeError("quadrant snap guest screenshot is invalid")
+                report["snap_preview_screenshot"] = {
+                    "path": str(snap_frame.relative_to(ROOT)), "width": snap_width, "height": snap_height,
+                    "applied_zone": "BottomLeft",
+                }
                 right = snap_key("Preview", "meta_l", "right")
                 restored_left = snap_key("Cancelled", "esc")
-                if restored_left != left or right[0] != left[0] + left[2] or right[1:] != left[1:]:
-                    raise RuntimeError("snap cancellation or equal split bounds differ")
+                if (restored_left != bottom_left or right[0] != left[0] + left[2]
+                        or right[2] != left[2] or right[3] != left[3]
+                        or right[1] + right[3] != left[1] + left[3]):
+                    raise RuntimeError("snap cancellation, quarter bounds, or equal split geometry differ")
                 full = snap_key("Preview", "meta_l", "up")
                 if full[:2] != left[:2] or full[2] != left[2] + right[2] or full[3] != left[3]:
                     raise RuntimeError("maximized preview differs from work area")
                 snap_key("Applied", "ret")
                 original = snap_key("Restored", "meta_l", "down")
-                if original == left or original == full:
+                if original == bottom_left or original == full:
                     raise RuntimeError("snap restore lost original floating geometry")
-                report["checks"].append("actual PS/2 Super-arrow snap preview, apply, cancel and restore preserve floating geometry and work-area bounds")
+                report["checks"].append("actual PS/2 Super-arrow snap selects a quadrant, captures it, cancels, maximizes and restores original floating geometry")
                 report["checks"].append("Editor actual load, PS/2 editing, Ctrl-S journal save, external-change conflict and unsaved-text preservation")
                 if args.persistence_phase:
                     persistent_path = "/native/persistent" if args.gpt_data_profile else "/persistent"
@@ -785,7 +857,7 @@ def main():
                 colors = {pixels[at:at + 3] for at in range(0, len(pixels), 3)}
                 if len(colors) < 4:
                     raise RuntimeError("framebuffer screenshot is blank or lacks rendered UI")
-                report["screenshot"] = {"path": "build/screenshot.ppm", "width": width, "height": height, "distinct_colors": len(colors),
+                report["screenshot"] = {"path": str(screenshot.relative_to(ROOT)), "width": width, "height": height, "distinct_colors": len(colors),
                                         "validation": "PPM dimensions and at least four colors; no visual layout or accessibility verification"}
                 report["checks"].append("nonblank framebuffer screenshot")
                 if args.capture_prism_gallery:
@@ -858,9 +930,18 @@ def main():
                                 gallery_key("down")
                             gallery_key("ret")
                             gallery_key("right")
-                            gallery_key("tab")
+                            for _ in range(3):
+                                gallery_key("tab")
                             gallery_key("ret", expected=rb"PRISM APPEARANCE SAVE: request=\d+ .* result=Ok\(\(\)\) accepted=true")
                             capture_gallery("settings-accessibility")
+                            # Select 125% Settings-only text, save it through
+                            # the same control path, and keep a separate
+                            # guest frame showing the persisted preference.
+                            gallery_key("shift", "tab")
+                            gallery_key("right")
+                            gallery_key("tab")
+                            gallery_key("ret", expected=rb"PRISM APPEARANCE SAVE: request=\d+ .* result=Ok\(\(\)\) accepted=true")
+                            capture_gallery("settings-text-scale")
                         for _ in range(8):
                             closed = gallery_key("alt", "f4", expected=focus_pattern)
                             if closed[1] == b"None":
@@ -876,7 +957,7 @@ def main():
                     capture_gallery("notifications")
                     gallery_key("f8", expected=rb"PRISM DESKTOP: focused=None home=false")
                     report["visual_gallery"] = gallery
-                    report["checks"].append("actual QMP keyboard launched and captured completed guest frames for Home, six first-party panels, saved Accessibility settings, shortcut guide and notifications")
+                    report["checks"].append("actual QMP keyboard launched and captured completed guest frames for Home, six first-party panels, saved Accessibility focus and 125% Settings text size, shortcut guide and notifications")
             if dns_peer is not None and not args.expect_boot_failure:
                 boot_dropped = dns_peer.stats.get("boot_dropped", dns_peer.stats["dropped"])
                 boot_answers = dns_peer.stats.get("boot_answers", dns_peer.stats["answers"])

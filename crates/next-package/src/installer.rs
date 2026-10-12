@@ -6,8 +6,11 @@ use std::{
     collections::BTreeMap,
     fs::{self, File, OpenOptions},
     io::{Read, Write},
-    os::unix::fs::{OpenOptionsExt, PermissionsExt},
-    path::{Path, PathBuf},
+    os::unix::{
+        fs::{OpenOptionsExt, PermissionsExt},
+        io::AsRawFd,
+    },
+    path::{Component, Path, PathBuf},
     prelude::v1::*,
 };
 const MAX_INSTALLED: usize = 16;
@@ -49,7 +52,7 @@ struct Registry {
     packages: BTreeMap<String, Installed>,
 }
 pub struct Installer {
-    root: PathBuf,
+    root: File,
 }
 struct Lock {
     path: PathBuf,
@@ -76,13 +79,6 @@ fn digest(text: &str) -> Result<[u8; 32], Error> {
     }
     Ok(out)
 }
-fn regular(path: &Path) -> Result<(), Error> {
-    let m = fs::symlink_metadata(path)?;
-    if !m.is_file() || m.file_type().is_symlink() {
-        return Err(Error::UnsafeRoot);
-    }
-    Ok(())
-}
 fn directory(path: &Path) -> Result<(), Error> {
     let m = fs::symlink_metadata(path)?;
     if !m.is_dir() || m.file_type().is_symlink() || m.permissions().mode() & 0o022 != 0 {
@@ -91,9 +87,15 @@ fn directory(path: &Path) -> Result<(), Error> {
     Ok(())
 }
 fn read(path: &Path, max: usize) -> Result<Vec<u8>, Error> {
-    regular(path)?;
+    let mut file = OpenOptions::new()
+        .read(true)
+        .custom_flags(libc::O_NOFOLLOW | libc::O_CLOEXEC)
+        .open(path)?;
+    if !file.metadata()?.is_file() {
+        return Err(Error::UnsafeRoot);
+    }
     let mut out = Vec::new();
-    File::open(path)?
+    Read::by_ref(&mut file)
         .take(max as u64 + 1)
         .read_to_end(&mut out)?;
     if out.len() > max {
@@ -103,6 +105,49 @@ fn read(path: &Path, max: usize) -> Result<Vec<u8>, Error> {
 }
 fn sync_directory(path: &Path) -> std::io::Result<()> {
     File::open(path)?.sync_all()
+}
+fn descriptor_path(file: &File) -> PathBuf {
+    #[cfg(target_os = "linux")]
+    const FD_DIRECTORY: &str = "/proc/self/fd";
+    #[cfg(not(target_os = "linux"))]
+    const FD_DIRECTORY: &str = "/dev/fd";
+    PathBuf::from(FD_DIRECTORY).join(file.as_raw_fd().to_string())
+}
+fn open_child_directory(parent: &File, name: &std::ffi::OsStr) -> std::io::Result<File> {
+    OpenOptions::new()
+        .read(true)
+        .custom_flags(libc::O_DIRECTORY | libc::O_NOFOLLOW | libc::O_CLOEXEC)
+        .open(descriptor_path(parent).join(name))
+}
+fn open_directory_nofollow(path: &Path) -> std::io::Result<File> {
+    let mut current = if path.is_absolute() {
+        File::open("/")?
+    } else {
+        File::open(".")?
+    };
+    for component in path.components() {
+        match component {
+            Component::RootDir | Component::CurDir => {}
+            Component::Normal(name) => current = open_child_directory(&current, name)?,
+            // Refusing parent components keeps selection anchored to each
+            // already-open directory, even if an ancestor is renamed mid-walk.
+            Component::ParentDir | Component::Prefix(_) => {
+                return Err(std::io::Error::new(
+                    std::io::ErrorKind::InvalidInput,
+                    "installer root must not contain parent or platform-prefix components",
+                ));
+            }
+        }
+    }
+    Ok(current)
+}
+fn root_directory(path: &Path) -> Result<File, Error> {
+    let root = open_directory_nofollow(path)?;
+    let metadata = root.metadata()?;
+    if !metadata.is_dir() || metadata.permissions().mode() & 0o022 != 0 {
+        return Err(Error::UnsafeRoot);
+    }
+    Ok(root)
 }
 impl Installer {
     /// Authenticate before consulting the destination. This never creates a
@@ -125,25 +170,36 @@ impl Installer {
         }
     }
     /// Open an existing private root; never create or choose it implicitly.
-    /// Caller must own it and protect all ancestors from hostile rename races.
+    /// Each path component is opened with `O_NOFOLLOW` relative to its already
+    /// open parent. The returned directory handle pins the selected root even
+    /// if a caller-visible ancestor is renamed or replaced afterward. Linux
+    /// requires procfs at `/proc/self/fd`; other Unix hosts use `/dev/fd` and
+    /// must provide that descriptor namespace. Objects inside the private root
+    /// remain subject to the caller's private-root trust boundary.
     pub fn open(root: &Path) -> Result<Self, Error> {
-        directory(root)?;
-        let root = root.canonicalize()?;
-        directory(&root)?;
-        Ok(Self { root })
+        Ok(Self {
+            root: root_directory(root)?,
+        })
+    }
+    fn root_path(&self) -> PathBuf {
+        descriptor_path(&self.root)
     }
     fn lock(&self) -> Result<Lock, Error> {
-        directory(&self.root)?;
-        let path = self.root.join(".install.lock");
+        let metadata = self.root.metadata()?;
+        if !metadata.is_dir() || metadata.permissions().mode() & 0o022 != 0 {
+            return Err(Error::UnsafeRoot);
+        }
+        let path = self.root_path().join(".install.lock");
         OpenOptions::new()
             .write(true)
             .create_new(true)
             .mode(0o600)
+            .custom_flags(libc::O_NOFOLLOW | libc::O_CLOEXEC)
             .open(&path)?;
         Ok(Lock { path })
     }
     fn load(&self) -> Result<Registry, Error> {
-        let path = self.root.join("registry");
+        let path = self.root_path().join("registry");
         if !path.try_exists()? {
             return Ok(Registry {
                 generation: 0,
@@ -225,18 +281,20 @@ impl Installer {
         if bytes.len() > MAX_REGISTRY_BYTES {
             return Err(Error::Full);
         }
-        let temporary = self.root.join(".registry.next");
+        let root = self.root_path();
+        let temporary = root.join(".registry.next");
         let mut file = OpenOptions::new()
             .write(true)
             .create_new(true)
             .mode(0o600)
+            .custom_flags(libc::O_NOFOLLOW | libc::O_CLOEXEC)
             .open(&temporary)?;
         let result = (|| {
             file.write_all(bytes.as_bytes())?;
             file.sync_all()?;
             before_rename()?;
-            fs::rename(&temporary, self.root.join("registry"))?;
-            sync_root(&self.root).map_err(Error::Indeterminate)
+            fs::rename(&temporary, root.join("registry"))?;
+            sync_root(&root).map_err(Error::Indeterminate)
         })();
         if result.is_err() {
             let _ = fs::remove_file(temporary);
@@ -244,7 +302,7 @@ impl Installer {
         result
     }
     fn deployment(&self, hash: &[u8; 32]) -> PathBuf {
-        self.root.join("deployments").join(hex(hash))
+        self.root_path().join("deployments").join(hex(hash))
     }
     fn verify_deployment(
         &self,
@@ -252,7 +310,7 @@ impl Installer {
         id: &str,
         anchors: &[TrustAnchor],
     ) -> Result<(), Error> {
-        directory(&self.root.join("deployments"))?;
+        directory(&self.root_path().join("deployments"))?;
         let root = self.deployment(expected);
         directory(&root)?;
         let bytes = read(&root.join("bundle.nextapp"), MAX_BUNDLE_BYTES)?;
@@ -286,7 +344,7 @@ impl Installer {
         hash: &[u8; 32],
         anchors: &[TrustAnchor],
     ) -> Result<(), Error> {
-        let deployments = self.root.join("deployments");
+        let deployments = self.root_path().join("deployments");
         if !deployments.try_exists()? {
             fs::create_dir(&deployments)?;
         }
@@ -303,6 +361,7 @@ impl Installer {
             .write(true)
             .create_new(true)
             .mode(0o600)
+            .custom_flags(libc::O_NOFOLLOW | libc::O_CLOEXEC)
             .open(temporary.join("bundle.nextapp"))?;
         bundle.write_all(bytes)?;
         bundle.sync_all()?;
@@ -330,6 +389,7 @@ impl Installer {
                 .write(true)
                 .create_new(true)
                 .mode(0o600)
+                .custom_flags(libc::O_NOFOLLOW | libc::O_CLOEXEC)
                 .open(&path)
                 .map_err(|_| Error::Conflict)?;
             output.write_all(input.data)?;
@@ -728,7 +788,10 @@ mod tests {
         let root = Temporary::new();
         let link = root.0.join("alias");
         symlink(&root.0, &link).unwrap();
-        assert!(matches!(Installer::open(&link), Err(Error::UnsafeRoot)));
+        assert!(matches!(
+            Installer::open(&link),
+            Err(Error::Io(_)) | Err(Error::UnsafeRoot)
+        ));
         fs::remove_file(link).unwrap();
         let installer = root.installer();
         let anchors = [crate::tests::anchor()];
@@ -745,10 +808,59 @@ mod tests {
         symlink(root.0.join("registry"), &file).unwrap();
         assert!(matches!(
             installer.file("org.next.test", "assets/help.txt", &anchors),
-            Err(Error::UnsafeRoot)
+            Err(Error::Io(_)) | Err(Error::UnsafeRoot)
         ));
         fs::set_permissions(&root.0, fs::Permissions::from_mode(0o777)).unwrap();
         assert!(matches!(Installer::open(&root.0), Err(Error::UnsafeRoot)));
+    }
+    #[test]
+    fn symlinked_ancestor_is_rejected_when_opening_root() {
+        let root = Temporary::new();
+        let actual_parent = root.0.join("actual");
+        fs::create_dir(&actual_parent).unwrap();
+        let actual = actual_parent.join("apps");
+        fs::create_dir(&actual).unwrap();
+        fs::set_permissions(&actual, fs::Permissions::from_mode(0o700)).unwrap();
+        let alias = root.0.join("alias");
+        symlink(&actual_parent, &alias).unwrap();
+
+        assert!(matches!(
+            Installer::open(&alias.join("apps")),
+            Err(Error::Io(_)) | Err(Error::UnsafeRoot)
+        ));
+    }
+    #[test]
+    fn replacing_a_visible_ancestor_after_open_cannot_redirect_installer_writes() {
+        let root = Temporary::new();
+        let ancestor = root.0.join("ancestor");
+        fs::create_dir(&ancestor).unwrap();
+        let destination = ancestor.join("apps");
+        fs::create_dir(&destination).unwrap();
+        fs::set_permissions(&destination, fs::Permissions::from_mode(0o700)).unwrap();
+
+        let outside = root.0.join("outside");
+        fs::create_dir(&outside).unwrap();
+        let outside_apps = outside.join("apps");
+        fs::create_dir(&outside_apps).unwrap();
+        fs::set_permissions(&outside_apps, fs::Permissions::from_mode(0o700)).unwrap();
+
+        let installer = Installer::open(&destination).unwrap();
+        let pinned_ancestor = root.0.join("ancestor-pinned");
+        fs::rename(&ancestor, &pinned_ancestor).unwrap();
+        symlink(&outside, &ancestor).unwrap();
+
+        let anchors = [crate::tests::anchor()];
+        let bytes = bundle("org.next.test", b"safe", 0);
+        installer.install(&bytes, &anchors).unwrap();
+
+        assert!(pinned_ancestor.join("apps/registry").is_file());
+        assert!(!outside_apps.join("registry").exists());
+        assert_eq!(
+            installer
+                .file("org.next.test", "assets/help.txt", &anchors)
+                .unwrap(),
+            b"safe"
+        );
     }
     #[test]
     fn revoked_rollback_and_corrupt_registry_never_mutate_active_state() {

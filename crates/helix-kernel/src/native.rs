@@ -3093,6 +3093,14 @@ pub extern "sysv64" fn linux_dispatch(frame: *mut CpuFrame) -> u64 {
         return 0;
     };
     rt.capture_tls(slot);
+    if frame.rax == 39 {
+        frame.rax = linux::identity_syscall_result(
+            frame.rax,
+            rt.processes[slot].profile,
+            rt.processes[slot].pid,
+        );
+        return 0;
+    }
     if rt.processes[slot].profile != Profile::Linux {
         if rt.processes[slot].profile == Profile::Nt {
             log!(
@@ -3105,6 +3113,21 @@ pub extern "sysv64" fn linux_dispatch(frame: *mut CpuFrame) -> u64 {
     }
     let generation = rt.processes[slot].generation;
     match frame.rax {
+        63 => {
+            if !user_range(&rt.processes[slot], frame.rdi, linux::UTSNAME_BYTES, true) {
+                frame.rax = linux::EFAULT;
+                return 0;
+            }
+            let bytes = linux::utsname_bytes();
+            unsafe {
+                copy_nonoverlapping(
+                    bytes.as_ptr(),
+                    physical_pointer(slot, frame.rdi),
+                    bytes.len(),
+                )
+            }
+            frame.rax = 0;
+        }
         82 | 264 => {
             let (old_address, new_address) = if frame.rax == 82 {
                 (frame.rdi, frame.rsi)
@@ -3263,7 +3286,7 @@ pub extern "sysv64" fn linux_dispatch(frame: *mut CpuFrame) -> u64 {
         }
         8 => {
             frame.rax =
-                crate::linux_fs::seek(slot, generation, frame.rdi, frame.rsi as i64, frame.rdx)
+                crate::linux_fs::lseek(slot, generation, frame.rdi, frame.rsi as i64, frame.rdx)
                     .unwrap_or_else(|error| error)
         }
         17 => frame.rax = linux_pread(rt, slot, frame.rdi, frame.rsi, frame.rdx, frame.r10),
@@ -3356,7 +3379,6 @@ pub extern "sysv64" fn linux_dispatch(frame: *mut CpuFrame) -> u64 {
                 .unwrap_or_else(|errno| errno)
         }
         12 => frame.rax = rt.linux_brk(slot, frame.rdi),
-        39 => frame.rax = rt.processes[slot].pid,
         24 => {
             frame.rax = 0;
             rt.processes[slot].frame = *frame;
@@ -3366,7 +3388,13 @@ pub extern "sysv64" fn linux_dispatch(frame: *mut CpuFrame) -> u64 {
             rt.finish(slot, (frame.rdi & 255) as i64);
             return 1;
         }
-        _ => frame.rax = linux::ENOSYS,
+        _ => {
+            frame.rax = linux::identity_syscall_result(
+                frame.rax,
+                rt.processes[slot].profile,
+                rt.processes[slot].pid,
+            )
+        }
     }
     0
 }

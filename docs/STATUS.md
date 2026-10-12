@@ -93,7 +93,7 @@ Evidence distinguishes host-tested primitives, boot smoke tests, integrated syst
 | SECTION-10.1 | VFS object model | partial | boot_smoke, host_tested, integrated |
 | SECTION-10.2 | Volume layout | partial | boot_smoke, host_tested, integrated |
 | SECTION-10.3 | NextFS design specification | partial | boot_smoke, host_tested, integrated |
-| SECTION-10.4 | Backup and restore | pending | none |
+| SECTION-10.4 | Backup and restore | partial | host_tested |
 | SECTION-11 | Networking and remote access | pending | none |
 | SECTION-11.1 | Architecture | partial | boot_smoke, host_tested, integrated |
 | SECTION-11.2 | Socket interface | partial | boot_smoke, host_tested, integrated |
@@ -102,7 +102,7 @@ Evidence distinguishes host-tested primitives, boot smoke tests, integrated syst
 | SECTION-12.1 | Audio service | partial | boot_smoke, host_tested |
 | SECTION-12.2 | Input and IME | partial | boot_smoke, host_tested |
 | SECTION-12.3 | Accessibility requirements | partial | boot_smoke, host_tested |
-| SECTION-12.4 | Display and capture privacy | pending | none |
+| SECTION-12.4 | Display and capture privacy | partial | host_tested |
 | SECTION-13 | Graphics stack and Prism compositor | pending | none |
 | SECTION-13.1 | Final graphics capability profiles | partial | boot_smoke, host_tested |
 | SECTION-13.2 | GPU architecture | pending | none |
@@ -165,7 +165,7 @@ Evidence distinguishes host-tested primitives, boot smoke tests, integrated syst
 | SECTION-23 | Desktop interactions, accessibility and internationalization | pending | none |
 | SECTION-23.1 | Unified interaction contract | partial | boot_smoke, host_tested, integrated |
 | SECTION-23.2 | Accessibility requirements | partial | boot_smoke, host_tested |
-| SECTION-23.3 | Localization and typography | pending | none |
+| SECTION-23.3 | Localization and typography | partial | boot_smoke, host_tested |
 | SECTION-24 | Virtualization, containers, developer environment and system interoperability | pending | none |
 | SECTION-24.1 | Next Hypervisor and VM manager | pending | none |
 | SECTION-24.2 | Next Containers | pending | none |

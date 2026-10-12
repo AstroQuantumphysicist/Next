@@ -62,6 +62,7 @@ def main():
 
     production = [
         ROOT / "crates/helix-kernel/src/network.rs",
+        ROOT / "crates/helix-kernel/src/network_dhcpv6.rs",
         ROOT / "crates/helix-kernel/src/network_ipv6.rs",
         ROOT / "crates/helix-kernel/src/network_runtime.rs",
         ROOT / "crates/helix-kernel/src/network_dhcp.rs",
@@ -79,6 +80,7 @@ def main():
             "Device::submit_transmit rejection before modifying device-owned static TX storage",
             "network runtime timeout retaining outstanding TX ownership",
             "network_ipv6::validate_ethernet_frame IPv6 and Neighbor Discovery ingress validation",
+            "network_dhcpv6::parse_message and Transaction option/lease-candidate validation plus the bounded Client transaction/timer state machine (host-tested only; no guest packet, address, DAD, or route integration)",
         ],
         "qemu_guest_verification": "not performed by this host harness",
         "source_sha256": {

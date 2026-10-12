@@ -536,6 +536,42 @@ impl<'a, D: WritableBlockDevice> Store<'a, D> {
         };
         self.commit(entries, Some((index, data)))
     }
+    /// Replace the complete bounded namespace in one COW transaction.
+    ///
+    /// All input paths, duplicates, file sizes, capacity, and write authority
+    /// are checked before the first device write. The replacement snapshot is
+    /// limited to the journal's eight files and existing path/data bounds.
+    #[cfg(any(test, feature = "host-backup"))]
+    pub fn replace_all(&mut self, files: &[(&str, &[u8])]) -> Result<(), Error<D::Error>> {
+        self.writable()?;
+        if files.len() > MAX_FILES {
+            return Err(Error::Full);
+        }
+
+        let mut entries = [Entry::EMPTY; MAX_FILES];
+        let mut replacements = [None; MAX_FILES];
+        for (index, (path, data)) in files.iter().enumerate() {
+            if *path == "/dirs" || path.starts_with("/dirs/") {
+                return Err(Error::InvalidPath);
+            }
+            let name = path_name(path).ok_or(Error::InvalidPath)?;
+            if data.len() > MAX_FILE_BYTES {
+                return Err(Error::TooLarge);
+            }
+            if entries[..index].iter().any(|entry| entry.info.name == name) {
+                return Err(Error::Exists);
+            }
+            entries[index] = Entry {
+                info: FileInfo {
+                    name,
+                    size: data.len() as u32,
+                },
+                crc: crc32(data),
+            };
+            replacements[index] = Some(*data);
+        }
+        self.commit_payloads(entries, replacements)
+    }
     pub fn remove(&mut self, path: &str) -> Result<(), Error<D::Error>> {
         self.writable()?;
         if path == "/dirs" || path.starts_with("/dirs/") {

@@ -5,7 +5,18 @@ use crate::desktop::Bounds;
 pub enum Zone {
     Left,
     Right,
+    TopLeft,
+    TopRight,
+    BottomLeft,
+    BottomRight,
     Maximize,
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Direction {
+    Up,
+    Down,
+    Left,
+    Right,
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Minimum {
@@ -16,6 +27,35 @@ pub struct Minimum {
 pub enum Error {
     InvalidGeometry,
     MinimumDoesNotFit,
+}
+/// Move through the bounded snap layout from an active keyboard preview.
+/// Missing neighbors intentionally leave the current preview untouched.
+pub const fn adjacent(zone: Zone, direction: Direction) -> Option<Zone> {
+    match (zone, direction) {
+        (Zone::Left, Direction::Up) => Some(Zone::TopLeft),
+        (Zone::Left, Direction::Down) => Some(Zone::BottomLeft),
+        (Zone::Left, Direction::Right) => Some(Zone::Right),
+        (Zone::Right, Direction::Up) => Some(Zone::TopRight),
+        (Zone::Right, Direction::Down) => Some(Zone::BottomRight),
+        (Zone::Right, Direction::Left) => Some(Zone::Left),
+        (Zone::TopLeft, Direction::Up) => Some(Zone::Maximize),
+        (Zone::TopLeft, Direction::Right) => Some(Zone::TopRight),
+        (Zone::TopLeft, Direction::Down) => Some(Zone::BottomLeft),
+        (Zone::TopLeft, Direction::Left) => Some(Zone::Left),
+        (Zone::TopRight, Direction::Up) => Some(Zone::Maximize),
+        (Zone::TopRight, Direction::Right) => Some(Zone::Right),
+        (Zone::TopRight, Direction::Down) => Some(Zone::BottomRight),
+        (Zone::TopRight, Direction::Left) => Some(Zone::TopLeft),
+        (Zone::BottomLeft, Direction::Up) => Some(Zone::TopLeft),
+        (Zone::BottomLeft, Direction::Right) => Some(Zone::BottomRight),
+        (Zone::BottomLeft, Direction::Left) => Some(Zone::Left),
+        (Zone::BottomRight, Direction::Up) => Some(Zone::TopRight),
+        (Zone::BottomRight, Direction::Right) => Some(Zone::Right),
+        (Zone::BottomRight, Direction::Left) => Some(Zone::BottomLeft),
+        (Zone::Maximize, Direction::Left) => Some(Zone::Left),
+        (Zone::Maximize, Direction::Right) => Some(Zone::Right),
+        _ => None,
+    }
 }
 fn valid(area: Bounds) -> bool {
     area.width > 0
@@ -31,6 +71,7 @@ pub fn target(area: Bounds, minimum: Minimum, zone: Zone) -> Result<Bounds, Erro
         return Err(Error::InvalidGeometry);
     }
     let split = area.width / 2;
+    let split_y = area.height / 2;
     let result = match zone {
         Zone::Left => Bounds {
             width: split,
@@ -41,6 +82,29 @@ pub fn target(area: Bounds, minimum: Minimum, zone: Zone) -> Result<Bounds, Erro
             width: area.width - split,
             ..area
         },
+        Zone::TopLeft => Bounds {
+            width: split,
+            height: split_y,
+            ..area
+        },
+        Zone::TopRight => Bounds {
+            x: area.x + split,
+            width: area.width - split,
+            height: split_y,
+            ..area
+        },
+        Zone::BottomLeft => Bounds {
+            y: area.y + split_y,
+            width: split,
+            height: area.height - split_y,
+            ..area
+        },
+        Zone::BottomRight => Bounds {
+            x: area.x + split,
+            y: area.y + split_y,
+            width: area.width - split,
+            height: area.height - split_y,
+        },
         Zone::Maximize => area,
     };
     if result.width < minimum.width || result.height < minimum.height {
@@ -49,7 +113,8 @@ pub fn target(area: Bounds, minimum: Minimum, zone: Zone) -> Result<Bounds, Erro
     Ok(result)
 }
 /// Pointer zones are finite and inside this work area; unrelated monitor
-/// positions cannot accidentally trigger a snap. Side edges precede the top.
+/// positions cannot accidentally trigger a snap. Corners take priority, then
+/// side edges and the top-center maximize zone.
 pub fn pointer_zone(area: Bounds, x: i32, y: i32, edge: i32) -> Option<Zone> {
     if !valid(area)
         || edge <= 0
@@ -60,15 +125,21 @@ pub fn pointer_zone(area: Bounds, x: i32, y: i32, edge: i32) -> Option<Zone> {
     {
         return None;
     }
-    let edge = edge.min(area.width / 2).min(area.height);
-    if x - area.x < edge {
-        Some(Zone::Left)
-    } else if area.x + area.width - x <= edge {
-        Some(Zone::Right)
-    } else if y - area.y < edge {
-        Some(Zone::Maximize)
-    } else {
-        None
+    let edge_x = edge.min((area.width / 2).max(1));
+    let edge_y = edge.min((area.height / 2).max(1));
+    let left = x - area.x < edge_x;
+    let right = area.x + area.width - x <= edge_x;
+    let top = y - area.y < edge_y;
+    let bottom = area.y + area.height - y <= edge_y;
+    match (left, right, top, bottom) {
+        (true, _, true, _) => Some(Zone::TopLeft),
+        (_, true, true, _) => Some(Zone::TopRight),
+        (true, _, _, true) => Some(Zone::BottomLeft),
+        (_, true, _, true) => Some(Zone::BottomRight),
+        (true, _, _, _) => Some(Zone::Left),
+        (_, true, _, _) => Some(Zone::Right),
+        (_, _, true, _) => Some(Zone::Maximize),
+        _ => None,
     }
 }
 #[derive(Clone, Copy, Debug)]
@@ -142,6 +213,34 @@ mod tests {
         assert_eq!(target(area, MIN, Zone::Maximize), Ok(area));
     }
     #[test]
+    fn odd_quadrants_tile_the_work_area_without_gaps_or_overlap() {
+        let area = Bounds {
+            x: 13,
+            y: 29,
+            width: 1009,
+            height: 653,
+        };
+        let zones = [
+            Zone::TopLeft,
+            Zone::TopRight,
+            Zone::BottomLeft,
+            Zone::BottomRight,
+        ];
+        let [tl, tr, bl, br] = zones.map(|zone| target(area, MIN, zone).unwrap());
+        assert_eq!(tl.x, area.x);
+        assert_eq!(tl.y, area.y);
+        assert_eq!(tl.x + tl.width, tr.x);
+        assert_eq!(tr.y, tl.y);
+        assert_eq!(bl.x, tl.x);
+        assert_eq!(bl.y, tl.y + tl.height);
+        assert_eq!(br.x, tr.x);
+        assert_eq!(br.y, bl.y);
+        assert_eq!(tr.x + tr.width, area.x + area.width);
+        assert_eq!(bl.y + bl.height, area.y + area.height);
+        assert_eq!(tl.width + tr.width, area.width);
+        assert_eq!(tl.height + bl.height, area.height);
+    }
+    #[test]
     fn minimum_and_overflow_fail_without_manufacturing_offscreen_bounds() {
         assert_eq!(
             target(
@@ -165,6 +264,62 @@ mod tests {
             },
             MIN,
             Zone::Right
+        )
+        .is_ok());
+        let quadrant_area = Bounds {
+            x: 0,
+            y: 0,
+            width: 480,
+            height: 288,
+        };
+        for zone in [
+            Zone::TopLeft,
+            Zone::TopRight,
+            Zone::BottomLeft,
+            Zone::BottomRight,
+        ] {
+            assert!(target(quadrant_area, MIN, zone).is_ok());
+        }
+        assert_eq!(
+            target(
+                Bounds {
+                    width: 480,
+                    height: 287,
+                    ..quadrant_area
+                },
+                MIN,
+                Zone::TopLeft
+            ),
+            Err(Error::MinimumDoesNotFit)
+        );
+        assert!(target(
+            Bounds {
+                width: 480,
+                height: 287,
+                ..quadrant_area
+            },
+            MIN,
+            Zone::BottomLeft
+        )
+        .is_ok());
+        assert_eq!(
+            target(
+                Bounds {
+                    width: 479,
+                    ..quadrant_area
+                },
+                MIN,
+                Zone::TopLeft
+            ),
+            Err(Error::MinimumDoesNotFit)
+        );
+        assert!(target(
+            Bounds {
+                width: 479,
+                ..quadrant_area
+            },
+            MIN,
+            Zone::TopRight
         )
         .is_ok());
         for area in [
@@ -219,10 +374,31 @@ mod tests {
         };
         assert_eq!(pointer_zone(area, 8, 100, 24), Some(Zone::Left));
         assert_eq!(pointer_zone(area, 1007, 100, 24), Some(Zone::Right));
+        assert_eq!(pointer_zone(area, 8, 68, 24), Some(Zone::TopLeft));
+        assert_eq!(pointer_zone(area, 1007, 68, 24), Some(Zone::TopRight));
+        assert_eq!(pointer_zone(area, 8, 667, 24), Some(Zone::BottomLeft));
+        assert_eq!(pointer_zone(area, 1007, 667, 24), Some(Zone::BottomRight));
         assert_eq!(pointer_zone(area, 500, 68, 24), Some(Zone::Maximize));
         for (x, y) in [(7, 100), (1008, 100), (500, 67), (500, 668), (500, 200)] {
             assert_eq!(pointer_zone(area, x, y, 24), None);
         }
+    }
+    #[test]
+    fn keyboard_neighbors_cover_quadrants_without_wrapping() {
+        assert_eq!(adjacent(Zone::Left, Direction::Up), Some(Zone::TopLeft));
+        assert_eq!(
+            adjacent(Zone::TopLeft, Direction::Right),
+            Some(Zone::TopRight)
+        );
+        assert_eq!(
+            adjacent(Zone::TopRight, Direction::Down),
+            Some(Zone::BottomRight)
+        );
+        assert_eq!(
+            adjacent(Zone::BottomRight, Direction::Left),
+            Some(Zone::BottomLeft)
+        );
+        assert_eq!(adjacent(Zone::BottomLeft, Direction::Down), None);
     }
     #[test]
     fn successful_geometries_obey_minimum_and_containment_across_sizes() {
@@ -234,7 +410,15 @@ mod tests {
                     width,
                     height,
                 };
-                for zone in [Zone::Left, Zone::Right, Zone::Maximize] {
+                for zone in [
+                    Zone::Left,
+                    Zone::Right,
+                    Zone::TopLeft,
+                    Zone::TopRight,
+                    Zone::BottomLeft,
+                    Zone::BottomRight,
+                    Zone::Maximize,
+                ] {
                     if let Ok(b) = target(area, MIN, zone) {
                         assert!(b.width >= MIN.width && b.height >= MIN.height);
                         assert!(b.x >= area.x && b.y >= area.y);

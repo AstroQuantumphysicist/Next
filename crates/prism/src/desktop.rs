@@ -753,6 +753,39 @@ mod tests {
         assert_eq!(d.snapped_zone(App::Terminal), None);
     }
     #[test]
+    fn quadrant_snap_preserves_restore_bounds_across_preview_cancel_switch_and_resize() {
+        let mut d = Desktop::new();
+        d.viewport(1281, 901);
+        let original = d.window(App::Terminal).bounds;
+        d.begin_snap(Zone::TopLeft).unwrap();
+        let top_left = d.snap_preview().unwrap().1;
+        assert_eq!(d.window(App::Terminal).bounds, original);
+        d.finish_snap(false);
+        assert_eq!(d.window(App::Terminal).bounds, original);
+
+        d.begin_snap(Zone::BottomRight).unwrap();
+        d.finish_snap(true);
+        assert_eq!(
+            d.window(App::Terminal).bounds,
+            snap::target(d.full(), Desktop::minimum(), Zone::BottomRight).unwrap()
+        );
+        assert_eq!(d.window(App::Terminal).restore, original);
+        d.begin_snap(Zone::TopLeft).unwrap();
+        assert_eq!(d.snap_preview().unwrap().1, top_left);
+        d.finish_snap(true);
+        assert_eq!(d.window(App::Terminal).restore, original);
+
+        d.viewport(1400, 1000);
+        assert_eq!(d.snapped_zone(App::Terminal), Some(Zone::TopLeft));
+        assert_eq!(
+            d.window(App::Terminal).bounds,
+            snap::target(d.full(), Desktop::minimum(), Zone::TopLeft).unwrap()
+        );
+        d.action(Action::Restore);
+        assert_eq!(d.window(App::Terminal).bounds, d.clamp(original));
+        assert_eq!(d.snapped_zone(App::Terminal), None);
+    }
+    #[test]
     fn pointer_edges_preview_release_apply_and_viewport_reflows_or_unsnaps() {
         let mut d = Desktop::new();
         let original = d.window(App::Terminal).bounds;
@@ -772,6 +805,21 @@ mod tests {
                 && bounds.y >= 0
                 && bounds.x + bounds.width <= 320
                 && bounds.y + bounds.height <= 240
+        );
+    }
+    #[test]
+    fn pointer_corner_drag_previews_and_applies_quadrant_snap() {
+        let mut d = Desktop::new();
+        let original = d.window(App::Terminal).bounds;
+        d.pointer(Pointer::Down(original.x + 100, original.y + 10));
+        d.pointer(Pointer::Move(8, 68));
+        assert_eq!(d.preview_zone(), Some(Zone::TopLeft));
+        d.pointer(Pointer::Up);
+        assert_eq!(d.snapped_zone(App::Terminal), Some(Zone::TopLeft));
+        assert_eq!(d.window(App::Terminal).restore, original);
+        assert_eq!(
+            d.window(App::Terminal).bounds,
+            snap::target(d.full(), Desktop::minimum(), Zone::TopLeft).unwrap()
         );
     }
 }

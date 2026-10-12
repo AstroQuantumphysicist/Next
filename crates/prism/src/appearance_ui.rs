@@ -64,7 +64,10 @@ impl AppearanceUi {
         if self.pending.is_some() {
             return Err(Error::Busy);
         }
-        if loaded.preferences.text_scale != TextScale::Percent100 {
+        if !matches!(
+            loaded.preferences.text_scale,
+            TextScale::Percent100 | TextScale::Percent125
+        ) {
             self.status = Status::UnsupportedScale;
             return Err(Error::UnsupportedScale);
         }
@@ -110,6 +113,15 @@ impl AppearanceUi {
     pub fn choose_focus_indicator(&mut self, focus_indicator: FocusIndicator) -> Result<(), Error> {
         self.editable()?;
         self.draft.focus_indicator = focus_indicator;
+        self.status = Status::Unsaved;
+        Ok(())
+    }
+    pub fn choose_text_scale(&mut self, text_scale: TextScale) -> Result<(), Error> {
+        self.editable()?;
+        if !matches!(text_scale, TextScale::Percent100 | TextScale::Percent125) {
+            return Err(Error::UnsupportedScale);
+        }
+        self.draft.text_scale = text_scale;
         self.status = Status::Unsaved;
         Ok(())
     }
@@ -241,5 +253,43 @@ mod tests {
         assert_eq!(ui.active().focus_indicator, FocusIndicator::Standard);
         assert!(ui.saved(request.id, true));
         assert_eq!(ui.active().focus_indicator, FocusIndicator::Strong);
+    }
+    #[test]
+    fn bounded_settings_text_scale_is_draft_until_save_and_survives_reload() {
+        let mut ui = AppearanceUi::new();
+        ui.set_loaded(Loaded {
+            preferences: Preferences::default(),
+            origin: crate::appearance::Origin::MissingDefault,
+        })
+        .unwrap();
+
+        ui.choose_text_scale(TextScale::Percent125).unwrap();
+        assert_eq!(ui.active().text_scale, TextScale::Percent100);
+        assert_eq!(ui.draft().text_scale, TextScale::Percent125);
+        ui.apply().unwrap();
+        let failed = ui.take_request().unwrap();
+        assert_eq!(failed.preferences.text_scale, TextScale::Percent125);
+        assert_eq!(ui.active().text_scale, TextScale::Percent100);
+        assert!(ui.saved(failed.id, false));
+        assert_eq!(ui.active().text_scale, TextScale::Percent100);
+        assert_eq!(ui.draft().text_scale, TextScale::Percent125);
+
+        ui.apply().unwrap();
+        let committed = ui.take_request().unwrap();
+        assert_eq!(committed.preferences.text_scale, TextScale::Percent125);
+        assert!(ui.saved(committed.id, true));
+        assert_eq!(ui.active().text_scale, TextScale::Percent125);
+        let mut reloaded = AppearanceUi::new();
+        reloaded
+            .set_loaded(Loaded {
+                preferences: ui.active(),
+                origin: crate::appearance::Origin::Persisted,
+            })
+            .unwrap();
+        assert_eq!(reloaded.active().text_scale, TextScale::Percent125);
+        assert_eq!(
+            reloaded.choose_text_scale(TextScale::Percent150),
+            Err(Error::UnsupportedScale)
+        );
     }
 }

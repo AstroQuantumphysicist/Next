@@ -321,10 +321,16 @@ pub fn stdout_open(slot: usize, generation: u64, fd: u64) -> bool {
     })
     .unwrap_or(false)
 }
-pub fn seek(slot: usize, generation: u64, fd: u64, offset: i64, origin: u64) -> Result<u64, u64> {
+/// Linux x86-64 syscall 8 for the bounded regular files in this adapter.
+///
+/// Keep the arithmetic at the Linux ABI boundary so signed overflow gets the
+/// Linux `EOVERFLOW` result, while a negative resulting position and an
+/// unsupported whence retain `EINVAL`. The underlying file cache still owns
+/// the final bounded-offset check and descriptor offset update.
+pub fn lseek(slot: usize, generation: u64, fd: u64, offset: i64, whence: u64) -> Result<u64, u64> {
     with_owner(slot, generation, |owner| {
         if fd == 0 {
-            return if owner.stdin && origin <= 2 {
+            return if owner.stdin && whence <= 2 {
                 Ok(0)
             } else if owner.stdin {
                 Err(errno(22))
@@ -335,13 +341,29 @@ pub fn seek(slot: usize, generation: u64, fd: u64, offset: i64, origin: u64) -> 
         let (stream, _) = owner.fds.get(fd).map_err(fd_error)?;
         match stream.object {
             StreamObject::NullInput => {
-                if origin <= 2 {
+                if whence <= 2 {
                     Ok(0)
                 } else {
                     Err(errno(22))
                 }
             }
-            StreamObject::File(handle) => file::seek(handle, offset, origin).map_err(status),
+            StreamObject::File(handle) => {
+                let (length, current) = file::info(handle).map_err(status)?;
+                let base = match whence {
+                    0 => 0,
+                    1 => current,
+                    2 => length,
+                    _ => return Err(errno(22)),
+                };
+                let base = i64::try_from(base).map_err(|_| linux::EOVERFLOW)?;
+                let next = base.checked_add(offset).ok_or(linux::EOVERFLOW)?;
+                if next < 0 {
+                    return Err(errno(22));
+                }
+                // `file::seek` enforces FILE_BYTES and atomically publishes
+                // the new offset only after all checks have passed.
+                file::seek(handle, next, 0).map_err(status)
+            }
         }
     })
 }

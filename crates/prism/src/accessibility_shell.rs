@@ -586,7 +586,7 @@ impl Shell {
                             } else if section.category
                                 == settings_catalog::Category::Accessibility
                             {
-                                "Unavailable in this build; only the Settings focus outline preference is active."
+                                "Unavailable in this build; only Settings text size and focus outline preferences are active."
                             } else {
                                 "Unavailable in this build; no action is enabled."
                             },
@@ -604,7 +604,7 @@ impl Shell {
                         "Settings section availability",
                         match (section.category, section.state) {
                             (settings_catalog::Category::Appearance, settings_catalog::State::Available) => "Theme and accent preferences are available.",
-                            (settings_catalog::Category::Accessibility, settings_catalog::State::Available) => "The keyboard focus outline preference is available.",
+                            (settings_catalog::Category::Accessibility, settings_catalog::State::Available) => "Settings text size and keyboard focus outline preferences are available.",
                             (_, settings_catalog::State::Available) => "Settings are available.",
                             (_, settings_catalog::State::ReadOnly) => "Read-only system diagnostics are available; configuration is unavailable.",
                             (_, settings_catalog::State::Unavailable) => "This settings provider is not connected.",
@@ -616,8 +616,16 @@ impl Shell {
                         41,
                         None,
                         Role::Status,
-                        "Text size",
-                        "100 percent; scaling controls are unavailable",
+                        "Settings text size",
+                        match self.active_appearance().text_scale {
+                            appearance::TextScale::Percent100 => {
+                                "100 percent; applied to Settings text."
+                            }
+                            appearance::TextScale::Percent125 => {
+                                "125 percent; applied to Settings text."
+                            }
+                            _ => "Unsupported stored value; no text scaling is applied.",
+                        },
                         None,
                         state,
                     )?;
@@ -687,7 +695,7 @@ impl Shell {
             (5, 3..=4) => self.appearance_control_bounds(2, (local - 3) as usize),
             (5, 5) => Some(self.settings_diagnostics_bounds()),
             (5, 10..=21) => self.settings_category_bounds((local - 10) as usize),
-            (5, 22..=25) => self.accessibility_control_bounds((local - 22) as usize),
+            (5, 22..=27) => self.accessibility_control_bounds((local - 22) as usize),
             (3 | 7, 1) => {
                 let b = self.file_dialog_bounds();
                 Some(Bounds {
@@ -719,7 +727,7 @@ impl Shell {
         }
     }
     fn accessible_focus_controls(&self, out: &mut Snapshot, scope: u32) -> Result<(), Error> {
-        for local in 1..=25 {
+        for local in 1..=27 {
             if let Some(focus) = self
                 .file_focus
                 .state(keyboard_focus::ControlId { scope, local })
@@ -754,6 +762,8 @@ impl Shell {
                         },
                         (5, 22) => "Standard",
                         (5, 23) => "Strong",
+                        (5, 24) => "100 percent",
+                        (5, 25) => "125 percent",
                         (3, 1) => self.file_dialog.input(),
                         (7, 1) => self.trash.input(),
                         _ => "",
@@ -769,7 +779,13 @@ impl Shell {
                                     == appearance::FocusIndicator::Standard)
                             || ((scope, local) == (5, 23)
                                 && self.appearance.draft().focus_indicator
-                                    == appearance::FocusIndicator::Strong),
+                                    == appearance::FocusIndicator::Strong)
+                            || ((scope, local) == (5, 24)
+                                && self.appearance.draft().text_scale
+                                    == appearance::TextScale::Percent100)
+                            || ((scope, local) == (5, 25)
+                                && self.appearance.draft().text_scale
+                                    == appearance::TextScale::Percent125),
                         checked: c.checked,
                         busy: false,
                     },

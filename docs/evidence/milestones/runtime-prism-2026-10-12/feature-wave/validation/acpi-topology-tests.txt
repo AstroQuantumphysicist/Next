@@ -1,0 +1,14 @@
+
+running 10 tests
+test tests::duplicate_apic_ids_and_processor_uids_are_rejected_across_madt_formats ... ok
+test tests::cpu_roster_accepts_its_bounded_capacity_and_rejects_the_next_record ... ok
+test tests::duplicate_roots_cpus_and_bad_madt_sizes_are_rejected ... ok
+test tests::discovers_multiple_enabled_and_disabled_cpu_records_without_starting_aps ... ok
+test tests::enabled_cpu_identity_and_count_match_common_qemu_profiles ... ok
+test tests::interrupt_reserved_encodings_and_hpet_gas_are_checked ... ok
+test tests::rsdt_v1_and_bounded_unknown_madt_entries_are_supported ... ok
+test tests::physical_ranges_require_retained_acpi_coverage_without_gaps ... ok
+test tests::valid_xsdt_topology_and_hpet_are_discovered ... ok
+test tests::wrong_checksums_lengths_and_root_pointers_fail_closed ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s

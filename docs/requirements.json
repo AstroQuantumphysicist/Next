@@ -2,7 +2,7 @@
   "schema": 1,
   "spec_sha256": "248a4f8c44f6c54e91dcf548ffeb0fb1e83c72dc2e378870f6315e6ca1592a22",
   "product_ready": false,
-  "note": "2026-10-12 feature wave: scheduler-backed event waits, including event-only wait-any, and Linux positional file I/O pass QEMU; Prism has nine guest-captured screens and 12 Settings categories. DHCP guest T1/T2 renewal/rebind, NAK recovery, and expiry recovery have controlled-peer QEMU evidence. Static virtio-net DMA ownership, CPU topology parsing, NextFS directory serialization, channel benchmarking, panic-header formatting, and the full workspace suite have scoped host evidence. 78 pending, 117 partial, 0 verified; product_ready=false. No physical hardware certification.",
+  "note": "2026-10-12 feature wave on current signed development image f4986796\u2026: Prism Settings supports persisted 100%/125% text size; snap, backup archive, capture-consent policy, installer-root, DHCPv6 state, Linux syscall contracts, and ACPI topology each have bounded tests/evidence. Current QEMU topology profiles cover 1/2/4/8 configured CPUs with APs stopped. 74 pending, 121 partial, 0 verified; product_ready=false. This is not Next 1.0 or hardware certification.",
   "requirements": [
     {
       "id": "NEXT-BOOT-001",
@@ -323,7 +323,7 @@
           "command": "source tools/env.sh && cargo test -p next-fs",
           "scope": "41 host tests include immediate Busy on same-context and concurrent MutationLock contention, guard release, and concurrent directory-operation stress. docs/KERNEL-LOCKS.md records observed nesting order and audits the current non-waiting timer/try-only guard paths. This is bounded host/source evidence, not guest IRQ or SMP validation.",
           "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/nextfs-tests.txt",
-          "sha256": "b3e3acab27e1e78c3eb3e3830b33612389574b760a301a7c7af000c8dff64a5f"
+          "sha256": "3cfd6194ccc49e45504ef95ddc484b1e58e0a7ed31d92351c6c8e7c5577d4348"
         }
       ],
       "remaining": "Per-core state and an interrupt-priority policy are not explicit; the current kernel services are serialized by a one-CPU entry model. The lock note covers only observed nesting and present IRQ paths, with no global rank checker, complete IRQ call-graph audit, AP/SMP lock discipline, or guest/hardware validation."
@@ -574,9 +574,44 @@
           "scope": "On the same signed image as the qemu64 gallery, QMP reports two configured virtual CPUs and ACPI/MADT discovery validates two enabled processor entries. AP startup remains disabled, the trampoline stays reserved, and scheduler scope remains BSP only; this is not multicore scheduling/stress.",
           "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/smp-two-vcpu/boot-smoke.json",
           "sha256": "96873a0e21670fbf8484951454246a4f3ee7938e097fc1c28fe5302e02021ab2"
+        },
+        {
+          "level": "host_tested",
+          "command": "bash tools/test-acpi-topology.sh",
+          "scope": "Ten host ACPI parser tests cover exact enabled CPU identities and synthetic 1/2/4/8-entry MADT rosters, malformed/duplicate entries, and bounded capacity. Parsing does not start APs.",
+          "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/feature-wave/validation/acpi-topology-tests.txt",
+          "sha256": "d4f3a3a462dc9c294bccbfbc57c2f0729a60f23b7b2e8f2e432352e1b3ce0efa"
+        },
+        {
+          "level": "boot_smoke",
+          "command": "source tools/env.sh && python3 tools/boot_smoke.py --smp 1 --timeout 600 --output-dir build/final-image-qemu64",
+          "scope": "Current image SHA256 f4986796\u2026; 120 checks passed with 1 QMP CPU object(s) and 1 enabled ACPI/MADT CPUs. APs remain stopped, reservations retained, and scheduler scope remains the BSP.",
+          "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/feature-wave/qemu64/boot-smoke.json",
+          "sha256": "83a51ea215b57d750e3da5f108336849bd8de27cd48626ab1bf6087806e8cf35"
+        },
+        {
+          "level": "boot_smoke",
+          "command": "source tools/env.sh && python3 tools/boot_smoke.py --smp 2 --timeout 600 --output-dir build/final-image-smp2",
+          "scope": "Current image SHA256 f4986796\u2026; 119 checks passed with 2 QMP CPU object(s) and 2 enabled ACPI/MADT CPUs. APs remain stopped, reservations retained, and scheduler scope remains the BSP.",
+          "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/feature-wave/smp/smp-2/boot-smoke.json",
+          "sha256": "7a138613fe6c3305d2092d15e6e4c29c322debdad282ab3326de9c8ffec07dbf"
+        },
+        {
+          "level": "boot_smoke",
+          "command": "source tools/env.sh && python3 tools/boot_smoke.py --smp 4 --timeout 600 --output-dir build/final-image-smp4",
+          "scope": "Current image SHA256 f4986796\u2026; 119 checks passed with 4 QMP CPU object(s) and 4 enabled ACPI/MADT CPUs. APs remain stopped, reservations retained, and scheduler scope remains the BSP.",
+          "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/feature-wave/smp/smp-4/boot-smoke.json",
+          "sha256": "bb333c20c06da57ad3334628d36b9708532d78af451e01ac33b8945ba2ecd138"
+        },
+        {
+          "level": "boot_smoke",
+          "command": "source tools/env.sh && python3 tools/boot_smoke.py --smp 8 --timeout 600 --output-dir build/final-image-smp8",
+          "scope": "Current image SHA256 f4986796\u2026; 119 checks passed with 8 QMP CPU object(s) and 8 enabled ACPI/MADT CPUs. APs remain stopped, reservations retained, and scheduler scope remains the BSP.",
+          "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/feature-wave/smp/smp-8/boot-smoke.json",
+          "sha256": "ee3a6977b84296e2d728b3fb17a259b50614278f72a46c61eebec53fbdd6d7c3"
         }
       ],
-      "remaining": "The parser and a two-vCPU QEMU run discover two configured processors without starting APs. The roster is statically bounded at 16 records; larger tables fail closed. CPU hotplug, AP startup, and topology behavior on physical hardware remain unvalidated."
+      "remaining": "The bounded parser accepts exact synthetic 1/2/4/8 CPU rosters; current-image QEMU QMP and ACPI/MADT counts match at 1/2/4/8 vCPUs. AP startup, cross-core synchronization, SMP scheduling, CPU hotplug, larger physical topologies and hardware validation remain unimplemented or unvalidated."
     },
     {
       "id": "NEXT-OBJ-001",
@@ -867,7 +902,7 @@
           "command": "source tools/env.sh && cargo test -p next-fs --lib",
           "scope": "42 host tests pass, including deadline-bound rendezvous failure when a worker misses a phase, concurrent directory open/rename/unlink progress, stale identity rejection, and mutation-lock reentrancy. No guest SMP or physical-disk stress.",
           "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/nextfs-tests.txt",
-          "sha256": "b3e3acab27e1e78c3eb3e3830b33612389574b760a301a7c7af000c8dff64a5f"
+          "sha256": "3cfd6194ccc49e45504ef95ddc484b1e58e0a7ed31d92351c6c8e7c5577d4348"
         }
       ],
       "remaining": "A nonblocking mutation lock and host directory-race tests cover bounded journal operations, including a harness that fails within a deadline if one worker misses a rendezvous phase. Guest SMP, asynchronous filesystem callers, and power-loss behavior under concurrent mutation remain unvalidated."
@@ -890,10 +925,17 @@
           "command": "source tools/env.sh && cargo test --locked --offline -p next-package --features host-tools",
           "scope": "42 package tests include rejection of file/directory prefix collisions before staging, case-alias and metadata-limit checks, and proof that rejected archives do not mutate existing outputs. Host installer only; hostile-ancestor races and guest installation are not covered.",
           "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/package-host-tests.txt",
-          "sha256": "8532d15ca24dd8b8de862c9cbb170a12f3a7786cbf807858c46819cd3b7acc5e"
+          "sha256": "f73c3280ef40f538a2328053b055e32f3ec22c4df63a88efe1ce78d1908a45cc"
+        },
+        {
+          "level": "host_tested",
+          "command": "source tools/env.sh && cargo test --locked --offline -p next-package --features host-tools",
+          "scope": "47 host-tool tests include rejection of symlinked root components and a race test proving replacement of a visible ancestor after the installer opens its pinned root descriptor cannot redirect writes. Tested on Linux; mutations inside the private root and guest install authority are outside this guarantee.",
+          "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/feature-wave/validation/package-host-tests.txt",
+          "sha256": "0f3f87d521710acc20001a6b0931bb51d7c9a1f1deff69ade1a328f63c569a9f"
         }
       ],
-      "remaining": "Canonical bounded metadata and host extraction reject traversal, aliases, links, file/directory prefix conflicts and oversized metadata before exposure. Guest extraction authority, hostile-ancestor/race defense, hardlink/special-file semantics for general archives, and complete root-confinement coverage remain absent."
+      "remaining": "Host installer tests reject traversal and symlinked destination components and pin the opened root against ancestor replacement. Guest extraction authority, hostile mutation within the private root, other Unix descriptor-path behavior, and generalized archive hardlink/special-file semantics remain unvalidated."
     },
     {
       "id": "NEXT-PKG-002",
@@ -2029,9 +2071,17 @@
       "id": "SECTION-10.4",
       "kind": "section",
       "text": "Backup and restore",
-      "status": "pending",
-      "evidence": [],
-      "remaining": "Implement and validate the complete specification contract."
+      "status": "partial",
+      "evidence": [
+        {
+          "level": "host_tested",
+          "command": "source tools/env.sh && cargo test --locked --offline -p next-fs --features host-backup --lib",
+          "scope": "53 host tests cover bounded archive export/import, SHA-256 preflight, reserved-path rejection and one-transaction journal restore. Fault injection before and after all 69 write/flush operations recovers a complete old or new namespace. Host/test gated; no destination picker, encryption, signed archive, external-media service or Prism workflow.",
+          "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/feature-wave/validation/backup-tests.txt",
+          "sha256": "ff777835b9e0d830c5749581fb2a0c910f674322a3f5898bcaa30835c3821331"
+        }
+      ],
+      "remaining": "The bounded unsigned host/test archive codec and one-transaction journal restore bridge are tested. User-selected destinations, local snapshot/version browsing, incremental history, encrypted external backups, device-failure protection, a backup UI/service, and full NextFS remain unimplemented."
     },
     {
       "id": "SECTION-11",
@@ -2155,9 +2205,16 @@
           "scope": "56 production-source host tests cover virtio queue ownership and bounded IPv6/ICMPv6/NDP/Router Advertisement parsing with one router/four prefix candidates and lifetime validation. Host-modeled only; no IPv6 guest, address assignment, DAD, neighbor cache, routes or DHCPv6.",
           "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/network-dma-host.json",
           "sha256": "19da717cd6acb5a63ae96a0fde9fe7d343b7077808c9ead045b364931535ba62"
+        },
+        {
+          "level": "host_tested",
+          "command": "source tools/env.sh && python3 tools/test-network-dma.py",
+          "scope": "78 host tests exercise production network queue/DMA and IPv6 ingress code, including a bounded DHCPv6 packet parser and client transaction/lease state model. The harness does not send DHCPv6 packets or install an IPv6 address, perform DAD, or configure routes in the guest.",
+          "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/feature-wave/validation/network-dma-host.json",
+          "sha256": "de3d16efa999e2624e9b848a2158bb9279e67a55d37fcfb3568329ee88660f81"
         }
       ],
-      "remaining": "IPv4 DHCP acquisition/renewal and bounded TCP/UDP/DNS probes have scoped guest and host evidence. IPv6 receive validation and RA prefix/router lifetime parsing are host-tested only; address assignment, DAD, neighbor cache, routes, DHCPv6, TLS integration, firewall policy and broad interoperability remain absent or unvalidated."
+      "remaining": "IPv4 DHCP renewal/rebind and bounded TCP/UDP/DNS probes have guest/host evidence. IPv6 ingress, RA lifetimes and DHCPv6 state transitions have host-only tests; IPv6 address assignment, DAD, neighbor cache, routes, firewall, TLS integration, reconnect behavior and broad interoperability remain absent or unvalidated."
     },
     {
       "id": "SECTION-12",
@@ -2238,7 +2295,7 @@
           "command": "source tools/env.sh && bash tools/test-appearance-journal.sh",
           "scope": "43 host crash-boundary tests compile the production Appearance preference codec/save path and COW journal. The Standard/Strong focus-outline choice shares the checksummed record and changes active state only after commit; no external assistive technology transport is tested.",
           "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/appearance-journal-tests.txt",
-          "sha256": "0beda3bbbe68dba3df3e5643636d53e8d0989b048848b58ccd20e22341b7af2d"
+          "sha256": "bfead2de8ab6e49749c0dd2957015729930cc04d4be8b6d1288330580cd0a5a4"
         },
         {
           "level": "boot_smoke",
@@ -2246,17 +2303,39 @@
           "scope": "Actual QMP keyboard navigation opens Accessibility Settings, selects Strong outline, triggers Save and waits for an accepted kernel commit record before capturing a completed guest frame. This proves the bounded Settings interaction in this QEMU run, not screen-reader support, general focus contrast, physical display behavior, or accessibility certification.",
           "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/final-qemu64/prism-settings-accessibility.png",
           "sha256": "0621c24e3511ecef21ababe6cd9ce3405f8b14ce7bae055b0fdd1effed752cd8"
+        },
+        {
+          "level": "host_tested",
+          "command": "source tools/env.sh && cargo test --locked --offline -p prism",
+          "scope": "212 Prism host tests cover the persisted focus-outline and Settings-only 100%/125% text-size controls, renderer fitting/metrics, navigation, and bounded capture-consent policy. No full screen-reader, speech, braille, alternative input, global scaling or accessibility certification claim.",
+          "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/feature-wave/validation/prism-tests.txt",
+          "sha256": "7f98ecddb8754209237f1acf38dbff7441254e4497f5b82bdddf197d876bcf32"
+        },
+        {
+          "level": "boot_smoke",
+          "command": "source tools/env.sh && bash tools/build.sh && python3 tools/boot_smoke.py --timeout 360 --capture-prism-gallery --output-dir build/final-image-qemu64",
+          "scope": "On the current signed development image, keyboard navigation saves the Strong focus outline and 125% Settings-only text preference; the harness captures the completed 1280x800 guest frame after the accepted save. This is not global/app scaling or accessibility certification.",
+          "artifact": "docs/images/prism-settings-text-scale.png",
+          "sha256": "1119c9c392828e221dde88bb0cf1886662949550ebef402a8464755c4469780f"
         }
       ],
-      "remaining": "One persisted Settings-only focus-outline choice and its keyboard/save path are covered by host crash tests and a QEMU screenshot. Screen-reader/speech/braille, magnifier, external accessibility API, accessible login/installer/recovery, native/foreign application trees, scalable typography, reduced motion/transparency, and certification remain unfinished."
+      "remaining": "Full keyboard navigation and accessible semantics remain incomplete beyond the covered shell controls. Settings supports a persisted focus outline and 100%/125% text scaling only within Settings. Screen-reader infrastructure, speech, braille, alternative input, accessible login/installer/recovery, magnifier, reduced motion, system-wide font scaling, 150%/200% choices and assistive-technology acceptance remain unimplemented."
     },
     {
       "id": "SECTION-12.4",
       "kind": "section",
       "text": "Display and capture privacy",
-      "status": "pending",
-      "evidence": [],
-      "remaining": "Implement and validate the complete specification contract."
+      "status": "partial",
+      "evidence": [
+        {
+          "level": "host_tested",
+          "command": "source tools/env.sh && cargo test --locked --offline -p prism capture_privacy",
+          "scope": "Six host tests cover metadata-only source previews, explicit deny/one-shot/session decisions, app+source-generation binding, one-shot consumption, revocation and bounded fail-closed capacity. The policy receives no screen pixels and is not connected to a compositor or capture UI.",
+          "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/feature-wave/validation/capture-privacy-tests.txt",
+          "sha256": "1efc31352824730ebe8f85272048178b58c05726b0af430bc712010c4106e0b7"
+        }
+      ],
+      "remaining": "No compositor capture path invokes this policy; there is no trusted source-preview renderer, persisted per-app consent UI, camera/microphone access indicator, or underlying permission-service enforcement. System-level display, camera and microphone privacy is not established."
     },
     {
       "id": "SECTION-13",
@@ -2360,7 +2439,7 @@
     {
       "id": "SECTION-14",
       "kind": "section",
-      "text": "Prism user experience — visual and behavioral specification",
+      "text": "Prism user experience \u2014 visual and behavioral specification",
       "status": "pending",
       "evidence": [],
       "remaining": "Implement and validate the complete specification contract."
@@ -2435,9 +2514,23 @@
           "scope": "Real GUI two-boot120create/117verify on exact60ab: retained Files/Appearance persistence gate plus Super Home/search/app shortcuts, pending terminal command preservation, committed conditional Copy cancellation/overwrite/source retention, and dirty AltF4 Cancel/Save/Discard checked against actual journal bytes. Copy test files are removed before reboot, so this does not establish copied-file reboot persistence. Initial Escape-to-Home harness assumption failure is retained separately.",
           "artifact": "docs/evidence/milestones/60ab816c97cc/shortcuts-copy/files-appearance.json",
           "sha256": "0da6e86bbb70560ac256efe005f1a5aeece86a728b6d626cd4cae0cfa7426aec"
+        },
+        {
+          "level": "host_tested",
+          "command": "source tools/env.sh && cargo test --locked --offline -p prism",
+          "scope": "212 Prism tests cover four corner zones, half splits, odd-sized geometry, minimum-size refusal, cancel/restore and keyboard navigation.",
+          "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/feature-wave/validation/prism-tests.txt",
+          "sha256": "7f98ecddb8754209237f1acf38dbff7441254e4497f5b82bdddf197d876bcf32"
+        },
+        {
+          "level": "boot_smoke",
+          "command": "source tools/env.sh && bash tools/build.sh && python3 tools/boot_smoke.py --timeout 360 --capture-prism-gallery --output-dir build/final-image-qemu64",
+          "scope": "The current-image QEMU smoke uses actual PS/2 Super+arrow input to preview and apply BottomLeft, cancel another zone, maximize and restore. The 1280x800 screenshot shows Terminal in the single work-area quadrant with Editor behind it.",
+          "artifact": "docs/images/prism-snap-quadrant.png",
+          "sha256": "93555466d9a0f5226baba1c0ec1efc516d3b73f9f16b85b2e679249f3805e148"
         }
       ],
-      "remaining": "Tenth has trusted kernel-hosted panels, persistent theme/accent at scale100, real GUI create/edit/rename/permanent-delete/conditional-copy confirmations and actual Super/AltF4 routing. Original signed native surface pixels are immutably copied into trusted previews with readable authenticated origin and lifecycle cleanup. Client input and cooperative close are later source, not this image. User compositor isolation, general tabs/directories/workspaces, Trash, Unicode shaping/screen readers, full apps/settings and capture policy remain incomplete."
+      "remaining": "The kernel-hosted single-work-area shell and four-corner snap preview/restore are exercised. User compositor isolation, independent applications, multi-monitor/workspace topology, dynamic display layout and full production window management remain incomplete."
     },
     {
       "id": "SECTION-14.3",
@@ -2579,9 +2672,23 @@
           "scope": "120 total qemu64 assertions on tenth60ab: genuine signed native surface producer PID43 exits49, bounded immutable CPU-copy pixels visibly presented with trusted origin caption and exact teardown, native DNS and baseline foundations. No client input, close protocol, isolated compositor, full UI toolkit or production capture policy.",
           "artifact": "docs/evidence/milestones/60ab816c97cc/boot-smoke.json",
           "sha256": "a7c81fb6577f48559ff2b2013c12b9c113813faeb299fd8f8cabe0c56526d29b"
+        },
+        {
+          "level": "host_tested",
+          "command": "source tools/env.sh && cargo test --locked --offline -p prism",
+          "scope": "212 Prism tests cover four corner zones, half splits, odd-sized geometry, minimum-size refusal, cancel/restore and keyboard navigation.",
+          "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/feature-wave/validation/prism-tests.txt",
+          "sha256": "7f98ecddb8754209237f1acf38dbff7441254e4497f5b82bdddf197d876bcf32"
+        },
+        {
+          "level": "boot_smoke",
+          "command": "source tools/env.sh && bash tools/build.sh && python3 tools/boot_smoke.py --timeout 360 --capture-prism-gallery --output-dir build/final-image-qemu64",
+          "scope": "The current-image QEMU smoke uses actual PS/2 Super+arrow input to preview and apply BottomLeft, cancel another zone, maximize and restore. The 1280x800 screenshot shows Terminal in the single work-area quadrant with Editor behind it.",
+          "artifact": "docs/images/prism-snap-quadrant.png",
+          "sha256": "93555466d9a0f5226baba1c0ec1efc516d3b73f9f16b85b2e679249f3805e148"
         }
       ],
-      "remaining": "Four original kernel-hosted development panels, launcher/window controls, keyboard/mouse interaction and synchronized rendered output are implemented. Complete Prism apps/search/workspaces, typography/Unicode/themes, persistent settings, accessibility/privacy portals, animation and performance acceptance remain absent."
+      "remaining": "The current documented default shortcuts and snap navigation have bounded tests and guest interaction evidence. Full application shortcut coverage, remapping, IME/layout interaction, independent app surfaces and desktop-wide accessibility remain incomplete."
     },
     {
       "id": "SECTION-14.5",
@@ -2660,14 +2767,35 @@
           "scope": "119 actual assertions; eight F9 readbacks bind last complete frame, names/roles/geometry/selection/focus, Tab/no-mutation, trusted portal and query modal restoration. Manual local metadata only; no external speech/transport/application trees or accessibility certification.",
           "artifact": "docs/evidence/milestones/75b7eee4a19b/accessibility/boot-smoke.json",
           "sha256": "128b8a13096fb08e69203c23b61f953bc693e89a7697fe416066acea1ddcbab7"
+        },
+        {
+          "level": "host_tested",
+          "command": "source tools/env.sh && cargo test --locked --offline -p prism",
+          "scope": "212 Prism host tests cover the persisted focus-outline and Settings-only 100%/125% text-size controls, renderer fitting/metrics, navigation, and bounded capture-consent policy. No full screen-reader, speech, braille, alternative input, global scaling or accessibility certification claim.",
+          "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/feature-wave/validation/prism-tests.txt",
+          "sha256": "7f98ecddb8754209237f1acf38dbff7441254e4497f5b82bdddf197d876bcf32"
+        },
+        {
+          "level": "boot_smoke",
+          "command": "source tools/env.sh && bash tools/build.sh && python3 tools/boot_smoke.py --timeout 360 --capture-prism-gallery --output-dir build/final-image-qemu64",
+          "scope": "On the current signed development image, keyboard navigation saves the Strong focus outline and 125% Settings-only text preference; the harness captures the completed 1280x800 guest frame after the accepted save. This is not global/app scaling or accessibility certification.",
+          "artifact": "docs/images/prism-settings-text-scale.png",
+          "sha256": "1119c9c392828e221dde88bb0cf1886662949550ebef402a8464755c4469780f"
+        },
+        {
+          "level": "boot_smoke",
+          "command": "source tools/env.sh && bash tools/build.sh && python3 tools/boot_smoke.py --timeout 360 --capture-prism-gallery --output-dir build/final-image-qemu64",
+          "scope": "The current-image QEMU smoke uses actual PS/2 Super+arrow input to preview and apply BottomLeft, cancel another zone, maximize and restore. The 1280x800 screenshot shows Terminal in the single work-area quadrant with Editor behind it.",
+          "artifact": "docs/images/prism-snap-quadrant.png",
+          "sha256": "93555466d9a0f5226baba1c0ec1efc516d3b73f9f16b85b2e679249f3805e148"
         }
       ],
-      "remaining": "Tenth has trusted kernel-hosted panels, persistent theme/accent at scale100, real GUI create/edit/rename/permanent-delete/conditional-copy confirmations and actual Super/AltF4 routing. Original signed native surface pixels are immutably copied into trusted previews with readable authenticated origin and lifecycle cleanup. Client input and cooperative close are later source, not this image. User compositor isolation, general tabs/directories/workspaces, Trash, Unicode shaping/screen readers, full apps/settings and capture policy remain incomplete."
+      "remaining": "The software-rendered kernel-hosted shell has saved appearance/accessibility preferences, 100%/125% Settings text and single-work-area snapping. Full Unicode shaping, system-wide high-DPI/font controls, screen-reader and assistive-service testing, compositor isolation, multi-monitor support, GPU acceleration and performance certification remain unfinished."
     },
     {
       "id": "SECTION-15",
       "kind": "section",
-      "text": "Compatibility architecture — principles and boundaries",
+      "text": "Compatibility architecture \u2014 principles and boundaries",
       "status": "pending",
       "evidence": [],
       "remaining": "Implement and validate the complete specification contract."
@@ -2859,9 +2987,16 @@
           "scope": "Actual tenth60ab surface publication/presentation/teardown and DNS/foundation trace; Source11 interactive input/Trash/namespace grants and Source12 close requests are absent from this image.",
           "artifact": "docs/evidence/milestones/60ab816c97cc/serial.log",
           "sha256": "796424a4d0582983229e2555f7f3ec43c0c4248286b202e8dd3ff15850e4a0bb"
+        },
+        {
+          "level": "host_tested",
+          "command": "source tools/env.sh && python3 tools/test-linux-fs-contract.py",
+          "scope": "Seven host contract tests cover Linux-profile-gated getpid, six fixed-width uname fields and NUL padding, and Linux lseek whence/signed errors. These new calls have no guest Linux fixture yet.",
+          "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/feature-wave/validation/linux-fs-contract-tests.txt",
+          "sha256": "21160c604f29a20167d61cf69bcbeb1312d91913ac3f5ddd608d6af1c2f0b6d7"
         }
       ],
-      "remaining": "Original identical static Linux hello/memory/clock/file fixtures execute on host Linux and Helix with selected syscall/error semantics, bounded descriptor operations, anonymous VM/heap and monotonic sleep/time. Dynamic loader/libc/language TLS/signals/sockets/VDSO/namespaces and substantial real application catalog remain absent."
+      "remaining": "The static Linux profile runs its existing bounded guest fixtures; getpid, uname and lseek currently have host contract coverage only. Dynamic loading, broad libc/POSIX semantics, signals, networking, VDSO, namespaces and real application compatibility remain absent."
     },
     {
       "id": "SECTION-17.2",
@@ -2903,9 +3038,16 @@
           "scope": "Original Linux file fixture passes in Helix under QEMU, exercising bounded descriptors and positional pread64/pwrite64; this is not broad POSIX application compatibility.",
           "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/qemu-max/boot-smoke.json",
           "sha256": "4e9e8d5117aa911618c691cde288a1af18c67e7a21f98217c03d53002e82d268"
+        },
+        {
+          "level": "host_tested",
+          "command": "source tools/env.sh && python3 tools/test-linux-fs-contract.py",
+          "scope": "Seven host contract tests cover Linux-profile-gated getpid, six fixed-width uname fields and NUL padding, and Linux lseek whence/signed errors. These new calls have no guest Linux fixture yet.",
+          "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/feature-wave/validation/linux-fs-contract-tests.txt",
+          "sha256": "21160c604f29a20167d61cf69bcbeb1312d91913ac3f5ddd608d6af1c2f0b6d7"
         }
       ],
-      "remaining": "Original identical static Linux hello/memory/clock/file fixtures execute on host Linux and Helix with selected syscall/error semantics, bounded descriptor operations, anonymous VM/heap and monotonic sleep/time. Dynamic loader/libc/language TLS/signals/sockets/VDSO/namespaces and substantial real application catalog remain absent."
+      "remaining": "The tested ABI gateway remains an explicit, narrow syscall subset. The new getpid/uname/lseek tests validate host contracts but are not guest fixtures; broad Linux and Windows ABI compatibility, dynamic loaders, libc and extensive applications remain unsupported."
     },
     {
       "id": "SECTION-17.3",
@@ -3845,9 +3987,24 @@
       "id": "SECTION-23.3",
       "kind": "section",
       "text": "Localization and typography",
-      "status": "pending",
-      "evidence": [],
-      "remaining": "Implement and validate the complete specification contract."
+      "status": "partial",
+      "evidence": [
+        {
+          "level": "host_tested",
+          "command": "source tools/env.sh && cargo test --locked --offline -p prism",
+          "scope": "212 Prism host tests cover the persisted focus-outline and Settings-only 100%/125% text-size controls, renderer fitting/metrics, navigation, and bounded capture-consent policy. No full screen-reader, speech, braille, alternative input, global scaling or accessibility certification claim.",
+          "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/feature-wave/validation/prism-tests.txt",
+          "sha256": "7f98ecddb8754209237f1acf38dbff7441254e4497f5b82bdddf197d876bcf32"
+        },
+        {
+          "level": "boot_smoke",
+          "command": "source tools/env.sh && bash tools/build.sh && python3 tools/boot_smoke.py --timeout 360 --capture-prism-gallery --output-dir build/final-image-qemu64",
+          "scope": "On the current signed development image, keyboard navigation saves the Strong focus outline and 125% Settings-only text preference; the harness captures the completed 1280x800 guest frame after the accepted save. This is not global/app scaling or accessibility certification.",
+          "artifact": "docs/images/prism-settings-text-scale.png",
+          "sha256": "1119c9c392828e221dde88bb0cf1886662949550ebef402a8464755c4469780f"
+        }
+      ],
+      "remaining": "Selawik provides a metrically compatible Segoe UI replacement and Settings supports 100%/125% text size, but the OS lacks full Unicode normalization policy, grapheme-aware editing, complex-script shaping, fallback/emoji/bidi, UTF-16 conversion, locale-aware formatting, translated accessibility text, CJK IME, and right-to-left layout."
     },
     {
       "id": "SECTION-24",
@@ -4194,9 +4351,16 @@
           "scope": "Actual q35/TCG qemu64 guest kernel over virtio-net and a deterministic Ethernet peer: 40-second DHCPv4 lease; T1 unicast ACK refresh; T2 broadcast rebind accepted from an alternate server; NAK-triggered discovery restart; and expiry-triggered discovery restart. Single-vCPU QEMU evidence, not broad server interoperability or hardware certification.",
           "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/dhcp-guest-smoke.json",
           "sha256": "ae608d67744727e09890cbe9de386af5341af31125f0f74ce7b79f3bfaff32cc"
+        },
+        {
+          "level": "host_tested",
+          "command": "source tools/env.sh && python3 tools/test-network-dma.py",
+          "scope": "78 host tests exercise production network queue/DMA and IPv6 ingress code, including a bounded DHCPv6 packet parser and client transaction/lease state model. The harness does not send DHCPv6 packets or install an IPv6 address, perform DAD, or configure routes in the guest.",
+          "artifact": "docs/evidence/milestones/runtime-prism-2026-10-12/feature-wave/validation/network-dma-host.json",
+          "sha256": "de3d16efa999e2624e9b848a2158bb9279e67a55d37fcfb3568329ee88660f81"
         }
       ],
-      "remaining": "QEMU evidence covers DHCPv4 acquisition, renewal/rebind, NAK recovery, and expiry recovery with a controlled peer, plus actual ARP/ICMP/UDP/TCP and local synthetic-zone DNS A/AAAA/retry/cache/TTL expiry. General DNS/upstream handling, IPv6 transport, userspace netd/socket APIs, TLS, firewall, usable network settings, broad interoperability, and physical certification remain absent."
+      "remaining": "Guest evidence covers bounded IPv4/DHCPv4 and TCP/UDP/DNS scenarios; host tests include IPv6 ingress validation and a DHCPv6 state model only. There is no guest DHCPv6/IPv6 address assignment, DAD, routing, userspace netd/socket service, TLS, firewall UI, VPN/Wi-Fi management, or broad physical-network certification."
     },
     {
       "id": "DELIVERABLE-desktop",

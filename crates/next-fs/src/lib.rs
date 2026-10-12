@@ -1,8 +1,14 @@
 #![no_std]
 //! Read-only FAT32 with short (8.3) paths. This is not NextFS or a POSIX VFS.
 
+#[cfg(feature = "host-backup")]
+pub mod backup;
+#[cfg(feature = "host-backup")]
+pub mod backup_archive;
 pub mod gpt;
 pub mod journal;
+#[cfg(feature = "host-backup")]
+pub mod journal_backup;
 pub mod storage_policy;
 pub mod trash_record;
 

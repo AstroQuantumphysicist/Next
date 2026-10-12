@@ -316,6 +316,24 @@ mod tests {
         );
     }
     #[test]
+    fn bounded_settings_text_scale_survives_the_checksummed_atomic_record() {
+        let mut disk = Disk {
+            bytes: None,
+            fail: false,
+            writes: 0,
+        };
+        let mut active = Preferences::default();
+        let proposed = Preferences {
+            text_scale: TextScale::Percent125,
+            ..Preferences::default()
+        };
+        save(&mut disk, &mut active, proposed).unwrap();
+        assert_eq!(disk.writes, 1);
+        assert_eq!(active.text_scale, TextScale::Percent125);
+        assert_eq!(load(&mut disk).unwrap().preferences, proposed);
+        assert_eq!(disk.bytes.as_deref(), Some(proposed.encode().as_slice()));
+    }
+    #[test]
     fn valid_checksum_cannot_authorize_unknown_values_or_reserved_extensions() {
         for (offset, value, expected) in [
             (8, 2, DecodeError::Version),

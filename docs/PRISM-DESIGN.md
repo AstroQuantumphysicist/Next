@@ -18,12 +18,14 @@ replace font-layout, scaling, accessibility, or physical-display validation.
 ![Prism Home from a completed guest framebuffer capture](images/prism-home.png)
 
 See the [guest-captured visual gallery](PRISM-VISUAL-GALLERY.md) for Home,
-Terminal, Files, Monitor, Settings, Editor, Calculator, notifications, and the
-keyboard shortcut guide. Settings exposes 12 navigable categories: Appearance
-has active theme/accent controls with Save/Revert, Accessibility offers a
-persisted Strong keyboard-focus outline for Settings controls, System provides
-read-only diagnostics, and the other nine pages are informational with disabled
-rows.
+Terminal, Files, Monitor, Settings, Editor, Calculator, notifications, the
+keyboard shortcut guide, saved Accessibility settings, and quarter snapping. Settings exposes
+12 navigable categories: Appearance has active theme/accent controls with
+Save/Revert, Accessibility persists a Strong keyboard-focus outline and 100%
+or 125% text size within Settings, System provides read-only diagnostics, and
+the other nine pages are informational with disabled rows. The guest gallery
+includes a frame after saving the 125% choice; the preference is scoped to
+Settings text, not desktop-wide scaling.
 
 ## Reviewed reference images
 
@@ -37,15 +39,18 @@ rows.
 This is the bounded kernel-hosted development shell, with software rendering.
 It is not the isolated production compositor. The Latin atlas does not provide
 Unicode shaping; UTF-8 editor storage does not imply complete Unicode display.
-Bounded persisted appearance themes and real GUI file operations have dedicated
-retained-image guest evidence. Settings wallpaper, fonts, density, scale, and
-desktop layout remain unavailable; System is read-only and nine categories are
-informational. Accessibility currently saves only the Settings focus outline;
-screen-reader transport, captions, speech, magnification, reduced motion,
-keyboard-repeat and pointer preferences remain unavailable. Newer Trash, client input, cooperative close,
-and session-only Undo have separate source and guest gates; controls must
-preserve backend authority and trusted-dialog priority. Text size remains fixed
-at 100%. See [PRISM-ACCEPTANCE.md](PRISM-ACCEPTANCE.md) for functional gates.
+Bounded persisted appearance themes, real GUI file operations, the focus
+outline, and Settings-only text scaling have dedicated tests and guest-frame
+evidence. Desktop-wide wallpaper, font, density, text scaling and layout controls
+remain unavailable; System is read-only and nine categories are informational.
+Screen-reader transport, captions, speech, magnification, reduced motion,
+keyboard-repeat and pointer preferences remain unavailable. Prism snapping now
+supports left/right halves and four corner quadrants in one work area, with
+reversible previews, minimum-size checks, and restore bounds; it does not provide
+multi-monitor layout negotiation. Trash, client input, cooperative close, and
+session-only Undo have separate source and guest gates; controls must preserve
+backend authority and trusted-dialog priority. See
+[PRISM-ACCEPTANCE.md](PRISM-ACCEPTANCE.md) for functional gates.
 
 Licenses, exact source-font hashes, rasterization parameters, and reproducible
 asset generators are recorded under docs/third-party and crates/prism/assets.

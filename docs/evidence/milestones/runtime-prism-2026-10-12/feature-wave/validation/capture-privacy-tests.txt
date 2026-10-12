@@ -1,0 +1,13 @@
+    Blocking waiting for file lock on package cache
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.02s
+     Running unittests src/lib.rs (target/debug/deps/prism-52a4bbbac899edc5)
+
+running 6 tests
+test capture_privacy::tests::fixed_capacities_fail_closed_and_reuse_only_released_slots ... ok
+test capture_privacy::tests::one_shot_permit_is_bound_and_consumed_once ... ok
+test capture_privacy::tests::session_grant_is_app_source_and_generation_scoped_and_revocable ... ok
+test capture_privacy::tests::revocation_invalidates_pending_and_issued_one_shot_requests ... ok
+test capture_privacy::tests::requests_and_previews_do_not_grant_pixel_access ... ok
+test capture_privacy::tests::invalid_identities_and_sources_are_rejected ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 206 filtered out; finished in 0.00s

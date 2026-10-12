@@ -1,7 +1,7 @@
 //! Honest, bounded top-level settings catalog for Prism.
 //!
-//! A section can be browsed before its backend exists. Appearance and one
-//! Settings-scoped accessibility preference are actionable; System exposes
+//! A section can be browsed before its backend exists. Appearance and two
+//! Settings-scoped accessibility preferences are actionable; System exposes
 //! read-only diagnostics. Other rows describe their missing providers and do
 //! not claim enabled actions.
 
@@ -144,7 +144,7 @@ pub const SECTIONS: [Section; 12] = [
     Section {
         category: Category::Accessibility,
         label: "Accessibility",
-        summary: "Choose the keyboard focus outline. Other accessibility controls are unavailable.",
+        summary: "Choose the focus outline and Settings text size. Other accessibility services are unavailable.",
         rows: [
             "Screen reader, captions and speech",
             "Keyboard repeat and pointer support",

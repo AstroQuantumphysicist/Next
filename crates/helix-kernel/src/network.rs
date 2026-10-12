@@ -9,6 +9,11 @@ use core::{
 };
 #[path = "network_dhcp.rs"]
 pub mod dhcp;
+// Parsed and host-tested as a bounded protocol primitive; guest DHCPv6 is not
+// enabled yet, so its public API is intentionally unused by the runtime.
+#[allow(dead_code)]
+#[path = "network_dhcpv6.rs"]
+pub mod dhcpv6;
 #[path = "network_ipv6.rs"]
 mod ipv6;
 #[path = "network_runtime.rs"]

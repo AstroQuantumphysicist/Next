@@ -1,0 +1,13 @@
+    Blocking waiting for file lock on package cache
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.02s
+
+running 7 tests
+test linux::mapping_tests::bounds_overflow_and_write_execute_requests_fail_closed ... ok
+test linux::mapping_tests::occupied_and_fragmented_pages_are_never_reused ... ok
+test lseek_uses_linux_whence_and_signed_offset_errors ... ok
+test getpid_returns_kernel_pid_only_for_linux_profile ... ok
+test stdin_is_eof_device_with_independent_duplicate_lifetime ... ok
+test uname_uses_linux_x86_64_six_field_layout ... ok
+test positional_io_preserves_offset_and_obeys_bounded_file_errors ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s

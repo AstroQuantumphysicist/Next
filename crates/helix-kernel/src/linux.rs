@@ -20,6 +20,8 @@ pub const ENOENT: u64 = (-2i64) as u64;
 pub const EAGAIN: u64 = (-11i64) as u64;
 pub const EIO: u64 = (-5i64) as u64;
 pub const EFBIG: u64 = (-27i64) as u64;
+/// Linux x86-64 `struct utsname`: six 65-byte NUL-terminated fields.
+pub const UTSNAME_BYTES: usize = 6 * 65;
 
 /// Translate shared kernel status values into the Linux syscall errno ABI.
 /// Keep this mapping at the personality boundary; native status numbers are
@@ -76,6 +78,42 @@ pub enum Profile {
     Linux,
     Nt,
 }
+
+/// Resolve getpid for this compatibility profile. `pid` is the process
+/// record's kernel PID, never its table slot; other calls stay ENOSYS.
+pub const fn identity_syscall_result(number: u64, profile: Profile, pid: u64) -> u64 {
+    if number == 39 && matches!(profile, Profile::Linux) {
+        pid
+    } else if number == 39 {
+        Status::NotSupported as i64 as u64
+    } else {
+        ENOSYS
+    }
+}
+
+/// Stable identity reported to programs in the Linux compatibility profile.
+/// The sysname identifies the selected ABI; release/version identify this
+/// scoped Helix implementation rather than claiming a general Linux kernel.
+/// Every field has Linux's fixed 65-byte layout, including zero padding.
+pub fn utsname_bytes() -> [u8; UTSNAME_BYTES] {
+    let mut bytes = [0; UTSNAME_BYTES];
+    for (index, field) in [
+        b"Linux".as_slice(),
+        b"next",
+        b"1.0-next-linux-abi",
+        b"#1 Helix Linux compatibility personality",
+        b"x86_64",
+        b"",
+    ]
+    .into_iter()
+    .enumerate()
+    {
+        let start = index * 65;
+        bytes[start..start + field.len()].copy_from_slice(field);
+    }
+    bytes
+}
+
 // The bounded PE descriptor is kept inline: this early no-allocator loader
 // deliberately spends under 512 bytes instead of allocating a box.
 #[allow(clippy::large_enum_variant)]

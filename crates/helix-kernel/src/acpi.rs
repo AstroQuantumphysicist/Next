@@ -609,6 +609,37 @@ mod tests {
         );
     }
     #[test]
+    fn enabled_cpu_identity_and_count_match_common_qemu_profiles() {
+        for expected_enabled in [1usize, 2, 4, 8] {
+            let mut image = cpu_fixture();
+            for index in 1..expected_enabled {
+                append_madt_cpu(
+                    &mut image,
+                    9,
+                    0x1000 + index as u32,
+                    0x2000 + index as u32,
+                    1,
+                );
+            }
+
+            let topology = discover_with(&image, 16).unwrap();
+            let enabled: std::vec::Vec<_> = topology.cpus[..topology.cpu_count]
+                .iter()
+                .filter(|cpu| cpu.enabled)
+                .copied()
+                .collect();
+            assert_eq!(enabled.len(), expected_enabled);
+            assert_eq!(topology.cpu_count, expected_enabled);
+            assert_eq!(enabled[0].apic_id, 0);
+            assert_eq!(enabled[0].uid, 0);
+            for (index, cpu) in enabled.iter().enumerate().skip(1) {
+                assert_eq!(cpu.apic_id, 0x1000 + index as u32);
+                assert_eq!(cpu.uid, 0x2000 + index as u32);
+                assert!(cpu.enabled);
+            }
+        }
+    }
+    #[test]
     fn duplicate_apic_ids_and_processor_uids_are_rejected_across_madt_formats() {
         let mut duplicate_apic = cpu_fixture();
         append_madt_cpu(&mut duplicate_apic, 9, 0, 1, 1);

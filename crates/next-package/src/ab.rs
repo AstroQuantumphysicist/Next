@@ -378,13 +378,58 @@ pub fn read_latest<S: MetadataStore>(store: &S) -> Result<Metadata, Error> {
     match first.sequence.cmp(&second.sequence) {
         core::cmp::Ordering::Equal if first == second => Ok(first),
         core::cmp::Ordering::Equal => Err(Error::ConflictingCopies),
-        core::cmp::Ordering::Greater if second.sequence.checked_add(1) == Some(first.sequence) => {
+        core::cmp::Ordering::Greater
+            if is_successor(second, first)
+                && second.sequence.checked_add(1) == Some(first.sequence) =>
+        {
             Ok(first)
         }
-        core::cmp::Ordering::Less if first.sequence.checked_add(1) == Some(second.sequence) => {
+        core::cmp::Ordering::Less
+            if is_successor(first, second)
+                && first.sequence.checked_add(1) == Some(second.sequence) =>
+        {
             Ok(second)
         }
+        core::cmp::Ordering::Greater | core::cmp::Ordering::Less
+            if first.sequence.abs_diff(second.sequence) == 1 =>
+        {
+            Err(Error::ConflictingCopies)
+        }
         _ => Err(Error::SequenceGap),
+    }
+}
+
+/// Adjacent records are accepted only when the newer record is a state that
+/// this policy could have committed from the older one. This lets an
+/// interrupted two-copy write recover while rejecting checksum-valid but
+/// contradictory copies.
+fn is_successor(previous: Metadata, next: Metadata) -> bool {
+    if previous.sequence.checked_add(1) != Some(next.sequence) {
+        return false;
+    }
+    match (previous.pending, next.pending) {
+        (None, Some((slot, image))) => {
+            next.confirmed_slot == previous.confirmed_slot
+                && next.confirmed == previous.confirmed
+                && slot == previous.confirmed_slot.other()
+                && image.generation > previous.confirmed.generation
+                && next.attempts_left == MAX_BOOT_ATTEMPTS
+        }
+        (Some((previous_slot, previous_image)), Some((next_slot, next_image))) => {
+            next.confirmed_slot == previous.confirmed_slot
+                && next.confirmed == previous.confirmed
+                && next_slot == previous_slot
+                && next_image == previous_image
+                && previous.attempts_left > 0
+                && next.attempts_left == previous.attempts_left - 1
+        }
+        (Some((previous_slot, previous_image)), None) => {
+            next.attempts_left == 0
+                && ((next.confirmed_slot == previous.confirmed_slot
+                    && next.confirmed == previous.confirmed)
+                    || (next.confirmed_slot == previous_slot && next.confirmed == previous_image))
+        }
+        (None, None) => false,
     }
 }
 
@@ -561,6 +606,15 @@ mod tests {
         (store, old, new)
     }
 
+    fn store_with(record: Metadata) -> MemoryStore {
+        let encoded = record.encode().unwrap();
+        MemoryStore {
+            copies: [encoded; 2],
+            fail_write: None,
+            corrupt_readback: None,
+        }
+    }
+
     #[test]
     fn record_round_trip_and_all_integrity_fields_are_strict() {
         let record = Metadata::initial(Slot::A, image(1, 0x11)).unwrap();
@@ -653,17 +707,54 @@ mod tests {
     fn trial_confirmation_requires_exact_slot_and_digest_and_advances_generation() {
         let (mut store, _, new) = initialized();
         assert_eq!(
+            confirm_running(&mut store, Slot::A, new),
+            Err(Error::InvalidTransition)
+        );
+        assert_eq!(
             confirm_running(&mut store, Slot::B, image(2, 0xee)),
             Err(Error::InvalidTransition)
+        );
+        assert_eq!(
+            confirm_running(&mut store, Slot::B, image(3, 0x22)),
+            Err(Error::InvalidTransition)
+        );
+        assert_eq!(
+            read_latest(&store).unwrap().attempts_left,
+            MAX_BOOT_ATTEMPTS
         );
         let confirmed = confirm_running(&mut store, Slot::B, new).unwrap();
         assert_eq!(confirmed.confirmed_slot, Slot::B);
         assert_eq!(confirmed.confirmed, new);
         assert_eq!(confirmed.pending, None);
         assert_eq!(confirmed.sequence, 3);
+        let boot = select_boot(&mut store, [Some(image(1, 0x11)), Some(new)]).unwrap();
+        assert_eq!(boot.mode, BootMode::Confirmed);
+        assert_eq!(boot.slot, Slot::B);
+        assert_eq!(boot.image, new);
         assert_eq!(
             confirm_running(&mut store, Slot::B, new),
             Err(Error::NoPendingDeployment)
+        );
+    }
+
+    #[test]
+    fn trial_can_be_confirmed_after_the_last_durable_attempt_decrement() {
+        let (mut store, old, new) = initialized();
+        for attempts_left in (0..MAX_BOOT_ATTEMPTS).rev() {
+            let decision = select_boot(&mut store, [Some(old), Some(new)]).unwrap();
+            assert_eq!(decision.mode, BootMode::Trial);
+            assert_eq!(decision.next_metadata.attempts_left, attempts_left);
+        }
+        assert_eq!(read_latest(&store).unwrap().attempts_left, 0);
+        let confirmed = confirm_running(&mut store, Slot::B, new).unwrap();
+        assert_eq!(confirmed.confirmed_slot, Slot::B);
+        assert_eq!(confirmed.confirmed, new);
+        assert_eq!(confirmed.pending, None);
+        assert_eq!(
+            select_boot(&mut store, [Some(old), Some(new)])
+                .unwrap()
+                .mode,
+            BootMode::Confirmed
         );
     }
 
@@ -680,20 +771,43 @@ mod tests {
             MAX_BOOT_ATTEMPTS
         );
 
+        // If the first copy was written but the second write fails, no trial
+        // decision escapes. The committed decrement remains authoritative on
+        // the next call, so a failed storage operation cannot grant a retry.
+        let (mut store, old, new) = initialized();
+        store.fail_write = Some(1);
+        assert_eq!(
+            select_boot(&mut store, [Some(old), Some(new)]),
+            Err(Error::Storage)
+        );
+        let persisted = read_latest(&store).unwrap();
+        assert_eq!(persisted.attempts_left, MAX_BOOT_ATTEMPTS - 1);
+        store.fail_write = None;
+        let retry = select_boot(&mut store, [Some(old), Some(new)]).unwrap();
+        assert_eq!(retry.mode, BootMode::Trial);
+        assert_eq!(retry.next_metadata.attempts_left, MAX_BOOT_ATTEMPTS - 2);
+
         let (mut store, old, new) = initialized();
         store.corrupt_readback = Some(0);
         assert_eq!(
             select_boot(&mut store, [Some(old), Some(new)]),
             Err(Error::Storage)
         );
+
+        let (mut store, old, new) = initialized();
+        store.corrupt_readback = Some(1);
+        assert_eq!(
+            select_boot(&mut store, [Some(old), Some(new)]),
+            Err(Error::Storage)
+        );
+        assert_eq!(read_latest(&store), Err(Error::CorruptStore));
     }
 
     #[test]
     fn dual_copy_selection_accepts_only_equal_or_adjacent_sequences() {
         let (mut store, old, new) = initialized();
         let latest = read_latest(&store).unwrap();
-        let mut older = latest;
-        older.sequence -= 1;
+        let older = Metadata::initial(Slot::A, old).unwrap();
         store.copies[0] = latest.encode().unwrap();
         store.copies[1] = older.encode().unwrap();
         assert_eq!(read_latest(&store), Ok(latest));
@@ -701,7 +815,7 @@ mod tests {
         let _ = select_boot(&mut store, [Some(old), Some(new)]).unwrap();
         let newer = select_boot(&mut store, [Some(old), Some(new)]).unwrap();
         assert_eq!(newer.next_metadata.sequence, 4);
-        older = Metadata::initial(Slot::A, old)
+        let older = Metadata::initial(Slot::A, old)
             .unwrap()
             .stage(Slot::B, new)
             .unwrap();
@@ -716,6 +830,65 @@ mod tests {
         store.copies[0] = newer.next_metadata.encode().unwrap();
         store.copies[1] = same_generation_conflict.encode().unwrap();
         assert_eq!(read_latest(&store), Err(Error::ConflictingCopies));
+    }
+
+    #[test]
+    fn adjacent_copies_must_represent_one_valid_policy_transition() {
+        let old = image(1, 0x11);
+        let new = image(2, 0x22);
+        let initial = Metadata::initial(Slot::A, old).unwrap();
+        let staged = initial.stage(Slot::B, new).unwrap();
+
+        let mut store = MemoryStore {
+            copies: [initial.encode().unwrap(), staged.encode().unwrap()],
+            ..MemoryStore::blank()
+        };
+        assert_eq!(read_latest(&store), Ok(staged));
+
+        let trial = select_metadata_for_test(staged, MAX_BOOT_ATTEMPTS - 1);
+        store.copies = [staged.encode().unwrap(), trial.encode().unwrap()];
+        assert_eq!(read_latest(&store), Ok(trial));
+
+        let rollback = Metadata {
+            sequence: trial.sequence + 1,
+            pending: None,
+            attempts_left: 0,
+            ..trial
+        };
+        store.copies = [trial.encode().unwrap(), rollback.encode().unwrap()];
+        assert_eq!(read_latest(&store), Ok(rollback));
+
+        let confirmed = staged.confirm(Slot::B, new).unwrap();
+        store.copies = [staged.encode().unwrap(), confirmed.encode().unwrap()];
+        assert_eq!(read_latest(&store), Ok(confirmed));
+
+        // This record is individually valid and checksum-correct, but skips
+        // two trial decrements while advancing only one sequence.
+        let skipped_trial = select_metadata_for_test(staged, 1);
+        store.copies = [staged.encode().unwrap(), skipped_trial.encode().unwrap()];
+        assert_eq!(read_latest(&store), Err(Error::ConflictingCopies));
+
+        // A same-sequence pair with different confirmed image identities is
+        // also a conflict even when both checksums are internally valid.
+        let mut conflicting = Metadata::initial(Slot::A, image(1, 0x99)).unwrap();
+        conflicting.sequence = initial.sequence;
+        store.copies = [initial.encode().unwrap(), conflicting.encode().unwrap()];
+        assert_eq!(read_latest(&store), Err(Error::ConflictingCopies));
+
+        // A single damaged copy cannot be silently discarded in favor of the
+        // other, even if the surviving record is otherwise valid.
+        store.copies[0] = initial.encode().unwrap();
+        store.copies[1] = staged.encode().unwrap();
+        store.copies[1][40] ^= 1;
+        assert_eq!(read_latest(&store), Err(Error::CorruptStore));
+    }
+
+    fn select_metadata_for_test(record: Metadata, attempts_left: u8) -> Metadata {
+        Metadata {
+            sequence: record.sequence + 1,
+            attempts_left,
+            ..record
+        }
     }
 
     #[test]
@@ -765,5 +938,61 @@ mod tests {
             generation_max.stage(Slot::B, image(u64::MAX, 0x22)),
             Err(Error::InvalidTransition)
         );
+    }
+
+    #[test]
+    fn generation_and_sequence_exhaustion_never_wrap_or_replace_confirmed_state() {
+        let before_exhaustion = image(u64::MAX - 1, 0x11);
+        let final_generation = image(u64::MAX, 0x22);
+        let mut store = MemoryStore::blank();
+        initialize(&mut store, Slot::A, before_exhaustion).unwrap();
+        stage_update(&mut store, Slot::B, final_generation).unwrap();
+        let confirmed = confirm_running(&mut store, Slot::B, final_generation).unwrap();
+        assert_eq!(confirmed.confirmed.generation, u64::MAX);
+        let before_rejected_stage = store.copies;
+        assert_eq!(
+            stage_update(&mut store, Slot::A, image(u64::MAX, 0x33)),
+            Err(Error::InvalidTransition)
+        );
+        assert_eq!(store.copies, before_rejected_stage);
+
+        let initial = Metadata::initial(Slot::A, image(1, 0x11)).unwrap();
+        let mut exhausted = initial;
+        exhausted.sequence = u64::MAX;
+        let mut store = store_with(exhausted);
+        let before = store.copies;
+        assert_eq!(
+            stage_update(&mut store, Slot::B, image(2, 0x22)),
+            Err(Error::CounterOverflow)
+        );
+        assert_eq!(store.copies, before);
+
+        let pending = initial.stage(Slot::B, image(2, 0x22)).unwrap();
+        let mut exhausted_trial = pending;
+        exhausted_trial.sequence = u64::MAX;
+        let mut store = store_with(exhausted_trial);
+        let before = store.copies;
+        assert_eq!(
+            select_boot(&mut store, [Some(image(1, 0x11)), Some(image(2, 0x22))]),
+            Err(Error::CounterOverflow)
+        );
+        assert_eq!(
+            confirm_running(&mut store, Slot::B, image(2, 0x22)),
+            Err(Error::CounterOverflow)
+        );
+        assert_eq!(store.copies, before);
+
+        let exhausted_rollback = Metadata {
+            sequence: u64::MAX,
+            attempts_left: 0,
+            ..pending
+        };
+        let mut store = store_with(exhausted_rollback);
+        let before = store.copies;
+        assert_eq!(
+            select_boot(&mut store, [Some(image(1, 0x11)), Some(image(2, 0x22))]),
+            Err(Error::CounterOverflow)
+        );
+        assert_eq!(store.copies, before);
     }
 }

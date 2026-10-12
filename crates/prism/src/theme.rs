@@ -36,23 +36,44 @@ fn glyph_index(c: char) -> usize {
     }
 }
 pub fn text_width(s: &str, font: Font) -> i32 {
+    text_width_scaled(s, font, crate::appearance::TextScale::Percent100)
+}
+pub fn text_width_scaled(s: &str, font: Font, scale: crate::appearance::TextScale) -> i32 {
     s.chars().fold(0i32, |sum, c| {
-        sum.saturating_add(ADVANCE[font.index() * 95 + glyph_index(c)] as i32)
+        let advance = ADVANCE[font.index() * 95 + glyph_index(c)] as i32;
+        let advance = if scale == crate::appearance::TextScale::Percent125 {
+            advance.saturating_mul(5).saturating_add(3) / 4
+        } else {
+            advance
+        };
+        sum.saturating_add(advance)
     })
 }
 pub fn text(canvas: &mut Canvas<'_>, x: i32, y: i32, s: &str, color: u32, font: Font) {
     let color = canvas.font_color(color);
+    let scaled = canvas.text_scale() == crate::appearance::TextScale::Percent125;
     let mut pen = x;
     for c in s.chars() {
         let index = font.index() * 95 + glyph_index(c);
         if pen >= canvas.width() as i32 {
             break;
         }
-        for row in 0..32 {
-            for col in 0..24 {
-                let a = ATLAS[index * 768 + row * 24 + col];
+        let output_rows = if scaled { 40 } else { 32 };
+        let output_cols = if scaled { 30 } else { 24 };
+        let x_offset = X_OFFSET[index] as i8 as i32;
+        let x_offset = if scaled {
+            x_offset.saturating_mul(5) / 4
+        } else {
+            x_offset
+        };
+        for row in 0..output_rows {
+            for col in 0..output_cols {
+                let a = if scaled {
+                    scaled_alpha(index, row, col)
+                } else {
+                    ATLAS[index * 768 + row * 24 + col]
+                };
                 if a != 0 {
-                    let x_offset = X_OFFSET[index] as i8 as i32;
                     blend_pixel(
                         canvas,
                         pen.saturating_add(x_offset).saturating_add(col as i32),
@@ -63,8 +84,36 @@ pub fn text(canvas: &mut Canvas<'_>, x: i32, y: i32, s: &str, color: u32, font: 
                 }
             }
         }
-        pen = pen.saturating_add(ADVANCE[index] as i32);
+        let advance = ADVANCE[index] as i32;
+        let advance = if scaled {
+            advance.saturating_mul(5).saturating_add(3) / 4
+        } else {
+            advance
+        };
+        pen = pen.saturating_add(advance);
     }
+}
+fn scaled_alpha(index: usize, row: usize, col: usize) -> u8 {
+    let source_y = row * 4;
+    let y0 = source_y / 5;
+    let y1 = (y0 + 1).min(31);
+    let fy = (source_y % 5) as u32;
+    let source_x = col * 4;
+    let x0 = source_x / 5;
+    let x1 = (x0 + 1).min(23);
+    let fx = (source_x % 5) as u32;
+    let atlas = index * 768;
+    let top_left = ATLAS[atlas + y0 * 24 + x0] as u32;
+    let top_right = ATLAS[atlas + y0 * 24 + x1] as u32;
+    let bottom_left = ATLAS[atlas + y1 * 24 + x0] as u32;
+    let bottom_right = ATLAS[atlas + y1 * 24 + x1] as u32;
+    let top_weight = 5 - fy;
+    let left_weight = 5 - fx;
+    let alpha = top_left * left_weight * top_weight
+        + top_right * fx * top_weight
+        + bottom_left * left_weight * fy
+        + bottom_right * fx * fy;
+    ((alpha + 12) / 25) as u8
 }
 fn blend_pixel(canvas: &mut Canvas<'_>, x: i32, y: i32, color: u32, alpha: u8) {
     if x < 0 || y < 0 || x as usize >= canvas.width || y as usize >= canvas.height {
@@ -436,6 +485,50 @@ mod tests {
             }
         }
         assert!(bgr.iter().any(|&p| p != 0xf0e0d0 && p != 0xaabbccdd));
+    }
+    #[test]
+    fn settings_text_scale_changes_glyph_metrics_and_raster_size() {
+        use crate::appearance::TextScale;
+        let sample = "Settings";
+        let regular_width = text_width(sample, Font::Body);
+        let large_width = text_width_scaled(sample, Font::Body, TextScale::Percent125);
+        assert!(large_width > regular_width);
+
+        let mut regular = [0; 80 * 64];
+        let mut large = [0; 80 * 64];
+        let mut regular_canvas = Canvas::new(&mut regular, 80, 64, 80, PixelFormat::Bgr).unwrap();
+        let mut large_canvas = Canvas::new(&mut large, 80, 64, 80, PixelFormat::Bgr).unwrap();
+        regular_canvas.clear(SURFACE);
+        large_canvas.clear(SURFACE);
+        large_canvas.set_text_scale(TextScale::Percent125);
+        text(&mut regular_canvas, 2, 2, sample, TEXT, Font::Body);
+        text(&mut large_canvas, 2, 2, sample, TEXT, Font::Body);
+        let regular_bounds = raster_bounds(&regular, 80, SURFACE);
+        let large_bounds = raster_bounds(&large, 80, SURFACE);
+        assert!(large_bounds.2 > regular_bounds.2);
+        assert!(large_bounds.3 > regular_bounds.3);
+    }
+    fn raster_bounds(
+        pixels: &[u32],
+        width: usize,
+        background: u32,
+    ) -> (usize, usize, usize, usize) {
+        let mut left = usize::MAX;
+        let mut top = usize::MAX;
+        let mut right = 0;
+        let mut bottom = 0;
+        for (index, pixel) in pixels.iter().enumerate() {
+            if *pixel == background {
+                continue;
+            }
+            let x = index % width;
+            let y = index / width;
+            left = left.min(x);
+            top = top.min(y);
+            right = right.max(x + 1);
+            bottom = bottom.max(y + 1);
+        }
+        (left, top, right, bottom)
     }
     #[test]
     fn clipped_surfaces_and_text_preserve_guards_at_extreme_origins() {
